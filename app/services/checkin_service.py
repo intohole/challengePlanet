@@ -13,9 +13,11 @@ from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository, InsightRepository
 from app.repositories.points_repository import ChallengeMetaRepository
 from app.repositories.squad_repository import SquadRepository
+from app.services.adaptive_service import evaluate_after_bad_mood_task
 from app.services.ai_service import AIService
 from app.services.mercy_service import load_valid_dates
 from app.services.points_service import PointsService
+from app.services.shield_service import ShieldService
 from app.services.streak_service import calc_streak, today_str, week_dates_of
 
 logger = get_logger("challengePlanet.checkin")
@@ -38,6 +40,7 @@ class CheckInService:
         self._squad_repo = SquadRepository()
         self._points = points or PointsService()
         self._ai = AIService()
+        self._shields = ShieldService()
 
     async def do_checkin(
         self,
@@ -46,10 +49,13 @@ class CheckInService:
         user_id: str,
         mood: str,
         reflection: str,
+        checkin_type: str = "full",
     ) -> dict[str, object]:
         challenge = await self._challenge_repo.get_by_id(session, challenge_id)
         if challenge is None or challenge.user_id != user_id:
             raise ValueError("挑战不存在")
+        if checkin_type not in ("full", "mini"):
+            raise ValueError("未知的打卡类型")
 
         today = today_str()
         existing = await self._repo.get_by_date(session, challenge_id, today)
@@ -58,17 +64,22 @@ class CheckInService:
             return {
                 "checkin": existing, "ai_feedback": existing.ai_feedback,
                 "points_earned": 0, "chest_points": 0, "streak": streak,
-                "already_checked": True,
+                "already_checked": True, "declaration": "", "shields": 0,
             }
 
         start_dt = datetime.strptime(challenge.start_date, "%Y-%m-%d")
         day_number = min((datetime.now() - start_dt).days + 1, challenge.duration_days)
         if day_number < 1:
             raise ValueError("挑战还未开始")
+        if checkin_type == "mini" and not reflection.strip():
+            reflection = "微打卡：今天没放弃"
 
         memory_context = await self._recall_context(user_id, challenge.title)
-        feedback = await self._safe_feedback(
-            challenge.title, day_number, challenge.duration_days, mood, reflection, memory_context
+        feedback, declaration = await asyncio.gather(
+            self._safe_feedback(
+                challenge.title, day_number, challenge.duration_days, mood, reflection, memory_context
+            ),
+            self._safe_declaration(challenge.title, day_number),
         )
         checkin = await self._repo.create(session, {
             "challenge_id": challenge_id,
@@ -76,22 +87,28 @@ class CheckInService:
             "day_number": day_number,
             "date": today,
             "status": "completed",
+            "checkin_type": checkin_type,
             "mood": mood,
             "reflection": reflection,
             "ai_feedback": feedback,
         })
 
         streak = await self._current_streak(session, challenge_id)
-        base, chest = await self._points.award_checkin(session, user_id, challenge_id, streak)
+        base, chest = await self._points.award_checkin(
+            session, user_id, challenge_id, streak, mini=checkin_type == "mini"
+        )
+        shields = await self._shields.award_milestone(session, challenge_id, streak)
         await self._maybe_award_squad_bonus(session, challenge_id, today)
         _fire_and_forget(self._save_memory(user_id, challenge.title, day_number, mood, reflection))
+        if mood == "bad":
+            _fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
         if day_number % 7 == 0 or day_number == challenge.duration_days:
             _fire_and_forget(generate_weekly_report_task(challenge_id))
 
         return {
             "checkin": checkin, "ai_feedback": feedback,
             "points_earned": base, "chest_points": chest, "streak": streak,
-            "already_checked": False,
+            "already_checked": False, "declaration": declaration, "shields": shields,
         }
 
     async def update_today_reflection(
@@ -145,6 +162,14 @@ class CheckInService:
         except Exception as e:
             logger.warning("daily feedback fallback: %s", e)
             return "坚持就是胜利！明天继续加油💪"
+
+    async def _safe_declaration(self, title: str, day_number: int) -> str:
+        try:
+            streak = day_number
+            return await self._ai.generate_declaration(title, day_number, streak)
+        except Exception as e:
+            logger.warning("declaration fallback: %s", e)
+            return ""
 
     async def _maybe_award_squad_bonus(
         self, session: AsyncSession, challenge_id: int, today: str

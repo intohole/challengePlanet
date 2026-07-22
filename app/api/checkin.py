@@ -37,7 +37,7 @@ async def do_checkin(
     service = CheckInService()
     try:
         result = await service.do_checkin(
-            session, challenge_id, user_id, request.mood, request.reflection
+            session, challenge_id, user_id, request.mood, request.reflection, request.checkin_type
         )
     except ValueError as e:
         raise _bad_request(e)
@@ -49,6 +49,8 @@ async def do_checkin(
         chest_points=int(result["chest_points"]),
         streak=int(result["streak"]),
         already_checked=bool(result["already_checked"]),
+        declaration=str(result.get("declaration", "")),
+        shields=int(result.get("shields", 0)),
     )
 
 
@@ -128,6 +130,7 @@ async def get_mercy_status(
         result = await service.get_mercy_status(session, challenge_id, user_id)
     except ValueError as e:
         raise _bad_request(e)
+    await session.commit()
     return MercyStatusResponse(**result)
 
 

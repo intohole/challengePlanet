@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import AsyncGenerator
 
 from nexus import get_llm_service, parse_llm_json
@@ -46,6 +47,33 @@ _REPAIR_SYSTEM = (
 _QUOTE_SYSTEM = (
     "你是文案高手。为用户的坚持挑战写一句分享海报金句，不超过20个字，有力量感，"
     "不要emoji，不要引号，直接输出这句话本身。"
+)
+
+_DECLARATION_SYSTEM = (
+    "你是点燃仪式感的教练。为用户今天的打卡写一句今日宣言，不超过16字，"
+    "第一人称、有力量感、不油腻，不要emoji，不要引号，直接输出这句话本身。"
+)
+
+_DIAGNOSIS_SYSTEM = (
+    "你是习惯养成领域的执行力诊断专家。用户挑战断签了，根据数据推断最可能的断签原因。"
+    "只输出严格JSON，不要markdown标记："
+    "{\"cause\": \"task_hard|no_time|motivation_decay|external\", "
+    "\"narrative\": \"2-3句叙事重塑文案：先共情正常化（偶尔断签不影响习惯养成），再肯定已完成进度，严禁指责\", "
+    "\"suggestion_action\": \"lighten3|micro|keep\", "
+    "\"suggestion_text\": \"一句话方案说明\"}\n"
+    "归因规则：心得提到累/太多/做不完→task_hard；提到加班/出差/没时间，或打卡时间逐日推迟→no_time；"
+    "心得字数逐日减少、心情持续低落、提到没劲/没意义→motivation_decay；提到生病/旅行/突发事件→external；"
+    "信号不足时按motivation_decay处理。\n"
+    "方案映射：task_hard→lighten3（未来3天降难度版），no_time→micro（未来7天微习惯版，每天5分钟），"
+    "motivation_decay→micro，external→keep（保持原计划）。"
+)
+
+_ADJUST_TASKS_SYSTEM = (
+    "你是习惯养成教练。把给定的每日任务调整为更轻松的版本，方向不变但显著降低执行门槛。"
+    "只输出严格JSON，不要markdown标记："
+    "{\"tasks\": [{\"day\": 1, \"title\": \"任务标题\", \"description\": \"具体任务\", \"tip\": \"小贴士\"}]}\n"
+    "要求：lighten模式下任务量降到原来的三分之一；micro模式下每天只需5分钟以内的最小行动；"
+    "day编号必须与原任务一致，任务数量一致。"
 )
 
 
@@ -180,3 +208,62 @@ class AIService:
         )
         quote = raw.strip().strip('"').strip("'").split("\n")[0].strip()
         return quote[:20] if quote else "坚持，是最好的答案"
+
+    async def generate_declaration(self, challenge_title: str, day_number: int, streak: int) -> str:
+        user_msg = f"挑战：{challenge_title}\n今天是第{day_number}天，已连续{streak}天"
+        llm = get_llm_service()
+        raw = await llm.ask(
+            user_msg,
+            system=_DECLARATION_SYSTEM,
+            temperature=0.9,
+            max_tokens=48,
+            timeout=12.0,
+        )
+        text = raw.strip().strip('"').strip("'").split("\n")[0].strip()
+        return text[:20]
+
+    async def diagnose_break(
+        self,
+        challenge_title: str,
+        missed_count: int,
+        total_days: int,
+        done_days: int,
+        recent_summary: str,
+    ) -> dict[str, object] | None:
+        user_msg = (
+            f"挑战：{challenge_title}（共{total_days}天，已完成{done_days}天，本次断签{missed_count}天）\n"
+            f"最近打卡记录：\n{recent_summary or '暂无'}"
+        )
+        llm = get_llm_service()
+        raw = await llm.ask(
+            user_msg,
+            system=_DIAGNOSIS_SYSTEM,
+            temperature=0.4,
+            max_tokens=384,
+            timeout=30.0,
+        )
+        parsed = parse_llm_json(raw)
+        if "raw_response" in parsed:
+            return None
+        if parsed.get("cause") not in ("task_hard", "no_time", "motivation_decay", "external"):
+            return None
+        if parsed.get("suggestion_action") not in ("lighten3", "micro", "keep"):
+            parsed["suggestion_action"] = "lighten3"
+        return parsed
+
+    async def generate_adjusted_tasks(
+        self, challenge_title: str, tasks: list[dict[str, object]], mode: str
+    ) -> list[dict[str, object]] | None:
+        user_msg = f"挑战：{challenge_title}\n模式：{mode}\n原任务：{json.dumps(tasks, ensure_ascii=False)}"
+        llm = get_llm_service()
+        raw = await llm.ask(
+            user_msg,
+            system=_ADJUST_TASKS_SYSTEM,
+            temperature=0.5,
+            max_tokens=2048,
+            timeout=60.0,
+        )
+        parsed = parse_llm_json(raw)
+        if "raw_response" in parsed or not isinstance(parsed.get("tasks"), list):
+            return None
+        return [t for t in parsed["tasks"] if isinstance(t, dict) and t.get("title")]

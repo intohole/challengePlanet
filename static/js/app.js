@@ -27,7 +27,8 @@ const state = reactive({
   mend: { show: false, dates: [], left: 0, busy: false },
   freeze: { show: false, dates: [], left: 0, busy: false },
   reflection: { show: false, mood: 'good', content: '', busy: false },
-  share: { show: false, url: '', loading: false },
+  share: { show: false, url: '', loading: false, mode: 'win' },
+  diagnosis: { show: false, loading: false, report: null, applying: false },
 })
 window.appState = state
 
@@ -142,13 +143,16 @@ function handleQuery() {
   } catch (e) {}
 }
 
-async function openShare() {
+async function openShare(mode) {
   if (!state.current) return
   state.share.show = true
   state.share.loading = true
   state.share.url = ''
+  state.share.mode = mode === 'flop' ? 'flop' : 'win'
   try {
-    state.share.url = await window.cpSharePoster.generate(state.current)
+    state.share.url = state.share.mode === 'flop'
+      ? await window.cpSharePoster.generateFlop(state.current)
+      : await window.cpSharePoster.generate(state.current)
   } catch (e) {
     state.share.show = false
     window.cpToast(window.cpErrMsg(e, '海报生成失败'))
@@ -161,7 +165,7 @@ function saveShareImage() {
   if (!state.share.url) return
   const a = document.createElement('a')
   a.href = state.share.url
-  a.download = '挑战星球_' + (state.current.title || '分享') + '.png'
+  a.download = '挑战星球_' + (state.share.mode === 'flop' ? '翻车复盘_' : '') + (state.current.title || '分享') + '.png'
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
@@ -170,7 +174,10 @@ function saveShareImage() {
 function copyShareText() {
   const c = state.current
   if (!c) return
-  const text = '我在挑战星球参加「' + c.title + '」挑战！\n已完成 ' + (c.completed_days || 0) + '/' + c.total_days + ' 天，连续打卡 ' + (c.streak || 0) + ' 天\n来挑战星球，和我一起变得更好！\n' + window.location.origin + window.cpPrefix
+  const url = window.location.origin + window.cpPrefix
+  const text = state.share.mode === 'flop'
+    ? '我在挑战星球「' + c.title + '」翻车后回来了！\n断签不可怕，可怕的是不再开始。已完成 ' + (c.completed_days || 0) + '/' + c.total_days + ' 天\n来挑战星球，真实打卡，允许翻车\n' + url
+    : '我在挑战星球参加「' + c.title + '」挑战！\n已完成 ' + (c.completed_days || 0) + '/' + c.total_days + ' 天，连续打卡 ' + (c.streak || 0) + ' 天\n来挑战星球，和我一起变得更好！\n' + url
   window.cpCopy(text)
 }
 function logout() {

@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from nexus import close_uc_sdk, init_uc_sdk
 from nexus.logging import get_logger
 
+from app.api.adaptive import router as adaptive_router
 from app.api.auth import router as auth_router
 from app.api.challenge import router as challenge_router
 from app.api.checkin import router as checkin_router
@@ -60,6 +61,7 @@ API_PREFIX = settings.API_PREFIX
 app.include_router(auth_router, prefix=API_PREFIX)
 app.include_router(challenge_router, prefix=API_PREFIX + "/challenges")
 app.include_router(checkin_router, prefix=API_PREFIX + "/challenges")
+app.include_router(adaptive_router, prefix=API_PREFIX + "/challenges")
 app.include_router(squad_router, prefix=API_PREFIX)
 app.include_router(points_router, prefix=API_PREFIX)
 app.include_router(portal_router, prefix=API_PREFIX)

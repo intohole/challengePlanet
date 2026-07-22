@@ -6,12 +6,12 @@
 <title>挑战星球 · AI打卡教练</title>
 <script>window.PATH_PREFIX = window.PATH_PREFIX || ''</script>
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="/static/style.css?v=5">
-<link rel="stylesheet" href="/static/style-components.css?v=5">
+<link rel="stylesheet" href="/static/style.css?v=6">
+<link rel="stylesheet" href="/static/style-components.css?v=6">
 <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.5.13/vue.global.prod.min.js"></script>
 <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="/static/nexus-ui/js/nexus-api-error.js?v=5"></script>
-<script src="/static/nexus-ui/js/nexus-api.js?v=5"></script>
+<script src="/static/nexus-ui/js/nexus-api-error.js?v=6"></script>
+<script src="/static/nexus-ui/js/nexus-api.js?v=6"></script>
 </head>
 <body>
 <div id="app" v-cloak>
@@ -156,24 +156,47 @@
 <div class="cp-modal glass">
   <div class="cp-modal-header"><h3>分享海报</h3><button class="cp-modal-close" @click="state.share.show=false"><i class="fas fa-xmark"></i></button></div>
   <div class="cp-modal-body">
+    <div class="cp-scope-tabs" style="margin-bottom:12px">
+      <button class="cp-pick-btn" :class="{active:state.share.mode!=='flop'}" @click="openShare('win')">🏆 成就海报</button>
+      <button class="cp-pick-btn" :class="{active:state.share.mode==='flop'}" @click="openShare('flop')">💥 翻车复盘</button>
+    </div>
     <div v-if="state.share.loading" class="cp-share-loading"><div class="cp-gen-spinner"></div>正在绘制海报...</div>
     <template v-else>
       <img :src="state.share.url" alt="分享海报" class="cp-share-img">
       <div class="cp-share-btns"><button class="cp-btn-primary" @click="saveShareImage()"><i class="fas fa-download"></i> 保存图片</button><button class="cp-btn-ghost" @click="copyShareText()"><i class="fas fa-copy"></i> 复制文案</button></div>
-      <p class="cp-share-hint">保存图片后可在微信/朋友圈分享</p>
+      <p class="cp-share-hint">{{ state.share.mode==='flop' ? '真实比完美更有感染力，翻车复盘反而更打动人' : '保存图片后可在微信/朋友圈分享' }}</p>
+    </template>
+  </div>
+</div>
+</div></transition>
+
+<transition name="modal"><div v-if="state.diagnosis.show" class="cp-modal-overlay" @click.self="state.diagnosis.show=false">
+<div class="cp-modal glass">
+  <div class="cp-modal-header"><h3>断签诊断</h3><button class="cp-modal-close" @click="state.diagnosis.show=false"><i class="fas fa-xmark"></i></button></div>
+  <div class="cp-modal-body">
+    <div v-if="state.diagnosis.loading" class="cp-share-loading"><div class="cp-gen-spinner"></div>AI 正在分析你的打卡记录...</div>
+    <template v-else-if="state.diagnosis.report">
+      <div class="cp-diag-cause"><i class="fas fa-magnifying-glass-chart"></i> {{ state.diagnosis.report.cause_label }}</div>
+      <p class="cp-diag-text">{{ state.diagnosis.report.narrative }}</p>
+      <div class="cp-diag-plan"><i class="fas fa-prescription"></i> 建议方案：{{ state.diagnosis.report.suggestion_text }}</div>
+      <p class="cp-diag-meta">已完成 {{ state.diagnosis.report.done_days }}/{{ state.diagnosis.report.total_days }} 天 · 断签 {{ state.diagnosis.report.missed_count }} 天 · 进度不会清零</p>
+      <div class="cp-sub-actions" style="margin-top:0">
+        <button class="cp-btn-ghost" :disabled="state.diagnosis.applying" @click="home.applyDiagnosis('keep')">保持原计划</button>
+        <button class="cp-btn-primary" :disabled="state.diagnosis.applying" @click="home.applyDiagnosis(state.diagnosis.report.suggestion_action)"><i class="fas fa-rocket"></i> {{ state.diagnosis.applying ? '应用中...' : '应用方案' }}</button>
+      </div>
     </template>
   </div>
 </div>
 </div></transition>
 
 </div>
-<script src="/static/js/galaxy.js?v=5"></script>
-<script src="/static/js/share-poster.js?v=5"></script>
-<script src="/static/js/create.js?v=5"></script>
-<script src="/static/js/views/home.js?v=5"></script>
-<script src="/static/js/views/squad.js?v=5"></script>
-<script src="/static/js/views/rank.js?v=5"></script>
-<script src="/static/js/views/me.js?v=5"></script>
-<script src="/static/js/app.js?v=5"></script>
+<script src="/static/js/galaxy.js?v=6"></script>
+<script src="/static/js/share-poster.js?v=6"></script>
+<script src="/static/js/create.js?v=6"></script>
+<script src="/static/js/views/home.js?v=6"></script>
+<script src="/static/js/views/squad.js?v=6"></script>
+<script src="/static/js/views/rank.js?v=6"></script>
+<script src="/static/js/views/me.js?v=6"></script>
+<script src="/static/js/app.js?v=6"></script>
 </body>
 </html>

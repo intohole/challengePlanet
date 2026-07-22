@@ -9,6 +9,7 @@ from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import StreakActionRepository
 from app.services.ai_service import AIService
 from app.services.points_service import PointsService
+from app.services.shield_service import ACTION_SHIELD, ShieldService
 from app.services.streak_service import (
     calc_streak,
     day_number_of,
@@ -37,7 +38,7 @@ async def load_valid_dates(session: AsyncSession, challenge_id: int) -> set[str]
     actions = await StreakActionRepository().get_by_challenge(session, challenge_id)
     dates = {c.date for c in checkins}
     for action in actions:
-        if action.action in (ACTION_FREEZE, ACTION_REPAIR):
+        if action.action in (ACTION_FREEZE, ACTION_REPAIR, ACTION_SHIELD):
             dates.add(action.action_date)
     return dates
 
@@ -49,6 +50,7 @@ class MercyService:
         self._action_repo = StreakActionRepository()
         self._points = points or PointsService()
         self._ai = AIService()
+        self._shields = ShieldService()
 
     async def _get_owned_challenge(
         self, session: AsyncSession, challenge_id: int, user_id: str
@@ -196,6 +198,18 @@ class MercyService:
         )
         valid = await self._valid_dates(session, challenge_id)
         yesterday = shift_date(today, -1)
+        shields = await self._shields.get_shields(session, challenge_id)
+        shield_activated = False
+        if (
+            yesterday not in valid
+            and challenge.start_date <= yesterday <= challenge.end_date
+            and streak_before(valid, yesterday) > 0
+            and shields > 0
+        ):
+            if await self._shields.consume_for_date(session, challenge_id, user_id, yesterday):
+                shield_activated = True
+                shields -= 1
+                valid = await self._valid_dates(session, challenge_id)
         repair_available = (
             yesterday not in valid
             and challenge.start_date <= yesterday <= challenge.end_date
@@ -209,4 +223,6 @@ class MercyService:
             "repair_available": repair_available,
             "missed_dates": missed,
             "streak": calc_streak(valid, today),
+            "shields": shields,
+            "shield_activated": shield_activated,
         }

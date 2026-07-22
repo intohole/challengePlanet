@@ -17,6 +17,7 @@ class CheckIn(Base):
     day_number: Mapped[int] = mapped_column(Integer, nullable=False)
     date: Mapped[str] = mapped_column(String(10), nullable=False)
     status: Mapped[str] = mapped_column(String(16), default="completed")
+    checkin_type: Mapped[str] = mapped_column(String(8), default="full")
     mood: Mapped[str] = mapped_column(String(16), default="good")
     reflection: Mapped[str] = mapped_column(Text, default="")
     ai_feedback: Mapped[str] = mapped_column(Text, default="")

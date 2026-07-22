@@ -32,6 +32,7 @@ _EXPECTED_TABLES = (
     "points_ledger",
     "streak_actions",
     "challenge_meta",
+    "adaptive_suggestions",
 )
 
 
@@ -41,7 +42,15 @@ async def get_db() -> AsyncSession:
 
 
 def _import_models() -> None:
-    from app.models import challenge, checkin, points, squad  # noqa: F401
+    from app.models import adaptive, challenge, checkin, points, squad  # noqa: F401
+
+
+async def _ensure_column(conn: object, table: str, column: str, ddl: str) -> None:
+    rows = await conn.execute(text(f"PRAGMA table_info({table})"))
+    cols = {row[1] for row in rows.fetchall()}
+    if column not in cols:
+        logger.info("migration: adding column %s.%s", table, column)
+        await conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {ddl}"))
 
 
 async def init_db() -> None:
@@ -59,6 +68,7 @@ async def run_migrations() -> None:
             if table not in existing:
                 logger.warning("migration: missing table %s, creating", table)
         await conn.run_sync(Base.metadata.create_all)
+        await _ensure_column(conn, "checkins", "checkin_type", "checkin_type VARCHAR(8) DEFAULT 'full'")
         rows = await conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'"))
         existing = {row[0] for row in rows.fetchall()}
         missing = [t for t in _EXPECTED_TABLES if t not in existing]

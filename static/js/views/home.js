@@ -5,7 +5,8 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0 },
+    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null },
+    _ignite: null,
 
     render(el) {
       this.el = el
@@ -45,16 +46,17 @@ window.cpViews.home = (function () {
       if (!ch) { this.loadedFor = null; return }
       if (this.loadedFor !== ch.id) {
         this.loadedFor = ch.id
-        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0 }
+        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null }
         this.rerender()
       }
       const safe = p => p.catch(() => null)
-      const [today, checkins, mercy, weekly, points] = await Promise.all([
+      const [today, checkins, mercy, weekly, points, adaptive] = await Promise.all([
         window.api.get('/challenges/' + ch.id + '/today').then(r => r.data || r).catch(e => { this._todayErr = e; return null }),
         safe(window.api.get('/challenges/' + ch.id + '/checkins')),
         safe(window.api.get('/challenges/' + ch.id + '/mercy')),
         safe(window.api.get('/challenges/' + ch.id + '/weekly-report')),
         safe(window.api.get('/points/summary')),
+        safe(window.api.get('/challenges/' + ch.id + '/adaptive/pending')),
       ])
       const d = this.data
       d.today = today
@@ -63,6 +65,11 @@ window.cpViews.home = (function () {
       d.mercy = mercy && (mercy.data || mercy)
       d.weekly = weekly && (weekly.data || weekly)
       d.points = points && (points.data || points)
+      const ad = adaptive && (adaptive.data || adaptive)
+      d.adaptive = (ad && ad.suggestion) || null
+      if (!d.declaration && today && today.checked_in) {
+        try { d.declaration = localStorage.getItem('cp_decl_' + ch.id + '_' + today.date) || '' } catch (e) {}
+      }
       const notStarted = ch.start_date && ch.start_date > window.cpTodayStr()
       if (!today && this._todayErr && !notStarted && ch.status === 'active') d.error = window.cpErrMsg(this._todayErr, '今日任务加载失败')
       else d.error = ''
@@ -99,11 +106,16 @@ window.cpViews.home = (function () {
       }
       html += '<div class="glass-card cp-hero"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(ch.title) + '</div><div class="cp-hero-date">' + (ch.start_date || '?') + ' → ' + (ch.end_date || '?') + '</div><div class="cp-galaxy-wrap"><div id="galaxy-box"></div></div></div>'
       if (d.loading && !d.today) return html + this._skeleton()
+      const shieldCount = (d.mercy && d.mercy.shields) || d.shields || 0
+      if (shieldCount > 0) html += '<div style="text-align:center"><span class="cp-shield-tag">🛡️ 连续护盾 ×' + shieldCount + ' · 断签自动保护</span></div>'
+      if (d.mercy && d.mercy.shield_activated) html += '<div class="cp-repair-card" style="border-color:rgba(129,140,248,.4);background:rgba(129,140,248,.08)"><p>🛡️ 护盾已自动生效！昨天的断签被保护，连续记录未中断。继续保持！</p></div>'
       if (d.error) html += '<div class="cp-error-box"><i class="fas fa-circle-exclamation"></i><span>' + window.cpEsc(d.error) + '</span><button class="cp-btn-ghost" onclick="cpViews.home.load()">重试</button></div>'
+      if (d.adaptive) html += this._adaptiveCard(d.adaptive)
       html += this._taskArea(s)
       if (d.mercy && d.mercy.repair_available) {
         html += '<div class="cp-repair-card"><p>💛 昨天不小心断签了，别灰心！48小时内完成今天任务即可修复连续记录。</p><button class="cp-btn-primary" onclick="cpViews.home.doRepair()"><i class="fas fa-band-aid"></i> 立即修复 streak</button></div>'
       }
+      if (d.mercy && (d.mercy.missed_dates || []).length) html += this._diagEntry(d.mercy.missed_dates.length)
       html += this._calendar(s)
       if (d.weekly && d.weekly.content) {
         html += '<div class="glass-card cp-weekly-box"><div class="cp-section-title"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> 本周洞察</div><div class="cp-weekly-text">' + window.cpEsc(d.weekly.content) + '</div><div class="cp-weekly-meta">本周进度 ' + (d.weekly.week_checkins || 0) + '/' + (d.weekly.week_days || 7) + ' 天</div></div>'
@@ -131,8 +143,13 @@ window.cpViews.home = (function () {
       if (t.task_tip) html += '<p class="cp-task-tip"><i class="fas fa-lightbulb"></i><span>' + window.cpEsc(t.task_tip) + '</span></p>'
       html += '</div>'
       if (!t.checked_in) {
-        html += '<button class="cp-btn-checkin" ' + (d.checking ? 'disabled' : '') + ' onclick="cpViews.home.doCheckin()"><i class="fas fa-check"></i> ' + (d.checking ? '打卡中...' : '一键打卡') + '</button>'
+        html += '<div class="cp-ignite-wrap">'
+        html += '<button class="cp-ignite-btn" ' + (d.checking ? 'disabled' : '') + ' onpointerdown="cpViews.home.igniteDown(event)" onpointerup="cpViews.home.igniteUp()" onpointerleave="cpViews.home.igniteUp()" onpointercancel="cpViews.home.igniteUp()" oncontextmenu="return false"><i class="fas fa-fire"></i><span>' + (d.checking ? '点燃中' : '长按点火') + '</span></button>'
+        html += '<span class="cp-ignite-hint">按住 1 秒点燃今日，松手取消</span>'
+        html += '<button class="cp-mini-link" ' + (d.checking ? 'disabled' : '') + ' onclick="cpViews.home.doMini()"><i class="fas fa-feather"></i> 今天太累？5分钟微打卡守住节奏</button>'
+        html += '</div>'
       } else {
+        if (d.declaration) html += '<div class="cp-declare">🔥 ' + window.cpEsc(d.declaration) + '</div>'
         html += '<button class="cp-btn-checkin done"><i class="fas fa-circle-check"></i> 今日已完成</button>'
         const plan = ch.ai_plan || []
         const next = plan[t.day_number]
@@ -165,7 +182,11 @@ window.cpViews.home = (function () {
         const rec = statusMap[ds]
         const st = rec ? (rec.status || 'checked') : ''
         let cls = '', mark = '<span class="st">·</span>'
-        if (st === 'checked' || st === 'completed') { cls = ' checked'; mark = '<span class="st">✓</span>' }
+        if (st === 'checked' || st === 'completed') {
+          const mini = rec.checkin_type === 'mini'
+          cls = mini ? ' mini' : ' checked'
+          mark = '<span class="st">✓</span>'
+        }
         else if (st === 'frozen') { cls = ' frozen'; mark = '<span class="st">❄</span>' }
         else if (st === 'mended') { cls = ' mended'; mark = '<span class="st">✚</span>' }
         else if (ds < today) { cls = ' missed'; mark = '<span class="st">·</span>' }
@@ -174,7 +195,7 @@ window.cpViews.home = (function () {
         const clickable = rec ? ' onclick="cpViews.home.openDayDetail(\'' + ds + '\')"' : ''
         html += '<div class="cp-cal-cell' + cls + '"' + clickable + '>' + mark + '<span>' + (i + 1) + '</span></div>'
       }
-      html += '</div><div class="cp-cal-legend"><span>✓ 已打卡</span><span>❄ 冻结</span><span>✚ 补签</span><span>· 缺失</span></div>'
+      html += '</div><div class="cp-cal-legend"><span>✓ 已打卡</span><span style="color:#c084fc">✓ 微打卡</span><span>❄ 冻结</span><span>✚ 补签</span><span>· 缺失</span></div>'
       if (d.mercy) {
         const missed = d.mercy.missed_dates || []
         html += '<div class="cp-mercy-row">'
@@ -190,7 +211,111 @@ window.cpViews.home = (function () {
       window.cpCreate.open({ rawInput: t.title + '，' + t.desc, days: t.days, category: t.category })
     },
 
-    async doCheckin() {
+    _adaptiveCard(a) {
+      let html = '<div class="cp-adapt-card"><div class="cp-adapt-head"><i class="fas fa-sliders"></i> 教练为你调整了计划</div><p class="cp-adapt-reason">' + window.cpEsc(a.reason || '') + '</p>'
+      if (a.task && a.task.title) {
+        html += '<div class="cp-adapt-task"><span class="cp-adapt-day">第 ' + (a.target_day || a.task.day || '?') + ' 天新任务</span><b>' + window.cpEsc(a.task.title) + '</b>'
+        if (a.task.description) html += '<p>' + window.cpEsc(a.task.description) + '</p>'
+        if (a.task.tip) html += '<p>💡 ' + window.cpEsc(a.task.tip) + '</p>'
+        html += '</div>'
+      }
+      html += '<div class="cp-sub-actions" style="margin-top:10px"><button class="cp-btn-ghost" onclick="cpViews.home.respondAdaptive(false)">保持原计划</button><button class="cp-btn-primary" onclick="cpViews.home.respondAdaptive(true)"><i class="fas fa-check"></i> 采纳调整</button></div></div>'
+      return html
+    },
+
+    _diagEntry(missedCount) {
+      return '<div class="cp-adapt-card" style="border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.07)"><div class="cp-adapt-head" style="color:var(--red)"><i class="fas fa-stethoscope"></i> 断签了？AI 帮你找原因</div><p class="cp-adapt-reason">已有 ' + missedCount + ' 天缺失。断签不是失败，找不到原因才是。AI 分析打卡记录，为你定制重启方案。</p><div class="cp-sub-actions" style="margin-top:0"><button class="cp-btn-ghost" onclick="cpOpenShare(\'flop\')"><i class="fas fa-share-nodes"></i> 翻车复盘海报</button><button class="cp-btn-primary" onclick="cpViews.home.doDiagnose()"><i class="fas fa-wand-magic-sparkles"></i> 一键诊断重启</button></div></div>'
+    },
+
+    async respondAdaptive(accept) {
+      const ch = window.appState.current
+      const a = this.data.adaptive
+      if (!ch || !a) return
+      try {
+        await window.api.post('/challenges/' + ch.id + '/adaptive/' + a.id + '/respond', { accept: !!accept })
+        window.cpToast(accept ? '已采纳新任务，即刻生效' : '好的，保持原计划')
+        this.data.adaptive = null
+        await this.load()
+        await window.cpLoadChallenges()
+        this.rerender()
+      } catch (e) { window.cpToast(window.cpErrMsg(e, '操作失败')) }
+    },
+
+    async doDiagnose() {
+      const ch = window.appState.current
+      if (!ch) return
+      const dg = window.appState.diagnosis
+      dg.show = true
+      dg.loading = true
+      dg.report = null
+      dg.applying = false
+      try {
+        const res = await window.api.post('/challenges/' + ch.id + '/diagnose', {})
+        dg.report = res.data || res
+      } catch (e) {
+        dg.show = false
+        window.cpToast(window.cpErrMsg(e, '诊断失败，请稍后再试'))
+      } finally { dg.loading = false }
+    },
+
+    async applyDiagnosis(action) {
+      const ch = window.appState.current
+      const dg = window.appState.diagnosis
+      if (!ch || dg.applying) return
+      dg.applying = true
+      try {
+        const res = await window.api.post('/challenges/' + ch.id + '/diagnose/apply', { action: action || 'keep' })
+        const r = res.data || res
+        window.cpToast(r.message || '已应用方案')
+        dg.show = false
+        await this.load()
+        await window.cpLoadChallenges()
+        this.rerender()
+      } catch (e) { window.cpToast(window.cpErrMsg(e, '应用失败')) }
+      finally { dg.applying = false }
+    },
+
+    igniteDown(e) {
+      const d = this.data
+      if (d.checking || (d.today && d.today.checked_in)) return
+      if (e.cancelable) e.preventDefault()
+      const btn = e.currentTarget
+      if (!btn || btn.disabled) return
+      this.igniteUp()
+      const ig = { btn, start: Date.now(), raf: 0, done: false }
+      this._ignite = ig
+      btn.classList.add('charging')
+      const tick = () => {
+        if (this._ignite !== ig || ig.done) return
+        const p = Math.min(1, (Date.now() - ig.start) / 1000)
+        ig.btn.style.setProperty('--p', p.toFixed(3))
+        if (p >= 1) {
+          ig.done = true
+          this._ignite = null
+          ig.btn.classList.remove('charging')
+          this.doCheckin('full')
+          return
+        }
+        ig.raf = requestAnimationFrame(tick)
+      }
+      ig.raf = requestAnimationFrame(tick)
+    },
+
+    igniteUp() {
+      const ig = this._ignite
+      if (!ig) return
+      ig.done = true
+      cancelAnimationFrame(ig.raf)
+      if (ig.btn) {
+        ig.btn.classList.remove('charging')
+        ig.btn.style.setProperty('--p', 0)
+      }
+      this._ignite = null
+    },
+
+    doMini() { this.doCheckin('mini') },
+
+    async doCheckin(checkinType) {
       const s = window.appState
       const ch = s.current
       const d = this.data
@@ -198,11 +323,16 @@ window.cpViews.home = (function () {
       d.checking = true
       this.rerender()
       try {
-        const res = await window.api.post('/challenges/' + ch.id + '/checkin', {})
+        const res = await window.api.post('/challenges/' + ch.id + '/checkin', { checkin_type: checkinType || 'full' })
         const r = res.data || res
-        window.cpCelebrate('打卡成功 +' + (r.points_earned || 0) + ' 分')
+        window.cpCelebrate((checkinType === 'mini' ? '微打卡 · 节奏守住 +' : '打卡成功 +') + (r.points_earned || 0) + ' 分')
         d.lastFeedback = r.ai_feedback || d.lastFeedback
         d.chest = r.chest_points || 0
+        d.declaration = r.declaration || ''
+        d.shields = r.shields || 0
+        if (d.declaration && d.today && d.today.date) {
+          try { localStorage.setItem('cp_decl_' + ch.id + '_' + d.today.date, d.declaration) } catch (e) {}
+        }
         await this.load()
         await window.cpLoadChallenges()
       } catch (e) {
