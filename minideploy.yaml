@@ -1,0 +1,15 @@
+app_name: ChallengePlanet
+display_name: 挑战星球
+description: AI驱动的挑战打卡工具
+start_command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8600
+prepare_command: pip install -r requirements.txt
+port: 8600
+has_frontend: true
+is_public: true
+group: 工具提效,生活
+framework: fastapi
+env:
+  SERVICE_TOKEN: dev-service-token-2026
+  LION_NAMESPACE: challengePlanet
+  LION_BASE_URL: http://localhost:9527
+  BEEMEMORY_BASE_URL: http://localhost:8700
