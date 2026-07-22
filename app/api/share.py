@@ -1,23 +1,22 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
-from app.schemas.checkin import ShareCardResponse
+from app.schemas.challenge import ShareDataResponse
 from app.services.challenge_service import ChallengeService
 
 router = APIRouter()
 
 
-@router.get("/{challenge_id}/share", response_model=ShareCardResponse)
-async def get_share_card(challenge_id: int, session: AsyncSession = Depends(get_db)) -> ShareCardResponse:
+@router.get("/share/{share_token}", response_model=ShareDataResponse)
+async def get_shared_challenge(
+    share_token: str, session: AsyncSession = Depends(get_db)
+) -> ShareDataResponse:
     service = ChallengeService()
-    data = await service.get_share_data(session, challenge_id)
+    data = await service.get_share_data_by_token(session, share_token)
     if data is None:
-        return ShareCardResponse(
-            challenge_id=challenge_id, title="", duration_days=0,
-            current_day=0, total_checkins=0, streak=0, progress_pct=0,
-            share_text="", share_token="",
-        )
-    return ShareCardResponse(**data)
+        raise HTTPException(status_code=404, detail="分享不存在")
+    await session.commit()
+    return ShareDataResponse(**data)

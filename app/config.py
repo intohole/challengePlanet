@@ -9,7 +9,6 @@ class Settings(BaseSettings):
     APP_NAME: str = "ChallengePlanet"
     DATABASE_URL: str = f"sqlite+aiosqlite:///{Path(__file__).parent.parent / 'data' / 'challenge.db'}"
     API_PREFIX: str = "/api/v1"
-    MAX_MILESTONES: int = 10
     LLM_MAX_TOKENS: int = 4096
     PLANNING_TEMPERATURE: float = 0.7
     FEEDBACK_TEMPERATURE: float = 0.8

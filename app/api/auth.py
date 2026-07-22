@@ -18,22 +18,32 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int = 86400
-    user: dict
+    user: dict[str, object]
 
 
 @router.post("/login", response_model=LoginResponse)
 async def login(req: LoginRequest) -> LoginResponse:
+    if not settings.UC_BASE_URL or not settings.UC_APP_KEY:
+        raise HTTPException(status_code=503, detail="认证服务未配置，请联系管理员")
     uc_url = settings.UC_BASE_URL.rstrip("/")
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.post(
-            f"{uc_url}/api/auth/login",
-            json={
-                "username": req.username,
-                "password": req.password,
-                "app_key": settings.UC_APP_KEY,
-            },
-        )
-    data = resp.json()
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                f"{uc_url}/api/auth/login",
+                json={
+                    "username": req.username,
+                    "password": req.password,
+                    "app_key": settings.UC_APP_KEY,
+                },
+            )
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="用户中心暂时不可用，请稍后重试")
+    if resp.status_code >= 500:
+        raise HTTPException(status_code=502, detail="用户中心暂时不可用，请稍后重试")
+    try:
+        data = resp.json()
+    except ValueError:
+        raise HTTPException(status_code=502, detail="用户中心返回异常")
     if not data.get("success"):
         detail = data.get("message") or data.get("detail") or "登录失败"
         raise HTTPException(status_code=401, detail=detail)

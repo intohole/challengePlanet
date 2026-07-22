@@ -28,11 +28,26 @@ class CheckInRepository:
         await session.flush()
         return checkin
 
+    async def update(self, session: AsyncSession, checkin: CheckIn, data: dict[str, object]) -> CheckIn:
+        for key, value in data.items():
+            setattr(checkin, key, value)
+        await session.flush()
+        return checkin
+
     async def count_by_challenge(self, session: AsyncSession, challenge_id: int) -> int:
         result = await session.execute(
             select(CheckIn).where(CheckIn.challenge_id == challenge_id)
         )
         return len(list(result.scalars().all()))
+
+    async def user_has_checkin_on_date(self, session: AsyncSession, user_id: str, date: str) -> bool:
+        result = await session.execute(
+            select(CheckIn.id).where(
+                CheckIn.user_id == user_id,
+                CheckIn.date == date,
+            ).limit(1)
+        )
+        return result.scalar_one_or_none() is not None
 
 
 class InsightRepository:
@@ -50,3 +65,12 @@ class InsightRepository:
         session.add(insight)
         await session.flush()
         return insight
+
+    async def get_latest_weekly(self, session: AsyncSession, challenge_id: int) -> AIInsight | None:
+        result = await session.execute(
+            select(AIInsight)
+            .where(AIInsight.challenge_id == challenge_id, AIInsight.insight_type == "weekly")
+            .order_by(AIInsight.created_at.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()

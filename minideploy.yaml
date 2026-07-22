@@ -13,6 +13,7 @@ env:
   LION_NAMESPACE: challengePlanet
   LION_BASE_URL: http://localhost:9527
   BEEMEMORY_BASE_URL: http://localhost:8700
-  LLM_API_KEY: gw-25f4ed50e0c057f2af6d58e8c501e99b5b30b0492b8d0b17
-  LLM_BASE_URL: http://localhost:8400/api/gateway/v1
-  LLM_MODEL: glm-4-flash
+  UC_BASE_URL: http://localhost:8901
+  UC_APP_KEY: ""
+  UC_APP_SECRET: ""
+  UC_JWT_SECRET: ""
