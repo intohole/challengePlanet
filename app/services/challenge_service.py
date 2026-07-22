@@ -49,9 +49,12 @@ class ChallengeService:
         self, session: AsyncSession, request: ChallengeCreate
     ) -> Challenge:
         meta = CATEGORY_META.get(request.category, CATEGORY_META["other"])
-        today = datetime.now()
-        start_str = today.strftime("%Y-%m-%d")
-        end_str = (today + timedelta(days=request.duration_days - 1)).strftime("%Y-%m-%d")
+        if request.start_date:
+            start_dt = datetime.strptime(request.start_date, "%Y-%m-%d")
+        else:
+            start_dt = datetime.now()
+        start_str = start_dt.strftime("%Y-%m-%d")
+        end_str = (start_dt + timedelta(days=request.duration_days - 1)).strftime("%Y-%m-%d")
 
         plan_data = await self._ai.generate_challenge_plan(
             request.title, request.description, request.category, request.duration_days
@@ -74,6 +77,22 @@ class ChallengeService:
         })
         await session.commit()
         return challenge
+
+    async def create_from_nl(
+        self, session: AsyncSession, user_id: str, parsed: dict[str, object], start_date: str
+    ) -> Challenge:
+        title = str(parsed.get("title", "未命名挑战"))
+        category = str(parsed.get("category", "other"))
+        duration = int(parsed.get("duration_days", 30))
+        description = str(parsed.get("description", ""))
+        return await self.create_challenge(session, ChallengeCreate(
+            user_id=user_id,
+            title=title,
+            description=description,
+            category=category,
+            duration_days=duration,
+            start_date=start_date,
+        ))
 
     async def get_today_task(
         self, session: AsyncSession, challenge_id: int, user_id: str

@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     LION_NAMESPACE: str = "challengePlanet"
     LION_BASE_URL: str = "http://localhost:9527"
     UC_BASE_URL: str = "http://localhost:8901"
+    UC_APP_KEY: str = ""
+    UC_APP_SECRET: str = ""
+    UC_JWT_SECRET: str = ""
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

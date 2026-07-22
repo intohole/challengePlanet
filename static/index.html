@@ -1,258 +1,134 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>挑战星球 - AI驱动的挑战打卡工具</title>
-  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="/static/style.css">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="/static/nexus-ui/js/nexus-api-error.js"></script>
-  <script src="/static/nexus-ui/js/nexus-api.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>挑战星球 - AI驱动的打卡挑战工具</title>
+<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="/static/style.css?v=3">
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script src="/static/nexus-ui/js/nexus-api.js?v=3"></script>
 </head>
 <body>
 <div id="app" v-cloak>
-  <svg width="0" height="0" style="position:absolute"><defs>
-    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#8b5cf6"/>
-    </linearGradient>
-  </defs></svg>
+<svg width="0" height="0" style="position:absolute"><defs>
+<linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#635bff"/><stop offset="100%" stop-color="#818cf8"/></linearGradient>
+</defs></svg>
 
-  <header class="cp-header">
-    <div class="cp-logo">
-      <div class="cp-logo-icon"><i class="fas fa-globe"></i></div>
-      <div class="cp-logo-text">挑战星球</div>
-    </div>
-    <div class="cp-header-right">
-      <span style="font-size:13px;color:var(--text-secondary)">{{ nickname }}</span>
-      <button class="cp-btn-ghost" @click="logout"><i class="fas fa-right-from-bracket"></i> 退出</button>
-    </div>
-  </header>
+<header class="cp-header">
+<div class="cp-logo"><div class="cp-logo-icon"><i class="fas fa-globe"></i></div><span class="cp-logo-text">挑战星球</span></div>
+<div class="cp-header-right"><span class="cp-user-name">{{ nickname }}</span><button class="cp-btn-ghost" @click="logout"><i class="fas fa-right-from-bracket"></i> 退出</button></div>
+</header>
 
-  <main class="cp-main">
-    <div class="cp-container">
+<main class="cp-main"><div class="cp-container">
 
-      <div v-if="state.loading && !hasChallenge" class="cp-loading glass-card">
-        <div class="cp-spinner"></div><span style="color:var(--text-secondary)">加载中...</span>
-      </div>
+<div v-if="state.loading && !hasChallenge && !state.generating" class="glass-card cp-loading"><div class="cp-spinner"></div><span>加载中...</span></div>
 
-      <div v-if="state.generating" class="cp-generating glass-card" style="padding:60px 24px">
-        <div class="cp-gen-spinner"></div>
-        <p style="color:var(--text-secondary);font-size:15px;margin-top:4px">{{ state.genProgress || 'AI正在生成挑战计划...' }}</p>
-      </div>
+<div v-if="state.generating" class="glass-card cp-generating"><div class="cp-gen-spinner"></div><p>{{ state.genProgress || 'AI正在生成挑战计划...' }}</p></div>
 
-      <div v-if="!hasChallenge && !state.loading && !state.generating" class="cp-empty glass-card" style="padding:60px 24px">
-        <div class="cp-empty-icon"><i class="fas fa-flag-checkered"></i></div>
-        <h2 class="cp-empty-title">开启你的第一个挑战</h2>
-        <p class="cp-empty-desc">AI将为你生成个性化挑战计划，每天打卡追踪进度，让坚持成为一种习惯</p>
-        <button class="cp-btn-create" @click="openCreate"><i class="fas fa-plus"></i> 创建挑战</button>
-      </div>
+<div v-if="!hasChallenge && !state.loading && !state.generating" class="glass-card cp-empty">
+<div class="cp-empty-icon"><i class="fas fa-flag-checkered"></i></div>
+<h2>开启你的第一个挑战</h2>
+<p>用自然语言描述目标，AI为你生成每日计划</p>
+<button class="cp-btn-create" @click="openCreate"><i class="fas fa-wand-magic-sparkles"></i> 创建挑战</button>
+</div>
 
-      <div v-if="hasChallenge" class="cp-grid">
+<div v-if="hasChallenge && !state.generating" class="cp-grid">
 
-        <aside class="cp-sidebar-left" :class="{ 'mobile-show': state.currentView === 'challenges' }">
-          <div class="glass-card" style="padding:16px;margin-bottom:16px">
-            <div class="cp-section-title"><i class="fas fa-list" style="color:var(--primary-light)"></i> 挑战列表</div>
-            <div v-for="ch in state.challenges" :key="ch.id" class="cp-challenge-item"
-              :class="{ active: state.currentChallenge?.id === ch.id }" @click="selectChallenge(ch)">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-                <i :class="['fas', categoryIcon(ch.category)]" :style="{ color: categoryColor(ch.category) }"></i>
-                <span style="font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ch.title }}</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted)">
-                <span>{{ ch.completed_days || 0 }}/{{ ch.total_days }}天</span>
-                <span v-if="ch.status === 'active'" class="cp-badge cp-badge-active">进行中</span>
-                <span v-else class="cp-badge cp-badge-done">已完成</span>
-              </div>
-            </div>
-          </div>
-          <button class="cp-btn-ghost" style="width:100%" @click="openCreate"><i class="fas fa-plus"></i> 新建挑战</button>
-        </aside>
+<aside class="cp-sidebar-left" :class="{'mobile-show':state.currentView==='challenges'}">
+<div class="glass-card cp-box">
+<div class="cp-section-title"><i class="fas fa-list" style="color:var(--primary-light)"></i> 挑战列表</div>
+<div v-for="ch in state.challenges" :key="ch.id" class="cp-challenge-item" :class="{active:state.currentChallenge?.id===ch.id}" @click="selectChallenge(ch)">
+<div class="cp-ch-title"><i :class="['fas',categoryIcon(ch.category)]" :style="{color:categoryColor(ch.category)}"></i><span>{{ ch.title }}</span></div>
+<div class="cp-ch-meta"><span>{{ ch.completed_days||0 }}/{{ ch.total_days }}天</span><span class="cp-badge" :class="ch.status==='active'?'cp-badge-active':'cp-badge-done'">{{ ch.status==='active'?'进行中':'已完成' }}</span></div>
+</div>
+</div>
+<button class="cp-btn-ghost cp-w100" @click="openCreate"><i class="fas fa-plus"></i> 新建挑战</button>
+</aside>
 
-        <section class="cp-center" :class="{ 'mobile-show': state.currentView === 'home' }">
-          <div v-if="state.currentChallenge" class="glass-card" style="padding:24px;margin-bottom:16px">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px">
-              <i :class="['fas', categoryIcon(state.currentChallenge.category)]"
-                :style="{ color: categoryColor(state.currentChallenge.category), fontSize: '18px' }"></i>
-              <h2 style="font-size:20px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ state.currentChallenge.title }}</h2>
-              <button class="cp-btn-ghost" @click="shareChallenge"><i class="fas fa-share-nodes"></i></button>
-            </div>
-            <div style="display:flex;justify-content:center;margin-bottom:24px">
-              <div class="cp-progress-ring">
-                <svg width="140" height="140">
-                  <circle cx="70" cy="70" r="52" stroke="rgba(255,255,255,0.08)" stroke-width="8" fill="none"/>
-                  <circle cx="70" cy="70" r="52" stroke="url(#ringGrad)" stroke-width="8" fill="none"
-                    stroke-linecap="round" :stroke-dasharray="ringCircumference" :stroke-dashoffset="ringOffset"/>
-                </svg>
-                <div class="cp-progress-text">
-                  <div class="cp-progress-percent">{{ progressPercent }}%</div>
-                  <div class="cp-progress-label">{{ state.currentChallenge.completed_days || 0 }}/{{ state.currentChallenge.total_days }}天</div>
-                </div>
-              </div>
-            </div>
-            <div v-if="state.todayTask" class="glass-card" style="padding:16px;margin-bottom:16px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <span style="font-size:13px;font-weight:600;color:var(--text-secondary)">
-                  今日任务 · 第{{ state.todayTask.day_number || (state.currentChallenge.completed_days || 0) + 1 }}天
-                </span>
-                <span style="font-size:12px;color:var(--text-muted)">{{ todayStr() }}</span>
-              </div>
-              <p style="font-size:15px;line-height:1.6">{{ state.todayTask.task_title || state.todayTask.task?.title || '完成今日打卡' }}</p>
-              <p v-if="state.todayTask.task_description || state.todayTask.task?.description" style="font-size:13px;color:var(--text-secondary);margin-top:8px">
-                {{ state.todayTask.task_description || state.todayTask.task?.description }}
-              </p>
-              <p v-if="state.todayTask.task_tip || state.todayTask.task?.tip" style="font-size:12px;color:var(--text-muted);margin-top:4px">
-                💡 {{ state.todayTask.task_tip || state.todayTask.task?.tip }}
-              </p>
-            </div>
-            <button v-if="!todayCheckedIn" class="cp-btn-checkin pulse" @click="openReflection">
-              <i class="fas fa-check-circle"></i> 立即打卡
-            </button>
-            <button v-else class="cp-btn-checkin done">
-              <i class="fas fa-check"></i> 今日已完成
-            </button>
-          </div>
-          <div v-if="state.error" class="glass-card" style="padding:12px 16px;border-color:rgba(239,68,68,0.3)">
-            <span style="font-size:13px;color:var(--danger)"><i class="fas fa-circle-exclamation"></i> {{ state.error }}</span>
-          </div>
-        </section>
+<section class="cp-center" :class="{'mobile-show':state.currentView==='home'}">
+<div v-if="state.currentChallenge" class="glass-card cp-box">
+<div class="cp-ch-head"><i :class="['fas',categoryIcon(state.currentChallenge.category)]" :style="{color:categoryColor(state.currentChallenge.category)}"></i><h2>{{ state.currentChallenge.title }}</h2><button class="cp-btn-ghost" @click="shareChallenge"><i class="fas fa-share-nodes"></i></button></div>
+<div class="cp-ring-wrap"><div class="cp-progress-ring"><svg width="140" height="140"><circle cx="70" cy="70" r="52" stroke="rgba(255,255,255,0.08)" stroke-width="8" fill="none"/><circle cx="70" cy="70" r="52" stroke="url(#rg)" stroke-width="8" fill="none" stroke-linecap="round" :stroke-dasharray="ringCircumference" :stroke-dashoffset="ringOffset"/></svg><div class="cp-progress-text"><div class="cp-progress-percent">{{ progressPercent }}%</div><div class="cp-progress-label">{{ state.currentChallenge.completed_days||0 }}/{{ state.currentChallenge.total_days }}天</div></div></div></div>
+<div v-if="state.todayTask" class="glass-card cp-task-card">
+<div class="cp-task-head"><span>今日任务 · 第{{ state.todayTask.day_number||(state.currentChallenge.completed_days||0)+1 }}天</span><span class="cp-task-date">{{ todayStr() }}</span></div>
+<p class="cp-task-title">{{ state.todayTask.task_title||'完成今日打卡' }}</p>
+<p v-if="state.todayTask.task_description" class="cp-task-desc">{{ state.todayTask.task_description }}</p>
+<p v-if="state.todayTask.task_tip" class="cp-task-tip"><i class="fas fa-lightbulb"></i> {{ state.todayTask.task_tip }}</p>
+</div>
+<button v-if="!todayCheckedIn" class="cp-btn-checkin pulse" @click="openReflection"><i class="fas fa-check-circle"></i> 立即打卡</button>
+<button v-else class="cp-btn-checkin done"><i class="fas fa-check"></i> 今日已完成</button>
+</div>
 
-        <aside class="cp-sidebar-right" :class="{ 'mobile-show': state.currentView === 'insights' }">
-          <div v-if="state.insights && (Array.isArray(state.insights) ? state.insights.length > 0 : true)" class="glass-card cp-insight-card" style="margin-bottom:16px">
-            <div class="cp-insight-header"><i class="fas fa-lightbulb"></i> AI洞察</div>
-            <template v-if="Array.isArray(state.insights)">
-              <div v-for="(ins, i) in state.insights" :key="i" class="cp-insight-body" style="margin-bottom:8px">
-                {{ typeof ins === 'string' ? ins : ins.text || ins.message || ins.content }}
-              </div>
-            </template>
-            <div v-else class="cp-insight-body">{{ typeof state.insights === 'string' ? state.insights : state.insights.text || state.insights.message || state.insights.content }}</div>
-          </div>
-          <div class="glass-card" style="padding:16px;margin-bottom:16px">
-            <div class="cp-section-title"><i class="fas fa-chart-simple" style="color:var(--accent-light)"></i> 统计</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div class="glass-card cp-stat-card">
-                <div class="cp-stat-num" style="color:var(--success)">{{ streakDays }}</div>
-                <div class="cp-stat-label">连续打卡</div>
-              </div>
-              <div class="glass-card cp-stat-card">
-                <div class="cp-stat-num" style="color:var(--primary-light)">{{ totalCheckins }}</div>
-                <div class="cp-stat-label">累计打卡</div>
-              </div>
-              <div class="glass-card cp-stat-card">
-                <div class="cp-stat-num" style="color:var(--accent-light)">{{ state.currentChallenge?.total_days || 0 }}</div>
-                <div class="cp-stat-label">挑战天数</div>
-              </div>
-              <div class="glass-card cp-stat-card">
-                <div class="cp-stat-num" style="color:var(--warning)">{{ state.challenges.length }}</div>
-                <div class="cp-stat-label">挑战总数</div>
-              </div>
-            </div>
-          </div>
-          <button class="cp-btn-ghost" style="width:100%" @click="shareChallenge"><i class="fas fa-share-nodes"></i> 分享挑战</button>
-        </aside>
+<div v-if="state.currentChallenge" class="glass-card cp-box">
+<div class="cp-section-title"><i class="fas fa-fire" style="color:var(--emerald)"></i> 打卡热力图 <span class="cp-streak-tag">连续 {{ streakDays }} 天</span></div>
+<div class="heatmap-grid"><div v-for="d in heatmapDays" :key="d.date" class="heatmap-cell" :class="{checked:d.checked,today:d.isToday}" :title="d.date"></div></div>
+</div>
 
-      </div>
-    </div>
-  </main>
+<div v-if="state.error" class="glass-card cp-error-box"><i class="fas fa-circle-exclamation"></i> {{ state.error }}</div>
+</section>
 
-  <nav class="cp-bottom-nav" v-if="hasChallenge">
-    <button class="cp-nav-item" :class="{ active: state.currentView === 'home' }" @click="switchView('home')"><i class="fas fa-house"></i><span>首页</span></button>
-    <button class="cp-nav-item" :class="{ active: state.currentView === 'challenges' }" @click="switchView('challenges')"><i class="fas fa-list"></i><span>挑战</span></button>
-    <button class="cp-nav-item" :class="{ active: state.currentView === 'insights' }" @click="switchView('insights')"><i class="fas fa-lightbulb"></i><span>洞察</span></button>
-  </nav>
-
-  <transition name="toast">
-    <div v-if="state.aiFeedback" class="cp-ai-feedback glass" @click="closeFeedback">
-      <div class="cp-ai-feedback-header"><i class="fas fa-robot"></i><span style="font-weight:600;font-size:13px">AI反馈</span></div>
-      <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">{{ state.aiFeedback }}</div>
-    </div>
-  </transition>
-
-  <transition name="modal">
-    <div v-if="state.showCreate" class="cp-modal-overlay" @click.self="state.showCreate = false">
-      <div class="cp-modal glass">
-        <div class="cp-modal-header">
-          <h3 class="cp-modal-title">创建挑战</h3>
-          <button class="cp-modal-close" @click="state.showCreate = false"><i class="fas fa-xmark"></i></button>
-        </div>
-        <div class="cp-modal-body">
-          <div style="margin-bottom:16px">
-            <label class="cp-label">挑战标题</label>
-            <input v-model="state.createForm.title" class="cp-field" placeholder="例如：每天阅读30分钟" @keyup.enter="createChallenge">
-          </div>
-          <div style="margin-bottom:16px">
-            <label class="cp-label">挑战天数</label>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button v-for="d in [7,14,21,30]" :key="d" class="cp-duration-btn" :class="{ active: state.createForm.duration === d }" @click="state.createForm.duration = d">{{ d }}天</button>
-              <button class="cp-duration-btn" :class="{ active: ![7,14,21,30].includes(state.createForm.duration) }" @click="state.createForm.duration = 14">自定义</button>
-            </div>
-            <input v-if="![7,14,21,30].includes(state.createForm.duration)" v-model.number="state.createForm.duration" type="number" min="1" max="365" class="cp-field" style="margin-top:8px" placeholder="输入天数">
-          </div>
-          <div style="margin-bottom:20px">
-            <label class="cp-label">挑战分类</label>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button v-for="(val, key) in {build:'习惯养成',quit:'戒除坏习惯',learn:'学习技能',fitness:'运动健身',mind:'心智成长'}" :key="key" class="cp-cat-btn" :class="{ active: state.createForm.category === key }" @click="state.createForm.category = key">{{ val }}</button>
-            </div>
-          </div>
-          <button class="cp-btn-primary" :disabled="!state.createForm.title.trim() || state.generating" @click="createChallenge">
-            <span v-if="state.generating">AI生成中...</span><span v-else><i class="fas fa-wand-magic-sparkles"></i> AI生成挑战计划</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </transition>
-
-  <transition name="modal">
-    <div v-if="state.showReflection" class="cp-modal-overlay" @click.self="state.showReflection = false">
-      <div class="cp-modal glass">
-        <div class="cp-modal-header">
-          <h3 class="cp-modal-title">今日打卡</h3>
-          <button class="cp-modal-close" @click="state.showReflection = false"><i class="fas fa-xmark"></i></button>
-        </div>
-        <div class="cp-modal-body">
-          <div style="margin-bottom:16px">
-            <label class="cp-label">今日心得（选填）</label>
-            <textarea v-model="state.reflectionForm.content" class="cp-field" rows="3" style="resize:none" placeholder="记录今天的感受和收获..."></textarea>
-          </div>
-          <div style="margin-bottom:20px">
-            <label class="cp-label">今日心情</label>
-            <div style="display:flex;gap:8px">
-              <button v-for="m in [{k:'good',l:'好',i:'fa-face-smile'},{k:'normal',l:'一般',i:'fa-face-meh'},{k:'bad',l:'差',i:'fa-face-frown'}]" :key="m.k" class="cp-duration-btn" :class="{ active: state.reflectionForm.mood === m.k }" @click="state.reflectionForm.mood = m.k" style="flex:1"><i :class="['fas',m.i]"></i> {{ m.l }}</button>
-            </div>
-          </div>
-          <button class="cp-btn-primary" :disabled="state.loading" @click="doCheckin">
-            <span v-if="state.loading">提交中...</span><span v-else><i class="fas fa-check"></i> 完成打卡</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </transition>
-
-  <transition name="modal">
-    <div v-if="state.shareCard" class="cp-modal-overlay" @click.self="state.shareCard = null">
-      <div class="cp-modal glass">
-        <div class="cp-modal-header">
-          <h3 class="cp-modal-title">分享挑战</h3>
-          <button class="cp-modal-close" @click="state.shareCard = null"><i class="fas fa-xmark"></i></button>
-        </div>
-        <div class="cp-modal-body">
-          <div class="cp-share-card">
-            <div class="cp-share-ring"><i :class="['fas', categoryIcon(state.currentChallenge?.category)]"></i></div>
-            <div class="cp-share-title">{{ state.currentChallenge?.title }}</div>
-            <div class="cp-share-stats">
-              <div class="cp-share-stat"><div class="cp-share-stat-num">{{ state.currentChallenge?.completed_days || 0 }}</div><div class="cp-share-stat-label">已完成</div></div>
-              <div class="cp-share-stat"><div class="cp-share-stat-num">{{ state.currentChallenge?.total_days || 0 }}</div><div class="cp-share-stat-label">总天数</div></div>
-              <div class="cp-share-stat"><div class="cp-share-stat-num">{{ streakDays }}</div><div class="cp-share-stat-label">连续打卡</div></div>
-            </div>
-          </div>
-          <button class="cp-btn-primary" @click="copyShareText"><i class="fas fa-copy"></i> 复制分享文案</button>
-        </div>
-      </div>
-    </div>
-  </transition>
+<aside class="cp-sidebar-right" :class="{'mobile-show':state.currentView==='insights'}">
+<div v-if="insightsText" class="glass-card cp-box">
+<div class="cp-section-title"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> AI洞察</div>
+<p class="cp-insight-text">{{ insightsText }}</p>
+</div>
+<div class="glass-card cp-box">
+<div class="cp-section-title"><i class="fas fa-chart-simple" style="color:var(--primary-light)"></i> 统计</div>
+<div class="cp-stat-grid">
+<div class="glass-card cp-stat-card"><div class="cp-stat-num" style="color:var(--emerald)">{{ streakDays }}</div><div class="cp-stat-label">连续打卡</div></div>
+<div class="glass-card cp-stat-card"><div class="cp-stat-num" style="color:var(--primary-light)">{{ totalCheckins }}</div><div class="cp-stat-label">累计打卡</div></div>
+<div class="glass-card cp-stat-card"><div class="cp-stat-num" style="color:var(--amber)">{{ state.currentChallenge?.total_days||0 }}</div><div class="cp-stat-label">挑战天数</div></div>
+<div class="glass-card cp-stat-card"><div class="cp-stat-num" style="color:var(--primary)">{{ state.challenges.length }}</div><div class="cp-stat-label">挑战总数</div></div>
+</div>
+</div>
+<button class="cp-btn-ghost cp-w100" @click="shareChallenge"><i class="fas fa-share-nodes"></i> 分享挑战</button>
+</aside>
 
 </div>
-<script src="/static/app.js"></script>
+</div></main>
+
+<nav class="cp-bottom-nav" v-if="hasChallenge">
+<button class="cp-nav-item" :class="{active:state.currentView==='home'}" @click="switchView('home')"><i class="fas fa-house"></i><span>首页</span></button>
+<button class="cp-nav-item" :class="{active:state.currentView==='challenges'}" @click="switchView('challenges')"><i class="fas fa-list"></i><span>挑战</span></button>
+<button class="cp-nav-item" :class="{active:state.currentView==='insights'}" @click="switchView('insights')"><i class="fas fa-lightbulb"></i><span>洞察</span></button>
+</nav>
+
+<transition name="toast"><div v-if="state.aiFeedback" class="cp-ai-feedback glass" @click="closeFeedback"><div class="cp-feedback-head"><i class="fas fa-robot"></i><span>AI反馈</span></div><p>{{ state.aiFeedback }}</p></div></transition>
+
+<transition name="modal"><div v-if="state.showCreate" class="cp-modal-overlay" @click.self="state.showCreate=false">
+<div class="cp-modal glass">
+<div class="cp-modal-header"><h3>创建挑战</h3><button class="cp-modal-close" @click="state.showCreate=false"><i class="fas fa-xmark"></i></button></div>
+<div class="cp-modal-body">
+<div><label class="cp-label">描述你的挑战目标</label><textarea v-model="state.createForm.rawInput" class="cp-field cp-nl-input" rows="3" placeholder="描述你想完成的挑战，如：30天戒烟、每天读书30分钟..."></textarea></div>
+<div class="cp-date-row"><label class="cp-label">开始日期</label><div class="cp-date-btns"><button v-for="opt in dateOptions" :key="opt.key" class="cp-duration-btn" :class="{active:state.createForm.startDateMode===opt.key}" @click="setStartDate(opt.key)">{{ opt.label }}</button></div><input v-if="state.createForm.startDateMode==='custom'" v-model="state.createForm.customDate" type="date" class="cp-field" style="margin-top:8px" @change="setStartDate('custom')"></div>
+<button class="cp-btn-primary" :disabled="!state.createForm.rawInput.trim()||state.generating" @click="createChallengeNL"><span v-if="state.generating">AI生成中...</span><span v-else><i class="fas fa-wand-magic-sparkles"></i> AI生成计划</span></button>
+</div>
+</div>
+</div></transition>
+
+<transition name="modal"><div v-if="state.showReflection" class="cp-modal-overlay" @click.self="state.showReflection=false">
+<div class="cp-modal glass">
+<div class="cp-modal-header"><h3>今日打卡</h3><button class="cp-modal-close" @click="state.showReflection=false"><i class="fas fa-xmark"></i></button></div>
+<div class="cp-modal-body">
+<div><label class="cp-label">今日心得（选填）</label><textarea v-model="state.reflectionForm.content" class="cp-field" rows="3" style="resize:none" placeholder="记录今天的感受和收获..."></textarea></div>
+<div><label class="cp-label">今日心情</label><div class="cp-mood-btns"><button v-for="m in moodOptions" :key="m.k" class="cp-duration-btn" :class="{active:state.reflectionForm.mood===m.k}" @click="state.reflectionForm.mood=m.k"><i :class="['fas',m.i]"></i> {{ m.l }}</button></div></div>
+<button class="cp-btn-primary" :disabled="state.loading" @click="doCheckin"><span v-if="state.loading">提交中...</span><span v-else><i class="fas fa-check"></i> 完成打卡</span></button>
+</div>
+</div>
+</div></transition>
+
+<transition name="modal"><div v-if="state.shareCard" class="cp-modal-overlay" @click.self="state.shareCard=null">
+<div class="cp-modal glass">
+<div class="cp-modal-header"><h3>分享挑战</h3><button class="cp-modal-close" @click="state.shareCard=null"><i class="fas fa-xmark"></i></button></div>
+<div class="cp-modal-body">
+<div class="cp-canvas-wrap"><img :src="state.shareCanvasUrl" alt="分享卡片" class="cp-share-img"></div>
+<div class="cp-share-btns"><button class="cp-btn-primary" @click="saveShareImage"><i class="fas fa-download"></i> 保存图片</button><button class="cp-btn-ghost" @click="copyShareText"><i class="fas fa-copy"></i> 复制文案</button></div>
+</div>
+</div>
+</div></transition>
+
+</div>
+<script src="/static/app.js?v=3"></script>
 </body>
 </html>

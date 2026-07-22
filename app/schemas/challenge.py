@@ -10,8 +10,15 @@ class ChallengeCreate(BaseModel):
     user_id: str = Field(..., description="用户ID")
     title: str = Field(..., description="挑战标题")
     description: str = Field("", description="挑战描述")
-    category: str = Field("build", description="分类: quit/build/learn/exercise/other")
+    category: str = Field("build", description="分类: quit/build/learn/fitness/mind/other")
     duration_days: int = Field(30, description="挑战天数")
+    start_date: str = Field("", description="开始日期 YYYY-MM-DD, 空则今天开始")
+
+
+class NLChallengeCreate(BaseModel):
+    user_id: str = Field(..., description="用户ID")
+    raw_input: str = Field(..., description="自然语言描述, 如: 我想30天戒烟")
+    start_date: str = Field("", description="开始日期, 空则今天开始")
 
 
 class ChallengeResponse(BaseModel):

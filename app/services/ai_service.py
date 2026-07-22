@@ -13,6 +13,32 @@ logger = get_logger("challengePlanet.ai")
 
 
 class AIService:
+    async def parse_challenge_input(self, raw_input: str) -> dict[str, object]:
+        system = (
+            "你是一个挑战目标解析器。从用户的自然语言描述中提取挑战参数。"
+            "输出JSON格式：{\"title\": \"简短标题\", \"category\": \"quit|build|learn|fitness|mind|other\", \"duration_days\": 30, \"description\": \"一句话描述\"}\n"
+            "分类规则：quit=戒除坏习惯(戒烟/戒酒/戒糖等), build=培养好习惯(早起/冥想等), "
+            "learn=学习技能(读书/编程/语言等), fitness=运动健身(跑步/健身等), mind=心智成长(日记/感恩等), other=其他\n"
+            "duration_days: 从描述中提取天数，默认30天。标题不超过10个字。"
+        )
+        llm = get_llm_service()
+        raw = await llm.ask(
+            raw_input,
+            system=system,
+            temperature=0.3,
+            max_tokens=256,
+            timeout=15.0,
+        )
+        parsed = parse_llm_json(raw)
+        if "raw_response" in parsed:
+            parsed = {
+                "title": raw_input[:10],
+                "category": "other",
+                "duration_days": 30,
+                "description": raw_input,
+            }
+        return parsed
+
     async def generate_challenge_plan(
         self, title: str, description: str, category: str, duration: int
     ) -> dict[str, object]:
@@ -54,6 +80,26 @@ class AIService:
         yield f'data: {{"step":"generating","message":"正在生成{duration}天详细计划..."}}\n\n'
         plan = await self.generate_challenge_plan(title, description, category, duration)
         result = {"step": "done", "plan": plan.get("plan", []), "suggestions": plan.get("suggestions", [])}
+        yield f"data: {json.dumps(result, ensure_ascii=False)}\n\n"
+
+    async def parse_and_plan_stream(
+        self, raw_input: str
+    ) -> AsyncGenerator[str, None]:
+        yield f'data: {{"step":"parsing","message":"AI正在理解你的目标..."}}\n\n'
+        parsed = await self.parse_challenge_input(raw_input)
+        title = str(parsed.get("title", raw_input[:10]))
+        category = str(parsed.get("category", "other"))
+        duration = int(parsed.get("duration_days", 30))
+        description = str(parsed.get("description", raw_input))
+        yield f'data: {{"step":"parsed","message":"已识别: {title}","parsed":{{"title":"{title}","category":"{category}","duration_days":{duration},"description":"{description}"}}}}\n\n'
+        yield f'data: {{"step":"generating","message":"正在生成{duration}天详细计划..."}}\n\n'
+        plan = await self.generate_challenge_plan(title, description, category, duration)
+        result = {
+            "step": "done",
+            "parsed": {"title": title, "category": category, "duration_days": duration, "description": description},
+            "plan": plan.get("plan", []),
+            "suggestions": plan.get("suggestions", []),
+        }
         yield f"data: {json.dumps(result, ensure_ascii=False)}\n\n"
 
     async def generate_daily_feedback(

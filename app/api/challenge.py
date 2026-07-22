@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
-from app.schemas.challenge import ChallengeCreate, ChallengeResponse, TodayTaskResponse
+from app.schemas.challenge import ChallengeCreate, ChallengeResponse, TodayTaskResponse, NLChallengeCreate
 from app.services.ai_service import AIService
 from app.services.challenge_service import ChallengeService
 
@@ -67,6 +67,40 @@ async def create_challenge(request: ChallengeCreate, session: AsyncSession = Dep
 
         service = ChallengeService()
         challenge = await service.create_challenge(session, request)
+        resp = await _to_response(challenge, session)
+        done_data = {
+            "step": "saved",
+            "challenge_id": challenge.id,
+            "title": challenge.title,
+            "challenge": resp.model_dump(mode="json"),
+        }
+        yield f"data: {json.dumps(done_data, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@router.post("/nl-create", response_class=StreamingResponse)
+async def create_challenge_nl(request: NLChallengeCreate, session: AsyncSession = Depends(get_db)) -> StreamingResponse:
+    ai = AIService()
+
+    async def stream():
+        parsed_data: dict[str, object] = {}
+        async for chunk in ai.parse_and_plan_stream(request.raw_input):
+            yield chunk
+            try:
+                line = chunk.strip()
+                if line.startswith("data:"):
+                    payload = json.loads(line[5:].strip())
+                    if payload.get("step") == "done":
+                        parsed_data = payload.get("parsed", {})
+            except json.JSONDecodeError:
+                pass
+
+        if not parsed_data:
+            parsed_data = {"title": request.raw_input[:10], "category": "other", "duration_days": 30, "description": request.raw_input}
+
+        service = ChallengeService()
+        challenge = await service.create_from_nl(session, request.user_id, parsed_data, request.start_date)
         resp = await _to_response(challenge, session)
         done_data = {
             "step": "saved",
