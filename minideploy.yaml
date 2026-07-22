@@ -1,4 +1,4 @@
-app_name: ChallengePlanet
+app_name: challengePlanet
 display_name: 挑战星球
 description: AI驱动的挑战打卡工具
 start_command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8600
@@ -13,3 +13,6 @@ env:
   LION_NAMESPACE: challengePlanet
   LION_BASE_URL: http://localhost:9527
   BEEMEMORY_BASE_URL: http://localhost:8700
+  LLM_API_KEY: gw-25f4ed50e0c057f2af6d58e8c501e99b5b30b0492b8d0b17
+  LLM_BASE_URL: http://localhost:8400/api/gateway/v1
+  LLM_MODEL: glm-4-flash
