@@ -1,8 +1,8 @@
 app_name: challengePlanet
 display_name: 挑战星球
 description: AI驱动的挑战打卡工具
-start_command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8600
-prepare_command: pip install -r requirements.txt
+start_command: python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8600
+prepare_command: pip3 install -r requirements.txt
 port: 8600
 has_frontend: true
 is_public: true
