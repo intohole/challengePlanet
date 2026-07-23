@@ -136,6 +136,8 @@ class CheckInService:
         _fire_and_forget(
             self._save_memory(user_id, challenge.title, checkin.day_number, mood, reflection)
         )
+        if mood == "bad":
+            _fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
         return updated
 
     async def _current_streak(self, session: AsyncSession, challenge_id: int) -> int:

@@ -69,6 +69,14 @@ async def run_migrations() -> None:
                 logger.warning("migration: missing table %s, creating", table)
         await conn.run_sync(Base.metadata.create_all)
         await _ensure_column(conn, "checkins", "checkin_type", "checkin_type VARCHAR(8) DEFAULT 'full'")
+        await conn.execute(text(
+            "UPDATE adaptive_suggestions SET status='expired' WHERE status='pending' AND id NOT IN ("
+            "SELECT MAX(id) FROM adaptive_suggestions WHERE status='pending' GROUP BY challenge_id)"
+        ))
+        await conn.execute(text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_adaptive_pending "
+            "ON adaptive_suggestions(challenge_id) WHERE status='pending'"
+        ))
         rows = await conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'"))
         existing = {row[0] for row in rows.fetchall()}
         missing = [t for t in _EXPECTED_TABLES if t not in existing]

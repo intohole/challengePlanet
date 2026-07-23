@@ -3,11 +3,11 @@ from __future__ import annotations
 import json
 
 from nexus.logging import get_logger
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import async_session
 from app.models.adaptive import AdaptiveSuggestion
-from app.models.challenge import Challenge
 from app.repositories.adaptive_repository import AdaptiveRepository
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
@@ -120,16 +120,20 @@ async def evaluate_after_bad_mood_task(challenge_id: int) -> None:
                     task["day"] = target_day
             if task is None:
                 task = fallback_light_task(original, target_day)
-            await repo.create(session, {
-                "challenge_id": challenge_id,
-                "user_id": challenge.user_id,
-                "kind": "lighten",
-                "reason": "注意到你最近连续几天都觉得有点吃力，这说明计划在推你的极限——好事，但别绷断。已为明天准备了一个减负版任务，保住节奏比完成任务量更重要。",
-                "task_json": json.dumps(task, ensure_ascii=False),
-                "target_day": target_day,
-                "status": "pending",
-            })
-            await session.commit()
+            try:
+                await repo.create(session, {
+                    "challenge_id": challenge_id,
+                    "user_id": challenge.user_id,
+                    "kind": "lighten",
+                    "reason": "注意到你最近连续几天都觉得有点吃力，这说明计划在推你的极限——好事，但别绷断。已为明天准备了一个减负版任务，保住节奏比完成任务量更重要。",
+                    "task_json": json.dumps(task, ensure_ascii=False),
+                    "target_day": target_day,
+                    "status": "pending",
+                })
+                await session.commit()
+            except IntegrityError:
+                await session.rollback()
+                return
             logger.info("adaptive lighten suggestion created: challenge=%s day=%s", challenge_id, target_day)
     except Exception as e:
         logger.warning("adaptive evaluate task failed: %s", e)

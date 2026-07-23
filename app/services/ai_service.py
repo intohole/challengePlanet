@@ -10,6 +10,24 @@ from app.config import settings
 
 logger = get_logger("challengePlanet.ai")
 
+
+def _fit_plan_length(plan: list[dict[str, object]], title: str, duration: int) -> list[dict[str, object]]:
+    if duration <= 0:
+        duration = len(plan)
+    fitted = plan[:duration]
+    template = dict(fitted[-1]) if fitted else {}
+    while len(fitted) < duration:
+        day = len(fitted) + 1
+        item = dict(template)
+        item["day"] = day
+        item["title"] = str(template.get("title") or f"第{day}天")
+        item["description"] = str(template.get("description") or f"坚持{title}")
+        item["tip"] = str(template.get("tip") or "")
+        fitted.append(item)
+    for idx, item in enumerate(fitted):
+        item["day"] = idx + 1
+    return fitted
+
 _PARSE_SYSTEM = (
     "你是一个挑战目标解析器。从用户的自然语言描述中提取挑战参数。"
     "输出JSON格式：{\"title\": \"简短标题\", \"category\": \"quit|build|learn|fitness|mind|other\", \"duration_days\": 30, \"description\": \"一句话描述\"}\n"
@@ -127,7 +145,10 @@ class AIService:
     def parse_plan_text(self, raw: str, title: str, duration: int) -> dict[str, object]:
         parsed = parse_llm_json(raw)
         if "raw_response" not in parsed and isinstance(parsed.get("plan"), list):
-            return parsed
+            plan = [dict(d) for d in parsed["plan"] if isinstance(d, dict)]
+            if plan:
+                parsed["plan"] = _fit_plan_length(plan, title, duration)
+                return parsed
         logger.error("Plan parse failed, generating fallback")
         return {
             "plan": [
