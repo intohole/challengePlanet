@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     APP_NAME: str = "ChallengePlanet"
+    APP_VERSION: str = "1.0.0"
     DATABASE_URL: str = f"sqlite+aiosqlite:///{Path(__file__).parent.parent / 'data' / 'challenge.db'}"
     API_PREFIX: str = "/api/v1"
     LLM_MAX_TOKENS: int = 4096

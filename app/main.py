@@ -18,6 +18,7 @@ from app.api.portal import router as portal_router
 from app.api.share import router as share_router
 from app.api.squad import router as squad_router
 from app.config import settings
+from app.core.middleware import register_middleware
 from app.db.database import init_db, run_migrations
 from app.infra.ironman_bootstrap import init_ironman, is_ironman_available
 
@@ -54,8 +55,15 @@ async def lifespan(app: FastAPI):
         pass
 
 
-app = FastAPI(title="ChallengePlanet", lifespan=lifespan)
+app = FastAPI(
+    title="ChallengePlanet",
+    version=settings.APP_VERSION,
+    lifespan=lifespan,
+    docs_url="/docs",
+    openapi_url="/openapi.json",
+)
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+register_middleware(app)
 
 API_PREFIX = settings.API_PREFIX
 app.include_router(auth_router, prefix=API_PREFIX)
@@ -73,7 +81,57 @@ async def health() -> dict[str, str]:
     return {
         "status": "ok",
         "app": settings.APP_NAME,
+        "version": settings.APP_VERSION,
         "ironman": "available" if is_ironman_available() else "unavailable",
+    }
+
+
+@app.get("/health/detailed")
+async def health_detailed() -> dict[str, object]:
+    import httpx
+    from sqlalchemy import text
+    from app.db.database import async_session
+
+    checks: dict[str, object] = {}
+    overall = True
+
+    try:
+        async with async_session() as session:
+            result = await session.execute(text("SELECT 1"))
+            checks["database"] = "ok" if result.scalar() == 1 else "error"
+    except Exception:
+        checks["database"] = "error"
+        overall = False
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(f"{settings.LION_BASE_URL}/health")
+            checks["lion"] = "ok" if resp.status_code == 200 else f"status:{resp.status_code}"
+            if resp.status_code != 200:
+                overall = False
+    except Exception:
+        checks["lion"] = "error"
+        overall = False
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(f"{settings.UC_BASE_URL}/health")
+            checks["usercenter"] = "ok" if resp.status_code == 200 else f"status:{resp.status_code}"
+            if resp.status_code != 200:
+                overall = False
+    except Exception:
+        checks["usercenter"] = "error"
+        overall = False
+
+    checks["ironman"] = "available" if is_ironman_available() else "unavailable"
+    if not is_ironman_available():
+        overall = False
+
+    return {
+        "status": "ok" if overall else "degraded",
+        "app": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "checks": checks,
     }
 
 
