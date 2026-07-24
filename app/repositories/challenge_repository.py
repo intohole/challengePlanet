@@ -38,6 +38,12 @@ class ChallengeRepository:
         )
         await session.flush()
 
+    async def get_all_active(self, session: AsyncSession) -> list[Challenge]:
+        result = await session.execute(
+            select(Challenge).where(Challenge.status == "active")
+        )
+        return list(result.scalars().all())
+
     async def get_by_share_token(self, session: AsyncSession, token: str) -> Challenge | None:
         result = await session.execute(
             select(Challenge).where(Challenge.share_token == token)

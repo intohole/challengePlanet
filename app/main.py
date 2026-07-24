@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from nexus import close_uc_sdk, init_uc_sdk
 from nexus.logging import get_logger
+from nexus.scheduler import get_scheduler
 
 from app.api.adaptive import router as adaptive_router
 from app.api.auth import router as auth_router
@@ -22,6 +23,7 @@ from app.config import settings
 from app.core.middleware import register_middleware
 from app.db.database import init_db, run_migrations
 from app.infra.ironman_bootstrap import init_ironman, is_ironman_available
+from app.services.reminder_service import send_checkin_reminders
 
 logger = get_logger("challengePlanet.main")
 
@@ -49,7 +51,20 @@ async def lifespan(app: FastAPI):
             logger.info("UC SDK initialized: %s", settings.UC_BASE_URL)
         except Exception as e:
             logger.warning("UC SDK init failed: %s", e)
+    scheduler = get_scheduler()
+    scheduler.add_cron_job(
+        send_checkin_reminders,
+        job_id="cp-checkin-reminder",
+        hour=20,
+        minute=0,
+    )
+    scheduler.start()
+    logger.info("Scheduler started: check-in reminders at 20:00 daily")
     yield
+    try:
+        scheduler.shutdown(wait=False)
+    except Exception:
+        pass
     try:
         await close_uc_sdk()
     except Exception:
