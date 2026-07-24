@@ -58,6 +58,10 @@
 .cp-text-display-head { font-size: 12px; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
 .cp-text-display-body { font-size: 14px; line-height: 1.7; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; }
 
+.cp-fab { position: fixed; right: 20px; bottom: 80px; width: 52px; height: 52px; border-radius: 50%; border: none; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(99,91,255,.4); z-index: 50; transition: transform .2s, box-shadow .2s; }
+.cp-fab:active { transform: scale(.9); }
+.cp-fab:hover { box-shadow: 0 6px 28px rgba(99,91,255,.5); }
+
 .cp-ai-card { padding: 14px; border-radius: var(--radius); border: 1px solid rgba(99,91,255,.25); background: rgba(99,91,255,.08); text-align: left; }
 .cp-ai-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--primary-light); margin-bottom: 6px; }
 .cp-ai-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.7; white-space: pre-wrap; }
