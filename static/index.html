@@ -6,16 +6,15 @@
 <title>挑战星球 · AI打卡教练</title>
 <script>window.PATH_PREFIX = window.PATH_PREFIX || ''</script>
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="/static/style.css?v=10">
-<link rel="stylesheet" href="/static/style-components.css?v=10">
-<link rel="stylesheet" href="/static/style-checkin.css?v=10">
+<link rel="stylesheet" href="/static/style.css?v=12">
+<link rel="stylesheet" href="/static/style-components.css?v=12">
+<link rel="stylesheet" href="/static/style-checkin.css?v=12">
 <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.5.13/vue.global.prod.min.js"></script>
 <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="/static/nexus-ui/js/nexus-api-error.js?v=10"></script>
-<script src="/static/nexus-ui/js/nexus-api.js?v=10"></script>
+<script src="/static/nexus-ui/js/nexus-api-error.js?v=12"></script>
+<script src="/static/nexus-ui/js/nexus-api.js?v=12"></script>
 </head>
 <body>
-<div class="cp-starfield" id="starfield"></div>
 <div id="app" v-cloak>
 
 <header class="cp-header">
@@ -203,30 +202,42 @@
 </div>
 </div></transition>
 
+<transition name="modal"><div v-if="state.sharedConfig.show" class="cp-modal-overlay" @click.self="state.sharedConfig.show=false">
+<div class="cp-modal glass">
+  <div class="cp-modal-header"><h3>导入挑战</h3><button class="cp-modal-close" @click="state.sharedConfig.show=false"><i class="fas fa-xmark"></i></button></div>
+  <div class="cp-modal-body">
+    <div v-if="state.sharedConfig.loading" class="cp-share-loading"><div class="cp-gen-spinner"></div>正在加载挑战配置...</div>
+    <template v-else-if="state.sharedConfig.config">
+      <div class="cp-shared-preview">
+        <div class="cp-shared-title">{{ state.sharedConfig.config.icon }} {{ state.sharedConfig.config.title }}</div>
+        <p class="cp-shared-desc">{{ state.sharedConfig.config.description }}</p>
+        <div class="cp-shared-meta">
+          <span><i class="fas fa-calendar"></i> {{ state.sharedConfig.config.duration_days }}天</span>
+          <span><i class="fas fa-list-check"></i> {{ (state.sharedConfig.config.plan || []).length }}天计划</span>
+        </div>
+        <button class="cp-btn-primary" :disabled="state.sharedConfig.importing" @click="importShared()"><i class="fas fa-rocket"></i> {{ state.sharedConfig.importing ? '导入中...' : '导入并开始挑战' }}</button>
+      </div>
+    </template>
+    <div v-else class="cp-error-box"><span>分享链接无效或已过期</span></div>
+  </div>
+</div>
+</div></transition>
+
 </div>
 <script>
 ;(function () {
-  const sf = document.getElementById('starfield')
-  if (!sf) return
-  let html = ''
-  for (let i = 0; i < 30; i++) {
-    const x = Math.random() * 100, y = Math.random() * 100, d = 2 + Math.random() * 3, delay = Math.random() * 3
-    html += '<div class="cp-star" style="left:' + x + '%;top:' + y + '%;animation-delay:' + delay + 's;animation-duration:' + d + 's"></div>'
-  }
-  html += '<div class="cp-shooting-star" style="top:15%;left:5%;animation-delay:3s"></div>'
-  html += '<div class="cp-shooting-star" style="top:50%;left:20%;animation-delay:8s"></div>'
-  sf.innerHTML = html
 })()
 </script>
-<script src="/static/js/galaxy.js?v=10"></script>
-<script src="/static/js/share-poster.js?v=10"></script>
-<script src="/static/js/create.js?v=10"></script>
-<script src="/static/js/views/home.js?v=10"></script>
-<script src="/static/js/views/home-calendar.js?v=10"></script>
-<script src="/static/js/views/home-actions.js?v=10"></script>
-<script src="/static/js/views/squad.js?v=10"></script>
-<script src="/static/js/views/rank.js?v=10"></script>
-<script src="/static/js/views/me.js?v=10"></script>
-<script src="/static/js/app.js?v=10"></script>
+<script src="/static/js/galaxy.js?v=12"></script>
+<script src="/static/js/share-poster.js?v=12"></script>
+<script src="/static/js/create.js?v=12"></script>
+<script src="/static/js/views/home.js?v=12"></script>
+<script src="/static/js/views/home-calendar.js?v=12"></script>
+<script src="/static/js/views/home-actions.js?v=12"></script>
+<script src="/static/js/views/home-guidance.js?v=12"></script>
+<script src="/static/js/views/squad.js?v=12"></script>
+<script src="/static/js/views/rank.js?v=12"></script>
+<script src="/static/js/views/me.js?v=12"></script>
+<script src="/static/js/app.js?v=12"></script>
 </body>
 </html>

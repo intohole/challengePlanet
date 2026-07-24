@@ -16,8 +16,10 @@ from app.schemas.challenge import (
     ShareDataResponse,
     TodayTaskResponse,
 )
+from app.schemas.guidance import GuidanceResponse, ImportResponse, SharedConfigResponse
 from app.services.ai_service import AIService
 from app.services.challenge_service import ChallengeService
+from app.services.guidance_service import GuidanceService
 
 router = APIRouter()
 
@@ -181,5 +183,58 @@ async def get_share_data(
     if challenge is None or challenge.user_id != user_id:
         raise HTTPException(status_code=404, detail="挑战不存在")
     data = await service.get_share_data(session, challenge_id)
+    await session.commit()
+    return ShareDataResponse(**data)
+
+
+@router.get("/{challenge_id}/guidance", response_model=GuidanceResponse)
+async def get_guidance(
+    challenge_id: int,
+    user_id: str = Depends(get_current_user_id_required),
+    session: AsyncSession = Depends(get_db),
+) -> GuidanceResponse:
+    service = GuidanceService()
+    result = await service.get_guidance(session, challenge_id, user_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="挑战不存在")
+    return GuidanceResponse(**result)
+
+
+@router.get("/shared/{share_token}", response_model=SharedConfigResponse)
+async def get_shared_config(
+    share_token: str,
+    session: AsyncSession = Depends(get_db),
+) -> SharedConfigResponse:
+    service = GuidanceService()
+    config = await service.get_shared_config(session, share_token)
+    if config is None:
+        raise HTTPException(status_code=404, detail="分享链接无效或已过期")
+    return SharedConfigResponse(**config)
+
+
+@router.post("/import/{share_token}", response_model=ImportResponse)
+async def import_shared(
+    share_token: str,
+    user_id: str = Depends(get_current_user_id_required),
+    session: AsyncSession = Depends(get_db),
+) -> ImportResponse:
+    service = GuidanceService()
+    challenge = await service.import_shared_config(session, share_token, user_id)
+    if challenge is None:
+        raise HTTPException(status_code=404, detail="分享链接无效或已过期")
+    await session.commit()
+    return ImportResponse(id=challenge.id, title=challenge.title, message="导入成功")
+
+
+@router.post("/{challenge_id}/share", response_model=ShareDataResponse)
+async def generate_share(
+    challenge_id: int,
+    user_id: str = Depends(get_current_user_id_required),
+    session: AsyncSession = Depends(get_db),
+) -> ShareDataResponse:
+    service = GuidanceService()
+    data = await service.generate_share_token(session, challenge_id, user_id)
+    if data is None:
+        raise HTTPException(status_code=404, detail="挑战不存在")
     await session.commit()
     return ShareDataResponse(**data)

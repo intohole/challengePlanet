@@ -5,7 +5,7 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '' },
+    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '' },
     _ignite: null,
 
     render(el) {
@@ -54,17 +54,18 @@ window.cpViews.home = (function () {
       if (!ch) { this.loadedFor = null; return }
       if (this.loadedFor !== ch.id) {
         this.loadedFor = ch.id
-        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '' }
+        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '' }
         this.rerender()
       }
       const safe = p => p.catch(() => null)
-      const [today, checkins, mercy, weekly, points, adaptive] = await Promise.all([
+      const [today, checkins, mercy, weekly, points, adaptive, guidance] = await Promise.all([
         window.api.get('/challenges/' + ch.id + '/today').then(r => r.data || r).catch(e => { this._todayErr = e; return null }),
         safe(window.api.get('/challenges/' + ch.id + '/checkins')),
         safe(window.api.get('/challenges/' + ch.id + '/mercy')),
         safe(window.api.get('/challenges/' + ch.id + '/weekly-report')),
         safe(window.api.get('/points/summary')),
         safe(window.api.get('/challenges/' + ch.id + '/adaptive/pending')),
+        safe(window.api.get('/challenges/' + ch.id + '/guidance')),
       ])
       const d = this.data
       d.today = today
@@ -75,6 +76,8 @@ window.cpViews.home = (function () {
       d.points = points && (points.data || points)
       const ad = adaptive && (adaptive.data || adaptive)
       d.adaptive = (ad && ad.suggestion) || null
+      const gd = guidance && (guidance.data || guidance)
+      d.guidance = gd || null
       if (!d.declaration && today && today.checked_in) {
         try { d.declaration = localStorage.getItem('cp_decl_' + ch.id + '_' + today.date) || '' } catch (e) {}
       }
@@ -112,7 +115,7 @@ window.cpViews.home = (function () {
         })
         html += '</div>'
       }
-      html += '<div class="glass-card cp-hero"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(ch.title) + '</div><div class="cp-hero-date">' + (ch.start_date || '?') + ' → ' + (ch.end_date || '?') + '</div>'
+      html += '<div class="glass-card cp-hero"><div class="cp-hero-top"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(ch.title) + '</div>' + (ch.share_token ? '<button class="cp-hero-share-btn" onclick="cpViews.home.openShareConfig()"><i class="fas fa-link"></i></button>' : '') + '</div><div class="cp-hero-date">' + (ch.start_date || '?') + ' → ' + (ch.end_date || '?') + '</div>'
       const scene = window.cpSceneMap[ch.scene_template]
       if (scene) html += '<div class="cp-hero-scene"><span class="cp-hero-scene-icon">' + scene.icon + '</span><span class="cp-hero-scene-name">' + window.cpEsc(scene.name) + '</span><span class="cp-hero-scene-type">' + ({ counter: '计数打卡', timer: '计时打卡', text: '文字记录', step: '分步打卡', binary: '每日打卡' }[scene.task_type] || '打卡') + '</span></div>'
       const pct = ch.total_days ? Math.round((ch.completed_days || 0) / ch.total_days * 100) : 0
@@ -124,6 +127,7 @@ window.cpViews.home = (function () {
       if (d.mercy && d.mercy.shield_activated) html += '<div class="cp-repair-card" style="border-color:rgba(129,140,248,.4);background:rgba(129,140,248,.08)"><p>🛡️ 护盾已自动生效！昨天的断签被保护，连续记录未中断。继续保持！</p></div>'
       if (d.error) html += '<div class="cp-error-box"><i class="fas fa-circle-exclamation"></i><span>' + window.cpEsc(d.error) + '</span><button class="cp-btn-ghost" onclick="cpViews.home.load()">重试</button></div>'
       if (d.adaptive) html += this._adaptiveCard(d.adaptive)
+      if (d.guidance) html += this._guidanceCard(d.guidance)
       html += this._taskArea(s)
       if (d.mercy && d.mercy.repair_available) {
         html += '<div class="cp-repair-card"><p>💛 昨天不小心断签了，别灰心！48小时内完成今天任务即可修复连续记录。</p><button class="cp-btn-primary" onclick="cpViews.home.doRepair()"><i class="fas fa-band-aid"></i> 立即修复 streak</button></div>'

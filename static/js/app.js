@@ -28,6 +28,7 @@ const state = reactive({
   freeze: { show: false, dates: [], left: 0, busy: false },
   reflection: { show: false, mood: 'good', content: '', busy: false },
   share: { show: false, url: '', loading: false, mode: 'win' },
+  sharedConfig: { show: false, loading: false, config: null, importing: false, token: '' },
   diagnosis: { show: false, loading: false, report: null, applying: false },
 })
 window.appState = state
@@ -149,6 +150,19 @@ function switchView(v) {
 function handleQuery() {
   try {
     const q = new URLSearchParams(window.location.search)
+    if (q.get('shared')) {
+      const token = q.get('shared')
+      state.sharedConfig = { show: true, loading: true, config: null, importing: false, token }
+      window.api.get('/challenges/shared/' + token).then(res => {
+        const d = res.data || res
+        state.sharedConfig.config = d
+        state.sharedConfig.loading = false
+      }).catch(() => {
+        state.sharedConfig.loading = false
+        state.sharedConfig.config = null
+      })
+      window.history.replaceState({}, '', window.cpPrefix + '/')
+    }
     if (q.get('from') === 'decision' && q.get('title')) {
       const title = q.get('title') || ''
       const desc = q.get('desc') || ''
@@ -157,6 +171,22 @@ function handleQuery() {
       window.history.replaceState({}, '', window.cpPrefix + '/')
     }
   } catch (e) {}
+}
+
+async function importShared() {
+  if (!state.sharedConfig.token || state.sharedConfig.importing) return
+  state.sharedConfig.importing = true
+  try {
+    await window.api.post('/challenges/import/' + state.sharedConfig.token, {})
+    state.sharedConfig.show = false
+    window.cpToast('导入成功！开始你的挑战吧')
+    await loadChallenges()
+    switchView('home')
+  } catch (e) {
+    window.cpToast(window.cpErrMsg(e, '导入失败'))
+  } finally {
+    state.sharedConfig.importing = false
+  }
 }
 
 async function openShare(mode) {
@@ -212,6 +242,7 @@ createApp({
       openShare,
       saveShareImage,
       copyShareText,
+      importShared,
       logout,
       openCreate: () => window.cpCreate.open(),
     }
