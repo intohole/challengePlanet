@@ -53,3 +53,12 @@
 .cp-plan-step-tag { font-size: 10px; color: var(--text-muted); background: rgba(148,163,255,.08); padding: 2px 7px; border-radius: 6px; }
 
 @media (max-width: 380px) { .cp-scene-grid { grid-template-columns: repeat(3, 1fr); } .cp-counter-btn { width: 46px; height: 46px; font-size: 18px; } .cp-counter-val { font-size: 30px; } .cp-timer-val { font-size: 34px; } }
+
+.cp-text-area { position: relative; }
+.cp-text-input { width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--card-border); background: rgba(148,163,255,.04); color: var(--text-primary); padding: 14px; font-family: inherit; transition: border-color .2s; box-sizing: border-box; }
+.cp-text-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,91,255,.1); }
+.cp-text-input:disabled { opacity: .5; }
+.cp-text-input::placeholder { color: var(--text-muted); }
+.cp-text-counter { text-align: right; font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.cp-text-count { font-weight: 700; color: var(--text-secondary); transition: color .2s; }
+.cp-text-count.done { color: var(--emerald); }

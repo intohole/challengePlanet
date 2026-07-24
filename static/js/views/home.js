@@ -5,7 +5,7 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [] },
+    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '' },
     _ignite: null,
 
     render(el) {
@@ -20,7 +20,13 @@ window.cpViews.home = (function () {
           : '<span class="cp-pending-badge zero"><i class="fas fa-check"></i>已全完成</span>'
       }
       html += '</div>'
-      html += '<div class="cp-greet"><div><h1>' + greet + '，' + window.cpEsc(s.nickname) + '</h1><p>' + window.cpTodayStr() + '</p></div></div>'
+      html += '<div class="cp-greet"><div><h1>' + greet + '，' + window.cpEsc(s.nickname) + '</h1><p>' + window.cpTodayStr() + '</p></div>'
+      if (s.booted && s.challenges.length) {
+        const totalDone = s.challenges.reduce((a, c) => a + (c.completed_days || 0), 0)
+        const totalDays = s.challenges.reduce((a, c) => a + (c.total_days || 0), 0)
+        if (totalDays > 0) html += '<div class="cp-greet-stats"><span class="cp-greet-stat"><b>' + s.challenges.length + '</b>个挑战</span><span class="cp-greet-sep">·</span><span class="cp-greet-stat"><b>' + totalDone + '</b>/' + totalDays + '天</span></div>'
+      }
+      html += '</div>'
       html += '<div class="cp-view">'
       if (!s.booted) {
         html += this._skeleton()
@@ -48,7 +54,7 @@ window.cpViews.home = (function () {
       if (!ch) { this.loadedFor = null; return }
       if (this.loadedFor !== ch.id) {
         this.loadedFor = ch.id
-        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [] }
+        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '' }
         this.rerender()
       }
       const safe = p => p.catch(() => null)
@@ -107,6 +113,8 @@ window.cpViews.home = (function () {
         html += '</div>'
       }
       html += '<div class="glass-card cp-hero"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(ch.title) + '</div><div class="cp-hero-date">' + (ch.start_date || '?') + ' → ' + (ch.end_date || '?') + '</div>'
+      const scene = window.cpSceneMap[ch.scene_template]
+      if (scene) html += '<div class="cp-hero-scene"><span class="cp-hero-scene-icon">' + scene.icon + '</span><span class="cp-hero-scene-name">' + window.cpEsc(scene.name) + '</span><span class="cp-hero-scene-type">' + ({ counter: '计数打卡', timer: '计时打卡', text: '文字记录', step: '分步打卡', binary: '每日打卡' }[scene.task_type] || '打卡') + '</span></div>'
       const pct = ch.total_days ? Math.round((ch.completed_days || 0) / ch.total_days * 100) : 0
       html += '<div class="cp-hero-progress"><div class="cp-hero-progress-bar"><div class="cp-hero-progress-fill" style="width:' + pct + '%"></div></div><span class="cp-hero-progress-text">' + pct + '%</span></div>'
       html += '<div class="cp-galaxy-wrap"><div id="galaxy-box"></div></div></div>'
@@ -154,6 +162,9 @@ window.cpViews.home = (function () {
       if (!t.checked_in) {
         html += this._checkinArea(tt, t)
       } else {
+        if (tt === 'text' && t.checkin_data && t.checkin_data.reflection) {
+          html += '<div class="glass-card cp-text-display"><div class="cp-text-display-head"><i class="fas fa-quote-left"></i> 今日记录</div><p class="cp-text-display-body">' + window.cpEsc(t.checkin_data.reflection) + '</p></div>'
+        }
         if (d.declaration) html += '<div class="cp-declare">🔥 ' + window.cpEsc(d.declaration) + '</div>'
         html += '<button class="cp-btn-checkin done"><i class="fas fa-circle-check"></i> 今日已完成</button>'
         const plan = ch.ai_plan || []
@@ -177,6 +188,7 @@ window.cpViews.home = (function () {
       if (tt === 'counter') return this._counterUI(t, dis)
       if (tt === 'timer') return this._timerUI(t, dis)
       if (tt === 'step') return this._stepUI(t, dis)
+      if (tt === 'text') return this._textUI(t, dis)
       return this._binaryUI(dis)
     },
 
@@ -213,6 +225,21 @@ window.cpViews.home = (function () {
         h += '<div class="cp-step-item' + (done ? ' done' : '') + '" onclick="cpViews.home.toggleStep(\'' + encodeURIComponent(st) + '\')"><span class="cp-step-check">' + (done ? '✓' : '○') + '</span><span class="cp-step-text">' + window.cpEsc(st) + '</span></div>'
       })
       h += '</div><button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-check"></i> 提交打卡 (' + d.taskSteps.length + '/' + steps.length + ')</button>'
+      h += this._miniLink(dis) + '</div>'
+      return h
+    },
+
+    _textUI(t, dis) {
+      const d = this.data
+      const target = t.task_target || 0
+      const unit = window.cpEsc(t.task_unit || '字')
+      const len = (d.textValue || '').length
+      let h = '<div class="cp-checkin-box"><div class="cp-text-area">'
+      h += '<textarea class="cp-text-input" ' + dis + ' placeholder="记录你的想法、感受或今天的收获..." oninput="cpViews.home.setText(this.value)" style="resize:none;font-size:15px;line-height:1.6;min-height:120px">' + window.cpEsc(d.textValue || '') + '</textarea>'
+      if (target > 0) h += '<div class="cp-text-counter"><span class="cp-text-count' + (len >= target ? ' done' : '') + '">' + len + '</span> / ' + target + ' ' + unit + '</div>'
+      else h += '<div class="cp-text-counter"><span class="cp-text-count">' + len + '</span> 字</div>'
+      h += '</div>'
+      h += '<button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-feather"></i> 提交记录</button>'
       h += this._miniLink(dis) + '</div>'
       return h
     },

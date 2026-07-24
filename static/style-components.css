@@ -1,6 +1,9 @@
 .cp-greet { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px 12px; animation: fade-in-up .4s ease; }
 .cp-greet h1 { font-size: 20px; font-weight: 700; }
 .cp-greet p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.cp-greet-stats { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+.cp-greet-stat b { color: var(--primary-light); font-weight: 700; font-size: 14px; }
+.cp-greet-sep { color: var(--card-border); }
 @keyframes fade-in-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .cp-brand-banner { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: var(--radius); background: linear-gradient(135deg, rgba(99,91,255,.1), rgba(52,211,153,.06)); border: 1px solid rgba(99,91,255,.2); margin-bottom: 12px; }
 .cp-brand-banner .cp-brand-icon { font-size: 22px; filter: drop-shadow(0 0 8px var(--primary-glow)); }
@@ -22,6 +25,10 @@
 @keyframes hero-glow { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
 .cp-hero-title { font-size: 17px; font-weight: 700; position: relative; }
 .cp-hero-date { font-size: 11px; color: var(--text-muted); margin-top: 3px; position: relative; }
+.cp-hero-scene { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 4px 12px; border-radius: 16px; background: rgba(148,163,255,.08); border: 1px solid rgba(148,163,255,.15); position: relative; }
+.cp-hero-scene-icon { font-size: 14px; }
+.cp-hero-scene-name { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.cp-hero-scene-type { font-size: 10px; color: var(--text-muted); background: rgba(148,163,255,.1); padding: 1px 8px; border-radius: 8px; }
 .cp-hero-progress { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px; position: relative; }
 .cp-hero-progress-bar { width: 100px; height: 4px; border-radius: 2px; background: rgba(148,163,255,.12); overflow: hidden; }
 .cp-hero-progress-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--primary), var(--emerald)); transition: width .6s; }
@@ -47,6 +54,9 @@
 .cp-btn-checkin.done { background: rgba(52,211,153,.14); color: var(--emerald); box-shadow: none; border: 1px solid rgba(52,211,153,.3); cursor: default; }
 .cp-sub-actions { display: flex; gap: 8px; margin-top: 10px; }
 .cp-sub-actions button { flex: 1; }
+.cp-text-display { padding: 14px; border-radius: var(--radius); background: rgba(148,163,255,.05); border: 1px solid rgba(148,163,255,.12); margin-bottom: 10px; }
+.cp-text-display-head { font-size: 12px; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.cp-text-display-body { font-size: 14px; line-height: 1.7; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; }
 
 .cp-ai-card { padding: 14px; border-radius: var(--radius); border: 1px solid rgba(99,91,255,.25); background: rgba(99,91,255,.08); text-align: left; }
 .cp-ai-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--primary-light); margin-bottom: 6px; }

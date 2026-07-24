@@ -80,9 +80,9 @@ class CheckInService:
         if checkin_type == "mini" and not reflection.strip():
             reflection = "微打卡：今天没放弃"
 
-        completion_pct = self._calc_completion_pct(task_type, task_value, task_target, steps_done)
+        completion_pct = self._calc_completion_pct(task_type, task_value, task_target, steps_done, reflection)
         task_data = json.dumps(
-            {"value": task_value, "unit": task_unit, "target": task_target, "steps_done": steps_done or []},
+            {"value": task_value, "unit": task_unit, "target": task_target, "steps_done": steps_done or [], "reflection": reflection},
             ensure_ascii=False,
         )
 
@@ -128,7 +128,8 @@ class CheckInService:
         }
 
     def _calc_completion_pct(
-        self, task_type: str, task_value: float, task_target: float, steps_done: list[str] | None
+        self, task_type: str, task_value: float, task_target: float, steps_done: list[str] | None,
+        reflection: str = "",
     ) -> float:
         if task_type in ("counter", "timer"):
             if task_target > 0:
@@ -139,6 +140,10 @@ class CheckInService:
             if total > 0:
                 return min(len(steps_done or []) / total * 100, 100.0)
             return 100.0
+        if task_type == "text":
+            if task_target > 0 and len(reflection.strip()) > 0:
+                return min(len(reflection.strip()) / task_target * 100, 100.0)
+            return 100.0 if reflection.strip() else 0.0
         return 100.0
 
     async def update_today_reflection(

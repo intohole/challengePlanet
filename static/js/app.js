@@ -35,18 +35,22 @@ window.appState = state
 window.cpTemplates = [
   { title: '戒烟挑战', category: 'quit', days: 42, icon: '🚭', desc: '告别香烟，找回健康呼吸', scene: 'quit' },
   { title: '每天读书30分钟', category: 'learn', days: 66, icon: '📚', desc: '用66天养成终身阅读习惯', scene: 'reading' },
-  { title: '坚持跑步', category: 'fitness', days: 21, icon: '🏃', desc: '每天跑起来，激活身体', scene: 'fitness' },
+  { title: '坚持跑步', category: 'fitness', days: 21, icon: '🏃', desc: '从1公里到5公里，循序渐进', scene: 'running' },
   { title: '早睡早起', category: 'build', days: 21, icon: '🌙', desc: '21天重建作息节律', scene: 'morning' },
-  { title: '学习Python编程', category: 'learn', days: 42, icon: '💻', desc: '42天从零到能写项目', scene: 'study' },
   { title: '每日冥想', category: 'mind', days: 21, icon: '🧘', desc: '每天10分钟正念练习', scene: 'meditation' },
+  { title: '每日感恩', category: 'mind', days: 21, icon: '🙏', desc: '每天记录3件感恩的事', scene: 'gratitude' },
 ]
 
 window.cpScenes = [
   { id: 'fitness', name: '健身', icon: '💪', color: '#f59e0b', task_type: 'counter', unit: '个', samples: ['30天每天30个俯卧撑', '21天腹肌撕裂者计划'] },
+  { id: 'running', name: '跑步', icon: '🏃', color: '#f43f5e', task_type: 'counter', unit: '公里', samples: ['42天从0到5公里跑步计划', '每天跑步3公里'] },
   { id: 'study', name: '学习', icon: '📚', color: '#6366f1', task_type: 'counter', unit: '页', samples: ['30天每天读20页专业书', '考研复习66天计划'] },
   { id: 'reading', name: '阅读', icon: '📖', color: '#10b981', task_type: 'counter', unit: '页', samples: ['每天阅读30页', '21天养成阅读习惯'] },
   { id: 'meditation', name: '冥想', icon: '🧘', color: '#8b5cf6', task_type: 'timer', unit: '分钟', samples: ['每天冥想10分钟', '21天正念冥想入门'] },
   { id: 'morning', name: '早起', icon: '🌅', color: '#f97316', task_type: 'timer', unit: '点', samples: ['30天早起6点起床', '坚持每天7点前起床'] },
+  { id: 'writing', name: '写作', icon: '✍️', color: '#8b5cf6', task_type: 'text', unit: '篇', samples: ['30天每日写作打卡', '21天晨间日记'] },
+  { id: 'gratitude', name: '感恩', icon: '🙏', color: '#fbbf24', task_type: 'text', unit: '件', samples: ['21天感恩日记', '每天记录3件感恩的事'] },
+  { id: 'water', name: '饮水', icon: '💧', color: '#06b6d4', task_type: 'counter', unit: '杯', samples: ['30天每天喝够8杯水', '21天养成喝水习惯'] },
   { id: 'quit', name: '戒断', icon: '🚭', color: '#ef4444', task_type: 'binary', unit: '次', samples: ['我要戒烟30天', '戒掉熬夜66天'] },
   { id: 'custom', name: '自定义', icon: '🎯', color: '#8b5cf6', task_type: 'binary', unit: '次', samples: ['自定义我的挑战', '30天不喝奶茶'] },
 ]

@@ -6,13 +6,13 @@
 <title>挑战星球 · AI打卡教练</title>
 <script>window.PATH_PREFIX = window.PATH_PREFIX || ''</script>
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="/static/style.css?v=9">
-<link rel="stylesheet" href="/static/style-components.css?v=9">
-<link rel="stylesheet" href="/static/style-checkin.css?v=9">
+<link rel="stylesheet" href="/static/style.css?v=10">
+<link rel="stylesheet" href="/static/style-components.css?v=10">
+<link rel="stylesheet" href="/static/style-checkin.css?v=10">
 <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.5.13/vue.global.prod.min.js"></script>
 <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="/static/nexus-ui/js/nexus-api-error.js?v=9"></script>
-<script src="/static/nexus-ui/js/nexus-api.js?v=9"></script>
+<script src="/static/nexus-ui/js/nexus-api-error.js?v=10"></script>
+<script src="/static/nexus-ui/js/nexus-api.js?v=10"></script>
 </head>
 <body>
 <div class="cp-starfield" id="starfield"></div>
@@ -52,7 +52,7 @@
           <button v-for="s in cpScenes" :key="s.id" class="cp-scene-card" :class="{active: state.create.sceneTemplate===s.id}" @click="cr.selectScene(s.id)">
             <span class="cp-scene-icon">{{ s.icon }}</span>
             <span class="cp-scene-name">{{ s.name }}</span>
-            <span class="cp-scene-type">{{ s.task_type === 'counter' ? '计数' : s.task_type === 'timer' ? '计时' : '打卡' }}</span>
+            <span class="cp-scene-type">{{ s.task_type === 'counter' ? '计数' : s.task_type === 'timer' ? '计时' : s.task_type === 'text' ? '记录' : s.task_type === 'step' ? '分步' : '打卡' }}</span>
           </button>
         </div>
       </div>
@@ -218,15 +218,15 @@
   sf.innerHTML = html
 })()
 </script>
-<script src="/static/js/galaxy.js?v=9"></script>
-<script src="/static/js/share-poster.js?v=9"></script>
-<script src="/static/js/create.js?v=9"></script>
-<script src="/static/js/views/home.js?v=9"></script>
-<script src="/static/js/views/home-calendar.js?v=9"></script>
-<script src="/static/js/views/home-actions.js?v=9"></script>
-<script src="/static/js/views/squad.js?v=9"></script>
-<script src="/static/js/views/rank.js?v=9"></script>
-<script src="/static/js/views/me.js?v=9"></script>
-<script src="/static/js/app.js?v=9"></script>
+<script src="/static/js/galaxy.js?v=10"></script>
+<script src="/static/js/share-poster.js?v=10"></script>
+<script src="/static/js/create.js?v=10"></script>
+<script src="/static/js/views/home.js?v=10"></script>
+<script src="/static/js/views/home-calendar.js?v=10"></script>
+<script src="/static/js/views/home-actions.js?v=10"></script>
+<script src="/static/js/views/squad.js?v=10"></script>
+<script src="/static/js/views/rank.js?v=10"></script>
+<script src="/static/js/views/me.js?v=10"></script>
+<script src="/static/js/app.js?v=10"></script>
 </body>
 </html>

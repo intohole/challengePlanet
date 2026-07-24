@@ -100,6 +100,10 @@
     this.rerender()
   }
 
+  V.setText = function (val) {
+    this.data.textValue = val || ''
+  }
+
   V.toggleStep = function (stepEncoded) {
     const d = this.data
     const step = decodeURIComponent(stepEncoded)
@@ -129,6 +133,13 @@
       payload.task_target = (t.task_steps || []).length
       payload.task_unit = '步'
       payload.steps_done = d.taskSteps
+    } else if (tt === 'text') {
+      if (!d.textValue.trim()) { window.cpToast('请写点什么再提交'); return }
+      payload.task_type = tt
+      payload.task_value = d.textValue.length
+      payload.task_target = t.task_target || 0
+      payload.task_unit = t.task_unit || '字'
+      payload.reflection = d.textValue
     } else {
       payload.task_type = 'binary'
     }
@@ -147,6 +158,7 @@
       }
       d.taskValue = 0
       d.taskSteps = []
+      d.textValue = ''
       await this.load()
       await window.cpLoadChallenges()
     } catch (e) {

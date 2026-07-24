@@ -125,6 +125,74 @@ _TEMPLATES: dict[str, SceneTemplate] = {
             "21天戒糖计划",
         ],
     ),
+    "water": SceneTemplate(
+        scene_id="water",
+        name="饮水",
+        icon="💧",
+        color="#06b6d4",
+        description="每日饮水打卡，按杯数累计，养成规律饮水习惯",
+        task_type="counter",
+        default_target=8.0,
+        unit="杯",
+        steps=["晨起一杯", "上午两杯", "下午两杯", "晚上一杯"],
+        difficulty_curve="稳定目标，从6杯起步逐步到8杯",
+        sample_prompts=[
+            "30天每天喝够8杯水",
+            "21天养成喝水习惯",
+            "每天喝水2升",
+        ],
+    ),
+    "running": SceneTemplate(
+        scene_id="running",
+        name="跑步",
+        icon="🏃",
+        color="#f43f5e",
+        description="跑步距离打卡，从慢跑1公里逐步提升到5公里",
+        task_type="counter",
+        default_target=3.0,
+        unit="公里",
+        steps=["热身", "跑步", "拉伸放松"],
+        difficulty_curve="渐进递增，从1公里起步每周+0.5公里",
+        sample_prompts=[
+            "42天从0到5公里跑步计划",
+            "每天跑步3公里",
+            "21天跑步入门",
+        ],
+    ),
+    "writing": SceneTemplate(
+        scene_id="writing",
+        name="写作",
+        icon="✍️",
+        color="#8b5cf6",
+        description="每日写作打卡，记录思考与成长，支持自由书写或结构化模板",
+        task_type="text",
+        default_target=1.0,
+        unit="篇",
+        steps=["选题", "草稿", "修改", "发布"],
+        difficulty_curve="字数递增，从100字起步逐步到500字",
+        sample_prompts=[
+            "30天每日写作打卡",
+            "21天晨间日记",
+            "每天写500字",
+        ],
+    ),
+    "gratitude": SceneTemplate(
+        scene_id="gratitude",
+        name="感恩",
+        icon="🙏",
+        color="#fbbf24",
+        description="每日感恩记录，写下3件值得感恩的事，培养积极心态",
+        task_type="text",
+        default_target=3.0,
+        unit="件",
+        steps=[],
+        difficulty_curve="稳定目标，每天3件感恩小事",
+        sample_prompts=[
+            "21天感恩日记",
+            "每天记录3件感恩的事",
+            "30天感恩打卡",
+        ],
+    ),
     "custom": SceneTemplate(
         scene_id="custom",
         name="自定义",
@@ -165,13 +233,17 @@ class SceneService:
         base = template.default_target
         if duration_days <= 0:
             return round(base, 2)
-        ramp_end = duration_days * 0.8
-        if ramp_end <= 1.0:
+        if template.task_type in ("binary", "text"):
             return round(base, 2)
-        if day >= ramp_end:
-            factor = 1.0
+        phase1_end = max(1, duration_days * 0.2)
+        phase2_end = max(phase1_end + 1, duration_days * 0.8)
+        if day <= phase1_end:
+            factor = 0.5 + 0.2 * ((day - 1) / max(1, phase1_end - 1))
+        elif day <= phase2_end:
+            progress = (day - phase1_end) / max(1, phase2_end - phase1_end)
+            factor = 0.7 + 0.3 * progress
         else:
-            factor = 0.5 + 0.5 * ((day - 1) / (ramp_end - 1.0))
+            factor = 1.0
         factor = max(0.5, min(1.0, factor))
         return round(base * factor, 2)
 
