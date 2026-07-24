@@ -69,6 +69,11 @@ async def run_migrations() -> None:
                 logger.warning("migration: missing table %s, creating", table)
         await conn.run_sync(Base.metadata.create_all)
         await _ensure_column(conn, "checkins", "checkin_type", "checkin_type VARCHAR(8) DEFAULT 'full'")
+        await _ensure_column(conn, "checkins", "task_type", "task_type VARCHAR(16) DEFAULT 'binary'")
+        await _ensure_column(conn, "checkins", "task_data", "task_data TEXT DEFAULT '{}'")
+        await _ensure_column(conn, "checkins", "completion_pct", "completion_pct REAL DEFAULT 100.0")
+        await _ensure_column(conn, "challenges", "task_type", "task_type VARCHAR(16) DEFAULT 'binary'")
+        await _ensure_column(conn, "challenges", "scene_template", "scene_template VARCHAR(32) DEFAULT ''")
         await conn.execute(text(
             "UPDATE adaptive_suggestions SET status='expired' WHERE status='pending' AND id NOT IN ("
             "SELECT MAX(id) FROM adaptive_suggestions WHERE status='pending' GROUP BY challenge_id)"

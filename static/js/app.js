@@ -22,7 +22,7 @@ const state = reactive({
   celebrate: false,
   celebrateText: '',
   stars: [],
-  create: { show: false, step: 1, rawInput: '', startMode: 'today', customDate: '', startDate: '', phase: 'idle', parsed: null, editTitle: '', editDays: 66, editCategory: 'build', editDesc: '', planText: '', plan: [], suggestions: [], error: '', saving: false, source: 'web' },
+  create: { show: false, step: 1, rawInput: '', startMode: 'today', customDate: '', startDate: '', sceneTemplate: '', phase: 'idle', parsed: null, editTitle: '', editDays: 66, editCategory: 'build', editDesc: '', planText: '', plan: [], suggestions: [], error: '', saving: false, source: 'web' },
   dayDetail: null,
   mend: { show: false, dates: [], left: 0, busy: false },
   freeze: { show: false, dates: [], left: 0, busy: false },
@@ -33,13 +33,25 @@ const state = reactive({
 window.appState = state
 
 window.cpTemplates = [
-  { title: '戒烟挑战', category: 'quit', days: 42, icon: '🚭', desc: '告别香烟，找回健康呼吸' },
-  { title: '每天读书30分钟', category: 'learn', days: 66, icon: '📚', desc: '用66天养成终身阅读习惯' },
-  { title: '坚持跑步', category: 'fitness', days: 21, icon: '🏃', desc: '每天跑起来，激活身体' },
-  { title: '早睡早起', category: 'build', days: 21, icon: '🌙', desc: '21天重建作息节律' },
-  { title: '学习Python编程', category: 'learn', days: 42, icon: '💻', desc: '42天从零到能写项目' },
-  { title: '每日冥想', category: 'mind', days: 21, icon: '🧘', desc: '每天10分钟正念练习' },
+  { title: '戒烟挑战', category: 'quit', days: 42, icon: '🚭', desc: '告别香烟，找回健康呼吸', scene: 'quit' },
+  { title: '每天读书30分钟', category: 'learn', days: 66, icon: '📚', desc: '用66天养成终身阅读习惯', scene: 'reading' },
+  { title: '坚持跑步', category: 'fitness', days: 21, icon: '🏃', desc: '每天跑起来，激活身体', scene: 'fitness' },
+  { title: '早睡早起', category: 'build', days: 21, icon: '🌙', desc: '21天重建作息节律', scene: 'morning' },
+  { title: '学习Python编程', category: 'learn', days: 42, icon: '💻', desc: '42天从零到能写项目', scene: 'study' },
+  { title: '每日冥想', category: 'mind', days: 21, icon: '🧘', desc: '每天10分钟正念练习', scene: 'meditation' },
 ]
+
+window.cpScenes = [
+  { id: 'fitness', name: '健身', icon: '💪', color: '#f59e0b', task_type: 'counter', unit: '个', samples: ['30天每天30个俯卧撑', '21天腹肌撕裂者计划'] },
+  { id: 'study', name: '学习', icon: '📚', color: '#6366f1', task_type: 'counter', unit: '页', samples: ['30天每天读20页专业书', '考研复习66天计划'] },
+  { id: 'reading', name: '阅读', icon: '📖', color: '#10b981', task_type: 'counter', unit: '页', samples: ['每天阅读30页', '21天养成阅读习惯'] },
+  { id: 'meditation', name: '冥想', icon: '🧘', color: '#8b5cf6', task_type: 'timer', unit: '分钟', samples: ['每天冥想10分钟', '21天正念冥想入门'] },
+  { id: 'morning', name: '早起', icon: '🌅', color: '#f97316', task_type: 'timer', unit: '点', samples: ['30天早起6点起床', '坚持每天7点前起床'] },
+  { id: 'quit', name: '戒断', icon: '🚭', color: '#ef4444', task_type: 'binary', unit: '次', samples: ['我要戒烟30天', '戒掉熬夜66天'] },
+  { id: 'custom', name: '自定义', icon: '🎯', color: '#8b5cf6', task_type: 'binary', unit: '次', samples: ['自定义我的挑战', '30天不喝奶茶'] },
+]
+window.cpSceneMap = {}
+window.cpScenes.forEach(s => { window.cpSceneMap[s.id] = s })
 
 window.cpCategoryMap = {
   build: { icon: 'fa-seedling', color: '#34d399', label: '习惯养成' },
@@ -189,6 +201,7 @@ createApp({
   setup() {
     return {
       state,
+      cpScenes: window.cpScenes,
       home: window.cpViews.home,
       cr: window.cpCreate,
       switchView,

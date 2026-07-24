@@ -15,6 +15,7 @@ from app.api.challenge import router as challenge_router
 from app.api.checkin import router as checkin_router
 from app.api.points import router as points_router
 from app.api.portal import router as portal_router
+from app.api.scene import router as scene_router
 from app.api.share import router as share_router
 from app.api.squad import router as squad_router
 from app.config import settings
@@ -73,6 +74,7 @@ app.include_router(adaptive_router, prefix=API_PREFIX + "/challenges")
 app.include_router(squad_router, prefix=API_PREFIX)
 app.include_router(points_router, prefix=API_PREFIX)
 app.include_router(portal_router, prefix=API_PREFIX)
+app.include_router(scene_router, prefix=API_PREFIX)
 app.include_router(share_router, prefix=API_PREFIX)
 
 

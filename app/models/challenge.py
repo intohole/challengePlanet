@@ -23,6 +23,8 @@ class Challenge(Base):
     ai_plan: Mapped[str] = mapped_column(Text, default="[]")
     color: Mapped[str] = mapped_column(String(16), default="#6366f1")
     icon: Mapped[str] = mapped_column(String(16), default="🎯")
+    task_type: Mapped[str] = mapped_column(String(16), default="binary")
+    scene_template: Mapped[str] = mapped_column(String(32), default="")
     is_shared: Mapped[bool] = mapped_column(Boolean, default=False)
     share_token: Mapped[str] = mapped_column(String(64), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

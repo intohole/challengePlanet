@@ -6,12 +6,13 @@
 <title>挑战星球 · AI打卡教练</title>
 <script>window.PATH_PREFIX = window.PATH_PREFIX || ''</script>
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="/static/style.css?v=8">
-<link rel="stylesheet" href="/static/style-components.css?v=8">
+<link rel="stylesheet" href="/static/style.css?v=9">
+<link rel="stylesheet" href="/static/style-components.css?v=9">
+<link rel="stylesheet" href="/static/style-checkin.css?v=9">
 <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.5.13/vue.global.prod.min.js"></script>
 <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="/static/nexus-ui/js/nexus-api-error.js?v=8"></script>
-<script src="/static/nexus-ui/js/nexus-api.js?v=8"></script>
+<script src="/static/nexus-ui/js/nexus-api-error.js?v=9"></script>
+<script src="/static/nexus-ui/js/nexus-api.js?v=9"></script>
 </head>
 <body>
 <div class="cp-starfield" id="starfield"></div>
@@ -45,6 +46,16 @@
     <div class="cp-steps"><div class="cp-step-dot on"></div><div class="cp-step-dot" :class="{on:state.create.step>=2}"></div><div class="cp-step-dot" :class="{on:state.create.phase==='preview'}"></div></div>
 
     <div v-if="state.create.step===1">
+      <div class="cp-form-row">
+        <label class="cp-label">选择场景（决定打卡方式和难度曲线）</label>
+        <div class="cp-scene-grid">
+          <button v-for="s in cpScenes" :key="s.id" class="cp-scene-card" :class="{active: state.create.sceneTemplate===s.id}" @click="cr.selectScene(s.id)">
+            <span class="cp-scene-icon">{{ s.icon }}</span>
+            <span class="cp-scene-name">{{ s.name }}</span>
+            <span class="cp-scene-type">{{ s.task_type === 'counter' ? '计数' : s.task_type === 'timer' ? '计时' : '打卡' }}</span>
+          </button>
+        </div>
+      </div>
       <div class="cp-form-row">
         <label class="cp-label">描述你的挑战目标</label>
         <textarea v-model="state.create.rawInput" class="cp-field" rows="3" style="resize:none;font-size:15px;line-height:1.6" placeholder="如：42天戒烟、每天读书30分钟、21天学会Python..."></textarea>
@@ -81,9 +92,11 @@
       <template v-if="state.create.phase==='preview'">
         <div class="cp-plan-list">
           <div v-for="d in state.create.plan" :key="d.day" class="cp-plan-day">
-            <div class="cp-plan-day-head">第 {{ d.day }} 天</div>
+            <div class="cp-plan-day-head"><span>第 {{ d.day }} 天</span><span v-if="d.difficulty" class="cp-plan-diff">难度 {{ '★'.repeat(d.difficulty) }}</span></div>
             <div class="cp-plan-day-title">{{ d.title }}</div>
             <div v-if="d.description" class="cp-plan-day-desc">{{ d.description }}</div>
+            <div v-if="d.target_value && d.target_value > 0" class="cp-plan-day-target"><i class="fas fa-bullseye"></i> 目标 {{ d.target_value }} {{ d.unit }}</div>
+            <div v-if="d.steps && d.steps.length" class="cp-plan-day-steps"><span v-for="(st, si) in d.steps" :key="si" class="cp-plan-step-tag">{{ st }}</span></div>
             <div v-if="d.tip" class="cp-plan-day-tip">💡 {{ d.tip }}</div>
           </div>
         </div>
@@ -205,15 +218,15 @@
   sf.innerHTML = html
 })()
 </script>
-<script src="/static/js/galaxy.js?v=8"></script>
-<script src="/static/js/share-poster.js?v=8"></script>
-<script src="/static/js/create.js?v=8"></script>
-<script src="/static/js/views/home.js?v=8"></script>
-<script src="/static/js/views/home-calendar.js?v=8"></script>
-<script src="/static/js/views/home-actions.js?v=8"></script>
-<script src="/static/js/views/squad.js?v=8"></script>
-<script src="/static/js/views/rank.js?v=8"></script>
-<script src="/static/js/views/me.js?v=8"></script>
-<script src="/static/js/app.js?v=8"></script>
+<script src="/static/js/galaxy.js?v=9"></script>
+<script src="/static/js/share-poster.js?v=9"></script>
+<script src="/static/js/create.js?v=9"></script>
+<script src="/static/js/views/home.js?v=9"></script>
+<script src="/static/js/views/home-calendar.js?v=9"></script>
+<script src="/static/js/views/home-actions.js?v=9"></script>
+<script src="/static/js/views/squad.js?v=9"></script>
+<script src="/static/js/views/rank.js?v=9"></script>
+<script src="/static/js/views/me.js?v=9"></script>
+<script src="/static/js/app.js?v=9"></script>
 </body>
 </html>

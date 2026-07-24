@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Integer, String, Text, DateTime, func, ForeignKey
+from sqlalchemy import Float, Integer, String, Text, DateTime, func, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.database import Base
@@ -21,6 +21,9 @@ class CheckIn(Base):
     mood: Mapped[str] = mapped_column(String(16), default="good")
     reflection: Mapped[str] = mapped_column(Text, default="")
     ai_feedback: Mapped[str] = mapped_column(Text, default="")
+    task_type: Mapped[str] = mapped_column(String(16), default="binary")
+    task_data: Mapped[str] = mapped_column(Text, default="{}")
+    completion_pct: Mapped[float] = mapped_column(Float, default=100.0)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 

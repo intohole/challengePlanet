@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from datetime import datetime
 
 from nexus.logging import get_logger
@@ -47,9 +48,14 @@ class CheckInService:
         session: AsyncSession,
         challenge_id: int,
         user_id: str,
-        mood: str,
-        reflection: str,
         checkin_type: str = "full",
+        mood: str = "",
+        reflection: str = "",
+        task_type: str = "binary",
+        task_value: float = 0,
+        task_unit: str = "",
+        task_target: float = 0,
+        steps_done: list[str] | None = None,
     ) -> dict[str, object]:
         challenge = await self._challenge_repo.get_by_id(session, challenge_id)
         if challenge is None or challenge.user_id != user_id:
@@ -74,6 +80,12 @@ class CheckInService:
         if checkin_type == "mini" and not reflection.strip():
             reflection = "微打卡：今天没放弃"
 
+        completion_pct = self._calc_completion_pct(task_type, task_value, task_target, steps_done)
+        task_data = json.dumps(
+            {"value": task_value, "unit": task_unit, "target": task_target, "steps_done": steps_done or []},
+            ensure_ascii=False,
+        )
+
         memory_context = await self._recall_context(user_id, challenge.title)
         feedback, declaration = await asyncio.gather(
             self._safe_feedback(
@@ -91,11 +103,15 @@ class CheckInService:
             "mood": mood,
             "reflection": reflection,
             "ai_feedback": feedback,
+            "task_type": task_type,
+            "task_data": task_data,
+            "completion_pct": completion_pct,
         })
 
         streak = await self._current_streak(session, challenge_id)
         base, chest = await self._points.award_checkin(
-            session, user_id, challenge_id, streak, mini=checkin_type == "mini"
+            session, user_id, challenge_id, streak,
+            mini=checkin_type == "mini", completion_pct=completion_pct,
         )
         shields = await self._shields.award_milestone(session, challenge_id, streak)
         await self._maybe_award_squad_bonus(session, challenge_id, today)
@@ -110,6 +126,20 @@ class CheckInService:
             "points_earned": base, "chest_points": chest, "streak": streak,
             "already_checked": False, "declaration": declaration, "shields": shields,
         }
+
+    def _calc_completion_pct(
+        self, task_type: str, task_value: float, task_target: float, steps_done: list[str] | None
+    ) -> float:
+        if task_type in ("counter", "timer"):
+            if task_target > 0:
+                return min(task_value / task_target * 100, 100.0)
+            return 100.0
+        if task_type == "step":
+            total = int(task_target) if task_target > 0 else 0
+            if total > 0:
+                return min(len(steps_done or []) / total * 100, 100.0)
+            return 100.0
+        return 100.0
 
     async def update_today_reflection(
         self,

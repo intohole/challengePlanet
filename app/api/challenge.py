@@ -49,6 +49,8 @@ def _to_response(challenge: object, item: dict[str, object]) -> ChallengeRespons
         ai_plan=plan,
         color=c.color,
         icon=c.icon,
+        task_type=c.task_type,
+        scene_template=c.scene_template,
         is_shared=c.is_shared,
         share_token=c.share_token,
         source=str(item.get("source", "manual")),
@@ -106,7 +108,9 @@ async def create_challenge_nl(
         yield _sse({"step": "planning"})
         collected: list[str] = []
         try:
-            async for token in ai.generate_challenge_plan_stream(title, description, category, duration):
+            async for token in ai.generate_challenge_plan_stream(
+                title, description, category, duration, request.scene_template
+            ):
                 collected.append(token)
                 yield _sse({"step": "token", "token": token})
         except Exception:
@@ -133,6 +137,7 @@ async def confirm_challenge(
     challenge = await service.create_with_plan(
         session, user_id, request.title, request.description, request.category,
         request.duration_days, request.start_date, plan, request.source, request.squad_id,
+        task_type=request.task_type, scene_template=request.scene_template,
     )
     await session.commit()
     return await _build_response(session, challenge, user_id)

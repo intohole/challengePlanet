@@ -11,11 +11,17 @@ class PlanDay(BaseModel):
     title: str = Field("", description="任务标题")
     description: str = Field("", description="具体任务")
     tip: str = Field("", description="小贴士")
+    task_type: str = Field("binary", description="任务类型: binary/counter/timer/choice/step/text")
+    target_value: float = Field(0, description="目标值(如30分钟/50个)")
+    unit: str = Field("", description="单位: 分钟/个/页/次等")
+    difficulty: int = Field(1, description="难度等级1-5")
+    steps: list[str] = Field(default_factory=list, description="多步骤任务步骤列表")
 
 
 class NLCreateRequest(BaseModel):
     raw_input: str = Field(..., description="自然语言描述, 如: 我想30天戒烟")
     start_date: str = Field("", description="开始日期 YYYY-MM-DD, 空则今天开始")
+    scene_template: str = Field("", description="场景模板: fitness/study/reading/meditation/morning/custom")
 
 
 class ChallengeConfirmRequest(BaseModel):
@@ -27,6 +33,8 @@ class ChallengeConfirmRequest(BaseModel):
     plan: list[PlanDay] = Field(default_factory=list, description="前端预览确认后的计划")
     source: str = Field("manual", description="来源: manual/lifecompass")
     squad_id: Optional[int] = Field(None, description="关联小队ID")
+    task_type: str = Field("binary", description="默认打卡任务类型")
+    scene_template: str = Field("", description="场景模板")
 
 
 class FromDecisionRequest(BaseModel):
@@ -57,6 +65,8 @@ class ChallengeResponse(BaseModel):
     ai_plan: list[dict[str, object]] = Field(default_factory=list)
     color: str = "#6366f1"
     icon: str = "🎯"
+    task_type: str = "binary"
+    scene_template: str = ""
     is_shared: bool = False
     share_token: str = ""
     source: str = "manual"
@@ -75,6 +85,10 @@ class TodayTaskResponse(BaseModel):
     task_title: str = ""
     task_description: str = ""
     task_tip: str = ""
+    task_type: str = "binary"
+    task_target: float = 0
+    task_unit: str = ""
+    task_steps: list[str] = Field(default_factory=list)
     checked_in: bool = False
     checkin_data: Optional[dict[str, object]] = None
     streak: int = 0
@@ -115,3 +129,21 @@ class ShareDataResponse(BaseModel):
     share_text: str
     share_token: str
     share_quote: str = ""
+
+
+class SceneTemplateResponse(BaseModel):
+    scene_id: str
+    name: str
+    icon: str
+    color: str
+    description: str
+    task_type: str
+    default_target: float
+    unit: str
+    steps: list[str]
+    difficulty_curve: str
+    sample_prompts: list[str]
+
+
+class SceneListResponse(BaseModel):
+    scenes: list[SceneTemplateResponse]

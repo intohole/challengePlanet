@@ -16,6 +16,7 @@ window.cpCreate = (function () {
     c.error = ''
     c.saving = false
     c.source = 'web'
+    c.sceneTemplate = ''
   }
 
   const C = {
@@ -32,6 +33,16 @@ window.cpCreate = (function () {
         if (preset.days) c.editDays = preset.days
         if (preset.category) c.editCategory = preset.category
         if (preset.source) c.source = preset.source
+        if (preset.scene) c.sceneTemplate = preset.scene
+      }
+    },
+
+    selectScene(sceneId) {
+      const c = st()
+      c.sceneTemplate = c.sceneTemplate === sceneId ? '' : sceneId
+      const scene = window.cpSceneMap[sceneId]
+      if (scene && c.sceneTemplate && !c.rawInput.trim()) {
+        c.rawInput = scene.samples[0]
       }
     },
 
@@ -76,7 +87,7 @@ window.cpCreate = (function () {
       c.planText = ''
       c.plan = []
       c.suggestions = []
-      await window.api.streamPost('/challenges/nl-create', { raw_input: raw, start_date: c.startDate }, {
+      await window.api.streamPost('/challenges/nl-create', { raw_input: raw, start_date: c.startDate, scene_template: c.sceneTemplate || '' }, {
         onEvent: (event, data) => {
           if (!data) return
           if (data.step === 'parsing') c.phase = 'parsing'
@@ -123,6 +134,7 @@ window.cpCreate = (function () {
       c.saving = true
       c.error = ''
       try {
+        const scene = window.cpSceneMap[c.sceneTemplate]
         const res = await window.api.post('/challenges/confirm', {
           title: c.editTitle.trim(),
           category: c.editCategory,
@@ -131,6 +143,8 @@ window.cpCreate = (function () {
           description: c.editDesc || '',
           plan: c.plan,
           source: c.source || 'web',
+          task_type: scene ? scene.task_type : 'binary',
+          scene_template: c.sceneTemplate || '',
         })
         const ch = res.data || res
         c.show = false

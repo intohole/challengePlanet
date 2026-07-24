@@ -89,6 +89,74 @@
 
   V.doMini = function () { this.doCheckin('mini') }
 
+  V.adjustCount = function (delta) {
+    const d = this.data
+    d.taskValue = Math.max(0, d.taskValue + delta)
+    this.rerender()
+  }
+
+  V.setCount = function (val) {
+    this.data.taskValue = Math.max(0, val)
+    this.rerender()
+  }
+
+  V.toggleStep = function (stepEncoded) {
+    const d = this.data
+    const step = decodeURIComponent(stepEncoded)
+    const idx = d.taskSteps.indexOf(step)
+    if (idx >= 0) d.taskSteps.splice(idx, 1)
+    else d.taskSteps.push(step)
+    this.rerender()
+  }
+
+  V.doMultiCheckin = async function () {
+    const s = window.appState
+    const ch = s.current
+    const d = this.data
+    const t = d.today
+    if (!ch || !t || d.checking || t.checked_in) return
+    const tt = t.task_type || ch.task_type || 'binary'
+    const payload = { checkin_type: 'full' }
+    if (tt === 'counter' || tt === 'timer') {
+      payload.task_type = tt
+      payload.task_value = d.taskValue
+      payload.task_target = t.task_target || 0
+      payload.task_unit = t.task_unit || ''
+      if (d.taskValue <= 0 && tt === 'counter') { window.cpToast('请输入完成数量'); return }
+    } else if (tt === 'step') {
+      payload.task_type = tt
+      payload.task_value = d.taskSteps.length
+      payload.task_target = (t.task_steps || []).length
+      payload.task_unit = '步'
+      payload.steps_done = d.taskSteps
+    } else {
+      payload.task_type = 'binary'
+    }
+    d.checking = true
+    this.rerender()
+    try {
+      const res = await window.api.post('/challenges/' + ch.id + '/checkin', payload)
+      const r = res.data || res
+      window.cpCelebrate('打卡成功 +' + (r.points_earned || 0) + ' 分')
+      d.lastFeedback = r.ai_feedback || d.lastFeedback
+      d.chest = r.chest_points || 0
+      d.declaration = r.declaration || ''
+      d.shields = r.shields || 0
+      if (d.declaration && t.date) {
+        try { localStorage.setItem('cp_decl_' + ch.id + '_' + t.date, d.declaration) } catch (e) {}
+      }
+      d.taskValue = 0
+      d.taskSteps = []
+      await this.load()
+      await window.cpLoadChallenges()
+    } catch (e) {
+      window.cpToast(window.cpErrMsg(e, '打卡失败，请重试'))
+    } finally {
+      d.checking = false
+      this.rerender()
+    }
+  }
+
   V.doCheckin = async function (checkinType) {
     const s = window.appState
     const ch = s.current

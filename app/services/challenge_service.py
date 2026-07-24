@@ -48,6 +48,8 @@ class ChallengeService:
         plan: list[dict[str, object]],
         source: str = "manual",
         squad_id: int | None = None,
+        task_type: str = "binary",
+        scene_template: str = "",
     ) -> Challenge:
         meta = CATEGORY_META.get(category, CATEGORY_META["other"])
         if start_date:
@@ -68,6 +70,8 @@ class ChallengeService:
             "ai_plan": json.dumps(plan, ensure_ascii=False),
             "color": meta["color"],
             "icon": meta["icon"],
+            "task_type": task_type,
+            "scene_template": scene_template,
             "share_token": secrets.token_hex(16),
         })
         await self._meta_repo.upsert(session, challenge.id, {
@@ -124,6 +128,8 @@ class ChallengeService:
             "stats": stats,
             "today_checked": today_checkin is not None,
             "source": meta.source if meta else "manual",
+            "task_type": challenge.task_type,
+            "scene_template": challenge.scene_template,
             "mercy": {
                 "mend_left_this_month": mercy["mend_left_this_month"],
                 "freeze_left_this_week": mercy["freeze_left_this_week"],
@@ -151,6 +157,8 @@ class ChallengeService:
         today_checkin = await self._checkin_repo.get_by_date(session, challenge_id, today)
         stats = await self.get_challenge_stats(session, challenge)
         progress = (stats["completed_days"] / challenge.duration_days * 100) if challenge.duration_days > 0 else 0
+        task_steps_raw = task.get("steps", task.get("task_steps", []))
+        task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
         return {
             "challenge_id": challenge_id,
             "day_number": day_number,
@@ -159,6 +167,10 @@ class ChallengeService:
             "task_title": str(task.get("title", "")),
             "task_description": str(task.get("description", "")),
             "task_tip": str(task.get("tip", "")),
+            "task_type": str(task.get("task_type", challenge.task_type)),
+            "task_target": float(task.get("target_value", task.get("target", 0))),
+            "task_unit": str(task.get("unit", "")),
+            "task_steps": task_steps,
             "checked_in": today_checkin is not None,
             "checkin_data": {
                 "mood": today_checkin.mood,

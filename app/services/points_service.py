@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import random
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,8 +11,10 @@ from app.services.streak_service import week_key_of
 
 CHECKIN_BASE_POINTS = 5
 MINI_CHECKIN_POINTS = 3
+MIN_FULL_POINTS = 2
 STREAK_BONUS_CAP = 7
 CHEST_PROBABILITY = 0.18
+CHEST_PROBABILITY_HIGH = 0.25
 CHEST_MIN = 5
 CHEST_MAX = 25
 SQUAD_BONUS_POINTS = 5
@@ -23,7 +26,8 @@ class PointsService:
         self._rng = rng or random.Random()
 
     async def award_checkin(
-        self, session: AsyncSession, user_id: str, challenge_id: int, streak_after: int, mini: bool = False
+        self, session: AsyncSession, user_id: str, challenge_id: int, streak_after: int,
+        mini: bool = False, completion_pct: float = 100.0,
     ) -> tuple[int, int]:
         if mini:
             await self._repo.add_entry(session, {
@@ -34,7 +38,8 @@ class PointsService:
                 "week_key": week_key_of(),
             })
             return MINI_CHECKIN_POINTS, 0
-        base = CHECKIN_BASE_POINTS + min(streak_after, STREAK_BONUS_CAP)
+        base = max(MIN_FULL_POINTS, math.floor(CHECKIN_BASE_POINTS * completion_pct / 100))
+        base += min(streak_after, STREAK_BONUS_CAP)
         await self._repo.add_entry(session, {
             "user_id": user_id,
             "delta": base,
@@ -43,15 +48,17 @@ class PointsService:
             "week_key": week_key_of(),
         })
         chest = 0
-        if self._rng.random() < CHEST_PROBABILITY:
-            chest = self._rng.randint(CHEST_MIN, CHEST_MAX)
-            await self._repo.add_entry(session, {
-                "user_id": user_id,
-                "delta": chest,
-                "reason": "chest",
-                "ref_id": str(challenge_id),
-                "week_key": week_key_of(),
-            })
+        if completion_pct >= 50:
+            prob = CHEST_PROBABILITY_HIGH if completion_pct >= 80 else CHEST_PROBABILITY
+            if self._rng.random() < prob:
+                chest = self._rng.randint(CHEST_MIN, CHEST_MAX)
+                await self._repo.add_entry(session, {
+                    "user_id": user_id,
+                    "delta": chest,
+                    "reason": "chest",
+                    "ref_id": str(challenge_id),
+                    "week_key": week_key_of(),
+                })
         return base, chest
 
     async def award_squad_bonus(

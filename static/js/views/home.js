@@ -5,7 +5,7 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null },
+    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [] },
     _ignite: null,
 
     render(el) {
@@ -48,7 +48,7 @@ window.cpViews.home = (function () {
       if (!ch) { this.loadedFor = null; return }
       if (this.loadedFor !== ch.id) {
         this.loadedFor = ch.id
-        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null }
+        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [] }
         this.rerender()
       }
       const safe = p => p.catch(() => null)
@@ -143,16 +143,16 @@ window.cpViews.home = (function () {
         if (ch.start_date && ch.start_date > window.cpTodayStr()) return '<div class="glass-card cp-task-card"><p class="cp-task-title">挑战尚未开始</p><p class="cp-task-desc">将于 ' + ch.start_date + ' 正式开始，先去准备一下吧。</p></div>'
         return ''
       }
-      html += '<div class="glass-card cp-task-card"><div class="cp-task-head"><span class="cp-task-day"><i class="fas fa-flag"></i>第 ' + (t.day_number || 1) + ' 天 · ' + (t.date || '') + '</span><span class="cp-task-pct">' + (t.progress_pct || 0) + '%</span></div><p class="cp-task-title">' + window.cpEsc(t.task_title || '完成今日打卡') + '</p>'
+      const tt = t.task_type || ch.task_type || 'binary'
+      const ttLabel = { counter: '计数', timer: '计时', step: '分步', choice: '选择', text: '记录', binary: '打卡' }[tt] || '打卡'
+      html += '<div class="glass-card cp-task-card"><div class="cp-task-head"><span class="cp-task-day"><i class="fas fa-flag"></i>第 ' + (t.day_number || 1) + ' 天 · ' + (t.date || '') + '</span><div class="cp-task-head-right"><span class="cp-task-type-badge">' + ttLabel + '</span><span class="cp-task-pct">' + (t.progress_pct || 0) + '%</span></div></div><p class="cp-task-title">' + window.cpEsc(t.task_title || '完成今日打卡') + '</p>'
       if (t.task_description) html += '<p class="cp-task-desc">' + window.cpEsc(t.task_description) + '</p>'
+      if (t.task_target && t.task_target > 0) html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> 今日目标 <b>' + t.task_target + '</b> ' + window.cpEsc(t.task_unit || '') + '</div>'
       if (t.task_tip) html += '<p class="cp-task-tip"><i class="fas fa-lightbulb"></i><span>' + window.cpEsc(t.task_tip) + '</span></p>'
+      if (t.task_steps && t.task_steps.length) html += '<div class="cp-task-steps-preview">' + t.task_steps.map(st => '<span class="cp-step-preview-tag">' + window.cpEsc(st) + '</span>').join('') + '</div>'
       html += '</div>'
       if (!t.checked_in) {
-        html += '<div class="cp-ignite-wrap">'
-        html += '<button class="cp-ignite-btn" ' + (d.checking ? 'disabled' : '') + ' onpointerdown="cpViews.home.igniteDown(event)" onpointerup="cpViews.home.igniteUp()" onpointerleave="cpViews.home.igniteUp()" onpointercancel="cpViews.home.igniteUp()" oncontextmenu="return false"><i class="fas fa-fire"></i><span>' + (d.checking ? '点燃中' : '长按点火') + '</span></button>'
-        html += '<span class="cp-ignite-hint">按住 1 秒点燃今日，松手取消</span>'
-        html += '<button class="cp-mini-link" ' + (d.checking ? 'disabled' : '') + ' onclick="cpViews.home.doMini()"><i class="fas fa-feather"></i> 今天太累？5分钟微打卡守住节奏</button>'
-        html += '</div>'
+        html += this._checkinArea(tt, t)
       } else {
         if (d.declaration) html += '<div class="cp-declare">🔥 ' + window.cpEsc(d.declaration) + '</div>'
         html += '<button class="cp-btn-checkin done"><i class="fas fa-circle-check"></i> 今日已完成</button>'
@@ -171,9 +171,70 @@ window.cpViews.home = (function () {
       return html
     },
 
+    _checkinArea(tt, t) {
+      const d = this.data
+      const dis = d.checking ? 'disabled' : ''
+      if (tt === 'counter') return this._counterUI(t, dis)
+      if (tt === 'timer') return this._timerUI(t, dis)
+      if (tt === 'step') return this._stepUI(t, dis)
+      return this._binaryUI(dis)
+    },
+
+    _counterUI(t, dis) {
+      const d = this.data
+      const target = t.task_target || 1
+      const unit = window.cpEsc(t.task_unit || '')
+      let h = '<div class="cp-checkin-box"><div class="cp-counter-row">'
+      h += '<button class="cp-counter-btn" ' + dis + ' onclick="cpViews.home.adjustCount(-5)">−5</button>'
+      h += '<div class="cp-counter-display"><span class="cp-counter-val">' + d.taskValue + '</span><span class="cp-counter-target">/ ' + target + ' ' + unit + '</span></div>'
+      h += '<button class="cp-counter-btn" ' + dis + ' onclick="cpViews.home.adjustCount(5)">+5</button></div>'
+      h += '<div class="cp-counter-quick">'
+      ;[0.25, 0.5, 0.75, 1].forEach(p => { const v = Math.round(target * p); h += '<button class="cp-quick-btn" ' + dis + ' onclick="cpViews.home.setCount(' + v + ')">' + v + '</button>' })
+      h += '</div>' + this._submitBtn(dis) + this._miniLink(dis) + '</div>'
+      return h
+    },
+
+    _timerUI(t, dis) {
+      const d = this.data
+      const target = t.task_target || 10
+      let h = '<div class="cp-checkin-box"><div class="cp-timer-display"><span class="cp-timer-val">' + this._fmtTime(d.taskValue) + '</span><span class="cp-timer-target">/ ' + target + ' ' + window.cpEsc(t.task_unit || '分钟') + '</span></div>'
+      h += '<div class="cp-timer-presets">'
+      ;[5, 10, 15, 20, 30].filter(p => p <= target * 1.5).forEach(p => { h += '<button class="cp-preset-btn" ' + dis + ' onclick="cpViews.home.setCount(' + p + ')">' + p + '分</button>' })
+      h += '</div>' + this._submitBtn(dis) + this._miniLink(dis) + '</div>'
+      return h
+    },
+
+    _stepUI(t, dis) {
+      const d = this.data
+      const steps = t.task_steps || []
+      let h = '<div class="cp-checkin-box"><div class="cp-step-list">'
+      steps.forEach(st => {
+        const done = d.taskSteps.includes(st)
+        h += '<div class="cp-step-item' + (done ? ' done' : '') + '" onclick="cpViews.home.toggleStep(\'' + encodeURIComponent(st) + '\')"><span class="cp-step-check">' + (done ? '✓' : '○') + '</span><span class="cp-step-text">' + window.cpEsc(st) + '</span></div>'
+      })
+      h += '</div><button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-check"></i> 提交打卡 (' + d.taskSteps.length + '/' + steps.length + ')</button>'
+      h += this._miniLink(dis) + '</div>'
+      return h
+    },
+
+    _binaryUI(dis) {
+      const d = this.data
+      return '<div class="cp-ignite-wrap"><button class="cp-ignite-btn" ' + dis + ' onpointerdown="cpViews.home.igniteDown(event)" onpointerup="cpViews.home.igniteUp()" onpointerleave="cpViews.home.igniteUp()" onpointercancel="cpViews.home.igniteUp()" oncontextmenu="return false"><i class="fas fa-fire"></i><span>' + (d.checking ? '点燃中' : '长按点火') + '</span></button><span class="cp-ignite-hint">按住 1 秒点燃今日，松手取消</span>' + this._miniLink(dis) + '</div>'
+    },
+
+    _submitBtn(dis) {
+      return '<button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-check"></i> 提交打卡</button>'
+    },
+
+    _miniLink(dis) {
+      return '<button class="cp-mini-link" ' + dis + ' onclick="cpViews.home.doMini()">今天太累？5分钟微打卡守住节奏</button>'
+    },
+
+    _fmtTime(min) { return Math.floor(min / 60) + ':' + String(min % 60).padStart(2, '0') },
+
     useTemplate(i) {
       const t = window.cpTemplates[i]
-      window.cpCreate.open({ rawInput: t.title + '，' + t.desc, days: t.days, category: t.category })
+      window.cpCreate.open({ rawInput: t.title + '，' + t.desc, days: t.days, category: t.category, scene: t.scene })
     },
 
     moodLabel(m) { return moodMap[m] || m },

@@ -37,7 +37,15 @@ async def do_checkin(
     service = CheckInService()
     try:
         result = await service.do_checkin(
-            session, challenge_id, user_id, request.mood, request.reflection, request.checkin_type
+            session, challenge_id, user_id,
+            checkin_type=request.checkin_type,
+            mood=request.mood,
+            reflection=request.reflection,
+            task_type=request.task_type,
+            task_value=request.task_value,
+            task_unit=request.task_unit,
+            task_target=request.task_target,
+            steps_done=request.steps_done,
         )
     except ValueError as e:
         raise _bad_request(e)
