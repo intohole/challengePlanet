@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from nexus import close_uc_sdk, init_uc_sdk
-from nexus.logging import get_logger
+from nexus.logging import get_logger, setup_logging
 from nexus.scheduler import get_scheduler
 
 from app.api.adaptive import router as adaptive_router
@@ -25,6 +25,7 @@ from app.db.database import init_db, run_migrations
 from app.infra.ironman_bootstrap import init_ironman, is_ironman_available
 from app.services.reminder_service import send_checkin_reminders
 
+setup_logging()
 logger = get_logger("challengePlanet.main")
 
 _STATIC_DIR = Path(__file__).parent.parent / "static"
@@ -95,11 +96,14 @@ app.include_router(share_router, prefix=API_PREFIX)
 
 @app.get("/health")
 async def health() -> dict[str, str]:
+    scheduler = get_scheduler()
+    jobs = scheduler.list_jobs()
     return {
         "status": "ok",
         "app": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "ironman": "available" if is_ironman_available() else "unavailable",
+        "scheduler": f"running ({len(jobs)} jobs)" if scheduler.running else "stopped",
     }
 
 
