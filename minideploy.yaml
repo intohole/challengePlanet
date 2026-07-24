@@ -1,5 +1,5 @@
 app_name: challengePlanet
-display_name: 挑战星球
+display_name: 跬步
 description: AI驱动的挑战打卡工具
 start_command: python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8610
 prepare_command: echo deps-ready
