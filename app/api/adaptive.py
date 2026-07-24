@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from nexus import get_current_user_id_required
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,12 +20,9 @@ from app.schemas.adaptive import (
 )
 from app.services.adaptive_service import AdaptiveService
 from app.services.diagnosis_service import DiagnosisService
+from app.api._common import bad_request
 
 router = APIRouter()
-
-
-def _bad_request(e: ValueError) -> HTTPException:
-    return HTTPException(status_code=400, detail=str(e))
 
 
 def _to_suggestion_response(s: object) -> AdaptiveSuggestionResponse:
@@ -53,7 +50,7 @@ async def get_pending_suggestion(
     try:
         suggestion = await service.get_pending(session, challenge_id, user_id)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     await session.commit()
     if suggestion is None:
         return AdaptivePendingResponse(suggestion=None)
@@ -72,7 +69,7 @@ async def respond_suggestion(
     try:
         result = await service.respond(session, suggestion_id, user_id, request.accept)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     await session.commit()
     task = result.get("task")
     return AdaptiveRespondResponse(
@@ -92,7 +89,7 @@ async def diagnose_break(
     try:
         report = await service.diagnose(session, challenge_id, user_id)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     await session.commit()
     return DiagnoseResponse(**report)
 
@@ -107,7 +104,7 @@ async def get_latest_diagnosis(
     try:
         report = await service.get_latest(session, challenge_id, user_id)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     if report is None:
         return DiagnosisLatestResponse(report=None)
     return DiagnosisLatestResponse(report=DiagnoseResponse(**report))
@@ -124,6 +121,6 @@ async def apply_diagnosis(
     try:
         result = await service.apply(session, challenge_id, user_id, request.action)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     await session.commit()
     return DiagnoseApplyResponse(**result)

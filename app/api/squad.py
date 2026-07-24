@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from nexus import get_current_user_id_required
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,12 +13,9 @@ from app.schemas.squad import (
     SquadResponse,
 )
 from app.services.squad_service import SquadService
+from app.api._common import bad_request
 
 router = APIRouter(prefix="/squads", tags=["squads"])
-
-
-def _bad_request(e: ValueError) -> HTTPException:
-    return HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("", response_model=SquadResponse)
@@ -50,7 +47,7 @@ async def join_squad(
     try:
         squad = await service.join(session, request.invite_code, user_id, request.nickname)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     await session.commit()
     members = await service.get_members(session, squad.id)
     return SquadResponse(
@@ -94,7 +91,7 @@ async def get_board(
     try:
         board = await service.get_board(session, squad_id, user_id)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     return SquadBoardResponse(**board)
 
 
@@ -109,7 +106,7 @@ async def nudge_member(
     try:
         await service.nudge(session, squad_id, user_id, request.to_user_id)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     await session.commit()
     return {"ok": True}
 
@@ -124,6 +121,6 @@ async def leave_squad(
     try:
         await service.leave(session, squad_id, user_id)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     await session.commit()
     return {"ok": True}

@@ -19,12 +19,9 @@ from app.schemas.checkin import (
 )
 from app.services.checkin_service import CheckInService
 from app.services.mercy_service import MercyService
+from app.api._common import bad_request
 
 router = APIRouter()
-
-
-def _bad_request(e: ValueError) -> HTTPException:
-    return HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/{challenge_id}/checkin", response_model=CheckInResultResponse)
@@ -48,7 +45,7 @@ async def do_checkin(
             steps_done=request.steps_done,
         )
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     await session.commit()
     return CheckInResultResponse(
         checkin=CheckInResponse.model_validate(result["checkin"]),
@@ -75,7 +72,7 @@ async def patch_today_checkin(
             session, challenge_id, user_id, request.mood, request.reflection
         )
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     await session.commit()
     return CheckInResponse.model_validate(checkin)
 
@@ -91,7 +88,7 @@ async def mend_checkin(
     try:
         result = await service.mend(session, challenge_id, user_id, request.date)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     await session.commit()
     return DateActionResponse(**result)
 
@@ -107,7 +104,7 @@ async def freeze_checkin(
     try:
         result = await service.freeze(session, challenge_id, user_id, request.date)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     await session.commit()
     return DateActionResponse(**result)
 
@@ -122,7 +119,7 @@ async def repair_streak(
     try:
         result = await service.repair(session, challenge_id, user_id)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     await session.commit()
     return RepairResponse(**result)
 
@@ -137,7 +134,7 @@ async def get_mercy_status(
     try:
         result = await service.get_mercy_status(session, challenge_id, user_id)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     await session.commit()
     return MercyStatusResponse(**result)
 
@@ -152,7 +149,7 @@ async def get_checkins(
     try:
         checkins = await service.get_checkins(session, challenge_id, user_id)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     return [CheckInResponse.model_validate(c) for c in checkins]
 
 
@@ -166,7 +163,7 @@ async def get_insights(
     try:
         insights = await service.get_insights(session, challenge_id, user_id)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     return [InsightResponse.model_validate(i) for i in insights]
 
 
@@ -180,5 +177,5 @@ async def get_weekly_report(
     try:
         result = await service.get_weekly_report(session, challenge_id, user_id)
     except ValueError as e:
-        raise _bad_request(e)
+        raise bad_request(e)
     return WeeklyReportResponse(**result)

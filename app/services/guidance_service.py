@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+import secrets
+from datetime import datetime, timedelta
+from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.challenge import Challenge
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
+from app.repositories.points_repository import ChallengeMetaRepository
+from app.services.challenge_service import ChallengeService
 from app.services.mercy_service import load_valid_dates
 from app.services.streak_service import calc_streak, today_str
 
@@ -108,7 +112,7 @@ class GuidanceService:
         last_milestone_tip = self._get_last_milestone(completed)
         avg_streak = int(benchmark["avg_streak"])
         avg_completion = int(benchmark["avg_completion"])
-        completion_rate = int((completed / challenge.duration_days * 100) if challenge.duration_days > 0 else 0)
+        completion_rate = (completed * 100) // challenge.duration_days if challenge.duration_days > 0 else 0
         percentile = self._calc_percentile(completed)
         return {
             "phase": phase_key,
@@ -194,11 +198,9 @@ class GuidanceService:
         config = await self.get_shared_config(session, share_token)
         if config is None:
             return None
-        import secrets
-        from datetime import timedelta as td
         start_dt = datetime.now()
         start_str = start_dt.strftime("%Y-%m-%d")
-        end_str = (start_dt + td(days=int(config["duration_days"]) - 1)).strftime("%Y-%m-%d")
+        end_str = (start_dt + timedelta(days=int(config["duration_days"]) - 1)).strftime("%Y-%m-%d")
         challenge = await self._repo.create(session, {
             "user_id": user_id,
             "title": str(config["title"]),
@@ -215,7 +217,6 @@ class GuidanceService:
             "scene_template": str(config["scene_template"]),
             "share_token": secrets.token_hex(16),
         })
-        from app.repositories.points_repository import ChallengeMetaRepository
         meta_repo = ChallengeMetaRepository()
         await meta_repo.upsert(session, challenge.id, {
             "source": "shared",
@@ -231,10 +232,8 @@ class GuidanceService:
         if challenge is None or challenge.user_id != user_id:
             return None
         if not challenge.share_token:
-            import secrets
             token = secrets.token_hex(16)
             await self._repo.update(session, challenge_id, {"share_token": token})
             challenge.share_token = token
-        from app.services.challenge_service import ChallengeService
         cs = ChallengeService()
         return await cs._build_share_data(session, challenge)

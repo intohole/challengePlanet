@@ -29,6 +29,12 @@ CATEGORY_META: dict[str, dict[str, str]] = {
 SOURCE_LIFECOMPASS = "lifecompass"
 
 
+def _calc_progress(completed_days: int, duration_days: int) -> float:
+    if duration_days <= 0:
+        return 0.0
+    return round(completed_days * 100.0 / duration_days, 1)
+
+
 class ChallengeService:
     def __init__(self) -> None:
         self._repo = ChallengeRepository()
@@ -156,7 +162,7 @@ class ChallengeService:
         today = today_str()
         today_checkin = await self._checkin_repo.get_by_date(session, challenge_id, today)
         stats = await self.get_challenge_stats(session, challenge)
-        progress = (stats["completed_days"] / challenge.duration_days * 100) if challenge.duration_days > 0 else 0
+        progress = _calc_progress(stats["completed_days"], challenge.duration_days)
         task_steps_raw = task.get("steps", task.get("task_steps", []))
         task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
         return {
@@ -224,7 +230,7 @@ class ChallengeService:
         stats = await self.get_challenge_stats(session, challenge)
         start_date = datetime.strptime(challenge.start_date, "%Y-%m-%d")
         current_day = min((datetime.now() - start_date).days + 1, challenge.duration_days)
-        progress = (stats["completed_days"] / challenge.duration_days * 100) if challenge.duration_days > 0 else 0
+        progress = _calc_progress(stats["completed_days"], challenge.duration_days)
         share_quote = await self._get_or_create_quote(session, challenge, stats["streak"])
         share_text = (
             f"🎯 {challenge.title}\n"
