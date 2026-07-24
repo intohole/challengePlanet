@@ -1,9 +1,9 @@
 app_name: challengePlanet
 display_name: 挑战星球
 description: AI驱动的挑战打卡工具
-start_command: python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8600
-prepare_command: pip3 install -r requirements.txt
-port: 8600
+start_command: python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8610
+prepare_command: echo deps-ready
+port: 8610
 has_frontend: true
 is_public: true
 group: 工具提效,生活
@@ -14,6 +14,7 @@ env:
   LION_BASE_URL: http://localhost:9527
   BEEMEMORY_BASE_URL: http://localhost:8700
   UC_BASE_URL: http://localhost:8901
-  UC_APP_KEY: ""
-  UC_APP_SECRET: ""
-  UC_JWT_SECRET: ""
+  UC_APP_KEY: app_cp_2bb254bd4312
+  UC_APP_SECRET: secret_e9ebcf80de81456f9eb39dbe
+  UC_JWT_SECRET: vikZD8ErfFyTopJCVKwklq2OtM5-6-8Ng3bl_y5QDG8
+  UC_ENABLED: "true"
