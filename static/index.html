@@ -6,18 +6,19 @@
 <title>挑战星球 · AI打卡教练</title>
 <script>window.PATH_PREFIX = window.PATH_PREFIX || ''</script>
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="/static/style.css?v=6">
-<link rel="stylesheet" href="/static/style-components.css?v=6">
+<link rel="stylesheet" href="/static/style.css?v=8">
+<link rel="stylesheet" href="/static/style-components.css?v=8">
 <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.5.13/vue.global.prod.min.js"></script>
 <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="/static/nexus-ui/js/nexus-api-error.js?v=6"></script>
-<script src="/static/nexus-ui/js/nexus-api.js?v=6"></script>
+<script src="/static/nexus-ui/js/nexus-api-error.js?v=8"></script>
+<script src="/static/nexus-ui/js/nexus-api.js?v=8"></script>
 </head>
 <body>
+<div class="cp-starfield" id="starfield"></div>
 <div id="app" v-cloak>
 
 <header class="cp-header">
-  <div class="cp-logo"><div class="cp-logo-icon"><i class="fas fa-globe-asia"></i></div><span class="cp-logo-text">挑战星球</span></div>
+  <div class="cp-logo"><div class="cp-logo-icon"><i class="fas fa-globe-asia"></i></div><div class="cp-logo-wrap"><span class="cp-logo-text">挑战星球</span><span class="cp-logo-tag">AI 打卡教练</span></div></div>
   <div class="cp-header-right"><span class="cp-user-name">{{ state.nickname }}</span></div>
 </header>
 
@@ -190,13 +191,29 @@
 </div></transition>
 
 </div>
-<script src="/static/js/galaxy.js?v=6"></script>
-<script src="/static/js/share-poster.js?v=6"></script>
-<script src="/static/js/create.js?v=6"></script>
-<script src="/static/js/views/home.js?v=6"></script>
-<script src="/static/js/views/squad.js?v=6"></script>
-<script src="/static/js/views/rank.js?v=6"></script>
-<script src="/static/js/views/me.js?v=6"></script>
-<script src="/static/js/app.js?v=6"></script>
+<script>
+;(function () {
+  const sf = document.getElementById('starfield')
+  if (!sf) return
+  let html = ''
+  for (let i = 0; i < 30; i++) {
+    const x = Math.random() * 100, y = Math.random() * 100, d = 2 + Math.random() * 3, delay = Math.random() * 3
+    html += '<div class="cp-star" style="left:' + x + '%;top:' + y + '%;animation-delay:' + delay + 's;animation-duration:' + d + 's"></div>'
+  }
+  html += '<div class="cp-shooting-star" style="top:15%;left:5%;animation-delay:3s"></div>'
+  html += '<div class="cp-shooting-star" style="top:50%;left:20%;animation-delay:8s"></div>'
+  sf.innerHTML = html
+})()
+</script>
+<script src="/static/js/galaxy.js?v=8"></script>
+<script src="/static/js/share-poster.js?v=8"></script>
+<script src="/static/js/create.js?v=8"></script>
+<script src="/static/js/views/home.js?v=8"></script>
+<script src="/static/js/views/home-calendar.js?v=8"></script>
+<script src="/static/js/views/home-actions.js?v=8"></script>
+<script src="/static/js/views/squad.js?v=8"></script>
+<script src="/static/js/views/rank.js?v=8"></script>
+<script src="/static/js/views/me.js?v=8"></script>
+<script src="/static/js/app.js?v=8"></script>
 </body>
 </html>

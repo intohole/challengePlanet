@@ -5,65 +5,148 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>挑战星球 · AI打卡教练</title>
 <script>window.PATH_PREFIX = window.PATH_PREFIX || ''</script>
-<link rel="stylesheet" href="/static/style.css?v=5">
+<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="/static/style.css?v=8">
+<link rel="stylesheet" href="/static/style-components.css?v=8">
 <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.5.13/vue.global.prod.min.js"></script>
-<script src="/static/nexus-ui/js/nexus-api-error.js?v=5"></script>
-<script src="/static/nexus-ui/js/nexus-api.js?v=5"></script>
+<script src="/static/nexus-ui/js/nexus-api-error.js?v=8"></script>
+<script src="/static/nexus-ui/js/nexus-api.js?v=8"></script>
 <style>
-.split-bg { background: radial-gradient(circle at 20% 30%, rgba(99,91,255,.18), transparent 55%), radial-gradient(circle at 80% 80%, rgba(52,211,153,.1), transparent 50%); }
-.login-input { background: rgba(11,13,26,.45); border: 1px solid var(--card-border); transition: all .2s; color: var(--text-primary); }
-.login-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); outline: none; }
-.login-btn { padding: 13px; border: none; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; font-weight: 600; cursor: pointer; font-size: 15px; transition: all .2s; box-shadow: 0 4px 20px var(--primary-glow); }
-.login-btn:hover:not(:disabled) { transform: translateY(-1px); }
-.login-btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
-.feature-card { padding: 14px; display: flex; align-items: center; gap: 12px; }
-.feature-card .ft-title { font-weight: 600; font-size: 14px; }
-.feature-card .ft-desc { font-size: 12px; color: var(--text-secondary); }
-.continue-btn { width: 100%; margin-top: 12px; padding: 10px; border-radius: var(--radius-sm); font-size: 12px; color: var(--text-secondary); background: rgba(148,163,255,.05); border: 1px solid var(--card-border); cursor: pointer; }
-.continue-btn:hover { background: var(--card-hover); }
-@media (max-width: 768px) { .login-right { display: none; } }
+.cp-starfield { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.cp-star { position: absolute; width: 2px; height: 2px; background: #fff; border-radius: 50%; opacity: 0; animation: star-twinkle 3s ease-in-out infinite; }
+@keyframes star-twinkle { 0%, 100% { opacity: 0; transform: scale(.5); } 50% { opacity: .8; transform: scale(1.2); } }
+.cp-shooting-star { position: absolute; width: 80px; height: 1px; background: linear-gradient(90deg, transparent, rgba(129,140,248,.8), transparent); opacity: 0; animation: shooting 8s ease-in infinite; }
+@keyframes shooting { 0% { transform: translateX(-100px) translateY(0) rotate(-15deg); opacity: 0; } 5% { opacity: 1; } 15% { transform: translateX(400px) translateY(-80px) rotate(-15deg); opacity: 0; } 100% { opacity: 0; } }
+
+.cp-login-wrap { position: relative; z-index: 1; display: flex; min-height: 100vh; }
+.cp-login-left { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px; }
+.cp-login-card { padding: 36px 32px; max-width: 380px; width: 100%; border-radius: var(--radius-lg); animation: card-in .6s ease; }
+@keyframes card-in { from { opacity: 0; transform: translateY(20px) scale(.96); } to { opacity: 1; transform: none; } }
+
+.cp-login-logo { text-align: center; margin-bottom: 28px; }
+.cp-login-logo-icon { width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-size: 28px; color: #fff; box-shadow: 0 0 36px var(--primary-glow); position: relative; animation: logo-pulse 3s ease-in-out infinite; }
+@keyframes logo-pulse { 0%, 100% { box-shadow: 0 0 28px var(--primary-glow); } 50% { box-shadow: 0 0 48px var(--primary-glow), 0 0 80px rgba(99,91,255,.15); } }
+.cp-login-logo-icon::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 1.5px solid rgba(99,91,255,.2); border-top-color: var(--primary-light); animation: orbit 4s linear infinite; }
+.cp-login-logo h1 { font-size: 24px; font-weight: 800; background: linear-gradient(135deg, var(--text-primary), var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.cp-login-logo p { font-size: 12px; margin-top: 4px; color: var(--text-muted); letter-spacing: .5px; }
+
+.cp-login-field { display: flex; flex-direction: column; gap: 16px; }
+.cp-login-input-wrap { position: relative; }
+.cp-login-input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; pointer-events: none; transition: color .2s; }
+.cp-login-input { background: rgba(11,13,26,.45); border: 1px solid var(--card-border); transition: all .2s; color: var(--text-primary); width: 100%; padding: 12px 16px 12px 42px; border-radius: var(--radius-sm); font-size: 14px; }
+.cp-login-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); outline: none; }
+.cp-login-input:focus + .cp-login-input-icon { color: var(--primary-light); }
+.cp-login-label { font-size: 12px; display: block; margin-bottom: 6px; color: var(--text-secondary); font-weight: 500; }
+
+.cp-login-btn { padding: 14px; border: none; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; font-weight: 700; cursor: pointer; font-size: 15px; transition: all .25s; box-shadow: 0 4px 24px var(--primary-glow); position: relative; overflow: hidden; }
+.cp-login-btn::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent); transform: translateX(-100%); transition: transform .6s; }
+.cp-login-btn:hover:not(:disabled)::before { transform: translateX(100%); }
+.cp-login-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 32px var(--primary-glow); }
+.cp-login-btn:active:not(:disabled) { transform: scale(.98); }
+.cp-login-btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+
+.cp-continue-btn { width: 100%; margin-top: 14px; padding: 11px; border-radius: var(--radius-sm); font-size: 13px; color: var(--text-secondary); background: rgba(148,163,255,.05); border: 1px solid var(--card-border); cursor: pointer; transition: all .2s; }
+.cp-continue-btn:hover { background: var(--card-hover); color: var(--primary-light); border-color: rgba(99,91,255,.3); }
+
+.cp-login-right { flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px; position: relative; overflow: hidden; background: radial-gradient(circle at 20% 30%, rgba(99,91,255,.18), transparent 55%), radial-gradient(circle at 80% 80%, rgba(52,211,153,.1), transparent 50%); }
+.cp-login-right-inner { max-width: 440px; position: relative; z-index: 1; animation: content-in .8s ease .2s both; }
+@keyframes content-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+.cp-login-right h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; line-height: 1.4; background: linear-gradient(135deg, var(--text-primary), var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.cp-login-right > .cp-login-right-inner > p { font-size: 14px; color: var(--text-secondary); }
+
+.cp-features { display: flex; flex-direction: column; gap: 12px; margin-top: 32px; }
+.cp-feature { padding: 14px 16px; display: flex; align-items: center; gap: 14px; border-radius: var(--radius); background: rgba(148,163,255,.04); border: 1px solid var(--card-border); transition: all .3s; cursor: default; }
+.cp-feature:hover { background: var(--card-hover); border-color: rgba(99,91,255,.3); transform: translateX(4px); }
+.cp-feature-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.cp-feature-icon.purple { background: rgba(99,91,255,.15); color: var(--primary-light); }
+.cp-feature-icon.green { background: rgba(52,211,153,.15); color: var(--emerald); }
+.cp-feature-icon.amber { background: rgba(251,191,36,.15); color: var(--amber); }
+.cp-feature-icon.pink { background: rgba(192,132,252,.15); color: #c084fc; }
+.cp-feature-text { flex: 1; }
+.cp-feature-title { font-weight: 600; font-size: 14px; }
+.cp-feature-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.5; }
+
+.cp-orbit-deco { position: absolute; top: 50%; right: -120px; transform: translateY(-50%); width: 400px; height: 400px; pointer-events: none; opacity: .3; }
+.cp-orbit-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(99,91,255,.15); }
+.cp-orbit-ring:nth-child(2) { inset: 40px; border-color: rgba(52,211,153,.12); }
+.cp-orbit-ring:nth-child(3) { inset: 80px; border-color: rgba(251,191,36,.1); }
+.cp-orbit-planet { position: absolute; width: 12px; height: 12px; border-radius: 50%; top: -6px; left: 50%; margin-left: -6px; }
+.cp-orbit-ring:nth-child(1) .cp-orbit-planet { background: var(--primary-light); box-shadow: 0 0 12px var(--primary-glow); animation: orbit-spin 12s linear infinite; }
+.cp-orbit-ring:nth-child(2) .cp-orbit-planet { background: var(--emerald); box-shadow: 0 0 10px var(--emerald-glow); animation: orbit-spin 8s linear infinite reverse; }
+.cp-orbit-ring:nth-child(3) .cp-orbit-planet { background: var(--amber); box-shadow: 0 0 10px rgba(251,191,36,.5); animation: orbit-spin 6s linear infinite; }
+@keyframes orbit-spin { from { transform: rotate(0deg) translateY(-200px) rotate(0deg); } to { transform: rotate(360deg) translateY(-200px) rotate(-360deg); } }
+
+@media (max-width: 768px) { .cp-login-right { display: none; } .cp-login-card { box-shadow: none; } }
 </style>
 </head>
-<body style="background:var(--bg-grad);color:var(--text-primary);min-height:100vh;">
-<div id="app" v-cloak style="display:flex;min-height:100vh;">
-  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:32px;">
-    <div class="glass" style="padding:32px;max-width:380px;width:100%;border-radius:var(--radius-lg);">
-      <div style="text-align:center;margin-bottom:28px;">
-        <div style="font-size:48px;margin-bottom:8px;">🌍</div>
-        <h1 style="font-size:24px;font-weight:700;">挑战星球</h1>
-        <p style="font-size:13px;margin-top:4px;color:var(--text-secondary);">AI为你规划每一天的坚持</p>
+<body>
+<div class="cp-starfield" id="starfield"></div>
+<div id="app" v-cloak class="cp-login-wrap">
+  <div class="cp-login-left">
+    <div class="glass cp-login-card">
+      <div class="cp-login-logo">
+        <div class="cp-login-logo-icon"><i class="fas fa-globe-asia"></i></div>
+        <h1>挑战星球</h1>
+        <p>AI 打卡教练 · 陪你每一天</p>
       </div>
-      <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="cp-login-field">
         <div>
-          <label style="font-size:12px;display:block;margin-bottom:6px;color:var(--text-secondary);">用户名</label>
-          <input v-model="form.username" type="text" class="login-input" style="width:100%;padding:12px 16px;border-radius:var(--radius-sm);font-size:14px;" placeholder="请输入用户名" @keyup.enter="doLogin">
+          <label class="cp-login-label">用户名</label>
+          <div class="cp-login-input-wrap">
+            <input v-model="form.username" type="text" class="cp-login-input" placeholder="请输入用户名" @keyup.enter="doLogin">
+            <i class="fas fa-user cp-login-input-icon"></i>
+          </div>
         </div>
         <div>
-          <label style="font-size:12px;display:block;margin-bottom:6px;color:var(--text-secondary);">密码</label>
-          <input v-model="form.password" type="password" class="login-input" style="width:100%;padding:12px 16px;border-radius:var(--radius-sm);font-size:14px;" placeholder="请输入密码" @keyup.enter="doLogin">
+          <label class="cp-login-label">密码</label>
+          <div class="cp-login-input-wrap">
+            <input v-model="form.password" type="password" class="cp-login-input" placeholder="请输入密码" @keyup.enter="doLogin">
+            <i class="fas fa-lock cp-login-input-icon"></i>
+          </div>
         </div>
-        <p v-if="loginError" style="font-size:12px;color:var(--red);line-height:1.5;">{{ loginError }}</p>
-        <button class="login-btn" @click="doLogin" :disabled="loginLoading||!form.username.trim()||!form.password">
-          {{ loginLoading ? '登录中...' : '登录' }}
+        <p v-if="loginError" style="font-size:12px;color:var(--red);line-height:1.5;display:flex;align-items:center;gap:6px;"><i class="fas fa-circle-exclamation"></i>{{ loginError }}</p>
+        <button class="cp-login-btn" @click="doLogin" :disabled="loginLoading||!form.username.trim()||!form.password">
+          <span v-if="loginLoading" style="display:inline-flex;align-items:center;gap:8px;"><span class="cp-gen-spinner"></span>登录中...</span>
+          <span v-else>登录</span>
         </button>
       </div>
-      <button v-if="hasSession" @click="continueSession" class="continue-btn">继续上次挑战 →</button>
+      <button v-if="hasSession" @click="continueSession" class="cp-continue-btn">继续上次挑战 →</button>
     </div>
   </div>
-  <div class="login-right split-bg" style="flex:1;display:flex;align-items:center;justify-content:center;padding:48px;">
-    <div style="max-width:420px;">
-      <h2 style="font-size:28px;font-weight:700;margin-bottom:8px;line-height:1.4;">说一个目标，<br>AI帮你拆解每一天</h2>
-      <p style="font-size:14px;color:var(--text-secondary);">组队互相监督，让坚持看得见</p>
-      <div style="display:flex;flex-direction:column;gap:14px;margin-top:32px;">
-        <div class="glass feature-card"><span style="font-size:24px;">🌍</span><div><div class="ft-title">星系进度</div><div class="ft-desc">每个挑战都是一颗行星，点亮它的每一步轨迹</div></div></div>
-        <div class="glass feature-card"><span style="font-size:24px;">🤖</span><div><div class="ft-title">AI教练</div><div class="ft-desc">自动生成每日计划，打卡后还有暖心反馈</div></div></div>
-        <div class="glass feature-card"><span style="font-size:24px;">👥</span><div><div class="ft-title">小队互相监督</div><div class="ft-desc">邀请好友组队，全员打卡人人加分</div></div></div>
-        <div class="glass feature-card"><span style="font-size:24px;">🎁</span><div><div class="ft-title">积分宝箱</div><div class="ft-desc">连续打卡积分递增，随机掉落惊喜宝箱</div></div></div>
+  <div class="cp-login-right">
+    <div class="cp-orbit-deco">
+      <div class="cp-orbit-ring"><div class="cp-orbit-planet"></div></div>
+      <div class="cp-orbit-ring"><div class="cp-orbit-planet"></div></div>
+      <div class="cp-orbit-ring"><div class="cp-orbit-planet"></div></div>
+    </div>
+    <div class="cp-login-right-inner">
+      <h2>说一个目标<br>AI帮你拆解每一天</h2>
+      <p>组队互相监督，让坚持看得见</p>
+      <div class="cp-features">
+        <div class="cp-feature"><div class="cp-feature-icon purple"><i class="fas fa-globe"></i></div><div class="cp-feature-text"><div class="cp-feature-title">星系进度</div><div class="cp-feature-desc">每个挑战都是一颗行星，点亮它的每一步轨迹</div></div></div>
+        <div class="cp-feature"><div class="cp-feature-icon green"><i class="fas fa-robot"></i></div><div class="cp-feature-text"><div class="cp-feature-title">AI教练</div><div class="cp-feature-desc">自动生成每日计划，打卡后还有暖心反馈</div></div></div>
+        <div class="cp-feature"><div class="cp-feature-icon amber"><i class="fas fa-users"></i></div><div class="cp-feature-text"><div class="cp-feature-title">小队互相监督</div><div class="cp-feature-desc">邀请好友组队，全员打卡人人加分</div></div></div>
+        <div class="cp-feature"><div class="cp-feature-icon pink"><i class="fas fa-gift"></i></div><div class="cp-feature-text"><div class="cp-feature-title">积分宝箱</div><div class="cp-feature-desc">连续打卡积分递增，随机掉落惊喜宝箱</div></div></div>
       </div>
     </div>
   </div>
 </div>
 <script>
+;(function () {
+  const stars = []
+  for (let i = 0; i < 40; i++) {
+    stars.push({ x: Math.random() * 100, y: Math.random() * 100, d: Math.random() * 3, delay: Math.random() * 3 })
+  }
+  const sf = document.getElementById('starfield')
+  if (sf) {
+    let html = ''
+    stars.forEach(s => { html += '<div class="cp-star" style="left:' + s.x + '%;top:' + s.y + '%;animation-delay:' + s.delay + 's;animation-duration:' + (2 + s.d) + 's"></div>' })
+    html += '<div class="cp-shooting-star" style="top:20%;left:10%;animation-delay:2s"></div>'
+    html += '<div class="cp-shooting-star" style="top:60%;left:30%;animation-delay:6s"></div>'
+    sf.innerHTML = html
+  }
+})()
+
 const { createApp, ref, onMounted } = Vue
 window.api = new NexusApi({ baseUrl: (window.PATH_PREFIX || '') + '/api/v1', tokenKey: 'uc_access_token' })
 createApp({
@@ -89,9 +172,7 @@ createApp({
         window.location.href = (window.PATH_PREFIX || '') + '/'
       } catch (e) {
         loginError.value = (window.mapHttpError && e.name === 'NexusApiError') ? window.mapHttpError(e) : (e.message || '登录失败，请检查用户名和密码')
-      } finally {
-        loginLoading.value = false
-      }
+      } finally { loginLoading.value = false }
     }
     function continueSession() { window.location.href = (window.PATH_PREFIX || '') + '/' }
     return { form, loginLoading, loginError, hasSession, doLogin, continueSession }

@@ -141,7 +141,10 @@ async def get_checkins(
     session: AsyncSession = Depends(get_db),
 ) -> list[CheckInResponse]:
     service = CheckInService()
-    checkins = await service.get_checkins(session, challenge_id)
+    try:
+        checkins = await service.get_checkins(session, challenge_id, user_id)
+    except ValueError as e:
+        raise _bad_request(e)
     return [CheckInResponse.model_validate(c) for c in checkins]
 
 
@@ -152,7 +155,10 @@ async def get_insights(
     session: AsyncSession = Depends(get_db),
 ) -> list[InsightResponse]:
     service = CheckInService()
-    insights = await service.get_insights(session, challenge_id)
+    try:
+        insights = await service.get_insights(session, challenge_id, user_id)
+    except ValueError as e:
+        raise _bad_request(e)
     return [InsightResponse.model_validate(i) for i in insights]
 
 
@@ -163,5 +169,8 @@ async def get_weekly_report(
     session: AsyncSession = Depends(get_db),
 ) -> WeeklyReportResponse:
     service = CheckInService()
-    result = await service.get_weekly_report(session, challenge_id)
+    try:
+        result = await service.get_weekly_report(session, challenge_id, user_id)
+    except ValueError as e:
+        raise _bad_request(e)
     return WeeklyReportResponse(**result)

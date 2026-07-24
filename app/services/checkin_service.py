@@ -197,15 +197,28 @@ class CheckInService:
         reflection_text = reflection or "无"
         await add_memory(user_id, f"挑战「{title}」第{day_number}天打卡：心情{mood_text}，心得{reflection_text}")
 
-    async def get_checkins(self, session: AsyncSession, challenge_id: int) -> list[CheckIn]:
+    async def get_checkins(
+        self, session: AsyncSession, challenge_id: int, user_id: str
+    ) -> list[CheckIn]:
+        challenge = await self._challenge_repo.get_by_id(session, challenge_id)
+        if challenge is None or challenge.user_id != user_id:
+            raise ValueError("挑战不存在")
         return await self._repo.get_by_challenge(session, challenge_id)
 
-    async def get_insights(self, session: AsyncSession, challenge_id: int) -> list:
+    async def get_insights(
+        self, session: AsyncSession, challenge_id: int, user_id: str
+    ) -> list:
+        challenge = await self._challenge_repo.get_by_id(session, challenge_id)
+        if challenge is None or challenge.user_id != user_id:
+            raise ValueError("挑战不存在")
         return await self._insight_repo.get_by_challenge(session, challenge_id)
 
     async def get_weekly_report(
-        self, session: AsyncSession, challenge_id: int
+        self, session: AsyncSession, challenge_id: int, user_id: str
     ) -> dict[str, object]:
+        challenge = await self._challenge_repo.get_by_id(session, challenge_id)
+        if challenge is None or challenge.user_id != user_id:
+            raise ValueError("挑战不存在")
         insight = await self._insight_repo.get_latest_weekly(session, challenge_id)
         checkins = await self._repo.get_by_challenge(session, challenge_id)
         week_dates = set(week_dates_of())

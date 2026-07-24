@@ -13,13 +13,15 @@ window.cpViews.home = (function () {
       const s = window.appState
       const h = new Date().getHours()
       const greet = h < 6 ? '夜深了' : h < 12 ? '早上好' : h < 14 ? '中午好' : h < 18 ? '下午好' : '晚上好'
-      let html = '<div class="cp-greet"><div><h1>' + greet + '，' + window.cpEsc(s.nickname) + '</h1><p>' + window.cpTodayStr() + '</p></div>'
+      let html = '<div class="cp-brand-banner"><span class="cp-brand-icon">🌍</span><div class="cp-brand-text"><div class="cp-brand-name">挑战星球</div><div class="cp-brand-slogan">AI 打卡教练 · 陪你每一天</div></div>'
       if (s.booted && s.challenges.length) {
         html += s.pendingCount > 0
-          ? '<span class="cp-pending-badge"><i class="fas fa-bolt"></i>今日待打卡 ' + s.pendingCount + ' 项</span>'
-          : '<span class="cp-pending-badge zero"><i class="fas fa-check"></i>今日已全部完成</span>'
+          ? '<span class="cp-pending-badge"><i class="fas fa-bolt"></i>待打卡 ' + s.pendingCount + '</span>'
+          : '<span class="cp-pending-badge zero"><i class="fas fa-check"></i>已全完成</span>'
       }
-      html += '</div><div class="cp-view">'
+      html += '</div>'
+      html += '<div class="cp-greet"><div><h1>' + greet + '，' + window.cpEsc(s.nickname) + '</h1><p>' + window.cpTodayStr() + '</p></div></div>'
+      html += '<div class="cp-view">'
       if (!s.booted) {
         html += this._skeleton()
       } else if (!s.challenges.length) {
@@ -104,7 +106,10 @@ window.cpViews.home = (function () {
         })
         html += '</div>'
       }
-      html += '<div class="glass-card cp-hero"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(ch.title) + '</div><div class="cp-hero-date">' + (ch.start_date || '?') + ' → ' + (ch.end_date || '?') + '</div><div class="cp-galaxy-wrap"><div id="galaxy-box"></div></div></div>'
+      html += '<div class="glass-card cp-hero"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(ch.title) + '</div><div class="cp-hero-date">' + (ch.start_date || '?') + ' → ' + (ch.end_date || '?') + '</div>'
+      const pct = ch.total_days ? Math.round((ch.completed_days || 0) / ch.total_days * 100) : 0
+      html += '<div class="cp-hero-progress"><div class="cp-hero-progress-bar"><div class="cp-hero-progress-fill" style="width:' + pct + '%"></div></div><span class="cp-hero-progress-text">' + pct + '%</span></div>'
+      html += '<div class="cp-galaxy-wrap"><div id="galaxy-box"></div></div></div>'
       if (d.loading && !d.today) return html + this._skeleton()
       const shieldCount = (d.mercy && d.mercy.shields) || d.shields || 0
       if (shieldCount > 0) html += '<div style="text-align:center"><span class="cp-shield-tag">🛡️ 连续护盾 ×' + shieldCount + ' · 断签自动保护</span></div>'
@@ -121,10 +126,10 @@ window.cpViews.home = (function () {
         html += '<div class="glass-card cp-weekly-box"><div class="cp-section-title"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> 本周洞察</div><div class="cp-weekly-text">' + window.cpEsc(d.weekly.content) + '</div><div class="cp-weekly-meta">本周进度 ' + (d.weekly.week_checkins || 0) + '/' + (d.weekly.week_days || 7) + ' 天</div></div>'
       }
       html += '<div class="glass-card cp-stats-row">'
-      html += '<div class="cp-stat"><div class="cp-stat-num" style="color:var(--emerald)">' + (ch.streak || 0) + '</div><div class="cp-stat-label">连续打卡</div></div>'
-      html += '<div class="cp-stat"><div class="cp-stat-num" style="color:var(--primary-light)">' + (ch.completed_days || 0) + '</div><div class="cp-stat-label">累计打卡</div></div>'
-      html += '<div class="cp-stat"><div class="cp-stat-num" style="color:var(--amber)">' + (ch.total_days || 0) + '</div><div class="cp-stat-label">总天数</div></div>'
-      html += '<div class="cp-stat"><div class="cp-stat-num" style="color:var(--primary)">' + ((d.points && d.points.total) || 0) + '</div><div class="cp-stat-label">总积分</div></div></div>'
+      html += '<div class="cp-stat"><div class="cp-stat-icon">🔥</div><div class="cp-stat-num" style="color:var(--emerald)">' + (ch.streak || 0) + '</div><div class="cp-stat-label">连续打卡</div></div>'
+      html += '<div class="cp-stat"><div class="cp-stat-icon">✅</div><div class="cp-stat-num" style="color:var(--primary-light)">' + (ch.completed_days || 0) + '</div><div class="cp-stat-label">累计打卡</div></div>'
+      html += '<div class="cp-stat"><div class="cp-stat-icon">📅</div><div class="cp-stat-num" style="color:var(--amber)">' + (ch.total_days || 0) + '</div><div class="cp-stat-label">总天数</div></div>'
+      html += '<div class="cp-stat"><div class="cp-stat-icon">⭐</div><div class="cp-stat-num" style="color:var(--primary)">' + ((d.points && d.points.total) || 0) + '</div><div class="cp-stat-label">总积分</div></div></div>'
       return html
     },
 
@@ -138,7 +143,7 @@ window.cpViews.home = (function () {
         if (ch.start_date && ch.start_date > window.cpTodayStr()) return '<div class="glass-card cp-task-card"><p class="cp-task-title">挑战尚未开始</p><p class="cp-task-desc">将于 ' + ch.start_date + ' 正式开始，先去准备一下吧。</p></div>'
         return ''
       }
-      html += '<div class="glass-card cp-task-card"><div class="cp-task-head"><span>第 ' + (t.day_number || 1) + ' 天 · ' + (t.date || '') + '</span><span>' + (t.progress_pct || 0) + '%</span></div><p class="cp-task-title">' + window.cpEsc(t.task_title || '完成今日打卡') + '</p>'
+      html += '<div class="glass-card cp-task-card"><div class="cp-task-head"><span class="cp-task-day"><i class="fas fa-flag"></i>第 ' + (t.day_number || 1) + ' 天 · ' + (t.date || '') + '</span><span class="cp-task-pct">' + (t.progress_pct || 0) + '%</span></div><p class="cp-task-title">' + window.cpEsc(t.task_title || '完成今日打卡') + '</p>'
       if (t.task_description) html += '<p class="cp-task-desc">' + window.cpEsc(t.task_description) + '</p>'
       if (t.task_tip) html += '<p class="cp-task-tip"><i class="fas fa-lightbulb"></i><span>' + window.cpEsc(t.task_tip) + '</span></p>'
       html += '</div>'
@@ -166,283 +171,9 @@ window.cpViews.home = (function () {
       return html
     },
 
-    _calendar(s) {
-      const ch = s.current
-      const d = this.data
-      if (!ch.start_date) return ''
-      const today = window.cpTodayStr()
-      const statusMap = {}
-      d.checkins.forEach(c => { statusMap[c.date] = c })
-      const total = ch.total_days || 1
-      const end = ch.end_date || window.cpAddDays(ch.start_date, total - 1)
-      let html = '<div class="glass-card cp-calendar-box"><div class="cp-section-title"><i class="fas fa-calendar-check" style="color:var(--emerald)"></i> 打卡日历</div><div class="cp-calendar-grid">'
-      for (let i = 0; i < total; i++) {
-        const ds = window.cpAddDays(ch.start_date, i)
-        if (ds > end) break
-        const rec = statusMap[ds]
-        const st = rec ? (rec.status || 'checked') : ''
-        let cls = '', mark = '<span class="st">·</span>'
-        if (st === 'checked' || st === 'completed') {
-          const mini = rec.checkin_type === 'mini'
-          cls = mini ? ' mini' : ' checked'
-          mark = '<span class="st">✓</span>'
-        }
-        else if (st === 'frozen') { cls = ' frozen'; mark = '<span class="st">❄</span>' }
-        else if (st === 'mended') { cls = ' mended'; mark = '<span class="st">✚</span>' }
-        else if (ds < today) { cls = ' missed'; mark = '<span class="st">·</span>' }
-        else if (ds > today) cls = ' future'
-        if (ds === today) cls += ' today'
-        const clickable = rec ? ' onclick="cpViews.home.openDayDetail(\'' + ds + '\')"' : ''
-        html += '<div class="cp-cal-cell' + cls + '"' + clickable + '>' + mark + '<span>' + (i + 1) + '</span></div>'
-      }
-      html += '</div><div class="cp-cal-legend"><span>✓ 已打卡</span><span style="color:#c084fc">✓ 微打卡</span><span>❄ 冻结</span><span>✚ 补签</span><span>· 缺失</span></div>'
-      if (d.mercy) {
-        const missed = d.mercy.missed_dates || []
-        html += '<div class="cp-mercy-row">'
-        if (missed.length) html += '<button class="cp-btn-ghost" onclick="cpViews.home.openMend()"><i class="fas fa-plus"></i> 补签（本月剩 ' + (d.mercy.mend_left_this_month || 0) + ' 次）</button>'
-        html += '<button class="cp-btn-ghost" onclick="cpViews.home.openFreeze()"><i class="fas fa-snowflake"></i> 冻结（本周剩 ' + (d.mercy.freeze_left_this_week || 0) + ' 次）</button></div>'
-      }
-      html += '</div>'
-      return html
-    },
-
     useTemplate(i) {
       const t = window.cpTemplates[i]
       window.cpCreate.open({ rawInput: t.title + '，' + t.desc, days: t.days, category: t.category })
-    },
-
-    _adaptiveCard(a) {
-      let html = '<div class="cp-adapt-card"><div class="cp-adapt-head"><i class="fas fa-sliders"></i> 教练为你调整了计划</div><p class="cp-adapt-reason">' + window.cpEsc(a.reason || '') + '</p>'
-      if (a.task && a.task.title) {
-        html += '<div class="cp-adapt-task"><span class="cp-adapt-day">第 ' + (a.target_day || a.task.day || '?') + ' 天新任务</span><b>' + window.cpEsc(a.task.title) + '</b>'
-        if (a.task.description) html += '<p>' + window.cpEsc(a.task.description) + '</p>'
-        if (a.task.tip) html += '<p>💡 ' + window.cpEsc(a.task.tip) + '</p>'
-        html += '</div>'
-      }
-      html += '<div class="cp-sub-actions" style="margin-top:10px"><button class="cp-btn-ghost" onclick="cpViews.home.respondAdaptive(false)">保持原计划</button><button class="cp-btn-primary" onclick="cpViews.home.respondAdaptive(true)"><i class="fas fa-check"></i> 采纳调整</button></div></div>'
-      return html
-    },
-
-    _diagEntry(missedCount) {
-      return '<div class="cp-adapt-card" style="border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.07)"><div class="cp-adapt-head" style="color:var(--red)"><i class="fas fa-stethoscope"></i> 断签了？AI 帮你找原因</div><p class="cp-adapt-reason">已有 ' + missedCount + ' 天缺失。断签不是失败，找不到原因才是。AI 分析打卡记录，为你定制重启方案。</p><div class="cp-sub-actions" style="margin-top:0"><button class="cp-btn-ghost" onclick="cpOpenShare(\'flop\')"><i class="fas fa-share-nodes"></i> 翻车复盘海报</button><button class="cp-btn-primary" onclick="cpViews.home.doDiagnose()"><i class="fas fa-wand-magic-sparkles"></i> 一键诊断重启</button></div></div>'
-    },
-
-    async respondAdaptive(accept) {
-      const ch = window.appState.current
-      const a = this.data.adaptive
-      if (!ch || !a) return
-      try {
-        await window.api.post('/challenges/' + ch.id + '/adaptive/' + a.id + '/respond', { accept: !!accept })
-        window.cpToast(accept ? '已采纳新任务，即刻生效' : '好的，保持原计划')
-        this.data.adaptive = null
-        await this.load()
-        await window.cpLoadChallenges()
-        this.rerender()
-      } catch (e) { window.cpToast(window.cpErrMsg(e, '操作失败')) }
-    },
-
-    async doDiagnose() {
-      const ch = window.appState.current
-      if (!ch) return
-      const dg = window.appState.diagnosis
-      dg.show = true
-      dg.loading = true
-      dg.report = null
-      dg.applying = false
-      try {
-        const res = await window.api.post('/challenges/' + ch.id + '/diagnose', {})
-        dg.report = res.data || res
-      } catch (e) {
-        dg.show = false
-        window.cpToast(window.cpErrMsg(e, '诊断失败，请稍后再试'))
-      } finally { dg.loading = false }
-    },
-
-    async applyDiagnosis(action) {
-      const ch = window.appState.current
-      const dg = window.appState.diagnosis
-      if (!ch || dg.applying) return
-      dg.applying = true
-      try {
-        const res = await window.api.post('/challenges/' + ch.id + '/diagnose/apply', { action: action || 'keep' })
-        const r = res.data || res
-        window.cpToast(r.message || '已应用方案')
-        dg.show = false
-        await this.load()
-        await window.cpLoadChallenges()
-        this.rerender()
-      } catch (e) { window.cpToast(window.cpErrMsg(e, '应用失败')) }
-      finally { dg.applying = false }
-    },
-
-    igniteDown(e) {
-      const d = this.data
-      if (d.checking || (d.today && d.today.checked_in)) return
-      if (e.cancelable) e.preventDefault()
-      const btn = e.currentTarget
-      if (!btn || btn.disabled) return
-      this.igniteUp()
-      const ig = { btn, start: Date.now(), raf: 0, done: false }
-      this._ignite = ig
-      btn.classList.add('charging')
-      const tick = () => {
-        if (this._ignite !== ig || ig.done) return
-        const p = Math.min(1, (Date.now() - ig.start) / 1000)
-        ig.btn.style.setProperty('--p', p.toFixed(3))
-        if (p >= 1) {
-          ig.done = true
-          this._ignite = null
-          ig.btn.classList.remove('charging')
-          this.doCheckin('full')
-          return
-        }
-        ig.raf = requestAnimationFrame(tick)
-      }
-      ig.raf = requestAnimationFrame(tick)
-    },
-
-    igniteUp() {
-      const ig = this._ignite
-      if (!ig) return
-      ig.done = true
-      cancelAnimationFrame(ig.raf)
-      if (ig.btn) {
-        ig.btn.classList.remove('charging')
-        ig.btn.style.setProperty('--p', 0)
-      }
-      this._ignite = null
-    },
-
-    doMini() { this.doCheckin('mini') },
-
-    async doCheckin(checkinType) {
-      const s = window.appState
-      const ch = s.current
-      const d = this.data
-      if (!ch || d.checking || (d.today && d.today.checked_in)) return
-      d.checking = true
-      this.rerender()
-      try {
-        const res = await window.api.post('/challenges/' + ch.id + '/checkin', { checkin_type: checkinType || 'full' })
-        const r = res.data || res
-        window.cpCelebrate((checkinType === 'mini' ? '微打卡 · 节奏守住 +' : '打卡成功 +') + (r.points_earned || 0) + ' 分')
-        d.lastFeedback = r.ai_feedback || d.lastFeedback
-        d.chest = r.chest_points || 0
-        d.declaration = r.declaration || ''
-        d.shields = r.shields || 0
-        if (d.declaration && d.today && d.today.date) {
-          try { localStorage.setItem('cp_decl_' + ch.id + '_' + d.today.date, d.declaration) } catch (e) {}
-        }
-        await this.load()
-        await window.cpLoadChallenges()
-      } catch (e) {
-        window.cpToast(window.cpErrMsg(e, '打卡失败，请重试'))
-      } finally {
-        d.checking = false
-        this.rerender()
-      }
-    },
-
-    async doRepair() {
-      const ch = window.appState.current
-      if (!ch) return
-      try {
-        const res = await window.api.post('/challenges/' + ch.id + '/repair', {})
-        const r = res.data || res
-        window.cpToast(r.message || '已修复！偶尔断签没关系，重要的是继续前进')
-        await this.load()
-        await window.cpLoadChallenges()
-        this.rerender()
-      } catch (e) { window.cpToast(window.cpErrMsg(e, '修复失败')) }
-    },
-
-    openDayDetail(ds) {
-      const ch = window.appState.current
-      const rec = this.data.checkins.find(c => c.date === ds)
-      if (!rec) return
-      const plan = (ch.ai_plan || [])[(rec.day_number || 1) - 1] || {}
-      window.appState.dayDetail = {
-        date: ds,
-        day: rec.day_number || 1,
-        status: rec.status || 'checked',
-        taskTitle: plan.title || '',
-        mood: rec.mood || '',
-        reflection: rec.reflection || '',
-        aiFeedback: rec.ai_feedback || '',
-      }
-    },
-    closeDayDetail() { window.appState.dayDetail = null },
-
-    openMend() {
-      const m = this.data.mercy
-      if (!m) return
-      window.appState.mend = { show: true, dates: m.missed_dates || [], left: m.mend_left_this_month || 0, busy: false }
-    },
-    async doMend(ds) {
-      const ch = window.appState.current
-      const md = window.appState.mend
-      if (!ch || md.busy) return
-      md.busy = true
-      try {
-        await window.api.post('/challenges/' + ch.id + '/mend', { date: ds })
-        window.cpToast('补签成功！又补上了一块拼图')
-        md.show = false
-        await this.load()
-        await window.cpLoadChallenges()
-        this.rerender()
-      } catch (e) { window.cpToast(window.cpErrMsg(e, '补签失败')) }
-      finally { md.busy = false }
-    },
-
-    openFreeze() {
-      const ch = window.appState.current
-      const m = this.data.mercy
-      if (!ch) return
-      const today = window.cpTodayStr()
-      const end = ch.end_date || window.cpAddDays(today, 7)
-      const dates = []
-      for (let i = 1; i <= 7; i++) {
-        const ds = window.cpAddDays(today, i)
-        if (ds > end) break
-        dates.push(ds)
-      }
-      window.appState.freeze = { show: true, dates, left: (m && m.freeze_left_this_week) || 0, busy: false }
-    },
-    async doFreeze(ds) {
-      const ch = window.appState.current
-      const fz = window.appState.freeze
-      if (!ch || fz.busy) return
-      fz.busy = true
-      try {
-        await window.api.post('/challenges/' + ch.id + '/freeze', { date: ds })
-        window.cpToast('已冻结 ' + ds + '，该日不计断签')
-        fz.show = false
-        await this.load()
-        this.rerender()
-      } catch (e) { window.cpToast(window.cpErrMsg(e, '冻结失败')) }
-      finally { fz.busy = false }
-    },
-
-    openReflection() {
-      const t = this.data.today
-      const cd = (t && t.checkin_data) || {}
-      window.appState.reflection = { show: true, mood: cd.mood || 'good', content: cd.reflection || '', busy: false }
-    },
-    async saveReflection() {
-      const ch = window.appState.current
-      const rf = window.appState.reflection
-      if (!ch || rf.busy) return
-      rf.busy = true
-      try {
-        const res = await window.api.patch('/challenges/' + ch.id + '/checkin/today', { mood: rf.mood, reflection: rf.content })
-        const r = res.data || res
-        if (r.ai_feedback) this.data.lastFeedback = r.ai_feedback
-        window.cpToast('心得已保存')
-        rf.show = false
-        await this.load()
-        this.rerender()
-      } catch (e) { window.cpToast(window.cpErrMsg(e, '保存失败')) }
-      finally { rf.busy = false }
     },
 
     moodLabel(m) { return moodMap[m] || m },
