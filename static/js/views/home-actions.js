@@ -113,6 +113,18 @@
     this.rerender()
   }
 
+  V._finishCheckin = async function (r, ch, d, dateStr) {
+    d.lastFeedback = r.ai_feedback || d.lastFeedback
+    d.chest = r.chest_points || 0
+    d.declaration = r.declaration || ''
+    d.shields = r.shields || 0
+    if (d.declaration && dateStr) {
+      try { localStorage.setItem('cp_decl_' + ch.id + '_' + dateStr, d.declaration) } catch (e) {}
+    }
+    await this.load()
+    await window.cpLoadChallenges()
+  }
+
   V.doMultiCheckin = async function () {
     const s = window.appState
     const ch = s.current
@@ -149,18 +161,10 @@
       const res = await window.api.post('/challenges/' + ch.id + '/checkin', payload)
       const r = res.data || res
       window.cpCelebrate('打卡成功 +' + (r.points_earned || 0) + ' 分')
-      d.lastFeedback = r.ai_feedback || d.lastFeedback
-      d.chest = r.chest_points || 0
-      d.declaration = r.declaration || ''
-      d.shields = r.shields || 0
-      if (d.declaration && t.date) {
-        try { localStorage.setItem('cp_decl_' + ch.id + '_' + t.date, d.declaration) } catch (e) {}
-      }
       d.taskValue = 0
       d.taskSteps = []
       d.textValue = ''
-      await this.load()
-      await window.cpLoadChallenges()
+      await this._finishCheckin(r, ch, d, t.date)
     } catch (e) {
       window.cpToast(window.cpErrMsg(e, '打卡失败，请重试'))
     } finally {
@@ -180,15 +184,7 @@
       const res = await window.api.post('/challenges/' + ch.id + '/checkin', { checkin_type: checkinType || 'full' })
       const r = res.data || res
       window.cpCelebrate((checkinType === 'mini' ? '微打卡 · 节奏守住 +' : '打卡成功 +') + (r.points_earned || 0) + ' 分')
-      d.lastFeedback = r.ai_feedback || d.lastFeedback
-      d.chest = r.chest_points || 0
-      d.declaration = r.declaration || ''
-      d.shields = r.shields || 0
-      if (d.declaration && d.today && d.today.date) {
-        try { localStorage.setItem('cp_decl_' + ch.id + '_' + d.today.date, d.declaration) } catch (e) {}
-      }
-      await this.load()
-      await window.cpLoadChallenges()
+      await this._finishCheckin(r, ch, d, d.today && d.today.date)
     } catch (e) {
       window.cpToast(window.cpErrMsg(e, '打卡失败，请重试'))
     } finally {

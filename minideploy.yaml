@@ -1,20 +1,36 @@
-app_name: challengePlanet
-display_name: 跬步
-description: AI驱动的挑战打卡工具
-start_command: python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8610
-prepare_command: echo deps-ready
-port: 8610
-has_frontend: true
-is_public: true
-group: 工具提效,生活
-framework: fastapi
+app:
+  name: challengePlanet
+  display_name: "挑战星球"
+  description: "AI驱动的挑战打卡工具"
+  app_group: "工具提效,生活"
+  icon_url: "icon.svg"
+  is_public: true
+  workers: 1
+  path_prefix: /challengePlanet
+  depends_on: ["usercenter", "lion", "prompt-manager", "beeMemory"]
+
+build:
+  prepare:
+    - python3 -m pip install -e /home/cool/workspace/ironman
+    - python3 -m pip install -e /home/cool/workspace/nexus-backend
+    - python3 -m pip install -r requirements.txt
+
+run:
+  web: python3 -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --timeout-keep-alive 30
+
 env:
-  SERVICE_TOKEN: dev-service-token-2026
+  PORT: "8610"
+  SERVICE_TOKEN: "dev-service-token-2026"
   LION_NAMESPACE: challengePlanet
-  LION_BASE_URL: http://localhost:9527
-  BEEMEMORY_BASE_URL: http://localhost:8700
-  UC_BASE_URL: http://localhost:8901
-  UC_APP_KEY: app_cp_2bb254bd4312
-  UC_APP_SECRET: secret_e9ebcf80de81456f9eb39dbe
-  UC_JWT_SECRET: vikZD8ErfFyTopJCVKwklq2OtM5-6-8Ng3bl_y5QDG8
+  LION_BASE_URL: "http://localhost:9527"
+  BEEMEMORY_BASE_URL: "http://localhost:8700"
+  UC_BASE_URL: "http://localhost:8901"
+  UC_APP_KEY: "app_cp_2bb254bd4312"
+  UC_APP_SECRET: "secret_e9ebcf80de81456f9eb39dbe"
+  UC_JWT_SECRET: "vikZD8ErfFyTopJCVKwklq2OtM5-6-8Ng3bl_y5QDG8"
   UC_ENABLED: "true"
+  TZ: "Asia/Shanghai"
+
+health:
+  path: /health
+  interval: 30
