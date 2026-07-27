@@ -125,7 +125,11 @@ async def create_challenge_nl(
             "suggestions": plan_data.get("suggestions", []),
         })
 
-    return StreamingResponse(stream(), media_type="text/event-stream")
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={"X-Accel-Buffering": "no", "Cache-Control": "no-cache", "Connection": "keep-alive"},
+    )
 
 
 @router.post("/confirm", response_model=ChallengeResponse)

@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from nexus import close_uc_sdk, init_uc_sdk
+from nexus import close_uc_sdk, init_uc_sdk, is_ironman_available, startup_ironman
 from nexus.logging import get_logger, setup_logging
 from nexus.scheduler import get_scheduler
 
@@ -22,7 +22,6 @@ from app.api.squad import router as squad_router
 from app.config import settings
 from app.core.middleware import register_middleware
 from app.db.database import init_db, run_migrations
-from app.infra.ironman_bootstrap import init_ironman, is_ironman_available
 from app.services.reminder_service import send_checkin_reminders
 
 setup_logging()
@@ -36,10 +35,9 @@ async def lifespan(app: FastAPI):
     await init_db()
     await run_migrations()
     if not is_ironman_available():
-        try:
-            await init_ironman()
-        except Exception as e:
-            logger.warning("Ironman init failed (Lion may be offline): %s", e)
+        result = await startup_ironman("ChallengePlanet")
+        if result.get("degraded"):
+            logger.warning("Ironman degraded: %s", result.get("error", "unknown"))
     logger.info("Ironman available: %s", is_ironman_available())
     if settings.UC_BASE_URL and settings.UC_APP_KEY:
         try:
