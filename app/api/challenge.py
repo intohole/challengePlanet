@@ -197,7 +197,8 @@ async def get_share_data(
     challenge = await service.get_challenge(session, challenge_id)
     if challenge is None or challenge.user_id != user_id:
         raise HTTPException(status_code=404, detail="挑战不存在")
-    data = await service.get_share_data(session, challenge_id)
+    from app.services.share_service import ShareService
+    data = await ShareService().get_share_data(session, challenge_id)
     await session.commit()
     return ShareDataResponse(**data)
 
