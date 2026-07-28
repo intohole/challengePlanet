@@ -5,7 +5,7 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '' },
+    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false },
     _ignite: null,
 
     render(el) {
@@ -42,6 +42,7 @@ window.cpViews.home = (function () {
         const cat = window.cpCat(s.current.category)
         window.renderGalaxy(gx, { total: s.current.total_days, completed: s.current.completed_days || 0, streak: s.current.streak || 0, color: cat.color, icon: s.current.icon || '' })
       }
+      this._renderMiniHourly()
     },
 
     onShow() { this.load() },
@@ -54,7 +55,7 @@ window.cpViews.home = (function () {
       if (!ch) { this.loadedFor = null; return }
       if (this.loadedFor !== ch.id) {
         this.loadedFor = ch.id
-        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '' }
+        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false }
         this.rerender()
       }
       const safe = p => p.catch(() => null)
@@ -133,6 +134,8 @@ window.cpViews.home = (function () {
         html += '<div class="cp-repair-card"><p>💛 昨天不小心断签了，别灰心！48小时内完成今天任务即可修复连续记录。</p><button class="cp-btn-primary" onclick="cpViews.home.doRepair()"><i class="fas fa-band-aid"></i> 立即修复 streak</button></div>'
       }
       if (d.mercy && (d.mercy.missed_dates || []).length) html += this._diagEntry(d.mercy.missed_dates.length)
+      html += this._todayTimeline(s)
+      html += this._reportSection(s)
       html += this._calendar(s)
       if (d.weekly && d.weekly.content) {
         html += '<div class="glass-card cp-weekly-box"><div class="cp-section-title"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> 本周洞察</div><div class="cp-weekly-text">' + window.cpEsc(d.weekly.content) + '</div><div class="cp-weekly-meta">本周进度 ' + (d.weekly.week_checkins || 0) + '/' + (d.weekly.week_days || 7) + ' 天</div></div>'
@@ -158,13 +161,28 @@ window.cpViews.home = (function () {
       }
       const tt = t.task_type || ch.task_type || 'binary'
       const ttLabel = { counter: '计数', timer: '计时', step: '分步', choice: '选择', text: '记录', binary: '打卡' }[tt] || '打卡'
+      const isMultiMode = ch.decompose_mode === 'time_slot' || tt === 'counter' || tt === 'timer'
       html += '<div class="glass-card cp-task-card"><div class="cp-task-head"><span class="cp-task-day"><i class="fas fa-flag"></i>第 ' + (t.day_number || 1) + ' 天 · ' + (t.date || '') + '</span><div class="cp-task-head-right"><span class="cp-task-type-badge">' + ttLabel + '</span><span class="cp-task-pct">' + (t.progress_pct || 0) + '%</span></div></div><p class="cp-task-title">' + window.cpEsc(t.task_title || '完成今日打卡') + '</p>'
       if (t.task_description) html += '<p class="cp-task-desc">' + window.cpEsc(t.task_description) + '</p>'
       if (t.task_target && t.task_target > 0) html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> 今日目标 <b>' + t.task_target + '</b> ' + window.cpEsc(t.task_unit || '') + '</div>'
+      if (isMultiMode && t.today_total !== undefined) {
+        const pct = t.today_target > 0 ? Math.min(100, Math.round(t.today_total / t.today_target * 100)) : 0
+        const isDecrease = ch.direction === 'decrease'
+        const baseline = t.dynamic_baseline || 0
+        const overBaseline = isDecrease ? t.today_total > baseline : t.today_total < baseline
+        const barColor = overBaseline ? 'var(--red)' : 'var(--emerald)'
+        html += '<div class="cp-task-progress"><div class="cp-task-progress-bar"><div class="cp-task-progress-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>'
+        html += '<div class="cp-task-progress-info"><span style="color:' + barColor + '">' + t.today_total + '</span><span class="cp-task-progress-sep">/</span><span>' + t.today_target + ' ' + window.cpEsc(t.unit || ch.unit || '') + '</span>'
+        if (baseline > 0) html += '<span class="cp-task-progress-baseline">软目标 ' + baseline.toFixed(1) + '</span>'
+        html += '</div></div>'
+      }
+      if (t.sub_goals && t.sub_goals.length) html += this._subGoalProgress(t.sub_goals, ch)
       if (t.task_tip) html += '<p class="cp-task-tip"><i class="fas fa-lightbulb"></i><span>' + window.cpEsc(t.task_tip) + '</span></p>'
       if (t.task_steps && t.task_steps.length) html += '<div class="cp-task-steps-preview">' + t.task_steps.map(st => '<span class="cp-step-preview-tag">' + window.cpEsc(st) + '</span>').join('') + '</div>'
       html += '</div>'
-      if (!t.checked_in) {
+      if (isMultiMode) {
+        html += this._multiCheckinArea(tt, t, ch)
+      } else if (!t.checked_in) {
         html += this._checkinArea(tt, t)
       } else {
         if (tt === 'text' && t.checkin_data && t.checkin_data.reflection) {

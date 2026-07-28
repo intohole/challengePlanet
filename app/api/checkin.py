@@ -35,14 +35,12 @@ async def do_checkin(
     try:
         result = await service.do_checkin(
             session, challenge_id, user_id,
-            checkin_type=request.checkin_type,
+            value=request.value,
             mood=request.mood,
             reflection=request.reflection,
-            task_type=request.task_type,
-            task_value=request.task_value,
-            task_unit=request.task_unit,
-            task_target=request.task_target,
-            steps_done=request.steps_done,
+            sub_goal_id=request.sub_goal_id,
+            context_tag=request.context_tag,
+            timestamp=request.timestamp,
         )
     except ValueError as e:
         raise bad_request(e)
@@ -56,6 +54,12 @@ async def do_checkin(
         already_checked=bool(result["already_checked"]),
         declaration=str(result.get("declaration", "")),
         shields=int(result.get("shields", 0)),
+        today_total=float(result.get("today_total", 0)),
+        today_target=float(result.get("today_target", 0)),
+        dynamic_baseline=float(result.get("dynamic_baseline", 0)),
+        remaining=float(result.get("remaining", 0)),
+        is_soft_exceeded=bool(result.get("is_soft_exceeded", False)),
+        soft_exceeded_amount=float(result.get("soft_exceeded_amount", 0)),
     )
 
 
@@ -75,6 +79,22 @@ async def patch_today_checkin(
         raise bad_request(e)
     await session.commit()
     return CheckInResponse.model_validate(checkin)
+
+
+@router.delete("/{challenge_id}/checkins/{checkin_id}")
+async def delete_checkin(
+    challenge_id: int,
+    checkin_id: int,
+    user_id: str = Depends(get_current_user_id_required),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, bool]:
+    service = CheckInService()
+    try:
+        await service.delete_checkin(session, checkin_id, user_id)
+    except ValueError as e:
+        raise bad_request(e)
+    await session.commit()
+    return {"ok": True}
 
 
 @router.post("/{challenge_id}/mend", response_model=DateActionResponse)
@@ -135,7 +155,6 @@ async def get_mercy_status(
         result = await service.get_mercy_status(session, challenge_id, user_id)
     except ValueError as e:
         raise bad_request(e)
-    await session.commit()
     return MercyStatusResponse(**result)
 
 
@@ -148,6 +167,20 @@ async def get_checkins(
     service = CheckInService()
     try:
         checkins = await service.get_checkins(session, challenge_id, user_id)
+    except ValueError as e:
+        raise bad_request(e)
+    return [CheckInResponse.model_validate(c) for c in checkins]
+
+
+@router.get("/{challenge_id}/checkins/today", response_model=list[CheckInResponse])
+async def get_today_checkins(
+    challenge_id: int,
+    user_id: str = Depends(get_current_user_id_required),
+    session: AsyncSession = Depends(get_db),
+) -> list[CheckInResponse]:
+    service = CheckInService()
+    try:
+        checkins = await service.get_today_checkins(session, challenge_id, user_id)
     except ValueError as e:
         raise bad_request(e)
     return [CheckInResponse.model_validate(c) for c in checkins]

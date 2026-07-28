@@ -30,6 +30,7 @@ const state = reactive({
   share: { show: false, url: '', loading: false, mode: 'win' },
   sharedConfig: { show: false, loading: false, config: null, importing: false, token: '' },
   diagnosis: { show: false, loading: false, report: null, applying: false },
+  reportView: { show: false, tab: 'overview', loading: false, overview: null, hourly: null, trend: null, heatmap: null, completion: null },
 })
 window.appState = state
 

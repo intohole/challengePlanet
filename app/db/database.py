@@ -24,6 +24,7 @@ async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit
 
 _EXPECTED_TABLES = (
     "challenges",
+    "sub_goals",
     "checkins",
     "ai_insights",
     "squads",
@@ -42,7 +43,7 @@ async def get_db() -> AsyncSession:
 
 
 def _import_models() -> None:
-    from app.models import adaptive, challenge, checkin, points, squad  # noqa: F401
+    from app.models import adaptive, challenge, checkin, points, squad, sub_goal  # noqa: F401
 
 
 async def _ensure_column(conn: object, table: str, column: str, ddl: str) -> None:
@@ -51,6 +52,15 @@ async def _ensure_column(conn: object, table: str, column: str, ddl: str) -> Non
     if column not in cols:
         logger.info("migration: adding column %s.%s", table, column)
         await conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {ddl}"))
+
+
+async def _drop_legacy_column_compat(conn: object) -> None:
+    rows = await conn.execute(text("PRAGMA table_info(checkins)"))
+    cols = {row[1] for row in rows.fetchall()}
+    legacy = ("checkin_type", "task_type", "task_data")
+    for col in legacy:
+        if col in cols:
+            logger.info("migration: legacy column checkins.%s kept (sqlite drop limited)", col)
 
 
 async def init_db() -> None:
@@ -68,12 +78,33 @@ async def run_migrations() -> None:
             if table not in existing:
                 logger.warning("migration: missing table %s, creating", table)
         await conn.run_sync(Base.metadata.create_all)
-        await _ensure_column(conn, "checkins", "checkin_type", "checkin_type VARCHAR(8) DEFAULT 'full'")
-        await _ensure_column(conn, "checkins", "task_type", "task_type VARCHAR(16) DEFAULT 'binary'")
-        await _ensure_column(conn, "checkins", "task_data", "task_data TEXT DEFAULT '{}'")
-        await _ensure_column(conn, "checkins", "completion_pct", "completion_pct REAL DEFAULT 100.0")
-        await _ensure_column(conn, "challenges", "task_type", "task_type VARCHAR(16) DEFAULT 'binary'")
-        await _ensure_column(conn, "challenges", "scene_template", "scene_template VARCHAR(32) DEFAULT ''")
+
+        await _ensure_column(conn, "challenges", "target_value", "target_value REAL DEFAULT 1.0")
+        await _ensure_column(conn, "challenges", "unit", "unit VARCHAR(16) DEFAULT '次'")
+        await _ensure_column(conn, "challenges", "direction", "direction VARCHAR(8) DEFAULT 'increase'")
+        await _ensure_column(conn, "challenges", "goal_type", "goal_type VARCHAR(8) DEFAULT 'hard'")
+        await _ensure_column(conn, "challenges", "decompose_mode", "decompose_mode VARCHAR(16) DEFAULT 'none'")
+        await _ensure_column(conn, "challenges", "slot_hours", "slot_hours INTEGER DEFAULT 1")
+        await _ensure_column(conn, "challenges", "slot_target_value", "slot_target_value REAL DEFAULT 0.0")
+
+        await _ensure_column(conn, "checkins", "sub_goal_id", "sub_goal_id INTEGER")
+        await _ensure_column(conn, "checkins", "timestamp", "timestamp DATETIME")
+        await _ensure_column(conn, "checkins", "value", "value REAL DEFAULT 0.0")
+        await _ensure_column(conn, "checkins", "unit", "unit VARCHAR(16) DEFAULT '次'")
+        await _ensure_column(conn, "checkins", "target_value", "target_value REAL DEFAULT 0.0")
+        await _ensure_column(conn, "checkins", "goal_type", "goal_type VARCHAR(8) DEFAULT 'hard'")
+        await _ensure_column(conn, "checkins", "direction", "direction VARCHAR(8) DEFAULT 'increase'")
+        await _ensure_column(conn, "checkins", "context_tag", "context_tag VARCHAR(32) DEFAULT ''")
+
+        await conn.execute(text(
+            "UPDATE checkins SET timestamp = created_at WHERE timestamp IS NULL"
+        ))
+        await conn.execute(text(
+            "UPDATE checkins SET value = 1.0 WHERE value = 0.0 AND completion_pct > 0"
+        ))
+
+        await _drop_legacy_column_compat(conn)
+
         await conn.execute(text(
             "UPDATE adaptive_suggestions SET status='expired' WHERE status='pending' AND id NOT IN ("
             "SELECT MAX(id) FROM adaptive_suggestions WHERE status='pending' GROUP BY challenge_id)"
@@ -82,6 +113,7 @@ async def run_migrations() -> None:
             "CREATE UNIQUE INDEX IF NOT EXISTS ux_adaptive_pending "
             "ON adaptive_suggestions(challenge_id) WHERE status='pending'"
         ))
+
         rows = await conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'"))
         existing = {row[0] for row in rows.fetchall()}
         missing = [t for t in _EXPECTED_TABLES if t not in existing]

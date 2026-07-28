@@ -57,6 +57,13 @@ def _to_response(challenge: object, item: dict[str, object]) -> ChallengeRespons
         share_token=c.share_token,
         source=str(item.get("source", "manual")),
         today_checked=bool(item.get("today_checked", False)),
+        target_value=float(getattr(c, "target_value", 1.0) or 1.0),
+        unit=str(getattr(c, "unit", "次") or "次"),
+        direction=str(getattr(c, "direction", "increase") or "increase"),
+        goal_type=str(getattr(c, "goal_type", "hard") or "hard"),
+        decompose_mode=str(getattr(c, "decompose_mode", "none") or "none"),
+        slot_hours=int(getattr(c, "slot_hours", 1) or 1),
+        slot_target_value=float(getattr(c, "slot_target_value", 0.0) or 0.0),
         mercy=item.get("mercy", {}),
         created_at=c.created_at,
     )
@@ -144,6 +151,10 @@ async def confirm_challenge(
         session, user_id, request.title, request.description, request.category,
         request.duration_days, request.start_date, plan, request.source, request.squad_id,
         task_type=request.task_type, scene_template=request.scene_template,
+        target_value=request.target_value, unit=request.unit,
+        direction=request.direction, goal_type=request.goal_type,
+        decompose_mode=request.decompose_mode, slot_hours=request.slot_hours,
+        slot_target_value=request.slot_target_value,
     )
     await session.commit()
     return await _build_response(session, challenge, user_id)

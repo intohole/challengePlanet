@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="/static/style.css?v=20260728">
 <link rel="stylesheet" href="/static/style-components.css?v=20260728">
 <link rel="stylesheet" href="/static/style-checkin.css?v=20260728">
+<link rel="stylesheet" href="/static/style-multi.css?v=20260728">
 <link rel="stylesheet" href="/static/mobile-base.css?v=20260728">
 <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.5.13/vue.global.prod.min.js"></script>
 <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -227,14 +228,23 @@
 </div>
 </div></transition>
 
+<transition name="modal"><div v-if="state.reportView && state.reportView.show" class="cp-modal-overlay" @click.self="home.closeReport()">
+<div class="cp-modal glass">
+  <div class="cp-modal-header"><h3>数据报表 · {{ state.current.title }}</h3><button class="cp-modal-close" @click="home.closeReport()"><i class="fas fa-xmark"></i></button></div>
+  <div class="cp-modal-body" v-html="home._reportModal()"></div>
+</div>
+</div></transition>
+
 </div>
 <script src="/static/js/galaxy.js?v=20260728"></script>
 <script src="/static/js/share-poster.js?v=20260728"></script>
 <script src="/static/js/create.js?v=20260728"></script>
 <script src="/static/js/views/home.js?v=20260728"></script>
 <script src="/static/js/views/home-calendar.js?v=20260728"></script>
-<script src="/static/js/views/home-actions.js?v=20260728"></script>
 <script src="/static/js/views/home-guidance.js?v=20260728"></script>
+<script src="/static/js/views/home-multi.js?v=20260728"></script>
+<script src="/static/js/views/home-reports.js?v=20260728"></script>
+<script src="/static/js/views/home-actions.js?v=20260728"></script>
 <script src="/static/js/views/squad.js?v=20260728"></script>
 <script src="/static/js/views/rank.js?v=20260728"></script>
 <script src="/static/js/views/me.js?v=20260728"></script>

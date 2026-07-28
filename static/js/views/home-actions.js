@@ -113,6 +113,86 @@
     this.rerender()
   }
 
+  V.openQuickForm = function (subGoalId) {
+    const d = this.data
+    d.showQuickForm = true
+    d.quickValue = 1
+    d.quickReflection = ''
+    d.quickMood = ''
+    if (subGoalId) d.quickSubGoalId = subGoalId
+    else d.quickSubGoalId = null
+    this.rerender()
+  }
+
+  V.closeQuickForm = function () {
+    this.data.showQuickForm = false
+    this.rerender()
+  }
+
+  V.adjustQuick = function (delta) {
+    const d = this.data
+    d.quickValue = Math.max(0, d.quickValue + delta)
+    this.rerender()
+  }
+
+  V.setQuick = function (val) {
+    this.data.quickValue = Math.max(0, val)
+    this.rerender()
+  }
+
+  V.setQuickSubGoal = function (id) {
+    this.data.quickSubGoalId = id
+    this.rerender()
+  }
+
+  V.setQuickContext = function (tag) {
+    this.data.quickMood = tag
+    this.rerender()
+  }
+
+  V.setQuickReflection = function (val) {
+    this.data.quickReflection = val || ''
+  }
+
+  V.doQuickCheckin = async function () {
+    const s = window.appState
+    const ch = s.current
+    const d = this.data
+    const t = d.today
+    if (!ch || !t || d.checking) return
+    if (d.quickValue <= 0) { window.cpToast('请输入数量'); return }
+    d.checking = true
+    this.rerender()
+    try {
+      const payload = {
+        value: d.quickValue,
+        sub_goal_id: d.quickSubGoalId,
+        context_tag: d.quickMood,
+        reflection: d.quickReflection || '',
+      }
+      const res = await window.api.post('/challenges/' + ch.id + '/checkin', payload)
+      const r = res.data || res
+      window.cpCelebrate('记录成功 +' + (r.points_earned || 0) + ' 分')
+      d.showQuickForm = false
+      d.quickValue = 1
+      d.quickReflection = ''
+      d.quickMood = ''
+      d.lastFeedback = r.ai_feedback || d.lastFeedback
+      d.chest = r.chest_points || 0
+      d.shields = r.shields || 0
+      await this.load()
+      await window.cpLoadChallenges()
+      if (r.is_soft_exceeded) {
+        setTimeout(() => window.cpToast('这个时段对你来说特别难，记录下就好', 3200), 1300)
+      }
+    } catch (e) {
+      window.cpToast(window.cpErrMsg(e, '记录失败，请重试'))
+    } finally {
+      d.checking = false
+      this.rerender()
+    }
+  }
+
   V._finishCheckin = async function (r, ch, d, dateStr) {
     d.lastFeedback = r.ai_feedback || d.lastFeedback
     d.chest = r.chest_points || 0
@@ -132,28 +212,17 @@
     const t = d.today
     if (!ch || !t || d.checking || t.checked_in) return
     const tt = t.task_type || ch.task_type || 'binary'
-    const payload = { checkin_type: 'full' }
+    const payload = { value: 1.0, reflection: '' }
     if (tt === 'counter' || tt === 'timer') {
-      payload.task_type = tt
-      payload.task_value = d.taskValue
-      payload.task_target = t.task_target || 0
-      payload.task_unit = t.task_unit || ''
       if (d.taskValue <= 0 && tt === 'counter') { window.cpToast('请输入完成数量'); return }
+      payload.value = d.taskValue
     } else if (tt === 'step') {
-      payload.task_type = tt
-      payload.task_value = d.taskSteps.length
-      payload.task_target = (t.task_steps || []).length
-      payload.task_unit = '步'
-      payload.steps_done = d.taskSteps
+      payload.value = d.taskSteps.length
+      payload.reflection = d.taskSteps.join('；')
     } else if (tt === 'text') {
       if (!d.textValue.trim()) { window.cpToast('请写点什么再提交'); return }
-      payload.task_type = tt
-      payload.task_value = d.textValue.length
-      payload.task_target = t.task_target || 0
-      payload.task_unit = t.task_unit || '字'
+      payload.value = d.textValue.length
       payload.reflection = d.textValue
-    } else {
-      payload.task_type = 'binary'
     }
     d.checking = true
     this.rerender()
@@ -181,7 +250,8 @@
     d.checking = true
     this.rerender()
     try {
-      const res = await window.api.post('/challenges/' + ch.id + '/checkin', { checkin_type: checkinType || 'full' })
+      const payload = { value: checkinType === 'mini' ? 0.5 : 1.0 }
+      const res = await window.api.post('/challenges/' + ch.id + '/checkin', payload)
       const r = res.data || res
       window.cpCelebrate((checkinType === 'mini' ? '微打卡 · 节奏守住 +' : '打卡成功 +') + (r.points_earned || 0) + ' 分')
       await this._finishCheckin(r, ch, d, d.today && d.today.date)

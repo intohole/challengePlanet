@@ -56,6 +56,13 @@ class ChallengeService:
         squad_id: int | None = None,
         task_type: str = "binary",
         scene_template: str = "",
+        target_value: float = 1.0,
+        unit: str = "次",
+        direction: str = "increase",
+        goal_type: str = "hard",
+        decompose_mode: str = "none",
+        slot_hours: int = 1,
+        slot_target_value: float = 0.0,
     ) -> Challenge:
         meta = CATEGORY_META.get(category, CATEGORY_META["other"])
         if start_date:
@@ -78,6 +85,13 @@ class ChallengeService:
             "icon": meta["icon"],
             "task_type": task_type,
             "scene_template": scene_template,
+            "target_value": target_value,
+            "unit": unit,
+            "direction": direction,
+            "goal_type": goal_type,
+            "decompose_mode": decompose_mode,
+            "slot_hours": slot_hours,
+            "slot_target_value": slot_target_value,
             "share_token": secrets.token_hex(16),
         })
         await self._meta_repo.upsert(session, challenge.id, {
@@ -160,11 +174,49 @@ class ChallengeService:
         if plan_list and day_number <= len(plan_list):
             task = plan_list[day_number - 1]
         today = today_str()
-        today_checkin = await self._checkin_repo.get_by_date(session, challenge_id, today)
+        today_checkins = await self._checkin_repo.list_by_date(session, challenge_id, today)
+        today_total = await self._checkin_repo.sum_value_by_date(session, challenge_id, today)
+
+        recent = await self._checkin_repo.list_recent(session, challenge_id, days=7)
+        daily_totals: dict[str, float] = {}
+        for c in recent:
+            daily_totals[c.date] = daily_totals.get(c.date, 0.0) + c.value
+        if daily_totals:
+            avg = sum(daily_totals.values()) / len(daily_totals)
+            if challenge.direction == "decrease":
+                dynamic_baseline = max(avg * 0.9, max(challenge.target_value * 0.5, 1.0))
+            else:
+                dynamic_baseline = max(avg * 1.1, 1.0)
+        else:
+            dynamic_baseline = max(challenge.target_value, 1.0)
+
+        from app.repositories.sub_goal_repository import SubGoalRepository
+        sub_goal_repo = SubGoalRepository()
+        sub_goals_db = await sub_goal_repo.get_by_challenge(session, challenge_id)
+        sub_goals_list: list[dict[str, object]] = []
+        for sg in sub_goals_db:
+            sg_today_value = await self._checkin_repo.sum_value_by_sub_goal(session, sg.id, today)
+            sg_today_list = await self._checkin_repo.list_by_sub_goal(session, sg.id, today)
+            sg_target = sg.target_value if sg.target_value > 0 else challenge.slot_target_value
+            sg_pct = (sg_today_value / sg_target * 100) if sg_target > 0 else 0.0
+            sub_goals_list.append({
+                "id": sg.id,
+                "title": sg.title,
+                "time_window_start": sg.time_window_start,
+                "time_window_end": sg.time_window_end,
+                "target_value": sg_target,
+                "goal_type": sg.goal_type,
+                "today_value": sg_today_value,
+                "today_checkin_count": len(sg_today_list),
+                "progress_pct": round(min(sg_pct, 100.0), 1),
+            })
+
         stats = await self.get_challenge_stats(session, challenge)
         progress = _calc_progress(stats["completed_days"], challenge.duration_days)
         task_steps_raw = task.get("steps", task.get("task_steps", []))
         task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
+        today_target = challenge.target_value
+        remaining = max(0.0, today_target - today_total) if challenge.direction == "decrease" else max(0.0, today_target - today_total)
         return {
             "challenge_id": challenge_id,
             "day_number": day_number,
@@ -177,15 +229,38 @@ class ChallengeService:
             "task_target": float(task.get("target_value", task.get("target", 0))),
             "task_unit": str(task.get("unit", "")),
             "task_steps": task_steps,
-            "checked_in": today_checkin is not None,
+            "target_value": float(challenge.target_value),
+            "unit": str(challenge.unit),
+            "direction": str(challenge.direction),
+            "goal_type": str(challenge.goal_type),
+            "decompose_mode": str(challenge.decompose_mode),
+            "today_total": today_total,
+            "today_target": today_target,
+            "dynamic_baseline": round(dynamic_baseline, 2),
+            "remaining": round(remaining, 2),
+            "progress_pct": round(progress, 1),
+            "checked_in": len(today_checkins) > 0,
             "checkin_data": {
-                "mood": today_checkin.mood,
-                "reflection": today_checkin.reflection,
-                "ai_feedback": today_checkin.ai_feedback,
-            } if today_checkin else None,
+                "mood": today_checkins[-1].mood if today_checkins else "",
+                "reflection": today_checkins[-1].reflection if today_checkins else "",
+                "ai_feedback": today_checkins[-1].ai_feedback if today_checkins else "",
+            } if today_checkins else None,
+            "today_checkins": [
+                {
+                    "id": c.id,
+                    "timestamp": c.timestamp.isoformat(),
+                    "value": c.value,
+                    "sub_goal_id": c.sub_goal_id,
+                    "mood": c.mood,
+                    "reflection": c.reflection,
+                    "context_tag": c.context_tag,
+                    "ai_feedback": c.ai_feedback,
+                }
+                for c in today_checkins
+            ],
+            "sub_goals": sub_goals_list,
             "streak": stats["streak"],
             "total_checkins": stats["completed_days"],
-            "progress_pct": round(progress, 1),
         }
 
     async def get_portal_today(

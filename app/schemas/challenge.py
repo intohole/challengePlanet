@@ -11,30 +11,45 @@ class PlanDay(BaseModel):
     title: str = Field("", description="任务标题")
     description: str = Field("", description="具体任务")
     tip: str = Field("", description="小贴士")
-    task_type: str = Field("binary", description="任务类型: binary/counter/timer/choice/step/text")
-    target_value: float = Field(0, description="目标值(如30分钟/50个)")
-    unit: str = Field("", description="单位: 分钟/个/页/次等")
+    task_type: str = Field("binary", description="任务类型: binary/counter/timer")
+    target_value: float = Field(0, description="目标值")
+    unit: str = Field("", description="单位")
     difficulty: int = Field(1, description="难度等级1-5")
-    steps: list[str] = Field(default_factory=list, description="多步骤任务步骤列表")
+    steps: list[str] = Field(default_factory=list, description="步骤列表")
 
 
 class NLCreateRequest(BaseModel):
     raw_input: str = Field(..., description="自然语言描述, 如: 我想30天戒烟")
-    start_date: str = Field("", description="开始日期 YYYY-MM-DD, 空则今天开始")
-    scene_template: str = Field("", description="场景模板: fitness/study/reading/meditation/morning/custom")
+    start_date: str = Field("", description="开始日期 YYYY-MM-DD")
+    scene_template: str = Field("", description="场景模板")
+    target_value: float = Field(1.0, description="每日目标值(0表示binary)")
+    unit: str = Field("", description="单位: 根/杯/分钟/页")
+    direction: str = Field("increase", description="increase(越多越好) | decrease(越少越好)")
+    goal_type: str = Field("hard", description="soft(督促) | hard(底线)")
+    decompose_mode: str = Field("none", description="none(不拆) | time_slot(按时段)")
+    slot_hours: int = Field(1, description="每个时段多少小时")
+    slot_target_value: float = Field(0.0, description="每个时段的目标值")
 
 
 class ChallengeConfirmRequest(BaseModel):
     title: str = Field(..., description="挑战标题")
-    category: str = Field("build", description="分类: quit/build/learn/fitness/mind/other")
+    category: str = Field("build", description="分类")
     duration_days: int = Field(30, description="挑战天数")
-    start_date: str = Field("", description="开始日期 YYYY-MM-DD, 空则今天开始")
+    start_date: str = Field("", description="开始日期")
     description: str = Field("", description="挑战描述")
     plan: list[PlanDay] = Field(default_factory=list, description="前端预览确认后的计划")
-    source: str = Field("manual", description="来源: manual/lifecompass")
+    source: str = Field("manual", description="来源")
     squad_id: Optional[int] = Field(None, description="关联小队ID")
-    task_type: str = Field("binary", description="默认打卡任务类型")
+    task_type: str = Field("binary", description="任务类型")
     scene_template: str = Field("", description="场景模板")
+
+    target_value: float = Field(1.0, description="每日目标值")
+    unit: str = Field("次", description="目标单位")
+    direction: str = Field("increase", description="increase | decrease")
+    goal_type: str = Field("hard", description="soft | hard")
+    decompose_mode: str = Field("none", description="none | time_slot")
+    slot_hours: int = Field(1, description="时段小时数")
+    slot_target_value: float = Field(0.0, description="时段目标值")
 
 
 class FromDecisionRequest(BaseModel):
@@ -71,6 +86,15 @@ class ChallengeResponse(BaseModel):
     share_token: str = ""
     source: str = "manual"
     today_checked: bool = False
+
+    target_value: float = 1.0
+    unit: str = "次"
+    direction: str = "increase"
+    goal_type: str = "hard"
+    decompose_mode: str = "none"
+    slot_hours: int = 1
+    slot_target_value: float = 0.0
+
     mercy: MercySummary = Field(default_factory=MercySummary)
     created_at: Optional[datetime] = None
 
@@ -89,11 +113,25 @@ class TodayTaskResponse(BaseModel):
     task_target: float = 0
     task_unit: str = ""
     task_steps: list[str] = Field(default_factory=list)
+
+    target_value: float = 1.0
+    unit: str = "次"
+    direction: str = "increase"
+    goal_type: str = "hard"
+    decompose_mode: str = "none"
+
+    today_total: float = 0.0
+    today_target: float = 1.0
+    dynamic_baseline: float = 1.0
+    remaining: float = 0.0
+    progress_pct: float = 0.0
+
     checked_in: bool = False
     checkin_data: Optional[dict[str, object]] = None
+    today_checkins: list[dict[str, object]] = Field(default_factory=list)
+    sub_goals: list[dict[str, object]] = Field(default_factory=list)
     streak: int = 0
     total_checkins: int = 0
-    progress_pct: float = 0.0
 
 
 class WeeklyReportResponse(BaseModel):
@@ -110,6 +148,8 @@ class PortalTodayItem(BaseModel):
     color: str = "#6366f1"
     checked: bool = False
     today_task_title: str = ""
+    today_total: float = 0.0
+    today_target: float = 0.0
 
 
 class PortalTodayResponse(BaseModel):
