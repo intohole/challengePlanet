@@ -21,6 +21,7 @@ class CheckIn(Base):
     user_id: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
 
     day_number: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(16), default="completed", nullable=False)
     timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
     date: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
 

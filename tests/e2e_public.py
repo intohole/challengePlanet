@@ -6,7 +6,7 @@ import json
 import sys
 import urllib.request
 
-BASE = "http://songguokr.com/challengeplanet"
+BASE = "https://songguokr.com/challengePlanet"
 API = f"{BASE}/api/v1"
 USER, PWD = "cp_e2e", "CpE2e#2026x"
 passed: list[str] = []

@@ -94,6 +94,7 @@ class CheckInService:
             "user_id": user_id,
             "sub_goal_id": sub_goal_id,
             "day_number": day_number,
+            "status": "completed",
             "timestamp": ts,
             "date": today,
             "value": value,
