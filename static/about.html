@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <title>关于我们 - 挑战星球</title>
+  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdmirror.com/gh/intohole/nexus-ui@v2.6.2/css/nexus-all.css">
+  <style>:root{--app-accent:#FF8A65;--app-accent-rgb:255,138,101;--app-accent-hover:#FFAB91}[v-cloak]{display:none}</style>
+</head>
+<body>
+<div id="app" v-cloak>
+  <nux-about-page :app-name="appName" :app-icon="appIcon" :slogan="slogan" :description="description" :story="story" :features="features" :promises="promises" :version="version" back-url="../"></nux-about-page>
+</div>
+<script src="https://cdn.bootcdn.net/ajax/libs/vue/3.5.13/vue.global.prod.min.js"></script>
+<script src="nux-about-page.js"></script>
+<script>
+const PROMISES=[
+  {icon:'fas fa-shield-halved',title:'数据安全',desc:'你的数据只属于你，未经授权我们不会访问'},
+  {icon:'fas fa-arrows-rotate',title:'持续迭代',desc:'产品在持续打磨，定期更新优化功能'},
+  {icon:'fas fa-heart',title:'用户至上',desc:'你的反馈驱动产品方向，每条建议都被认真对待'},
+  {icon:'fas fa-eye',title:'诚实透明',desc:'AI能力有边界，我们如实说明，不夸大效果'}
+];
+Vue.createApp({setup(){return{
+  appName:'挑战星球',appIcon:'🌍',slogan:'AI打卡教练',
+  description:'用AI生成挑战计划，陪你坚持',
+  story:['改变很难，但有人陪你就不一样。立下的flag总是倒下，不是因为不够努力，而是缺少科学的方法和陪伴。','挑战星球用AI生成适合你的挑战计划，陪你一步步坚持——让改变真正发生。'],
+  features:[{icon:'fas fa-flag',title:'AI挑战计划',desc:'AI生成个性化挑战计划'},{icon:'fas fa-check-circle',title:'打卡签到',desc:'每日打卡跟踪进度'},{icon:'fas fa-users',title:'小队协作',desc:'组队挑战互相督促'},{icon:'fas fa-trophy',title:'排行榜',desc:'排行激励持续坚持'}],
+  promises:PROMISES,version:'1.0.0'
+}}}).component('nux-about-page',window.NuxAboutPage).mount('#app');
+</script>
+</body>
+</html>
