@@ -255,7 +255,7 @@
     let h = '<div class="cp-completion">'
     h += '<div class="cp-completion-ring">'
     h += '<svg width="100" height="100" viewBox="0 0 100 100">'
-    h += '<circle cx="50" cy="50" r="36" fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="8"/>'
+    h += '<circle cx="50" cy="50" r="36" fill="none" stroke="rgba(15,23,42,0.06)" stroke-width="8"/>'
     h += '<circle cx="50" cy="50" r="36" fill="none" stroke="var(--emerald)" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + offset + '" transform="rotate(-90 50 50)"/>'
     h += '</svg>'
     h += '<div class="cp-completion-pct"><b>' + rate.toFixed(0) + '</b>%</div>'

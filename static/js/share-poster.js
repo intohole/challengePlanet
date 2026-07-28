@@ -19,7 +19,7 @@ window.cpSharePoster = (function () {
         const box = document.createElement('div')
         box.style.cssText = 'position:fixed;left:-9999px;top:-9999px'
         document.body.appendChild(box)
-        new QRCode(box, { text: url, width: size, height: size, colorDark: '#0b0d1a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M })
+        new QRCode(box, { text: url, width: size, height: size, colorDark: '#0f172a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M })
         const qc = box.querySelector('canvas')
         if (qc) {
           ctx.fillStyle = '#ffffff'
@@ -68,9 +68,9 @@ window.cpSharePoster = (function () {
     const ctx = canvas.getContext('2d')
 
     const bg = ctx.createLinearGradient(0, 0, 0, 1000)
-    bg.addColorStop(0, '#0b0d1a')
-    bg.addColorStop(0.6, '#12142e')
-    bg.addColorStop(1, '#1a1c3e')
+    bg.addColorStop(0, '#0e1526')
+    bg.addColorStop(0.6, '#182238')
+    bg.addColorStop(1, '#1e293b')
     ctx.fillStyle = bg
     ctx.fillRect(0, 0, 750, 1000)
     for (let i = 0; i < 90; i++) {
@@ -88,7 +88,7 @@ window.cpSharePoster = (function () {
     const px = 375, py = 290, pr = 96
     const pg = ctx.createRadialGradient(px - 30, py - 34, 10, px, py, pr)
     pg.addColorStop(0, cat.color)
-    pg.addColorStop(1, '#0b0d1a')
+    pg.addColorStop(1, '#0e1526')
     ctx.save()
     ctx.shadowColor = cat.color
     ctx.shadowBlur = 60
