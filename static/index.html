@@ -74,7 +74,6 @@
         </div>
         <input v-if="state.create.startMode==='custom'" v-model="state.create.customDate" type="date" class="cp-field" style="margin-top:8px" @change="cr.setCustomDate()">
       </div>
-      <button class="cp-btn-primary" :disabled="!state.create.rawInput.trim()" @click="cr.startGenerate()"><i class="fas fa-wand-magic-sparkles"></i> AI生成计划</button>
     </div>
 
     <div v-else>
@@ -105,16 +104,20 @@
           </div>
         </div>
         <div v-if="state.create.suggestions.length" class="cp-sugg"><span v-for="sg in state.create.suggestions" :key="sg" class="cp-sugg-chip">{{ sg }}</span></div>
-        <div class="cp-sub-actions" style="margin-top:14px">
-          <button class="cp-btn-ghost" @click="cr.startGenerate()"><i class="fas fa-rotate"></i> 换一批</button>
-          <button class="cp-btn-primary" :disabled="state.create.saving" @click="cr.confirmCreate()"><i class="fas fa-rocket"></i> {{ state.create.saving ? '开启中...' : '开启挑战' }}</button>
-        </div>
       </template>
-      <div v-if="state.create.phase==='idle' && state.create.step===2" class="cp-sub-actions">
-        <button class="cp-btn-ghost" @click="cr.back()"><i class="fas fa-arrow-left"></i> 返回修改</button>
-        <button class="cp-btn-primary" @click="cr.startGenerate()"><i class="fas fa-rotate"></i> 重新生成</button>
-      </div>
     </div>
+  </div>
+  <div class="cp-modal-footer">
+    <button class="cp-btn-ghost" @click="cr.close()">取消</button>
+    <button v-if="state.create.step===1" class="cp-btn-primary" :disabled="!state.create.rawInput.trim()" @click="cr.startGenerate()"><i class="fas fa-wand-magic-sparkles"></i> AI生成计划</button>
+    <template v-else-if="state.create.phase==='preview'">
+      <button class="cp-btn-ghost" @click="cr.startGenerate()"><i class="fas fa-rotate"></i> 换一批</button>
+      <button class="cp-btn-primary" :disabled="state.create.saving" @click="cr.confirmCreate()"><i class="fas fa-rocket"></i> {{ state.create.saving ? '开启中...' : '开启挑战' }}</button>
+    </template>
+    <template v-else-if="state.create.phase==='idle'">
+      <button class="cp-btn-ghost" @click="cr.back()"><i class="fas fa-arrow-left"></i> 返回修改</button>
+      <button class="cp-btn-primary" @click="cr.startGenerate()"><i class="fas fa-rotate"></i> 重新生成</button>
+    </template>
   </div>
 </div>
 </div></transition>
@@ -128,6 +131,9 @@
     <div class="cp-detail-row" v-if="state.dayDetail.reflection"><div class="cp-detail-label">打卡心得</div><div class="cp-detail-val">{{ state.dayDetail.reflection }}</div></div>
     <div class="cp-detail-row" v-if="state.dayDetail.aiFeedback"><div class="cp-detail-label">AI 反馈</div><div class="cp-detail-val">{{ state.dayDetail.aiFeedback }}</div></div>
   </div>
+  <div class="cp-modal-footer">
+    <button class="cp-btn-primary" @click="home.closeDayDetail()">关闭</button>
+  </div>
 </div>
 </div></transition>
 
@@ -140,6 +146,9 @@
       <button v-for="ds in state.mend.dates" :key="ds" class="cp-date-item" :disabled="state.mend.busy" @click="home.doMend(ds)"><span>{{ ds }}</span><i class="fas fa-plus" style="color:var(--amber)"></i></button>
     </div>
   </div>
+  <div class="cp-modal-footer">
+    <button class="cp-btn-ghost" @click="state.mend.show=false">取消</button>
+  </div>
 </div>
 </div></transition>
 
@@ -151,6 +160,9 @@
     <div class="cp-date-list">
       <button v-for="ds in state.freeze.dates" :key="ds" class="cp-date-item" :disabled="state.freeze.busy" @click="home.doFreeze(ds)"><span>{{ ds }}</span><i class="fas fa-snowflake" style="color:var(--primary-light)"></i></button>
     </div>
+  </div>
+  <div class="cp-modal-footer">
+    <button class="cp-btn-ghost" @click="state.freeze.show=false">取消</button>
   </div>
 </div>
 </div></transition>
@@ -165,6 +177,9 @@
       <button class="cp-pick-btn" :class="{active:state.reflection.mood==='bad'}" @click="state.reflection.mood='bad'">😔 有点难</button>
     </div></div>
     <div class="cp-form-row"><label class="cp-label">心得（选填）</label><textarea v-model="state.reflection.content" class="cp-field" rows="3" style="resize:none" placeholder="记录今天的感受和收获..."></textarea></div>
+  </div>
+  <div class="cp-modal-footer">
+    <button class="cp-btn-ghost" @click="state.reflection.show=false">取消</button>
     <button class="cp-btn-primary" :disabled="state.reflection.busy" @click="home.saveReflection()"><i class="fas fa-check"></i> {{ state.reflection.busy ? '保存中...' : '保存心得' }}</button>
   </div>
 </div>
@@ -181,9 +196,13 @@
     <div v-if="state.share.loading" class="cp-share-loading"><div class="cp-gen-spinner"></div>正在绘制海报...</div>
     <template v-else>
       <img :src="state.share.url" alt="分享海报" class="cp-share-img">
-      <div class="cp-share-btns"><button class="cp-btn-primary" @click="saveShareImage()"><i class="fas fa-download"></i> 保存图片</button><button class="cp-btn-ghost" @click="copyShareText()"><i class="fas fa-copy"></i> 复制文案</button></div>
       <p class="cp-share-hint">{{ state.share.mode==='flop' ? '真实比完美更有感染力，翻车复盘反而更打动人' : '保存图片后可在微信/朋友圈分享' }}</p>
     </template>
+  </div>
+  <div class="cp-modal-footer" v-if="!state.share.loading">
+    <button class="cp-btn-ghost" @click="state.share.show=false">取消</button>
+    <button class="cp-btn-ghost" @click="copyShareText()"><i class="fas fa-copy"></i> 复制文案</button>
+    <button class="cp-btn-primary" @click="saveShareImage()"><i class="fas fa-download"></i> 保存图片</button>
   </div>
 </div>
 </div></transition>
@@ -198,11 +217,12 @@
       <p class="cp-diag-text">{{ state.diagnosis.report.narrative }}</p>
       <div class="cp-diag-plan"><i class="fas fa-prescription"></i> 建议方案：{{ state.diagnosis.report.suggestion_text }}</div>
       <p class="cp-diag-meta">已完成 {{ state.diagnosis.report.done_days }}/{{ state.diagnosis.report.total_days }} 天 · 断签 {{ state.diagnosis.report.missed_count }} 天 · 进度不会清零</p>
-      <div class="cp-sub-actions" style="margin-top:0">
-        <button class="cp-btn-ghost" :disabled="state.diagnosis.applying" @click="home.applyDiagnosis('keep')">保持原计划</button>
-        <button class="cp-btn-primary" :disabled="state.diagnosis.applying" @click="home.applyDiagnosis(state.diagnosis.report.suggestion_action)"><i class="fas fa-rocket"></i> {{ state.diagnosis.applying ? '应用中...' : '应用方案' }}</button>
-      </div>
     </template>
+  </div>
+  <div class="cp-modal-footer" v-if="!state.diagnosis.loading && state.diagnosis.report">
+    <button class="cp-btn-ghost" @click="state.diagnosis.show=false">取消</button>
+    <button class="cp-btn-ghost" :disabled="state.diagnosis.applying" @click="home.applyDiagnosis('keep')">保持原计划</button>
+    <button class="cp-btn-primary" :disabled="state.diagnosis.applying" @click="home.applyDiagnosis(state.diagnosis.report.suggestion_action)"><i class="fas fa-rocket"></i> {{ state.diagnosis.applying ? '应用中...' : '应用方案' }}</button>
   </div>
 </div>
 </div></transition>
@@ -220,10 +240,13 @@
           <span><i class="fas fa-calendar"></i> {{ state.sharedConfig.config.duration_days }}天</span>
           <span><i class="fas fa-list-check"></i> {{ (state.sharedConfig.config.plan || []).length }}天计划</span>
         </div>
-        <button class="cp-btn-primary" :disabled="state.sharedConfig.importing" @click="importShared()"><i class="fas fa-rocket"></i> {{ state.sharedConfig.importing ? '导入中...' : '导入并开始挑战' }}</button>
       </div>
     </template>
     <div v-else class="cp-error-box"><span>分享链接无效或已过期</span></div>
+  </div>
+  <div class="cp-modal-footer" v-if="!state.sharedConfig.loading && state.sharedConfig.config">
+    <button class="cp-btn-ghost" @click="state.sharedConfig.show=false">取消</button>
+    <button class="cp-btn-primary" :disabled="state.sharedConfig.importing" @click="importShared()"><i class="fas fa-rocket"></i> {{ state.sharedConfig.importing ? '导入中...' : '导入并开始挑战' }}</button>
   </div>
 </div>
 </div></transition>
@@ -232,6 +255,9 @@
 <div class="cp-modal glass">
   <div class="cp-modal-header"><h3>数据报表 · {{ state.current.title }}</h3><button class="cp-modal-close" @click="home.closeReport()"><i class="fas fa-xmark"></i></button></div>
   <div class="cp-modal-body" v-html="home._reportModal()"></div>
+  <div class="cp-modal-footer">
+    <button class="cp-btn-primary" @click="home.closeReport()">关闭</button>
+  </div>
 </div>
 </div></transition>
 
