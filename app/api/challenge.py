@@ -5,6 +5,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from nexus import get_current_user_id_required
+from nexus.streaming import sse_event_dict, sse_response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
@@ -22,10 +23,6 @@ from app.services.challenge_service import ChallengeService
 from app.services.guidance_service import GuidanceService
 
 router = APIRouter()
-
-
-def _sse(payload: dict[str, object]) -> str:
-    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
 def _to_response(challenge: object, item: dict[str, object]) -> ChallengeResponse:
@@ -98,7 +95,7 @@ async def create_challenge_nl(
     ai = AIService()
 
     async def stream():
-        yield _sse({"step": "parsing"})
+        yield sse_event_dict("parsing")
         try:
             parsed = await ai.parse_challenge_input(request.raw_input)
         except Exception:
@@ -113,30 +110,25 @@ async def create_challenge_nl(
             "duration_days": duration,
             "description": description,
         }
-        yield _sse({"step": "parsed", "parsed": parsed_out})
-        yield _sse({"step": "planning"})
+        yield sse_event_dict("parsed", {"parsed": parsed_out})
+        yield sse_event_dict("planning")
         collected: list[str] = []
         try:
             async for token in ai.generate_challenge_plan_stream(
                 title, description, category, duration, request.scene_template
             ):
                 collected.append(token)
-                yield _sse({"step": "token", "token": token})
+                yield sse_event_dict("token", {"token": token})
         except Exception:
             collected = []
         plan_data = ai.parse_plan_text("".join(collected), title, duration)
-        yield _sse({
-            "step": "preview",
+        yield sse_event_dict("preview", {
             "parsed": parsed_out,
             "plan": plan_data.get("plan", []),
             "suggestions": plan_data.get("suggestions", []),
         })
 
-    return StreamingResponse(
-        stream(),
-        media_type="text/event-stream",
-        headers={"X-Accel-Buffering": "no", "Cache-Control": "no-cache", "Connection": "keep-alive"},
-    )
+    return sse_response(stream())
 
 
 @router.post("/confirm", response_model=ChallengeResponse)
