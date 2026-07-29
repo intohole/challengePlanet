@@ -5,7 +5,7 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false },
+    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false },
     _ignite: null,
 
     render(el) {
@@ -55,7 +55,7 @@ window.cpViews.home = (function () {
       if (!ch) { this.loadedFor = null; return }
       if (this.loadedFor !== ch.id) {
         this.loadedFor = ch.id
-        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false }
+        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false }
         this.rerender()
       }
       const safe = p => p.catch(() => null)
@@ -124,14 +124,16 @@ window.cpViews.home = (function () {
       html += '<div class="cp-galaxy-wrap"><div id="galaxy-box"></div></div></div>'
       if (d.loading && !d.today) return html + this._skeleton()
       const shieldCount = (d.mercy && d.mercy.shields) || d.shields || 0
-      if (shieldCount > 0) html += '<div style="text-align:center"><span class="cp-shield-tag">🛡️ 连续护盾 ×' + shieldCount + ' · 断签自动保护</span></div>'
-      if (d.mercy && d.mercy.shield_activated) html += '<div class="cp-repair-card" style="border-color:rgba(129,140,248,.4);background:rgba(129,140,248,.08)"><p>🛡️ 护盾已自动生效！昨天的断签被保护，连续记录未中断。继续保持！</p></div>'
+      if (shieldCount > 0) html += '<div style="text-align:center"><span class="cp-shield-tag cp-shield-active">🛡️ 连续护盾 ×' + shieldCount + ' · 断签自动保护</span></div>'
+      if (d.mercy && d.mercy.shield_activated) html += '<div class="cp-repair-card cp-shield-active" style="border-color:rgba(129,140,248,.4);background:rgba(129,140,248,.08)"><p>🛡️ 护盾已自动生效！昨天的断签被保护，连续记录未中断。继续保持！</p></div>'
       if (d.error) html += '<div class="cp-error-box"><i class="fas fa-circle-exclamation"></i><span>' + window.cpEsc(d.error) + '</span><button class="cp-btn-ghost" onclick="cpViews.home.load()">重试</button></div>'
       if (d.adaptive) html += this._adaptiveCard(d.adaptive)
       if (d.guidance) html += this._guidanceCard(d.guidance)
       html += this._taskArea(s)
-      if (d.mercy && d.mercy.repair_available) {
-        html += '<div class="cp-repair-card"><p>💛 昨天不小心断签了，别灰心！48小时内完成今天任务即可修复连续记录。</p><button class="cp-btn-primary" onclick="cpViews.home.doRepair()"><i class="fas fa-band-aid"></i> 立即修复 streak</button></div>'
+      if (d.justRepaired) {
+        html += '<div class="cp-repair-card cp-shield-mend-card" style="text-align:center"><div class="cp-shield-mend-icon">🛡️</div><p>盾牌已重组！连续记录恢复，继续加油。</p></div>'
+      } else if (d.mercy && d.mercy.repair_available) {
+        html += '<div class="cp-repair-card" style="text-align:center"><div class="cp-shield-break-icon">🛡️</div><p>💛 昨天不小心断签了，别灰心！48小时内完成今天任务即可修复连续记录。</p><button class="cp-btn-primary" onclick="cpViews.home.doRepair()"><i class="fas fa-band-aid"></i> 立即修复 streak</button></div>'
       }
       if (d.mercy && (d.mercy.missed_dates || []).length) html += this._diagEntry(d.mercy.missed_dates.length)
       html += this._todayTimeline(s)
@@ -164,16 +166,42 @@ window.cpViews.home = (function () {
       const isMultiMode = ch.decompose_mode === 'time_slot' || tt === 'counter' || tt === 'timer'
       html += '<div class="glass-card cp-task-card"><div class="cp-task-head"><span class="cp-task-day"><i class="fas fa-flag"></i>第 ' + (t.day_number || 1) + ' 天 · ' + (t.date || '') + '</span><div class="cp-task-head-right"><span class="cp-task-type-badge">' + ttLabel + '</span><span class="cp-task-pct">' + (t.progress_pct || 0) + '%</span></div></div><p class="cp-task-title">' + window.cpEsc(t.task_title || '完成今日打卡') + '</p>'
       if (t.task_description) html += '<p class="cp-task-desc">' + window.cpEsc(t.task_description) + '</p>'
-      if (t.task_target && t.task_target > 0) html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> 今日目标 <b>' + t.task_target + '</b> ' + window.cpEsc(t.task_unit || '') + '</div>'
+      const baseline = t.dynamic_baseline || 0
+      const isDecrease = ch.direction === 'decrease'
+      if (baseline > 0) {
+        const mainText = isDecrease ? '比昨天少 <b>' + baseline.toFixed(1) + '</b> 就行' : '比昨天多 <b>' + baseline.toFixed(1) + '</b> 就行'
+        const refText = (t.task_target && t.task_target > 0) ? '<span class="cp-task-target-ref">目标 ' + t.task_target + ' ' + window.cpEsc(t.task_unit || '') + '（参考）</span>' : ''
+        html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> ' + mainText + ' ' + window.cpEsc(t.task_unit || '') + refText + '</div>'
+      } else if (t.task_target && t.task_target > 0) {
+        html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> 今日目标 <b>' + t.task_target + '</b> ' + window.cpEsc(t.task_unit || '') + '</div>'
+      }
       if (isMultiMode && t.today_total !== undefined) {
-        const pct = t.today_target > 0 ? Math.min(100, Math.round(t.today_total / t.today_target * 100)) : 0
-        const isDecrease = ch.direction === 'decrease'
-        const baseline = t.dynamic_baseline || 0
-        const overBaseline = isDecrease ? t.today_total > baseline : t.today_total < baseline
-        const barColor = overBaseline ? 'var(--red)' : 'var(--emerald)'
+        const staticTarget = t.today_target || 1
+        let pct, barColor
+        if (baseline > 0) {
+          if (isDecrease) {
+            const reached = t.today_total <= baseline
+            if (reached) { pct = 100; barColor = 'var(--emerald)' }
+            else {
+              const overRatio = baseline > 0 ? Math.min(1, (t.today_total - baseline) / baseline) : 0
+              pct = Math.round(80 + overRatio * 20)
+              barColor = overRatio < 0.2 ? 'var(--amber)' : 'var(--red)'
+            }
+          } else {
+            const ratio = baseline > 0 ? t.today_total / baseline : 0
+            pct = Math.round(Math.min(100, ratio * 100))
+            if (ratio >= 1) barColor = 'var(--emerald)'
+            else if (ratio >= 0.8) barColor = 'var(--amber)'
+            else barColor = 'var(--primary)'
+          }
+        } else {
+          pct = staticTarget > 0 ? Math.min(100, Math.round(t.today_total / staticTarget * 100)) : 0
+          const overTarget = isDecrease ? t.today_total > staticTarget : t.today_total < staticTarget
+          barColor = overTarget ? 'var(--red)' : 'var(--emerald)'
+        }
         html += '<div class="cp-task-progress"><div class="cp-task-progress-bar"><div class="cp-task-progress-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>'
-        html += '<div class="cp-task-progress-info"><span style="color:' + barColor + '">' + t.today_total + '</span><span class="cp-task-progress-sep">/</span><span>' + t.today_target + ' ' + window.cpEsc(t.unit || ch.unit || '') + '</span>'
-        if (baseline > 0) html += '<span class="cp-task-progress-baseline">软目标 ' + baseline.toFixed(1) + '</span>'
+        html += '<div class="cp-task-progress-info"><span style="color:' + barColor + '">' + t.today_total + '</span><span class="cp-task-progress-sep">/</span><span>' + staticTarget + ' ' + window.cpEsc(t.unit || ch.unit || '') + '</span>'
+        if (baseline > 0) html += '<span class="cp-task-progress-baseline">基准 ' + baseline.toFixed(1) + '</span>'
         html += '</div></div>'
       }
       if (t.sub_goals && t.sub_goals.length) html += this._subGoalProgress(t.sub_goals, ch)

@@ -34,6 +34,7 @@
 .cp-task-target { display: flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 13px; color: var(--amber); }
 .cp-task-target i { font-size: 11px; }
 .cp-task-target b { font-size: 15px; }
+.cp-task-target-ref { margin-left: 6px; font-size: 11px; color: var(--text-muted); font-weight: 400; }
 .cp-task-steps-preview { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .cp-step-preview-tag { font-size: 11px; color: var(--text-muted); background: rgba(15,23,42,.04); padding: 3px 8px; border-radius: 8px; border: 1px solid rgba(15,23,42,.05); }
 

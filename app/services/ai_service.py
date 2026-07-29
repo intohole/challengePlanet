@@ -14,6 +14,7 @@ from app.services.prompts import (
     PLAN_SYSTEM,
     QUOTE_SYSTEM,
     REPAIR_SYSTEM,
+    get_mood_aware_prefix,
 )
 from app.services.scene_service import SceneService
 
@@ -138,7 +139,7 @@ class AIService:
     ) -> str:
         phase = "适应期" if day_number <= 3 else ("巩固期" if day_number <= total_days * 0.6 else "维持期")
         memory_part = f"\n用户过往记忆：{memory_context}" if memory_context else ""
-        soft_exceed_hint = self._build_soft_exceed_hint(value, target, direction, is_soft_exceeded)
+        soft_exceed_hint = self._build_soft_exceed_hint(value, target, direction, is_soft_exceeded, mood)
         user_msg = (
             f"挑战：{challenge_title}\n第{day_number}/{total_days}天 ({phase})\n"
             f"心情：{mood or '未记录'}\n本次记录值：{value}\n目标值：{target}\n"
@@ -147,17 +148,22 @@ class AIService:
         )
         llm = get_llm_service()
         raw = await llm.ask(
-            user_msg, system=FEEDBACK_SYSTEM,
+            user_msg, system=get_mood_aware_prefix(mood) + FEEDBACK_SYSTEM,
             temperature=settings.FEEDBACK_TEMPERATURE,
             max_tokens=256, timeout=30.0,
         )
         return raw.strip()
 
     def _build_soft_exceed_hint(
-        self, value: float, target: float, direction: str, is_soft_exceeded: bool,
+        self, value: float, target: float, direction: str, is_soft_exceeded: bool, mood: str = "",
     ) -> str:
         if not is_soft_exceeded:
             return ""
+        if mood == "bad":
+            return (
+                f"\n【场景】用户本次记录{value}，软目标是{target}，心情低落。"
+                "绝不使用'这个时段对你来说特别难'，改用'没关系，记录本身就是进步'。"
+            )
         if direction == "decrease":
             return (
                 f"\n【场景】用户本次记录{value}，软目标是{target}，超出了。"

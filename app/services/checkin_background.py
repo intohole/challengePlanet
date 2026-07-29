@@ -71,7 +71,11 @@ async def safe_feedback(
     except Exception as e:
         logger.warning("daily feedback fallback: %s", e)
         if is_soft_exceeded:
+            if mood == "bad":
+                return "没关系，记录本身就是进步"
             return "这个时段对你来说特别难，我们一起想办法"
+        if mood == "bad":
+            return "今天辛苦了，能记下来就已经很了不起了"
         return "坚持就是胜利！明天继续加油"
 
 

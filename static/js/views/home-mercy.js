@@ -10,7 +10,9 @@
       window.cpToast(r.message || '已修复！偶尔断签没关系，重要的是继续前进')
       await this.load()
       await window.cpLoadChallenges()
+      this.data.justRepaired = true
       this.rerender()
+      setTimeout(() => { this.data.justRepaired = false; this.rerender() }, 3000)
     } catch (e) { window.cpToast(window.cpErrMsg(e, '修复失败')) }
   }
 

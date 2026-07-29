@@ -120,6 +120,31 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 .cp-celebrate-text { font-size: 22px; font-weight: 800; color: var(--text-primary); text-shadow: 0 0 24px var(--emerald-glow); animation: celebrate-pop .5s ease-out; }
 @keyframes celebrate-pop { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
 
+.cp-shield-break-icon { display: inline-block; font-size: 34px; line-height: 1; animation: shieldShatter .6s ease-out forwards; transform-origin: center; margin-bottom: 8px; filter: drop-shadow(0 2px 6px rgba(239,83,80,.3)); }
+.cp-shield-mend-icon { display: inline-block; font-size: 34px; line-height: 1; animation: shieldMend .8s ease-out forwards, shieldMendGlow 1.2s ease-out .6s forwards; transform-origin: center; margin-bottom: 8px; }
+.cp-shield-mend-card { border-color: rgba(102,187,106,.4) !important; background: rgba(102,187,106,.08) !important; animation: shieldMendGlow 1.2s ease-out .6s forwards; }
+.cp-shield-active { animation: shieldGlow 1.8s ease-in-out infinite; }
+
+@keyframes shieldShatter {
+  0% { transform: scale(1) rotate(0); clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); opacity: 1; }
+  30% { transform: scale(1.1) rotate(-2deg); }
+  60% { clip-path: polygon(0 20%, 100% 0, 80% 100%, 20% 80%); opacity: 0.7; }
+  100% { clip-path: polygon(20% 30%, 80% 10%, 60% 90%, 30% 70%); opacity: 0.4; transform: scale(0.95); }
+}
+@keyframes shieldMend {
+  0% { clip-path: polygon(20% 30%, 80% 10%, 60% 90%, 30% 70%); opacity: 0.4; transform: scale(0.95); }
+  50% { clip-path: polygon(0 20%, 100% 0, 80% 100%, 20% 80%); opacity: 0.7; }
+  100% { transform: scale(1) rotate(0); clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); opacity: 1; }
+}
+@keyframes shieldGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,138,101,.4); }
+  50% { box-shadow: 0 0 0 8px rgba(255,138,101,0); }
+}
+@keyframes shieldMendGlow {
+  0% { box-shadow: 0 0 0 0 rgba(102,187,106,.5); }
+  100% { box-shadow: 0 0 0 16px rgba(102,187,106,0); }
+}
+
 .modal-enter-active, .modal-leave-active { transition: opacity .25s; }
 .modal-enter-from, .modal-leave-to { opacity: 0; }
 .modal-enter-active .cp-modal, .modal-leave-active .cp-modal { transition: transform .25s, opacity .25s; }
