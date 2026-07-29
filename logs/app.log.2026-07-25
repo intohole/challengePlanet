@@ -1,0 +1,36 @@
+2026-07-25 00:02:41,602 [INFO] app [req_id=-]: Logging initialized: level=INFO, dir=logs
+2026-07-25 00:02:41,623 [INFO] challengePlanet.db [req_id=-]: migrations check passed: 10 tables ready
+2026-07-25 00:02:41,714 [INFO] httpx [req_id=-]: HTTP Request: GET http://localhost:9527/api/v1/namespaces/default/configs/llm/chat "HTTP/1.1 401 Unauthorized"
+2026-07-25 00:02:41,728 [INFO] httpx [req_id=-]: HTTP Request: GET http://localhost:9527/api/v1/namespaces/default/configs/llm/embed "HTTP/1.1 401 Unauthorized"
+2026-07-25 00:02:41,733 [INFO] nexus.ironman [req_id=-]: ironman instrumented (chat + embed + ask + extract + stream wrapped with metrics/circuit/req_id)
+2026-07-25 00:02:41,733 [WARNING] nexus.ironman [req_id=-]: ironman Bootstrap in degraded mode (app=ChallengePlanet, config missing or incomplete)
+2026-07-25 00:02:41,733 [INFO] challengePlanet.main [req_id=-]: Ironman available: False
+2026-07-25 00:02:41,734 [INFO] apscheduler.scheduler [req_id=-]: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-07-25 00:02:41,734 [INFO] nexus.scheduler [req_id=-]: Registered cron job 'cp-checkin-reminder': {'hour': 20, 'minute': 0}
+2026-07-25 00:02:41,735 [INFO] apscheduler.scheduler [req_id=-]: Added job "send_checkin_reminders" to job store "default"
+2026-07-25 00:02:41,735 [INFO] apscheduler.scheduler [req_id=-]: Scheduler started
+2026-07-25 00:02:41,735 [INFO] nexus.scheduler [req_id=-]: Scheduler started with 1 jobs
+2026-07-25 00:02:41,735 [INFO] challengePlanet.main [req_id=-]: Scheduler started: check-in reminders at 20:00 daily
+2026-07-25 00:02:47,936 [INFO] nexus.scheduler [req_id=-]: Scheduler shutdown complete
+2026-07-25 00:02:47,936 [INFO] apscheduler.scheduler [req_id=-]: Scheduler has been shut down
+2026-07-25 00:02:48,299 [INFO] app [req_id=-]: Logging initialized: level=INFO, dir=logs
+2026-07-25 00:02:48,320 [INFO] challengePlanet.db [req_id=-]: migrations check passed: 10 tables ready
+2026-07-25 00:02:48,410 [INFO] httpx [req_id=-]: HTTP Request: GET http://localhost:9527/api/v1/namespaces/default/configs/llm/chat "HTTP/1.1 401 Unauthorized"
+2026-07-25 00:02:48,425 [INFO] httpx [req_id=-]: HTTP Request: GET http://localhost:9527/api/v1/namespaces/default/configs/llm/embed "HTTP/1.1 401 Unauthorized"
+2026-07-25 00:02:48,430 [INFO] nexus.ironman [req_id=-]: ironman instrumented (chat + embed + ask + extract + stream wrapped with metrics/circuit/req_id)
+2026-07-25 00:02:48,430 [WARNING] nexus.ironman [req_id=-]: ironman Bootstrap in degraded mode (app=ChallengePlanet, config missing or incomplete)
+2026-07-25 00:02:48,430 [INFO] challengePlanet.main [req_id=-]: Ironman available: False
+2026-07-25 00:02:48,431 [INFO] apscheduler.scheduler [req_id=-]: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-07-25 00:02:48,431 [INFO] nexus.scheduler [req_id=-]: Registered cron job 'cp-checkin-reminder': {'hour': 20, 'minute': 0}
+2026-07-25 00:02:48,431 [INFO] apscheduler.scheduler [req_id=-]: Added job "send_checkin_reminders" to job store "default"
+2026-07-25 00:02:48,431 [INFO] apscheduler.scheduler [req_id=-]: Scheduler started
+2026-07-25 00:02:48,431 [INFO] nexus.scheduler [req_id=-]: Scheduler started with 1 jobs
+2026-07-25 00:02:48,431 [INFO] challengePlanet.main [req_id=-]: Scheduler started: check-in reminders at 20:00 daily
+2026-07-25 20:00:00,005 [INFO] apscheduler.executors.default [req_id=-]: Running job "send_checkin_reminders (trigger: cron[hour='20', minute='0'], next run at: 2026-07-26 20:00:00 CST)" (scheduled at 2026-07-25 20:00:00+08:00)
+2026-07-25 20:00:00,039 [INFO] challengePlanet.reminder [req_id=-]: Found 4 unchecked challenges, sending reminders...
+2026-07-25 20:00:00,061 [WARNING] challengePlanet.reminder [req_id=-]: Failed to send reminder to user test_user_1: All connection attempts failed
+2026-07-25 20:00:00,062 [WARNING] challengePlanet.reminder [req_id=-]: Failed to send reminder to user cp_测试用户_la0gax: All connection attempts failed
+2026-07-25 20:00:00,063 [WARNING] challengePlanet.reminder [req_id=-]: Failed to send reminder to user cp_测试用户_la0gax: All connection attempts failed
+2026-07-25 20:00:00,063 [WARNING] challengePlanet.reminder [req_id=-]: Failed to send reminder to user test_user_001: All connection attempts failed
+2026-07-25 20:00:00,063 [INFO] challengePlanet.reminder [req_id=-]: Check-in reminders processed for 4 challenges.
+2026-07-25 20:00:00,063 [INFO] apscheduler.executors.default [req_id=-]: Job "send_checkin_reminders (trigger: cron[hour='20', minute='0'], next run at: 2026-07-26 20:00:00 CST)" executed successfully

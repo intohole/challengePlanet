@@ -1,0 +1,2 @@
+2026-07-26 20:00:01,213 [WARNING] apscheduler.executors.default [req_id=-]: Run time of job "send_checkin_reminders (trigger: cron[hour='20', minute='0'], next run at: 2026-07-27 20:00:00 CST)" was missed by 0:00:01.213718
+2026-07-26 20:00:01,218 [WARNING] nexus.scheduler [req_id=-]: Job 'cp-checkin-reminder' missed its schedule
