@@ -85,6 +85,11 @@ select {
         min-height: 44px;
         min-width: 44px;
     }
+    input,
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
     .cp-modal-close {
         width: 36px;
         height: 36px;
