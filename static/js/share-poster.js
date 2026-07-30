@@ -83,7 +83,7 @@ window.cpSharePoster = (function () {
     ctx.textAlign = 'left'
     ctx.fillStyle = '#818cf8'
     ctx.font = 'bold 22px sans-serif'
-    ctx.fillText('🌍 挑战星球', 40, 64)
+    ctx.fillText('🌍 星轨挑战', 40, 64)
 
     const px = 375, py = 290, pr = 96
     const pg = ctx.createRadialGradient(px - 30, py - 34, 10, px, py, pr)
@@ -163,7 +163,7 @@ window.cpSharePoster = (function () {
     ctx.fillStyle = '#818cf8'
     ctx.font = 'bold 17px sans-serif'
     ctx.textAlign = 'left'
-    ctx.fillText('挑战星球 · AI打卡教练', 40, 960)
+    ctx.fillText('星轨挑战 · AI打卡教练', 40, 960)
 
     return canvas.toDataURL('image/png')
   }
@@ -211,7 +211,7 @@ window.cpSharePoster = (function () {
     ctx.textAlign = 'left'
     ctx.fillStyle = '#fbbf24'
     ctx.font = 'bold 22px sans-serif'
-    ctx.fillText('🌍 挑战星球 · 翻车复盘', 40, 64)
+    ctx.fillText('🌍 星轨挑战 · 翻车复盘', 40, 64)
 
     const px = 375, py = 280, pr = 96
     const pg = ctx.createRadialGradient(px - 30, py - 34, 10, px, py, pr)
@@ -285,7 +285,7 @@ window.cpSharePoster = (function () {
     ctx.fillStyle = '#fbbf24'
     ctx.font = 'bold 17px sans-serif'
     ctx.textAlign = 'left'
-    ctx.fillText('挑战星球 · 真实打卡，允许翻车', 40, 960)
+    ctx.fillText('星轨挑战 · 真实打卡，允许翻车', 40, 960)
 
     return canvas.toDataURL('image/png')
   }

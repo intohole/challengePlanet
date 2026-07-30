@@ -1,6 +1,6 @@
 app:
   name: challengePlanet
-  display_name: "挑战星球"
+  display_name: "星轨挑战"
   description: "AI驱动的挑战打卡工具"
   app_group: "工具提效,生活"
   icon_url: "icon.svg"

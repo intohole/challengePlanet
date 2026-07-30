@@ -5,7 +5,7 @@
     if (!g) return ''
     let h = '<div class="glass-card cp-guidance-card">'
     h += '<div class="cp-guidance-head">'
-    h += '<div class="cp-phase-badge" style="background:' + (g.phase_color || '#FF8A65') + '20;color:' + (g.phase_color || '#FF8A65') + ';border-color:' + (g.phase_color || '#FF8A65') + '40">'
+    h += '<div class="cp-phase-badge" style="background:' + (g.phase_color || '#4f46e5') + '20;color:' + (g.phase_color || '#4f46e5') + ';border-color:' + (g.phase_color || '#4f46e5') + '40">'
     h += '<span class="cp-phase-icon">' + (g.phase_icon || '🌱') + '</span>'
     h += '<div class="cp-phase-info"><div class="cp-phase-name">' + window.cpEsc(g.phase_name || '适应期') + '</div><div class="cp-phase-range">' + window.cpEsc(g.phase_range || '第1-7天') + '</div></div>'
     h += '</div>'
@@ -53,7 +53,7 @@
     const ch = window.appState.current
     if (!ch || !ch.share_token) return
     const url = window.location.origin + window.cpPrefix + '/?shared=' + ch.share_token
-    const text = '我在挑战星球参加「' + ch.title + '」挑战！\n' + (ch.completed_days || 0) + '/' + ch.total_days + '天已完成，来一起打卡吧！\n' + url
+    const text = '我在星轨挑战参加「' + ch.title + '」挑战！\n' + (ch.completed_days || 0) + '/' + ch.total_days + '天已完成，来一起打卡吧！\n' + url
     window.cpCopy(text)
   }
 })()

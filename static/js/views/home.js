@@ -13,7 +13,7 @@ window.cpViews.home = (function () {
       const s = window.appState
       const h = new Date().getHours()
       const greet = h < 6 ? '夜深了' : h < 12 ? '早上好' : h < 14 ? '中午好' : h < 18 ? '下午好' : '晚上好'
-      let html = '<div class="cp-brand-banner"><span class="cp-brand-icon">🌍</span><div class="cp-brand-text"><div class="cp-brand-name">挑战星球</div><div class="cp-brand-slogan">AI 打卡教练 · 陪你每一天</div></div>'
+      let html = '<div class="cp-brand-banner"><span class="cp-brand-icon">🌍</span><div class="cp-brand-text"><div class="cp-brand-name">星轨挑战</div><div class="cp-brand-slogan">AI 打卡教练 · 陪你每一天</div></div>'
       if (s.booted && s.challenges.length) {
         html += s.pendingCount > 0
           ? '<span class="cp-pending-badge"><i class="fas fa-bolt"></i>待打卡 ' + s.pendingCount + '</span>'

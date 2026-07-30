@@ -51,7 +51,7 @@
         { name: '鱼跃', desc: '闲鱼助手', color: '#155e75' },
         { name: 'adSmart', desc: '广告投放', color: '#ef4444' },
         { name: '司南', desc: '人生推演', color: '#0d9488' },
-        { name: '挑战星球', desc: 'AI打卡', color: '#FF8A65' },
+        { name: '星轨挑战', desc: 'AI打卡', color: '#4f46e5' },
         { name: 'PromptGenius', desc: '提示词优化', color: '#0f172a' }
     ];
 

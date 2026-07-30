@@ -61,7 +61,7 @@ class ShareService:
             f"🎯 {challenge.title}\n"
             f"已坚持 {completed_days}/{challenge.duration_days} 天 ({progress:.0f}%)\n"
             f"🔥 连续 {streak} 天\n"
-            f"在挑战星球，用AI规划每一天的坚持"
+            f"在星轨挑战，用AI规划每一天的坚持"
         )
         return {
             "challenge_id": challenge.id, "title": challenge.title,

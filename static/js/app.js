@@ -212,7 +212,7 @@ function saveShareImage() {
   if (!state.share.url) return
   const a = document.createElement('a')
   a.href = state.share.url
-  a.download = '挑战星球_' + (state.share.mode === 'flop' ? '翻车复盘_' : '') + (state.current.title || '分享') + '.png'
+  a.download = '星轨挑战_' + (state.share.mode === 'flop' ? '翻车复盘_' : '') + (state.current.title || '分享') + '.png'
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
@@ -223,8 +223,8 @@ function copyShareText() {
   if (!c) return
   const url = window.location.origin + window.cpPrefix
   const text = state.share.mode === 'flop'
-    ? '我在挑战星球「' + c.title + '」翻车后回来了！\n断签不可怕，可怕的是不再开始。已完成 ' + (c.completed_days || 0) + '/' + c.total_days + ' 天\n来挑战星球，真实打卡，允许翻车\n' + url
-    : '我在挑战星球参加「' + c.title + '」挑战！\n已完成 ' + (c.completed_days || 0) + '/' + c.total_days + ' 天，连续打卡 ' + (c.streak || 0) + ' 天\n来挑战星球，和我一起变得更好！\n' + url
+    ? '我在星轨挑战「' + c.title + '」翻车后回来了！\n断签不可怕，可怕的是不再开始。已完成 ' + (c.completed_days || 0) + '/' + c.total_days + ' 天\n来星轨挑战，真实打卡，允许翻车\n' + url
+    : '我在星轨挑战参加「' + c.title + '」挑战！\n已完成 ' + (c.completed_days || 0) + '/' + c.total_days + ' 天，连续打卡 ' + (c.streak || 0) + ' 天\n来星轨挑战，和我一起变得更好！\n' + url
   window.cpCopy(text)
 }
 function logout() {
