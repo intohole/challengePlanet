@@ -1,23 +1,23 @@
 :root {
-  --bg: #FAFAFA;
-  --bg-grad: linear-gradient(180deg, #EEF2FF 0%, #FAFAFA 30%, #F0F4F8 100%);
+  --bg: #FAFAF7;
+  --bg-grad: linear-gradient(180deg, #FFF7ED 0%, #FAFAF7 30%, #F4F4F2 100%);
   --card: #FFFFFF;
-  --card-hover: #F5F5F5;
-  --card-border: #E8E8E8;
-  --card-shadow: 0 2px 12px rgba(15,23,42,.06);
+  --card-hover: #F4F3F1;
+  --card-border: #E7E5E4;
+  --card-shadow: 0 2px 12px rgba(28,25,23,.06);
   --text-primary: #0F172A;
   --text-secondary: #475569;
   --text-muted: #94A3B8;
-  --primary: #4f46e5;
-  --primary-light: #6366f1;
-  --primary-dark: #4338ca;
-  --primary-glow: rgba(79,70,229,.20);
-  --emerald: #66BB6A;
-  --emerald-glow: rgba(102,187,106,.25);
-  --amber: #FFCA28;
-  --amber-glow: rgba(255,202,40,.25);
-  --blue: #42A5F5;
-  --red: #EF5350;
+  --primary: #D97706;
+  --primary-light: #F59E0B;
+  --primary-dark: #B45309;
+  --primary-glow: rgba(217,119,6,.20);
+  --emerald: #059669;
+  --emerald-glow: rgba(5,150,105,.22);
+  --amber: #F59E0B;
+  --amber-glow: rgba(245,158,11,.25);
+  --blue: #1677FF;
+  --red: #DC2626;
   --radius-sm: 10px;
   --radius: 14px;
   --radius-lg: 20px;
@@ -41,7 +41,7 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 .cp-header { position: sticky; top: 0; z-index: 50; height: var(--header-h); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: rgba(255,255,255,.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--card-border); }
 .cp-logo { display: flex; align-items: center; gap: 10px; }
 .cp-logo-icon { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-size: 17px; color: #fff; box-shadow: 0 0 24px var(--primary-glow); position: relative; }
-.cp-logo-icon::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 1.5px solid rgba(79,70,229,.2); border-top-color: var(--primary-light); animation: orbit 3s linear infinite; }
+.cp-logo-icon::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 1.5px solid rgba(217,119,6,.2); border-top-color: var(--primary-light); animation: orbit 3s linear infinite; }
 @keyframes orbit { to { transform: rotate(360deg); } }
 .cp-logo-wrap { display: flex; flex-direction: column; line-height: 1.2; }
 .cp-logo-text { font-size: 17px; font-weight: 800; background: linear-gradient(135deg, var(--text-primary), var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
@@ -112,7 +112,7 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 .cp-template-icon { font-size: 24px; }
 .cp-template-title { font-size: 13px; font-weight: 600; }
 .cp-template-desc { font-size: 11px; color: var(--text-muted); }
-.cp-template-days { font-size: 11px; color: var(--primary); background: rgba(79,70,229,.12); padding: 2px 8px; border-radius: 8px; }
+.cp-template-days { font-size: 11px; color: var(--primary); background: rgba(217,119,6,.12); padding: 2px 8px; border-radius: 8px; }
 
 .cp-celebrate { position: fixed; inset: 0; z-index: 200; pointer-events: none; display: flex; align-items: center; justify-content: center; }
 .cp-celebrate-star { position: absolute; color: var(--amber); animation: star-fly 1.2s ease-out forwards; opacity: 0; }
@@ -122,7 +122,7 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 
 .cp-shield-break-icon { display: inline-block; font-size: 34px; line-height: 1; animation: shieldShatter .6s ease-out forwards; transform-origin: center; margin-bottom: 8px; filter: drop-shadow(0 2px 6px rgba(239,83,80,.3)); }
 .cp-shield-mend-icon { display: inline-block; font-size: 34px; line-height: 1; animation: shieldMend .8s ease-out forwards, shieldMendGlow 1.2s ease-out .6s forwards; transform-origin: center; margin-bottom: 8px; }
-.cp-shield-mend-card { border-color: rgba(102,187,106,.4) !important; background: rgba(102,187,106,.08) !important; animation: shieldMendGlow 1.2s ease-out .6s forwards; }
+.cp-shield-mend-card { border-color: rgba(5,150,105,.4) !important; background: rgba(5,150,105,.08) !important; animation: shieldMendGlow 1.2s ease-out .6s forwards; }
 .cp-shield-active { animation: shieldGlow 1.8s ease-in-out infinite; }
 
 @keyframes shieldShatter {
@@ -137,12 +137,12 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
   100% { transform: scale(1) rotate(0); clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); opacity: 1; }
 }
 @keyframes shieldGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(79,70,229,.4); }
-  50% { box-shadow: 0 0 0 8px rgba(79,70,229,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(217,119,6,.4); }
+  50% { box-shadow: 0 0 0 8px rgba(217,119,6,0); }
 }
 @keyframes shieldMendGlow {
-  0% { box-shadow: 0 0 0 0 rgba(102,187,106,.5); }
-  100% { box-shadow: 0 0 0 16px rgba(102,187,106,0); }
+  0% { box-shadow: 0 0 0 0 rgba(5,150,105,.5); }
+  100% { box-shadow: 0 0 0 16px rgba(5,150,105,0); }
 }
 
 .modal-enter-active, .modal-leave-active { transition: opacity .25s; }
