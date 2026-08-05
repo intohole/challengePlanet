@@ -1,0 +1,198 @@
+/* ========== Layout Base ========== */
+.nux-layout-sidebar,
+.nux-layout-topnav {
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+/* ========== Header ========== */
+.nux-layout-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: var(--nx-space-3);
+    padding: 0 var(--nx-space-4);
+    background: var(--nx-bg-surface);
+    border-bottom: 1px solid var(--nx-border);
+    z-index: 100;
+    backdrop-filter: blur(12px);
+}
+
+.nux-layout-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--nx-space-2);
+    font-weight: 600;
+    font-size: var(--nx-text-lg);
+    color: var(--nx-text-heading);
+}
+
+.nux-layout-brand-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.nux-layout-brand-name {
+    white-space: nowrap;
+}
+
+.nux-layout-header-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--nx-space-2);
+}
+
+/* ========== Sidebar Layout ========== */
+.nux-layout-sidebar .nux-layout-aside {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    bottom: 0;
+    width: 240px;
+    background: var(--nx-bg-surface);
+    border-right: 1px solid var(--nx-border);
+    overflow-y: auto;
+    z-index: 90;
+    transition: transform 0.3s ease;
+}
+
+.nux-layout-sidebar .nux-layout-main {
+    margin-left: 240px;
+    margin-top: 56px;
+    padding: var(--nx-space-6);
+    min-height: calc(100vh - 56px);
+    min-height: calc(100dvh - 56px);
+}
+
+/* ========== TopNav Layout ========== */
+.nux-layout-topnav .nux-layout-topnav-nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: var(--nx-space-4);
+}
+
+.nux-layout-topnav-item {
+    padding: var(--nx-space-2) var(--nx-space-3);
+    font-size: var(--nx-text-sm);
+    color: var(--nx-text-secondary);
+    text-decoration: none;
+    border-radius: var(--nx-radius-md);
+    transition: all var(--nx-transition-fast);
+    white-space: nowrap;
+}
+
+.nux-layout-topnav-item:hover {
+    color: var(--nx-text-heading);
+    background: var(--nx-bg-hover);
+}
+
+.nux-layout-topnav-item.active {
+    color: var(--app-accent, var(--nx-primary));
+    background: color-mix(in srgb, var(--app-accent, var(--nx-primary)) 10%, transparent);
+    font-weight: 500;
+}
+
+.nux-layout-topnav-drawer {
+    display: none;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 85vw;
+    background: var(--nx-bg-surface);
+    border-right: 1px solid var(--nx-border);
+    z-index: 90;
+    padding: var(--nx-space-4);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+}
+
+.nux-layout-topnav-drawer.open {
+    transform: translateX(0);
+}
+
+/* ========== Nav Items ========== */
+.nux-layout-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--nx-space-2);
+}
+
+.nux-layout-nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--nx-space-3);
+    padding: var(--nx-space-2) var(--nx-space-3);
+    font-size: var(--nx-text-sm);
+    color: var(--nx-text-secondary);
+    text-decoration: none;
+    border-radius: var(--nx-radius-md);
+    transition: all var(--nx-transition-fast);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.nux-layout-nav-item:hover {
+    color: var(--nx-text-heading);
+    background: var(--nx-bg-hover);
+}
+
+.nux-layout-nav-item.active {
+    color: var(--app-accent, var(--nx-primary));
+    background: color-mix(in srgb, var(--app-accent, var(--nx-primary)) 10%, transparent);
+    font-weight: 500;
+}
+
+.nux-layout-nav-icon {
+    font-size: 18px;
+    line-height: 1;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+    .nux-layout-sidebar .nux-layout-aside {
+        transform: translateX(-100%);
+    }
+
+    .nux-layout-sidebar .nux-layout-aside.mobile-open {
+        transform: translateX(0);
+    }
+
+    .nux-layout-sidebar .nux-layout-main {
+        margin-left: 0;
+        padding: var(--nx-space-4);
+    }
+
+    .nux-layout-topnav-drawer {
+        display: block;
+    }
+
+    .nux-layout-header {
+        padding: 0 var(--nx-space-3);
+    }
+
+    .nux-layout-brand-name {
+        font-size: var(--nx-text-base);
+    }
+}
+
+/* ========== Utility Classes ========== */
+.nx-hide-mobile { }
+.nx-show-mobile { display: none !important; }
+
+@media (max-width: 768px) {
+    .nx-hide-mobile { display: none !important; }
+    .nx-show-mobile { display: flex !important; }
+}

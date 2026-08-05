@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from nexus.middleware import LoadingSplashMiddleware, NoCacheMiddleware
 from nexus import close_uc_sdk, init_uc_sdk, is_ironman_available, startup_ironman
 from nexus.logging import get_logger, setup_logging
 from nexus.scheduler import get_scheduler
@@ -81,6 +82,8 @@ app = FastAPI(
 )
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 register_middleware(app)
+app.add_middleware(LoadingSplashMiddleware, app_name="ChallengePlanet")
+app.add_middleware(NoCacheMiddleware, path_prefix="/static")
 
 API_PREFIX = settings.API_PREFIX
 app.include_router(auth_router, prefix=API_PREFIX)
