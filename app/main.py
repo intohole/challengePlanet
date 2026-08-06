@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from nexus.middleware import LoadingSplashMiddleware, NoCacheMiddleware
-from nexus import close_uc_sdk, init_uc_sdk, is_ironman_available, startup_ironman
+from nexus import close_uc_sdk, init_uc_sdk, is_ironman_available, startup_ironman, register_health_detail
 from nexus.logging import get_logger, setup_logging
 from nexus.scheduler import get_scheduler
 
@@ -112,53 +112,44 @@ async def health() -> dict[str, str]:
     }
 
 
-@app.get("/health/detailed")
-async def health_detailed() -> dict[str, object]:
-    import httpx
+async def _health_db_check() -> str:
     from sqlalchemy import text
     from app.db.database import async_session
 
-    checks: dict[str, object] = {}
-    overall = True
+    async with async_session() as session:
+        result = await session.execute(text("SELECT 1"))
+        return "ok" if result.scalar() == 1 else "error"
 
-    try:
-        async with async_session() as session:
-            result = await session.execute(text("SELECT 1"))
-            checks["database"] = "ok" if result.scalar() == 1 else "error"
-    except Exception:
-        checks["database"] = "error"
-        overall = False
 
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(f"{settings.LION_BASE_URL}/health")
-            checks["lion"] = "ok" if resp.status_code == 200 else f"status:{resp.status_code}"
-            if resp.status_code != 200:
-                overall = False
-    except Exception:
-        checks["lion"] = "error"
-        overall = False
+async def _health_lion_check() -> str:
+    import httpx
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.get(f"{settings.LION_BASE_URL}/health")
+        return "ok" if resp.status_code == 200 else f"status:{resp.status_code}"
 
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(f"{settings.UC_BASE_URL}/health")
-            checks["usercenter"] = "ok" if resp.status_code == 200 else f"status:{resp.status_code}"
-            if resp.status_code != 200:
-                overall = False
-    except Exception:
-        checks["usercenter"] = "error"
-        overall = False
 
-    checks["ironman"] = "available" if is_ironman_available() else "unavailable"
-    if not is_ironman_available():
-        overall = False
+async def _health_uc_check() -> str:
+    import httpx
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.get(f"{settings.UC_BASE_URL}/health")
+        return "ok" if resp.status_code == 200 else f"status:{resp.status_code}"
 
-    return {
-        "status": "ok" if overall else "degraded",
-        "app": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "checks": checks,
-    }
+
+async def _health_ironman_check() -> str:
+    return "ok" if is_ironman_available() else "unavailable"
+
+
+register_health_detail(
+    app,
+    app_name=settings.APP_NAME,
+    app_version=settings.APP_VERSION,
+    checks={
+        "database": _health_db_check,
+        "lion": _health_lion_check,
+        "usercenter": _health_uc_check,
+        "ironman": _health_ironman_check,
+    },
+)
 
 
 @app.get("/")

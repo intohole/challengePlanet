@@ -4,8 +4,8 @@ from fastapi import FastAPI
 
 from nexus import (
     RequestIdMiddleware,
-    ServiceAuthMiddleware,
     RateLimitMiddleware,
+    register_service_auth,
     setup_cors,
     setup_exception_handlers,
 )
@@ -13,19 +13,8 @@ from nexus import (
 
 def register_middleware(app: FastAPI) -> None:
     app.add_middleware(RequestIdMiddleware)
-    app.add_middleware(
-        ServiceAuthMiddleware,
-        whitelist_paths=[
-            "/health",
-            "/health/detailed",
-            "/api/health",
-            "/docs",
-            "/openapi.json",
-            "/redoc",
-            "/",
-            "/login",
-            "/static",
-        ],
+    register_service_auth(
+        app,
         public_api_prefixes=["/api/v1/auth", "/api/v1/share"],
     )
     app.add_middleware(RateLimitMiddleware)
