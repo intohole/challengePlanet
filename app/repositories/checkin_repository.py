@@ -5,10 +5,12 @@ from datetime import datetime, timedelta
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from nexus import StatelessRepository
+
 from app.models.checkin import CheckIn, AIInsight
 
 
-class CheckInRepository:
+class CheckInRepository(StatelessRepository[CheckIn]):
     async def get_by_challenge(
         self, session: AsyncSession, challenge_id: int
     ) -> list[CheckIn]:
@@ -98,10 +100,7 @@ class CheckInRepository:
         return float(result.scalar_one() or 0.0)
 
     async def create(self, session: AsyncSession, data: dict[str, object]) -> CheckIn:
-        checkin = CheckIn(**data)
-        session.add(checkin)
-        await session.flush()
-        return checkin
+        return await super().create(session, data)
 
     async def update(
         self, session: AsyncSession, checkin: CheckIn, data: dict[str, object]
@@ -185,7 +184,7 @@ class CheckInRepository:
         ]
 
 
-class InsightRepository:
+class InsightRepository(StatelessRepository[AIInsight]):
     async def get_by_challenge(
         self, session: AsyncSession, challenge_id: int, limit: int = 10
     ) -> list[AIInsight]:
@@ -198,10 +197,7 @@ class InsightRepository:
         return list(result.scalars().all())
 
     async def create(self, session: AsyncSession, data: dict[str, object]) -> AIInsight:
-        insight = AIInsight(**data)
-        session.add(insight)
-        await session.flush()
-        return insight
+        return await super().create(session, data)
 
     async def get_latest_weekly(
         self, session: AsyncSession, challenge_id: int
