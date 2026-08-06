@@ -1,16 +1,16 @@
-body  {
+body   {
     padding-top: var(--safe-top);
     padding-bottom: var(--safe-bottom);
     padding-left: var(--safe-left);
     padding-right: var(--safe-right);
 }
 
-img, video, canvas  {
+img, video, canvas   {
     max-width: 100%;
     height: auto;
 }
 
-.full-height  {
+.full-height   {
     height: 100vh;
     height: 100svh;
     height: 100dvh;
@@ -19,7 +19,7 @@ img, video, canvas  {
     min-height: 100dvh;
 }
 
-.cp-modal-footer  {
+.cp-modal-footer   {
     position: sticky;
     bottom: 0;
     padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
@@ -30,12 +30,12 @@ img, video, canvas  {
 }
 
 .cp-modal-footer .cp-btn-primary,
-.cp-modal-footer .cp-btn-ghost  {
+.cp-modal-footer .cp-btn-ghost   {
     flex: 1;
     min-height: 48px;
 }
 
-@media (max-width: 768px)  {
+@media (max-width: 768px)   {
 .show-mobile{
 display: block !important;
 }
@@ -65,21 +65,15 @@ width: 36px;
         font-size: 16px;
         padding: 0;
 }
-.cp-modal{
-max-width: 100% !important;
-        max-height: 100dvh !important;
-        border-radius: 0 !important;
-        margin: 0 !important;
-}
 }
 
-@media (min-width: 769px)  {
+@media (min-width: 769px)   {
 .show-mobile{
 display: none !important;
 }
 }
 
-@media (pointer: coarse)  {
+@media (pointer: coarse)   {
 button,
     .btn,
     [role="button"],
@@ -94,7 +88,7 @@ display: none !important;
 }
 }
 
-@supports not (padding: env(safe-area-inset-top))  {
+@supports not (padding: env(safe-area-inset-top))   {
 :root{
 --safe-top: 0px;
         --safe-bottom: 0px;
