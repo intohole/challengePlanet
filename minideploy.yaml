@@ -11,9 +11,7 @@ app:
 
 build:
   prepare:
-    - python3 -m pip install -e /home/cool/workspace/ironman
-    - python3 -m pip install -e /home/cool/workspace/nexus-backend
-    - python3 -m pip install -r requirements.txt
+    - python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 run:
   web: python3 -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --timeout-keep-alive 30
