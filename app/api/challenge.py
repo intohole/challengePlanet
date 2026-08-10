@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from nexus import get_current_user_id_required
@@ -25,55 +23,6 @@ from app.services.guidance_service import GuidanceService
 router = APIRouter()
 
 
-def _to_response(challenge: object, item: dict[str, object]) -> ChallengeResponse:
-    c = challenge
-    stats = item["stats"]
-    try:
-        plan = json.loads(c.ai_plan) if c.ai_plan else []
-    except json.JSONDecodeError:
-        plan = []
-    return ChallengeResponse(
-        id=c.id,
-        user_id=c.user_id,
-        title=c.title,
-        description=c.description,
-        category=c.category,
-        duration_days=c.duration_days,
-        total_days=stats["total_days"],
-        completed_days=stats["completed_days"],
-        streak=stats["streak"],
-        start_date=c.start_date,
-        end_date=c.end_date,
-        status=c.status,
-        ai_plan=plan,
-        color=c.color,
-        icon=c.icon,
-        task_type=c.task_type,
-        scene_template=c.scene_template,
-        is_shared=c.is_shared,
-        share_token=c.share_token,
-        source=str(item.get("source", "manual")),
-        today_checked=bool(item.get("today_checked", False)),
-        target_value=float(getattr(c, "target_value", 1.0) or 1.0),
-        unit=str(getattr(c, "unit", "次") or "次"),
-        direction=str(getattr(c, "direction", "increase") or "increase"),
-        goal_type=str(getattr(c, "goal_type", "hard") or "hard"),
-        decompose_mode=str(getattr(c, "decompose_mode", "none") or "none"),
-        slot_hours=int(getattr(c, "slot_hours", 1) or 1),
-        slot_target_value=float(getattr(c, "slot_target_value", 0.0) or 0.0),
-        mercy=item.get("mercy", {}),
-        created_at=c.created_at,
-    )
-
-
-async def _build_response(
-    session: AsyncSession, challenge: object, user_id: str
-) -> ChallengeResponse:
-    service = ChallengeService()
-    item = await service.build_list_item(session, challenge, user_id)
-    return _to_response(challenge, item)
-
-
 @router.get("", response_model=list[ChallengeResponse])
 async def list_challenges(
     user_id: str = Depends(get_current_user_id_required),
@@ -83,7 +32,7 @@ async def list_challenges(
     challenges = await service.get_user_challenges(session, user_id)
     results: list[ChallengeResponse] = []
     for c in challenges:
-        results.append(await _build_response(session, c, user_id))
+        results.append(await service.build_response(session, c, user_id))
     return results
 
 
@@ -148,8 +97,7 @@ async def confirm_challenge(
         decompose_mode=request.decompose_mode, slot_hours=request.slot_hours,
         slot_target_value=request.slot_target_value,
     )
-    await session.commit()
-    return await _build_response(session, challenge, user_id)
+    return await service.build_response(session, challenge, user_id)
 
 
 @router.post("/from-decision", response_model=ChallengeResponse)
@@ -162,8 +110,7 @@ async def create_from_decision(
     challenge = await service.create_from_decision(
         session, user_id, request.title, request.description, request.duration_days
     )
-    await session.commit()
-    return await _build_response(session, challenge, user_id)
+    return await service.build_response(session, challenge, user_id)
 
 
 @router.get("/{challenge_id}/today", response_model=TodayTaskResponse)
@@ -191,7 +138,6 @@ async def get_share_data(
         raise HTTPException(status_code=404, detail="挑战不存在")
     from app.services.share_service import ShareService
     data = await ShareService().get_share_data(session, challenge_id)
-    await session.commit()
     return ShareDataResponse(**data)
 
 
@@ -230,7 +176,6 @@ async def import_shared(
     challenge = await service.import_shared_config(session, share_token, user_id)
     if challenge is None:
         raise HTTPException(status_code=404, detail="分享链接无效或已过期")
-    await session.commit()
     return ImportResponse(id=challenge.id, title=challenge.title, message="导入成功")
 
 
@@ -244,5 +189,4 @@ async def generate_share(
     data = await service.generate_share_token(session, challenge_id, user_id)
     if data is None:
         raise HTTPException(status_code=404, detail="挑战不存在")
-    await session.commit()
     return ShareDataResponse(**data)

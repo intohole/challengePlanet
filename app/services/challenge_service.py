@@ -10,6 +10,7 @@ from app.models.challenge import Challenge
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import ChallengeMetaRepository
+from app.schemas.challenge import ChallengeResponse
 from app.services.ai_service import AIService
 from app.services.mercy_service import MercyService, load_valid_dates
 from app.services.streak_service import calc_streak, today_str
@@ -68,6 +69,7 @@ class ChallengeService:
         await self._meta_repo.upsert(session, challenge.id, {
             "source": source, "squad_id": squad_id, "extra": "{}",
         })
+        await session.commit()
         return challenge
 
     async def create_from_decision(
@@ -120,6 +122,52 @@ class ChallengeService:
                 "repair_available": mercy["repair_available"],
             },
         }
+
+    async def build_response(
+        self, session: AsyncSession, challenge: object, user_id: str,
+    ) -> ChallengeResponse:
+        item = await self.build_list_item(session, challenge, user_id)
+        return self._to_response(challenge, item)
+
+    def _to_response(self, challenge: object, item: dict[str, object]) -> ChallengeResponse:
+        c = challenge
+        stats = item["stats"]
+        try:
+            plan = json.loads(c.ai_plan) if c.ai_plan else []
+        except json.JSONDecodeError:
+            plan = []
+        return ChallengeResponse(
+            id=c.id,
+            user_id=c.user_id,
+            title=c.title,
+            description=c.description,
+            category=c.category,
+            duration_days=c.duration_days,
+            total_days=stats["total_days"],
+            completed_days=stats["completed_days"],
+            streak=stats["streak"],
+            start_date=c.start_date,
+            end_date=c.end_date,
+            status=c.status,
+            ai_plan=plan,
+            color=c.color,
+            icon=c.icon,
+            task_type=c.task_type,
+            scene_template=c.scene_template,
+            is_shared=c.is_shared,
+            share_token=c.share_token,
+            source=str(item.get("source", "manual")),
+            today_checked=bool(item.get("today_checked", False)),
+            target_value=float(getattr(c, "target_value", 1.0) or 1.0),
+            unit=str(getattr(c, "unit", "次") or "次"),
+            direction=str(getattr(c, "direction", "increase") or "increase"),
+            goal_type=str(getattr(c, "goal_type", "hard") or "hard"),
+            decompose_mode=str(getattr(c, "decompose_mode", "none") or "none"),
+            slot_hours=int(getattr(c, "slot_hours", 1) or 1),
+            slot_target_value=float(getattr(c, "slot_target_value", 0.0) or 0.0),
+            mercy=item.get("mercy", {}),
+            created_at=c.created_at,
+        )
 
     async def get_today_task(
         self, session: AsyncSession, challenge_id: int, user_id: str,

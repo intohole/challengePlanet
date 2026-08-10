@@ -36,7 +36,9 @@ class ShareService:
         challenge = await self._repo.get_by_id(session, challenge_id)
         if challenge is None:
             return None
-        return await self._build_share_data(session, challenge)
+        data = await self._build_share_data(session, challenge)
+        await session.commit()
+        return data
 
     async def get_share_data_by_token(
         self, session: AsyncSession, share_token: str,

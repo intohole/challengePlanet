@@ -223,6 +223,7 @@ class GuidanceService:
             "squad_id": None,
             "extra": "{}",
         })
+        await session.commit()
         return challenge
 
     async def generate_share_token(
@@ -236,4 +237,6 @@ class GuidanceService:
             await self._repo.update(session, challenge_id, {"share_token": token})
             challenge.share_token = token
         cs = ChallengeService()
-        return await cs._build_share_data(session, challenge)
+        data = await cs._build_share_data(session, challenge)
+        await session.commit()
+        return data
