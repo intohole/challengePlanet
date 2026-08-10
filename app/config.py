@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     SERVICE_TOKEN: str = "dev-service-token-2026"
     LION_NAMESPACE: str = "challengePlanet"
     LION_BASE_URL: str = "http://localhost:9527"
-    UC_BASE_URL: str = "http://localhost:8901"
+    UC_BASE_URL: str = "https://songguokr.com/uc-api"
     UC_APP_KEY: str = ""
     UC_APP_SECRET: str = ""
     UC_JWT_SECRET: str = ""

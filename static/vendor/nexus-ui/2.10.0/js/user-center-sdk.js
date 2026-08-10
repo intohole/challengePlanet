@@ -10,7 +10,7 @@ const LEGACY_KEYS = [
 
 class UserCenterSDK {
     constructor(config) {
-        this.baseUrl = config.baseUrl.replace(/\/+$/, '');
+        this.baseUrl = (config.baseUrl || '').replace(/^https?:\/\//, '//').replace(/\/+$/, '');
         this.appKey = config.appKey;
         this.timeout = config.timeout || 30000;
         this._accessToken = null;

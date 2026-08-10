@@ -24,7 +24,7 @@ env:
   LION_NAMESPACE: challengePlanet
   LION_BASE_URL: "http://localhost:9527"
   BEEMEMORY_BASE_URL: "http://localhost:8700"
-  UC_BASE_URL: "http://localhost:8901"
+  UC_BASE_URL: "https://songguokr.com/uc-api"
   UC_APP_KEY: "${UC_APP_KEY}"
   UC_APP_SECRET: "${UC_APP_SECRET}"
   UC_JWT_SECRET: "${UC_JWT_SECRET}"
