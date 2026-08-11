@@ -56,7 +56,7 @@ class AIService:
 
     async def parse_challenge_input(self, raw_input: str) -> dict[str, object]:
         llm = get_llm_service()
-        raw = await llm.ask(raw_input, system=PARSE_SYSTEM, temperature=0.3, max_tokens=256, timeout=15.0)
+        raw = await llm.ask(raw_input, system=PARSE_SYSTEM, temperature=0.3, max_tokens=256, timeout=15.0, task_type="extract")
         parsed = parse_llm_json(raw)
         if "raw_response" in parsed:
             parsed = {
@@ -93,6 +93,7 @@ class AIService:
             user_msg, system=system,
             temperature=settings.PLANNING_TEMPERATURE,
             max_tokens=settings.LLM_MAX_TOKENS, timeout=120.0,
+            task_type="extract",
         )
         return self.parse_plan_text(raw, title, duration)
 
@@ -107,6 +108,7 @@ class AIService:
             user_msg, system=system,
             temperature=settings.PLANNING_TEMPERATURE,
             max_tokens=settings.LLM_MAX_TOKENS,
+            task_type="extract",
         ):
             yield token
 
@@ -150,7 +152,7 @@ class AIService:
         raw = await llm.ask(
             user_msg, system=get_mood_aware_prefix(mood) + FEEDBACK_SYSTEM,
             temperature=settings.FEEDBACK_TEMPERATURE,
-            max_tokens=256, timeout=30.0,
+            max_tokens=256, timeout=30.0, task_type="assistant",
         )
         return raw.strip()
 
@@ -182,7 +184,7 @@ class AIService:
     async def generate_repair_message(self, challenge_title: str, missed_days: int) -> str:
         user_msg = f"挑战：{challenge_title}\n中断天数：{missed_days}天"
         llm = get_llm_service()
-        raw = await llm.ask(user_msg, system=REPAIR_SYSTEM, temperature=0.7, max_tokens=128, timeout=20.0)
+        raw = await llm.ask(user_msg, system=REPAIR_SYSTEM, temperature=0.7, max_tokens=128, timeout=20.0, task_type="assistant")
         return raw.strip()
 
     async def generate_share_quote(self, challenge_title: str, streak: int) -> str:

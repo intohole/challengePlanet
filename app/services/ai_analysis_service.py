@@ -35,6 +35,7 @@ class AIAnalysisService:
         raw = await llm.ask(
             user_msg, system=WEEKLY_SYSTEM,
             temperature=0.6, max_tokens=512, timeout=30.0,
+            task_type="creative",
         )
         return raw.strip()
 
@@ -47,7 +48,7 @@ class AIAnalysisService:
             f"最近打卡记录：\n{recent_summary or '暂无'}"
         )
         llm = get_llm_service()
-        raw = await llm.ask(user_msg, system=DIAGNOSIS_SYSTEM, temperature=0.4, max_tokens=384, timeout=30.0)
+        raw = await llm.ask(user_msg, system=DIAGNOSIS_SYSTEM, temperature=0.4, max_tokens=384, timeout=30.0, task_type="extract")
         parsed = parse_llm_json(raw)
         if "raw_response" in parsed:
             return None
@@ -62,7 +63,7 @@ class AIAnalysisService:
     ) -> list[dict[str, object]] | None:
         user_msg = f"挑战：{challenge_title}\n模式：{mode}\n原任务：{json.dumps(tasks, ensure_ascii=False)}"
         llm = get_llm_service()
-        raw = await llm.ask(user_msg, system=ADJUST_TASKS_SYSTEM, temperature=0.5, max_tokens=2048, timeout=60.0)
+        raw = await llm.ask(user_msg, system=ADJUST_TASKS_SYSTEM, temperature=0.5, max_tokens=2048, timeout=60.0, task_type="extract")
         parsed = parse_llm_json(raw)
         if "raw_response" in parsed or not isinstance(parsed.get("tasks"), list):
             return None
@@ -82,6 +83,7 @@ class AIAnalysisService:
         raw = await llm.ask(
             user_msg, system=DECOMPOSE_SYSTEM,
             temperature=0.3, max_tokens=512, timeout=30.0,
+            task_type="extract",
         )
         parsed = parse_llm_json(raw)
         if "raw_response" in parsed:
@@ -126,6 +128,7 @@ class AIAnalysisService:
         raw = await llm.ask(
             user_msg, system=INSIGHT_SYSTEM,
             temperature=0.4, max_tokens=384, timeout=30.0,
+            task_type="extract",
         )
         parsed = parse_llm_json(raw)
         if "raw_response" in parsed:
