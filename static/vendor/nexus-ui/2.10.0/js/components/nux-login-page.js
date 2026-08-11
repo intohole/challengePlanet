@@ -7,6 +7,7 @@
             slogan: { type: String, default: '' },
             description: { type: String, default: '' },
             features: { type: Array, default: () => [] },
+            stats: { type: Array, default: () => [] },
             themeColor: { type: String, default: '' },
             showRegister: { type: Boolean, default: true },
             showPhoneLogin: { type: Boolean, default: false },
@@ -38,7 +39,7 @@
             const agreed = Vue.ref(false);
             const smsCode = Vue.ref('');
             const smsCountdown = Vue.ref(0);
-            const smsTimer = null;
+            let smsTimer = null;
             const form = Vue.reactive({
                 username: '',
                 password: '',
@@ -49,7 +50,7 @@
             });
 
             const combinedError = Vue.computed(() => props.error || localError.value);
-            const isSmsMode = Vue.computed(() => props.showSmsLogin && (mode.value === 'login' ? loginType.value === 'sms' : true));
+            const isSmsMode = Vue.computed(() => props.showSmsLogin && loginType.value === 'sms');
 
             function applyTheme() {
                 if (props.themeColor) {
@@ -105,13 +106,13 @@
                 emit('send-sms', { phone: phone, mode: mode.value === 'login' ? 'login' : 'register' });
             }
 
-            Vue.watch(smsLoading, function(v) {
+            Vue.watch(function() { return props.smsLoading; }, function(v) {
                 if (v) {
                     smsCountdown.value = 60;
                     if (smsTimer) clearInterval(smsTimer);
-                    const timer = setInterval(function() {
+                    smsTimer = setInterval(function() {
                         smsCountdown.value -= 1;
-                        if (smsCountdown.value <= 0) clearInterval(timer);
+                        if (smsCountdown.value <= 0) clearInterval(smsTimer);
                     }, 1000);
                 }
             });
@@ -161,6 +162,7 @@
             function switchMode(m) {
                 localError.value = '';
                 mode.value = m;
+                loginType.value = 'account';
             }
 
             function switchLoginType(t) {
@@ -193,7 +195,7 @@
 
                         <div v-if="combinedError" class="nux-login-error">{{ combinedError }}</div>
 
-                        <div v-if="mode === 'login' && showSmsLogin" class="nux-login-subtabs">
+                        <div v-if="showSmsLogin" class="nux-login-subtabs">
                             <button :class="['nux-login-subtab', { active: loginType === 'account' }]" @click="switchLoginType('account')">账号密码</button>
                             <button :class="['nux-login-subtab', { active: loginType === 'sms' }]" @click="switchLoginType('sms')">验证码登录</button>
                         </div>
@@ -321,6 +323,12 @@
                                     <strong v-if="f.title">{{ f.title }}</strong>
                                     <span v-if="f.desc">{{ f.desc }}</span>
                                 </div>
+                            </div>
+                        </div>
+                        <div v-if="stats && stats.length" class="nux-login-stats">
+                            <div v-for="(s, i) in stats" :key="i" class="nux-login-stat">
+                                <strong>{{ s.value }}</strong>
+                                <span>{{ s.label }}</span>
                             </div>
                         </div>
                     </div>
