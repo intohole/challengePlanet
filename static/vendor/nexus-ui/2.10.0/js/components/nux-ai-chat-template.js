@@ -28,7 +28,10 @@
                             <div class="nx-ai-chat-bubble">
                                 <slot name="message-before" :msg="m"></slot>
                                 <template v-if="m.streaming && !m.content && feat.typingIndicator">
-                                    <div class="nx-ai-chat-typing"><span></span><span></span><span></span></div>
+                                    <div class="nx-ai-chat-typing">
+                                        <span></span><span></span><span></span>
+                                        <em class="nx-ai-chat-thinking">正在思考…</em>
+                                    </div>
                                 </template>
                                 <template v-else>
                                     <div class="nx-ai-chat-content" v-html="renderMarkdown(m.content)"></div>
@@ -57,6 +60,10 @@
 
             <div class="nx-ai-chat-input-wrap">
                 <slot name="input-before"></slot>
+                <div v-if="isStreaming" class="nx-ai-chat-status">
+                    <span class="nx-ai-chat-status-spinner"></span>
+                    <span class="nx-ai-chat-status-text">AI 正在生成，已用时 {{ elapsed }}s</span>
+                </div>
                 <div class="nx-ai-chat-input-row">
                     <textarea
                         ref="inputEl"

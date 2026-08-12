@@ -41,6 +41,8 @@
             const newMsgCount = ref(0);
             const isComposing = ref(false);
             const lastSendTime = ref(0);
+            const elapsed = ref(0);
+            let elapsedTimer = null;
 
             const scrollEl = ref(null);
             const inputEl = ref(null);
@@ -53,6 +55,17 @@
 
             function emitMessages() {
                 ctx.emit('update:messages', list.slice());
+            }
+
+            function startElapsed() {
+                elapsed.value = 0;
+                clearInterval(elapsedTimer);
+                elapsedTimer = setInterval(() => { elapsed.value++; }, 1000);
+            }
+
+            function stopElapsed() {
+                clearInterval(elapsedTimer);
+                elapsedTimer = null;
             }
 
             function autoResize() {
@@ -170,6 +183,7 @@
                 isError.value = false;
                 errorMsg.value = '';
                 ctx.emit('stream-start');
+                startElapsed();
 
                 let stopped = false;
                 let stopFn = null;
@@ -206,6 +220,7 @@
 
                 function finishStream(ok, msg, err) {
                     isStreaming.value = false;
+                    stopElapsed();
                     ctx.emit('stream-end', ok);
                     if (!ok) ctx.emit('error', err || '未知错误', msg);
                     else ctx.emit('done', msg.content, msg);
@@ -242,6 +257,7 @@
                     assistantMsg.content = res.data.content || res.data.answer || res.data.reply || '（无内容）';
                     assistantMsg.streaming = false;
                     isStreaming.value = false;
+                    stopElapsed();
                     ctx.emit('stream-end', true);
                     ctx.emit('done', assistantMsg.content, assistantMsg);
                     emitMessages();
@@ -258,6 +274,7 @@
                     isError.value = true;
                     errorMsg.value = e.message || '降级同步也失败';
                     isStreaming.value = false;
+                    stopElapsed();
                     ctx.emit('stream-end', false);
                     ctx.emit('error', errorMsg.value, assistantMsg);
                     emitMessages();
@@ -271,6 +288,7 @@
                     try { NexusApi.abortAll && NexusApi.abortAll(); } catch (e) {}
                 }
                 isStreaming.value = false;
+                stopElapsed();
                 ctx.emit('stop');
                 ctx.emit('stream-end', true);
                 const last = list[list.length - 1];
@@ -348,6 +366,7 @@
             onBeforeUnmount(() => {
                 if (controller) try { controller.stop(); } catch (e) {}
                 if (rafId) cancelAnimationFrame(rafId);
+                stopElapsed();
             });
 
             ctx.expose({
@@ -363,7 +382,7 @@
 
             return {
                 list, input, isStreaming, isError, errorMsg, showScrollBtn, newMsgCount,
-                scrollEl, inputEl, listEl, feat, inputCfg, roleCfg,
+                elapsed, scrollEl, inputEl, listEl, feat, inputCfg, roleCfg,
                 renderMarkdown, send, stop, retry, clear, copyMessage, scrollToBottom,
                 onScroll, onInput, onKeydown, onCompositionStart, onCompositionEnd,
                 clickQuickReply, smartScroll

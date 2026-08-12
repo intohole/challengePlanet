@@ -205,8 +205,15 @@
 .nx-ai-chat-typing {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     padding: 4px 0;
+}
+
+.nx-ai-chat-thinking {
+    font-style: normal;
+    font-size: var(--nx-text-sm, 0.875rem);
+    color: var(--nx-text-muted, rgb(148, 163, 184));
+    letter-spacing: 0.02em;
 }
 
 .nx-ai-chat-typing span {
@@ -349,6 +356,29 @@
     gap: var(--nx-space-2, 0.5rem);
     align-items: flex-end;
     max-width: 100%;
+}
+
+.nx-ai-chat-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.25rem 0.5rem;
+    color: var(--nx-text-muted, rgb(148, 163, 184));
+    font-size: var(--nx-text-sm, 0.8125rem);
+}
+
+.nx-ai-chat-status-spinner {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border: 2px solid var(--nx-accent-soft, rgba(79, 70, 229, 0.3));
+    border-top-color: var(--nx-accent, rgb(79, 70, 229));
+    border-radius: 50%;
+    animation: nx-ai-chat-spin 0.8s linear infinite;
+}
+
+@keyframes nx-ai-chat-spin {
+    to { transform: rotate(360deg); }
 }
 
 .nx-ai-chat-input {
