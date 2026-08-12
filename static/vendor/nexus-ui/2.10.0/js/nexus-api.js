@@ -14,6 +14,14 @@
         return NET_PATTERNS.some(p => msg.includes(p));
     }
 
+    function _errMsg(v) {
+        if (v === null || v === undefined) return '';
+        if (typeof v === 'string') return v;
+        if (Array.isArray(v)) return v.join(', ');
+        if (typeof v === 'object') return JSON.stringify(v);
+        return String(v);
+    }
+
     class NexusApi {
         constructor(config = {}) {
             this.baseUrl = config.baseUrl !== undefined ? config.baseUrl : DEFAULT_BASE_URL;
@@ -102,18 +110,10 @@
         }
 
         _extractError(data) {
-            if (data.success === false) return String(data.message || data.error || '操作失败');
-            if (data.error) return String(data.error);
-            if (data.message) {
-                return Array.isArray(data.message) ? data.message.join(', ') :
-                       typeof data.message === 'object' ? JSON.stringify(data.message) :
-                       String(data.message);
-            }
-            if (data.detail) {
-                return Array.isArray(data.detail) ? data.detail.join(', ') :
-                       typeof data.detail === 'object' ? JSON.stringify(data.detail) :
-                       String(data.detail);
-            }
+            if (data.success === false) return _errMsg(data.message) || _errMsg(data.error) || '操作失败';
+            if (data.error) return _errMsg(data.error);
+            if (data.message) return _errMsg(data.message);
+            if (data.detail) return _errMsg(data.detail);
             return '请求失败';
         }
 
