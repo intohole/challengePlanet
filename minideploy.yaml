@@ -21,8 +21,8 @@ env:
   PORT: "8610"
   SERVICE_TOKEN: "${SERVICE_TOKEN}"
   LION_NAMESPACE: challengePlanet
-  LION_BASE_URL: "http://10.100.0.2:9527"
-  BEEMEMORY_BASE_URL: "http://10.100.0.2:8700"
+  LION_BASE_URL: "http://10.100.0.1:9527"
+  BEEMEMORY_BASE_URL: "http://10.100.0.1:8700"
   UC_BASE_URL: "https://songguokr.com/uc-api"
   UC_APP_KEY: "${UC_APP_KEY}"
   UC_APP_SECRET: "${UC_APP_SECRET}"
@@ -30,6 +30,7 @@ env:
   TZ: "Asia/Shanghai"
 
 secrets:
+  - SERVICE_TOKEN
   - UC_APP_KEY
   - UC_APP_SECRET
 
