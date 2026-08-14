@@ -83,7 +83,7 @@ window.cpSharePoster = (function () {
     ctx.textAlign = 'left'
     ctx.fillStyle = '#818cf8'
     ctx.font = 'bold 22px sans-serif'
-    ctx.fillText('🌍 星轨挑战', 40, 64)
+    ctx.fillText('星轨挑战', 40, 64)
 
     const px = 375, py = 290, pr = 96
     const pg = ctx.createRadialGradient(px - 30, py - 34, 10, px, py, pr)
@@ -211,7 +211,7 @@ window.cpSharePoster = (function () {
     ctx.textAlign = 'left'
     ctx.fillStyle = '#fbbf24'
     ctx.font = 'bold 22px sans-serif'
-    ctx.fillText('🌍 星轨挑战 · 翻车复盘', 40, 64)
+    ctx.fillText('星轨挑战 · 翻车复盘', 40, 64)
 
     const px = 375, py = 280, pr = 96
     const pg = ctx.createRadialGradient(px - 30, py - 34, 10, px, py, pr)

@@ -74,7 +74,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="ChallengePlanet",
+    title="星轨挑战",
     version=settings.APP_VERSION,
     lifespan=lifespan,
     docs_url="/docs",
@@ -82,7 +82,7 @@ app = FastAPI(
 )
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 register_middleware(app)
-app.add_middleware(LoadingSplashMiddleware, app_name="ChallengePlanet")
+app.add_middleware(LoadingSplashMiddleware, app_name="星轨挑战")
 app.add_middleware(NoCacheMiddleware, path_prefix="/static")
 
 API_PREFIX = settings.API_PREFIX

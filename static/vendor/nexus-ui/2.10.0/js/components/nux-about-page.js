@@ -39,20 +39,20 @@
 `;
 
     const DEFAULT_ECOSYSTEM = [
-        { name: '知路', desc: '志愿评估', color: '#059669' },
+        { name: '智途志愿', desc: '志愿评估', color: '#059669' },
         { name: '天才学伴', desc: '学习成长', color: '#0891b2' },
         { name: '跃职', desc: 'AI简历', color: '#6366f1' },
         { name: '拾光', desc: '生活笔记', color: '#8b5cf6' },
-        { name: 'VerseCraft', desc: '小说创作', color: '#228FBD' },
-        { name: '宠小护', desc: '宠物健康', color: '#ec4899' },
-        { name: '码趣星', desc: '少儿编程', color: '#f97316' },
+        { name: '墨韵创作', desc: '小说创作', color: '#228FBD' },
+        { name: '宠康管家', desc: '宠物健康', color: '#ec4899' },
+        { name: '编程学伴', desc: '少儿编程', color: '#f97316' },
         { name: '知识图谱', desc: '智能问答', color: '#d97706' },
-        { name: '投察', desc: '股票分析', color: '#1d4ed8' },
-        { name: '鱼跃', desc: '闲鱼助手', color: '#155e75' },
-        { name: 'adSmart', desc: '广告投放', color: '#ef4444' },
+        { name: '金股智投', desc: '股票分析', color: '#1d4ed8' },
+        { name: '金鱼助手', desc: '闲鱼助手', color: '#155e75' },
+        { name: '青鸟', desc: '广告投放', color: '#ef4444' },
         { name: '司南', desc: '人生推演', color: '#0d9488' },
-        { name: '挑战星球', desc: 'AI打卡', color: '#FF8A65' },
-        { name: 'PromptGenius', desc: '提示词优化', color: '#171717' }
+        { name: '星轨挑战', desc: 'AI打卡', color: '#FF8A65' },
+        { name: '镕裁', desc: '提示词优化', color: '#171717' }
     ];
 
     function injectStyle() {
