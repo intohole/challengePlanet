@@ -5,7 +5,7 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false },
+    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, collapsedSections: {} },
     _ignite: null,
 
     render(el) {
@@ -13,7 +13,7 @@ window.cpViews.home = (function () {
       const s = window.appState
       const h = new Date().getHours()
       const greet = h < 6 ? '夜深了' : h < 12 ? '早上好' : h < 14 ? '中午好' : h < 18 ? '下午好' : '晚上好'
-      let html = '<div class="cp-brand-banner"><span class="cp-brand-icon">🌍</span><div class="cp-brand-text"><div class="cp-brand-name">星轨挑战</div><div class="cp-brand-slogan">AI 打卡教练 · 陪你每一天</div></div>'
+      let html = '<div class="cp-brand-banner cp-nebula-card"><span class="cp-brand-icon">🌍</span><div class="cp-brand-text"><div class="cp-brand-name">星轨挑战</div><div class="cp-brand-slogan">AI 打卡教练 · 陪你每一天</div></div>'
       if (s.booted && s.challenges.length) {
         html += s.pendingCount > 0
           ? '<span class="cp-pending-badge"><i class="fas fa-bolt"></i>待打卡 ' + s.pendingCount + '</span>'
@@ -55,7 +55,7 @@ window.cpViews.home = (function () {
       if (!ch) { this.loadedFor = null; return }
       if (this.loadedFor !== ch.id) {
         this.loadedFor = ch.id
-        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false }
+        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, collapsedSections: {} }
         this.rerender()
       }
       const safe = p => p.catch(() => null)
@@ -104,6 +104,21 @@ window.cpViews.home = (function () {
       return html
     },
 
+    _collapsible(id, title, icon, iconColor, content, defaultOpen) {
+      const isOpen = this.data.collapsedSections[id] !== undefined ? this.data.collapsedSections[id] : (defaultOpen !== false)
+      return '<div class="glass-card" style="padding:14px">' +
+        '<div class="cp-collapsible-head" onclick="cpViews.home.toggleSection(\'' + id + '\')">' +
+        '<div class="cp-section-title" style="margin-bottom:0"><i class="fas ' + icon + '" style="color:' + iconColor + '"></i> ' + title + '</div>' +
+        '<i class="fas fa-chevron-' + (isOpen ? 'up' : 'down') + '" style="color:var(--text-muted);font-size:12px;transition:transform .2s"></i></div>' +
+        (isOpen ? '<div class="cp-collapsible-body" style="margin-top:12px">' + content + '</div>' : '') + '</div>'
+    },
+
+    toggleSection(id) {
+      const d = this.data.collapsedSections
+      d[id] = !d[id]
+      this.rerender()
+    },
+
     _main(s) {
       const ch = s.current
       const d = this.data
@@ -116,13 +131,19 @@ window.cpViews.home = (function () {
         })
         html += '</div>'
       }
-      html += '<div class="glass-card cp-hero"><div class="cp-hero-top"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(ch.title) + '</div>' + (ch.share_token ? '<button class="cp-hero-share-btn" onclick="cpViews.home.openShareConfig()"><i class="fas fa-link"></i></button>' : '') + '</div><div class="cp-hero-date">' + (ch.start_date || '?') + ' → ' + (ch.end_date || '?') + '</div>'
+
+      if (d.guidance && d.guidance.is_at_risk) {
+        html += '<div class="cp-risk-banner"><i class="fas fa-triangle-exclamation"></i><span>中断了！今天重新打卡，节奏就能恢复</span><button class="cp-risk-btn" onclick="cpViews.home.load()">立即打卡</button></div>'
+      }
+
+      html += '<div class="glass-card cp-hero cp-nebula-card"><div class="cp-hero-top"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(ch.title) + '</div>' + (ch.share_token ? '<button class="cp-hero-share-btn" onclick="cpViews.home.openShareConfig()"><i class="fas fa-link"></i></button>' : '') + '</div><div class="cp-hero-date">' + (ch.start_date || '?') + ' → ' + (ch.end_date || '?') + '</div>'
       const scene = window.cpSceneMap[ch.scene_template]
       if (scene) html += '<div class="cp-hero-scene"><span class="cp-hero-scene-icon">' + scene.icon + '</span><span class="cp-hero-scene-name">' + window.cpEsc(scene.name) + '</span><span class="cp-hero-scene-type">' + ({ counter: '计数打卡', timer: '计时打卡', text: '文字记录', step: '分步打卡', binary: '每日打卡' }[scene.task_type] || '打卡') + '</span></div>'
-      const pct = ch.total_days ? Math.round((ch.completed_days || 0) / ch.total_days * 100) : 0
-      html += '<div class="cp-hero-progress"><div class="cp-hero-progress-bar"><div class="cp-hero-progress-fill" style="width:' + pct + '%"></div></div><span class="cp-hero-progress-text">' + pct + '%</span></div>'
+      html += '<div class="cp-hero-progress"><div class="cp-hero-progress-bar"><div class="cp-hero-progress-fill" style="width:' + (ch.total_days ? Math.round((ch.completed_days || 0) / ch.total_days * 100) : 0) + '%"></div></div><span class="cp-hero-progress-text">' + (ch.total_days ? Math.round((ch.completed_days || 0) / ch.total_days * 100) : 0) + '%</span></div>'
       html += '<div class="cp-galaxy-wrap"><div id="galaxy-box"></div></div></div>'
+
       if (d.loading && !d.today) return html + this._skeleton()
+
       const shieldCount = (d.mercy && d.mercy.shields) || d.shields || 0
       if (shieldCount > 0) html += '<div style="text-align:center"><span class="cp-shield-tag cp-shield-active">🛡️ 连续护盾 ×' + shieldCount + ' · 断签自动保护</span></div>'
       if (d.mercy && d.mercy.shield_activated) html += '<div class="cp-repair-card cp-shield-active" style="border-color:rgba(129,140,248,.4);background:rgba(129,140,248,.08)"><p>🛡️ 护盾已自动生效！昨天的断签被保护，连续记录未中断。继续保持！</p></div>'
@@ -130,23 +151,32 @@ window.cpViews.home = (function () {
       if (d.adaptive) html += this._adaptiveCard(d.adaptive)
       if (d.guidance) html += this._guidanceCard(d.guidance)
       html += this._taskArea(s)
+
       if (d.justRepaired) {
         html += '<div class="cp-repair-card cp-shield-mend-card" style="text-align:center"><div class="cp-shield-mend-icon">🛡️</div><p>盾牌已重组！连续记录恢复，继续加油。</p></div>'
       } else if (d.mercy && d.mercy.repair_available) {
         html += '<div class="cp-repair-card" style="text-align:center"><div class="cp-shield-break-icon">🛡️</div><p>💛 昨天不小心断签了，别灰心！48小时内完成今天任务即可修复连续记录。</p><button class="cp-btn-primary" onclick="cpViews.home.doRepair()"><i class="fas fa-band-aid"></i> 立即修复 streak</button></div>'
       }
       if (d.mercy && (d.mercy.missed_dates || []).length) html += this._diagEntry(d.mercy.missed_dates.length)
+
       html += this._todayTimeline(s)
-      html += this._reportSection(s)
-      html += this._calendar(s)
+      html += this._collapsible('reports', '数据报表', 'fa-chart-pie', 'var(--primary-light)', this._reportContent(s))
+      html += this._collapsible('calendar', '打卡日历', 'fa-calendar-check', 'var(--emerald)', this._calendarContent(s))
+
       if (d.weekly && d.weekly.content) {
-        html += '<div class="glass-card cp-weekly-box"><div class="cp-section-title"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> 本周洞察</div><div class="cp-weekly-text">' + window.cpEsc(d.weekly.content) + '</div><div class="cp-weekly-meta">本周进度 ' + (d.weekly.week_checkins || 0) + '/' + (d.weekly.week_days || 7) + ' 天</div></div>'
+        html += this._collapsible('weekly', '本周洞察', 'fa-lightbulb', 'var(--amber)', '<div class="cp-weekly-text">' + window.cpEsc(d.weekly.content) + '</div><div class="cp-weekly-meta">本周进度 ' + (d.weekly.week_checkins || 0) + '/' + (d.weekly.week_days || 7) + ' 天</div>')
       }
-      html += '<div class="glass-card cp-stats-row">'
-      html += '<div class="cp-stat"><div class="cp-stat-icon">🔥</div><div class="cp-stat-num" style="color:var(--emerald)">' + (ch.streak || 0) + '</div><div class="cp-stat-label">连续打卡</div></div>'
+
+      html += '<div class="glass-card" style="padding:16px">'
+      html += '<div class="cp-stats-row">'
+      const streakVal = ch.streak || 0
+      const prevStreak = ch.prev_streak || 0
+      const streakTrend = streakVal > prevStreak ? '↑' : (streakVal < prevStreak ? '↓' : '')
+      const streakTrendColor = streakVal >= prevStreak ? 'var(--emerald)' : 'var(--red)'
+      html += '<div class="cp-stat"><div class="cp-stat-icon">🔥</div><div class="cp-stat-num" style="color:var(--emerald)">' + streakVal + '</div><div class="cp-stat-label">连续打卡' + (streakTrend ? ' <span style="color:' + streakTrendColor + '">' + streakTrend + '</span>' : '') + '</div></div>'
       html += '<div class="cp-stat"><div class="cp-stat-icon">✅</div><div class="cp-stat-num" style="color:var(--primary-light)">' + (ch.completed_days || 0) + '</div><div class="cp-stat-label">累计打卡</div></div>'
       html += '<div class="cp-stat"><div class="cp-stat-icon">📅</div><div class="cp-stat-num" style="color:var(--amber)">' + (ch.total_days || 0) + '</div><div class="cp-stat-label">总天数</div></div>'
-      html += '<div class="cp-stat"><div class="cp-stat-icon">⭐</div><div class="cp-stat-num" style="color:var(--primary)">' + ((d.points && d.points.total) || 0) + '</div><div class="cp-stat-label">总积分</div></div></div>'
+      html += '<div class="cp-stat"><div class="cp-stat-icon">⭐</div><div class="cp-stat-num" style="color:var(--primary)">' + ((d.points && d.points.total) || 0) + '</div><div class="cp-stat-label">总积分</div></div></div></div>'
       html += '<button class="cp-fab" onclick="cpCreate.open()"><i class="fas fa-plus"></i></button>'
       return html
     },
@@ -220,7 +250,9 @@ window.cpViews.home = (function () {
         html += '<button class="cp-btn-checkin done"><i class="fas fa-circle-check"></i> 今日已完成</button>'
         const plan = ch.ai_plan || []
         const next = plan[t.day_number]
-        if (next && next.title) html += '<div class="cp-tomorrow"><i class="fas fa-sun"></i> 明日预告：' + window.cpEsc(next.title) + '</div>'
+        if (next && next.title) {
+          html += '<div class="cp-tomorrow-enhanced"><div class="cp-tomorrow-icon">🌅</div><div class="cp-tomorrow-body"><div class="cp-tomorrow-label">明日预告</div><div class="cp-tomorrow-title">' + window.cpEsc(next.title) + '</div>' + (next.description ? '<div class="cp-tomorrow-desc">' + window.cpEsc(next.description) + '</div>' : '') + '</div></div>'
+        }
         if (d.lastFeedback) {
           html += '<div class="cp-ai-card"><div class="cp-ai-head"><i class="fas fa-robot"></i> AI 教练反馈</div><p>' + window.cpEsc(d.lastFeedback) + '</p>'
           if (d.chest) html += '<span class="cp-chest-tag">🎁 惊喜宝箱 +' + d.chest + ' 分</span>'
@@ -233,82 +265,100 @@ window.cpViews.home = (function () {
       return html
     },
 
-    _checkinArea(tt, t) {
+    _reportContent(s) {
+      const ch = s.current
       const d = this.data
-      const dis = d.checking ? 'disabled' : ''
-      if (tt === 'counter') return this._counterUI(t, dis)
-      if (tt === 'timer') return this._timerUI(t, dis)
-      if (tt === 'step') return this._stepUI(t, dis)
-      if (tt === 'text') return this._textUI(t, dis)
-      return this._binaryUI(dis)
+      if (!ch) return ''
+      const isDecompose = ch.decompose_mode === 'time_slot' || ch.task_type === 'counter' || ch.task_type === 'timer'
+      let html = '<div class="cp-report-head"><div class="cp-section-title" style="margin-bottom:0"><i class="fas fa-chart-pie" style="color:var(--primary-light)"></i> 数据报表</div>'
+      html += '<button class="cp-btn-ghost cp-report-expand" onclick="cpViews.home.openReport()"><i class="fas fa-expand"></i> 完整报表</button></div>'
+      html += '<div class="cp-report-quickgrid">'
+      html += this._quickStat('今日', (d.today && d.today.today_total) || 0, '/', (d.today && d.today.today_target) || ch.target_value, ch.unit, 'var(--emerald)')
+      const baseline = (d.today && d.today.dynamic_baseline) || 0
+      html += this._quickStat('软目标', baseline.toFixed(1), '', '', ch.unit, 'var(--amber)')
+      html += this._quickStat('连续', ch.streak || 0, '', '', '天', 'var(--primary-light)')
+      html += this._quickStat('累计', ch.completed_days || 0, '/', ch.total_days || 0, '天', 'var(--primary)')
+      html += '</div>'
+      if (isDecompose) {
+        html += '<div class="cp-report-mini-chart" id="cp-mini-hourly-' + ch.id + '"></div>'
+      }
+      return html
     },
 
-    _counterUI(t, dis) {
+    _quickStat(label, val, sep, val2, unit, color) {
+      let v = '<div class="cp-quick-stat"><div class="cp-quick-stat-label">' + label + '</div>'
+      v += '<div class="cp-quick-stat-val" style="color:' + color + '"><b>' + val + '</b>'
+      if (sep) v += '<span class="cp-quick-stat-sep">' + sep + '</span><span class="cp-quick-stat-val2">' + val2 + '</span>'
+      v += '</div><div class="cp-quick-stat-unit">' + window.cpEsc(unit || '') + '</div></div>'
+      return v
+    },
+
+    _renderMiniHourly() {
+      const ch = window.appState.current
+      if (!ch) return
+      const box = document.getElementById('cp-mini-hourly-' + ch.id)
+      if (!box) return
+      window.api.get('/challenges/' + ch.id + '/report/hourly?days=7').then(res => {
+        const r = (res && (res.data || res)) || {}
+        const items = r.items || []
+        if (!items.length) { box.innerHTML = '<div class="cp-mini-empty">暂无时段数据</div>'; return }
+        const max = Math.max.apply(null, items.map(i => i.total_value || 0)) || 1
+        let html = '<div class="cp-mini-bars">'
+        items.forEach(it => {
+          const h = it.hour
+          const v = it.total_value || 0
+          const ratio = v / max
+          const isPeak = h === r.peak_hour
+          const cls = isPeak ? ' peak' : (v > 0 ? ' active' : '')
+          html += '<div class="cp-mini-bar' + cls + '" title="' + h + ':00 ' + v + '"><div class="cp-mini-bar-fill" style="height:' + (ratio * 100) + '%"></div></div>'
+        })
+        html += '</div>'
+        html += '<div class="cp-mini-axis"><span>0</span><span>6</span><span>12</span><span>18</span><span>23</span></div>'
+        if (r.insight) html += '<div class="cp-mini-insight"><i class="fas fa-lightbulb"></i> ' + window.cpEsc(r.insight) + '</div>'
+        box.innerHTML = html
+      }).catch(() => { box.innerHTML = '<div class="cp-mini-empty">加载失败</div>' })
+    },
+
+    _calendarContent(s) {
+      const ch = s.current
       const d = this.data
-      const target = t.task_target || 1
-      const unit = window.cpEsc(t.task_unit || '')
-      let h = '<div class="cp-checkin-box"><div class="cp-counter-row">'
-      h += '<button class="cp-counter-btn" ' + dis + ' onclick="cpViews.home.adjustCount(-5)">−5</button>'
-      h += '<div class="cp-counter-display"><span class="cp-counter-val">' + d.taskValue + '</span><span class="cp-counter-target">/ ' + target + ' ' + unit + '</span></div>'
-      h += '<button class="cp-counter-btn" ' + dis + ' onclick="cpViews.home.adjustCount(5)">+5</button></div>'
-      h += '<div class="cp-counter-quick">'
-      ;[0.25, 0.5, 0.75, 1].forEach(p => { const v = Math.round(target * p); h += '<button class="cp-quick-btn" ' + dis + ' onclick="cpViews.home.setCount(' + v + ')">' + v + '</button>' })
-      h += '</div>' + this._submitBtn(dis) + this._miniLink(dis) + '</div>'
-      return h
+      if (!ch.start_date) return ''
+      const today = window.cpTodayStr()
+      const statusMap = {}
+      d.checkins.forEach(c => { statusMap[c.date] = c })
+      const total = ch.total_days || 1
+      const end = ch.end_date || window.cpAddDays(ch.start_date, total - 1)
+      let html = '<div class="cp-calendar-grid">'
+      for (let i = 0; i < total; i++) {
+        const ds = window.cpAddDays(ch.start_date, i)
+        if (ds > end) break
+        const rec = statusMap[ds]
+        const st = rec ? (rec.status || 'checked') : ''
+        const phasePct = i / total
+        const phaseColor = phasePct < 0.25 ? 'rgba(52,211,153,' : (phasePct < 0.6 ? 'rgba(245,158,11,' : 'rgba(167,139,250,')
+        let cls = '', mark = '<span class="st">·</span>'
+        if (st === 'checked' || st === 'completed') {
+          const mini = rec.checkin_type === 'mini'
+          cls = mini ? ' mini' : ' checked'
+          mark = '<span class="st">✓</span>'
+        }
+        else if (st === 'frozen') { cls = ' frozen'; mark = '<span class="st">❄</span>' }
+        else if (st === 'mended') { cls = ' mended'; mark = '<span class="st">✚</span>' }
+        else if (ds < today) { cls = ' missed'; mark = '<span class="st">·</span>' }
+        else if (ds > today) cls = ' future'
+        if (ds === today) cls += ' today'
+        const clickable = rec ? ' onclick="cpViews.home.openDayDetail(\'' + ds + '\')"' : ''
+        html += '<div class="cp-cal-cell' + cls + '"' + clickable + ' style="' + (ds < today && !rec ? 'background:' + phaseColor + '0.08)' : '') + '">' + mark + '<span>' + (i + 1) + '</span></div>'
+      }
+      html += '</div><div class="cp-cal-legend"><span>✓ 已打卡</span><span style="color:#c084fc">✓ 微打卡</span><span>❄ 冻结</span><span>✚ 补签</span><span>· 缺失</span></div>'
+      if (d.mercy) {
+        const missed = d.mercy.missed_dates || []
+        html += '<div class="cp-mercy-row">'
+        if (missed.length) html += '<button class="cp-btn-ghost" onclick="cpViews.home.openMend()"><i class="fas fa-plus"></i> 补签（本月剩 ' + (d.mercy.mend_left_this_month || 0) + ' 次）</button>'
+        html += '<button class="cp-btn-ghost" onclick="cpViews.home.openFreeze()"><i class="fas fa-snowflake"></i> 冻结（本周剩 ' + (d.mercy.freeze_left_this_week || 0) + ' 次）</button></div>'
+      }
+      return html
     },
-
-    _timerUI(t, dis) {
-      const d = this.data
-      const target = t.task_target || 10
-      let h = '<div class="cp-checkin-box"><div class="cp-timer-display"><span class="cp-timer-val">' + this._fmtTime(d.taskValue) + '</span><span class="cp-timer-target">/ ' + target + ' ' + window.cpEsc(t.task_unit || '分钟') + '</span></div>'
-      h += '<div class="cp-timer-presets">'
-      ;[5, 10, 15, 20, 30].filter(p => p <= target * 1.5).forEach(p => { h += '<button class="cp-preset-btn" ' + dis + ' onclick="cpViews.home.setCount(' + p + ')">' + p + '分</button>' })
-      h += '</div>' + this._submitBtn(dis) + this._miniLink(dis) + '</div>'
-      return h
-    },
-
-    _stepUI(t, dis) {
-      const d = this.data
-      const steps = t.task_steps || []
-      let h = '<div class="cp-checkin-box"><div class="cp-step-list">'
-      steps.forEach(st => {
-        const done = d.taskSteps.includes(st)
-        h += '<div class="cp-step-item' + (done ? ' done' : '') + '" onclick="cpViews.home.toggleStep(\'' + encodeURIComponent(st) + '\')"><span class="cp-step-check">' + (done ? '✓' : '○') + '</span><span class="cp-step-text">' + window.cpEsc(st) + '</span></div>'
-      })
-      h += '</div><button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-check"></i> 提交打卡 (' + d.taskSteps.length + '/' + steps.length + ')</button>'
-      h += this._miniLink(dis) + '</div>'
-      return h
-    },
-
-    _textUI(t, dis) {
-      const d = this.data
-      const target = t.task_target || 0
-      const unit = window.cpEsc(t.task_unit || '字')
-      const len = (d.textValue || '').length
-      let h = '<div class="cp-checkin-box"><div class="cp-text-area">'
-      h += '<textarea class="cp-text-input" ' + dis + ' placeholder="记录你的想法、感受或今天的收获..." oninput="cpViews.home.setText(this.value)" style="resize:none;font-size:15px;line-height:1.6;min-height:120px">' + window.cpEsc(d.textValue || '') + '</textarea>'
-      if (target > 0) h += '<div class="cp-text-counter"><span class="cp-text-count' + (len >= target ? ' done' : '') + '">' + len + '</span> / ' + target + ' ' + unit + '</div>'
-      else h += '<div class="cp-text-counter"><span class="cp-text-count">' + len + '</span> 字</div>'
-      h += '</div>'
-      h += '<button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-feather"></i> 提交记录</button>'
-      h += this._miniLink(dis) + '</div>'
-      return h
-    },
-
-    _binaryUI(dis) {
-      const d = this.data
-      return '<div class="cp-ignite-wrap"><button class="cp-ignite-btn" ' + dis + ' onpointerdown="cpViews.home.igniteDown(event)" onpointerup="cpViews.home.igniteUp()" onpointerleave="cpViews.home.igniteUp()" onpointercancel="cpViews.home.igniteUp()" oncontextmenu="return false"><i class="fas fa-fire"></i><span>' + (d.checking ? '点燃中' : '长按点火') + '</span></button><span class="cp-ignite-hint">按住 1 秒点燃今日，松手取消</span>' + this._miniLink(dis) + '</div>'
-    },
-
-    _submitBtn(dis) {
-      return '<button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-check"></i> 提交打卡</button>'
-    },
-
-    _miniLink(dis) {
-      return '<button class="cp-mini-link" ' + dis + ' onclick="cpViews.home.doMini()">今天太累？5分钟微打卡守住节奏</button>'
-    },
-
-    _fmtTime(min) { return Math.floor(min / 60) + ':' + String(min % 60).padStart(2, '0') },
 
     useTemplate(i) {
       const t = window.cpTemplates[i]

@@ -262,4 +262,81 @@
       this.rerender()
     }
   }
+
+  V._checkinArea = function (tt, t) {
+    const d = this.data
+    const dis = d.checking ? 'disabled' : ''
+    if (tt === 'counter') return this._counterUI(t, dis)
+    if (tt === 'timer') return this._timerUI(t, dis)
+    if (tt === 'step') return this._stepUI(t, dis)
+    if (tt === 'text') return this._textUI(t, dis)
+    return this._binaryUI(dis)
+  }
+
+  V._counterUI = function (t, dis) {
+    const d = this.data
+    const target = t.task_target || 1
+    const unit = window.cpEsc(t.task_unit || '')
+    let h = '<div class="cp-checkin-box"><div class="cp-counter-row">'
+    h += '<button class="cp-counter-btn" ' + dis + ' onclick="cpViews.home.adjustCount(-5)">−5</button>'
+    h += '<div class="cp-counter-display"><span class="cp-counter-val">' + d.taskValue + '</span><span class="cp-counter-target">/ ' + target + ' ' + unit + '</span></div>'
+    h += '<button class="cp-counter-btn" ' + dis + ' onclick="cpViews.home.adjustCount(5)">+5</button></div>'
+    h += '<div class="cp-counter-quick">'
+    ;[0.25, 0.5, 0.75, 1].forEach(p => { const v = Math.round(target * p); h += '<button class="cp-quick-btn" ' + dis + ' onclick="cpViews.home.setCount(' + v + ')">' + v + '</button>' })
+    h += '</div>' + this._submitBtn(dis) + this._miniLink(dis) + '</div>'
+    return h
+  }
+
+  V._timerUI = function (t, dis) {
+    const d = this.data
+    const target = t.task_target || 10
+    let h = '<div class="cp-checkin-box"><div class="cp-timer-display"><span class="cp-timer-val">' + this._fmtTime(d.taskValue) + '</span><span class="cp-timer-target">/ ' + target + ' ' + window.cpEsc(t.task_unit || '分钟') + '</span></div>'
+    h += '<div class="cp-timer-presets">'
+    ;[5, 10, 15, 20, 30].filter(p => p <= target * 1.5).forEach(p => { h += '<button class="cp-preset-btn" ' + dis + ' onclick="cpViews.home.setCount(' + p + ')">' + p + '分</button>' })
+    h += '</div>' + this._submitBtn(dis) + this._miniLink(dis) + '</div>'
+    return h
+  }
+
+  V._stepUI = function (t, dis) {
+    const d = this.data
+    const steps = t.task_steps || []
+    let h = '<div class="cp-checkin-box"><div class="cp-step-list">'
+    steps.forEach(st => {
+      const done = d.taskSteps.includes(st)
+      h += '<div class="cp-step-item' + (done ? ' done' : '') + '" onclick="cpViews.home.toggleStep(\'' + encodeURIComponent(st) + '\')"><span class="cp-step-check">' + (done ? '✓' : '○') + '</span><span class="cp-step-text">' + window.cpEsc(st) + '</span></div>'
+    })
+    h += '</div><button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-check"></i> 提交打卡 (' + d.taskSteps.length + '/' + steps.length + ')</button>'
+    h += this._miniLink(dis) + '</div>'
+    return h
+  }
+
+  V._textUI = function (t, dis) {
+    const d = this.data
+    const target = t.task_target || 0
+    const unit = window.cpEsc(t.task_unit || '字')
+    const len = (d.textValue || '').length
+    let h = '<div class="cp-checkin-box"><div class="cp-text-area">'
+    h += '<textarea class="cp-text-input" ' + dis + ' placeholder="记录你的想法、感受或今天的收获..." oninput="cpViews.home.setText(this.value)" style="resize:none;font-size:15px;line-height:1.6;min-height:120px">' + window.cpEsc(d.textValue || '') + '</textarea>'
+    if (target > 0) h += '<div class="cp-text-counter"><span class="cp-text-count' + (len >= target ? ' done' : '') + '">' + len + '</span> / ' + target + ' ' + unit + '</div>'
+    else h += '<div class="cp-text-counter"><span class="cp-text-count">' + len + '</span> 字</div>'
+    h += '</div>'
+    h += '<button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-feather"></i> 提交记录</button>'
+    h += this._miniLink(dis) + '</div>'
+    return h
+  }
+
+  V._binaryUI = function (dis) {
+    const d = this.data
+    return '<div class="cp-ignite-wrap"><button class="cp-ignite-btn" ' + dis + ' onpointerdown="cpViews.home.igniteDown(event)" onpointerup="cpViews.home.igniteUp()" onpointerleave="cpViews.home.igniteUp()" onpointercancel="cpViews.home.igniteUp()" oncontextmenu="return false"><i class="fas fa-fire"></i><span>' + (d.checking ? '点燃中' : '长按点火') + '</span></button><span class="cp-ignite-hint">按住 1 秒点燃今日，松手取消</span>' + this._miniLink(dis) + '</div>'
+  }
+
+  V._submitBtn = function (dis) {
+    return '<button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-check"></i> 提交打卡</button>'
+  }
+
+  V._miniLink = function (dis) {
+    return '<button class="cp-mini-link" ' + dis + ' onclick="cpViews.home.doMini()">今天太累？5分钟微打卡守住节奏</button>'
+  }
+
+  V._fmtTime = function (min) { return Math.floor(min / 60) + ':' + String(min % 60).padStart(2, '0') }
 })()

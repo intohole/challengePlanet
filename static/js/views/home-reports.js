@@ -1,62 +1,6 @@
 ;(function () {
   const V = window.cpViews.home
 
-  V._reportSection = function (s) {
-    const ch = s.current
-    const d = this.data
-    if (!ch) return ''
-    const isDecompose = ch.decompose_mode === 'time_slot' || ch.task_type === 'counter' || ch.task_type === 'timer'
-    let html = '<div class="glass-card cp-report-section"><div class="cp-report-head"><div class="cp-section-title"><i class="fas fa-chart-pie" style="color:var(--primary-light)"></i> 数据报表</div>'
-    html += '<button class="cp-btn-ghost cp-report-expand" onclick="cpViews.home.openReport()"><i class="fas fa-expand"></i> 完整报表</button></div>'
-    html += '<div class="cp-report-quickgrid">'
-    html += this._quickStat('今日', (d.today && d.today.today_total) || 0, '/', (d.today && d.today.today_target) || ch.target_value, ch.unit, 'var(--emerald)')
-    const baseline = (d.today && d.today.dynamic_baseline) || 0
-    html += this._quickStat('软目标', baseline.toFixed(1), '', '', ch.unit, 'var(--amber)')
-    const streak = ch.streak || 0
-    html += this._quickStat('连续', streak, '', '', '天', 'var(--primary-light)')
-    html += this._quickStat('累计', ch.completed_days || 0, '/', ch.total_days || 0, '天', 'var(--primary)')
-    html += '</div>'
-    if (isDecompose) {
-      html += '<div class="cp-report-mini-chart" id="cp-mini-hourly-' + ch.id + '"></div>'
-    }
-    html += '</div>'
-    return html
-  }
-
-  V._quickStat = function (label, val, sep, val2, unit, color) {
-    let v = '<div class="cp-quick-stat"><div class="cp-quick-stat-label">' + label + '</div>'
-    v += '<div class="cp-quick-stat-val" style="color:' + color + '"><b>' + val + '</b>'
-    if (sep) v += '<span class="cp-quick-stat-sep">' + sep + '</span><span class="cp-quick-stat-val2">' + val2 + '</span>'
-    v += '</div><div class="cp-quick-stat-unit">' + window.cpEsc(unit || '') + '</div></div>'
-    return v
-  }
-
-  V._renderMiniHourly = function () {
-    const ch = window.appState.current
-    if (!ch) return
-    const box = document.getElementById('cp-mini-hourly-' + ch.id)
-    if (!box) return
-    window.api.get('/challenges/' + ch.id + '/report/hourly?days=7').then(res => {
-      const r = (res && (res.data || res)) || {}
-      const items = r.items || []
-      if (!items.length) { box.innerHTML = '<div class="cp-mini-empty">暂无时段数据</div>'; return }
-      const max = Math.max.apply(null, items.map(i => i.total_value || 0)) || 1
-      let html = '<div class="cp-mini-bars">'
-      items.forEach(it => {
-        const h = it.hour
-        const v = it.total_value || 0
-        const ratio = v / max
-        const isPeak = h === r.peak_hour
-        const cls = isPeak ? ' peak' : (v > 0 ? ' active' : '')
-        html += '<div class="cp-mini-bar' + cls + '" title="' + h + ':00 ' + v + '"><div class="cp-mini-bar-fill" style="height:' + (ratio * 100) + '%"></div></div>'
-      })
-      html += '</div>'
-      html += '<div class="cp-mini-axis"><span>0</span><span>6</span><span>12</span><span>18</span><span>23</span></div>'
-      if (r.insight) html += '<div class="cp-mini-insight"><i class="fas fa-lightbulb"></i> ' + window.cpEsc(r.insight) + '</div>'
-      box.innerHTML = html
-    }).catch(() => { box.innerHTML = '<div class="cp-mini-empty">加载失败</div>' })
-  }
-
   V.openReport = function () {
     const s = window.appState
     if (!s.current) return
@@ -184,25 +128,41 @@
     const pts = r.points
     const vals = pts.map(p => p.value || 0)
     const max = Math.max.apply(null, vals) || 1
-    const min = 0
-    let h = '<div class="cp-trend-chart">'
-    pts.forEach(p => {
-      const v = p.value || 0
-      const ratio = (v - min) / (max - min || 1)
-      const isToday = p.date === window.cpTodayStr()
-      const cls = isToday ? 'today' : ''
-      h += '<div class="cp-trend-col ' + cls + '" title="' + p.date + ' ' + v + '">'
-      h += '<div class="cp-trend-bar" style="height:' + (ratio * 100) + '%"></div>'
-      h += '</div>'
+    const min = Math.min.apply(null, vals) || 0
+    const range = max - min || 1
+    const w = 320, h = 160, pad = 20
+    const stepX = (w - pad * 2) / Math.max(pts.length - 1, 1)
+    let pathD = '', areaD = ''
+    pts.forEach((p, i) => {
+      const x = pad + i * stepX
+      const y = h - pad - ((p.value - min) / range) * (h - pad * 2)
+      if (i === 0) { pathD += 'M' + x.toFixed(1) + ',' + y.toFixed(1); areaD += 'M' + x.toFixed(1) + ',' + y.toFixed(1) }
+      else { pathD += ' L' + x.toFixed(1) + ',' + y.toFixed(1); areaD += ' L' + x.toFixed(1) + ',' + y.toFixed(1) }
     })
-    h += '</div>'
-    h += '<div class="cp-trend-legend">'
-    h += '<span><i class="fas fa-circle" style="color:var(--emerald)"></i> 今日</span>'
-    h += '<span>均值 ' + r.avg_value + ' ' + window.cpEsc(ch.unit) + '</span>'
-    const tdMap = { improving: '进步中', worsening: r.direction === 'decrease' ? '需关注' : '需关注', stable: '稳定' }
-    h += '<span>趋势 ' + (tdMap[r.trend_direction] || '稳定') + '</span></div>'
-    if (r.insight) h += '<div class="cp-chart-insight"><i class="fas fa-lightbulb"></i> ' + window.cpEsc(r.insight) + '</div>'
-    return h
+    areaD += ' L' + (pad + (pts.length - 1) * stepX).toFixed(1) + ',' + (h - pad) + ' L' + pad + ',' + (h - pad) + ' Z'
+    const todayIdx = pts.findIndex(p => p.date === window.cpTodayStr())
+    const todayX = todayIdx >= 0 ? (pad + todayIdx * stepX).toFixed(1) : 0
+    let hhtml = '<div class="cp-svg-trend">'
+    hhtml += '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" style="max-width:100%">'
+    hhtml += '<defs><linearGradient id="trend-grad" x1="0" y1="0" x2="0" y2="1">'
+    hhtml += '<stop offset="0%" stop-color="rgba(129,140,248,.35)"/>'
+    hhtml += '<stop offset="100%" stop-color="rgba(129,140,248,0)"/>'
+    hhtml += '</linearGradient></defs>'
+    hhtml += '<path d="' + areaD + '" fill="url(#trend-grad)" opacity="0.8"/>'
+    hhtml += '<path d="' + pathD + '" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+    if (todayIdx >= 0) {
+      hhtml += '<circle cx="' + todayX + '" cy="' + (h - pad - ((pts[todayIdx].value - min) / range) * (h - pad * 2)).toFixed(1) + '" r="4" fill="var(--emerald)" stroke="rgba(15,23,42,.6)" stroke-width="2"/>'
+    }
+    hhtml += '<line x1="' + pad + '" y1="' + (h - pad) + '" x2="' + (w - pad) + '" y2="' + (h - pad) + '" stroke="rgba(148,163,184,.15)" stroke-width="1"/>'
+    hhtml += '</svg>'
+    hhtml += '</div>'
+    hhtml += '<div class="cp-trend-legend">'
+    hhtml += '<span><i class="fas fa-circle" style="color:var(--emerald)"></i> 今日</span>'
+    hhtml += '<span>均值 ' + (r.avg_value || 0).toFixed(1) + ' ' + window.cpEsc(ch.unit) + '</span>'
+    const tdMap = { improving: '进步中 ↑', worsening: '需关注 ↓', stable: '稳定 →' }
+    hhtml += '<span>趋势 ' + (tdMap[r.trend_direction] || '稳定 →') + '</span></div>'
+    if (r.insight) hhtml += '<div class="cp-chart-insight"><i class="fas fa-lightbulb"></i> ' + window.cpEsc(r.insight) + '</div>'
+    return hhtml
   }
 
   V._renderHeatmap = function (r, ch) {
@@ -255,7 +215,7 @@
     let h = '<div class="cp-completion">'
     h += '<div class="cp-completion-ring">'
     h += '<svg width="100" height="100" viewBox="0 0 100 100">'
-    h += '<circle cx="50" cy="50" r="36" fill="none" stroke="rgba(15,23,42,0.06)" stroke-width="8"/>'
+    h += '<circle cx="50" cy="50" r="36" fill="none" stroke="rgba(148,163,184,.1)" stroke-width="8"/>'
     h += '<circle cx="50" cy="50" r="36" fill="none" stroke="var(--emerald)" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + offset + '" transform="rotate(-90 50 50)"/>'
     h += '</svg>'
     h += '<div class="cp-completion-pct"><b>' + rate.toFixed(0) + '</b>%</div>'

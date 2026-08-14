@@ -132,6 +132,10 @@
 .cp-cs-val { font-size: 18px; font-weight: 800; line-height: 1.2; }
 .cp-cs-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
 
+/* SVG trend chart */
+.cp-svg-trend { padding: 8px 0; margin-bottom: 10px; }
+.cp-svg-trend svg { display: block; }
+
 @media (max-width: 380px) {
   .cp-report-quickgrid { grid-template-columns: repeat(2, 1fr); }
   .cp-overview-grid { grid-template-columns: repeat(2, 1fr); }
