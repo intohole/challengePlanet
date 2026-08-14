@@ -25,14 +25,12 @@ env:
   UC_BASE_URL: "https://songguokr.com/uc-api"
   UC_APP_KEY: "${UC_APP_KEY}"
   UC_APP_SECRET: "${UC_APP_SECRET}"
-  UC_JWT_SECRET: "${UC_JWT_SECRET}"
   UC_ENABLED: "true"
   TZ: "Asia/Shanghai"
 
 secrets:
   - UC_APP_KEY
   - UC_APP_SECRET
-  - UC_JWT_SECRET
 
 health:
   path: /health
