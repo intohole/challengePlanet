@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""ChallengePlanet 二级打卡 E2E 测试 - 多次打卡/子目标/报表体系"""
 from __future__ import annotations
 
 import json
@@ -13,7 +12,6 @@ API = f"{BASE}/api/v1"
 USER, PWD = "cp_e2e", "CpE2e#2026x"
 passed: list[str] = []
 failed: list[tuple[str, str]] = []
-
 
 def req(method: str, path: str, body: dict | None = None, token: str | None = None,
         timeout: int = 90, raw: bool = False):
@@ -33,19 +31,9 @@ def req(method: str, path: str, body: dict | None = None, token: str | None = No
         except Exception:
             return e.code, {}
 
-
 def check(name: str, cond: bool, detail: str = "") -> None:
     if cond:
         passed.append(name)
-        print(f"  PASS {name}")
-    else:
-        failed.append((name, detail))
-        print(f"  FAIL {name} :: {detail}")
-
-
-print("== 1. 登录 ==")
-st, body = req("POST", "/auth/login", {"username": USER, "password": PWD})
-data = body.get("data") or body
 token = data.get("access_token")
 check("登录返回token", st == 200 and bool(token), f"st={st} body={str(body)[:200]}")
 

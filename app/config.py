@@ -13,10 +13,10 @@ class Settings(BaseSettings):
     LLM_MAX_TOKENS: int = 4096
     PLANNING_TEMPERATURE: float = 0.7
     FEEDBACK_TEMPERATURE: float = 0.8
-    BEEMEMORY_BASE_URL: str = "http://localhost:8700"
+    BEEMEMORY_BASE_URL: str = "http://${BEE_MEMORY_BASE_URL}"
     SERVICE_TOKEN: str = "dev-service-token-2026"
     LION_NAMESPACE: str = "challengePlanet"
-    LION_BASE_URL: str = "http://localhost:9527"
+    LION_BASE_URL: str = "http://${NEXUS_BASE_URL}"
     UC_BASE_URL: str = "https://songguokr.com/uc-api"
     UC_APP_KEY: str = ""
     UC_APP_SECRET: str = ""
