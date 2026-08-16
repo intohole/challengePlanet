@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from nexus.middleware import LoadingSplashMiddleware, NoCacheMiddleware
 from nexus import close_uc_sdk, init_uc_sdk, is_ironman_available, startup_ironman, register_health_detail
 from nexus.logging import get_logger, setup_logging
+from nexus.notify import async_init_notify_client
 from nexus.scheduler import get_scheduler
 
 from app.api.adaptive import router as adaptive_router
@@ -42,6 +43,7 @@ async def lifespan(app: FastAPI):
         if result.get("degraded"):
             logger.warning("Ironman degraded: %s", result.get("error", "unknown"))
     logger.info("Ironman available: %s", is_ironman_available())
+    await async_init_notify_client()
     if settings.UC_BASE_URL and settings.UC_APP_KEY:
         try:
             init_uc_sdk(

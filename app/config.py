@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     PLANNING_TEMPERATURE: float = 0.7
     FEEDBACK_TEMPERATURE: float = 0.8
     BEEMEMORY_BASE_URL: str = "http://localhost:8700"
-    NOTIFY_CENTER_URL: str = "http://10.100.0.1:8910"
+    NOTIFY_CENTER_URL: str = os.environ.get("NOTIFY_CENTER_URL", "http://10.100.0.1:8910")
     SERVICE_TOKEN: str = os.environ.get("SERVICE_TOKEN", "dev-service-token-2026")
     LION_NAMESPACE: str = "challengePlanet"
     LION_BASE_URL: str = "http://localhost:9527"

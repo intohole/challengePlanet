@@ -1,20 +1,17 @@
 from __future__ import annotations
 
-import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from nexus.notify import get_notify_client
 from nexus.logging import get_logger
 
-from app.config import settings
 from app.db.database import async_session
 from app.models.challenge import Challenge
 from app.models.checkin import CheckIn
 from app.services.streak_service import today_str
 
 logger = get_logger("challengePlanet.reminder")
-
-_NOTIFY_BASE_URL = settings.NOTIFY_CENTER_URL
 
 
 async def _get_unchecked_challenges(session: AsyncSession) -> list[Challenge]:
@@ -46,37 +43,27 @@ async def send_checkin_reminders() -> None:
             logger.info(
                 "Found %d unchecked challenges, sending reminders...", len(unchecked)
             )
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                for challenge in unchecked:
-                    try:
-                        resp = await client.post(
-                            f"{_NOTIFY_BASE_URL}/api/notify/send",
-                            headers={"X-Service-Token": settings.SERVICE_TOKEN},
-                            json={
-                                "user_id": challenge.user_id,
-                                "app_id": "challengePlanet",
-                                "type": "task",
-                                "priority": 3,
-                                "title": f"「{challenge.title}」打卡提醒",
-                                "content": (
-                                    f"今天还没打卡哦！"
-                                    f"坚持{challenge.duration_days}天挑战，别断了连击！"
-                                ),
-                                "channels": ["in_app"],
-                            },
-                        )
-                        if resp.status_code != 200:
-                            logger.warning(
-                                "Reminder send failed for user=%s status=%d",
-                                challenge.user_id,
-                                resp.status_code,
-                            )
-                    except Exception as e:
-                        logger.warning(
-                            "Failed to send reminder to user %s: %s",
-                            challenge.user_id,
-                            e,
-                        )
+            client = get_notify_client()
+            for challenge in unchecked:
+                try:
+                    await client.send(
+                        user_id=str(challenge.user_id),
+                        title=f"「{challenge.title}」打卡提醒",
+                        content=(
+                            f"今天还没打卡哦！"
+                            f"坚持{challenge.duration_days}天挑战，别断了连击！"
+                        ),
+                        type="task",
+                        priority=3,
+                        app_id="challengePlanet",
+                        channels=["in_app"],
+                    )
+                except Exception as e:
+                    logger.warning(
+                        "Failed to send reminder to user %s: %s",
+                        challenge.user_id,
+                        e,
+                    )
             logger.info(
                 "Check-in reminders processed for %d challenges.", len(unchecked)
             )

@@ -25,7 +25,6 @@ env:
   UC_APP_KEY: "${UC_APP_KEY}"
   UC_APP_SECRET: "${UC_APP_SECRET}"
   UC_ENABLED: "true"
-  NOTIFY_CENTER_URL: "${NOTIFY_CENTER_URL}"
   TZ: "Asia/Shanghai"
 
 secrets:
