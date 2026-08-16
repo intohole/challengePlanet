@@ -7,7 +7,7 @@ app:
   is_public: true
   workers: 1
   path_prefix: /challengePlanet
-  depends_on: ["usercenter", "lion", "prompt-manager", "beeMemory"]
+  depends_on: ["lion","prompt-manager","beeMemory"]
 
 build:
   python: 3.12
