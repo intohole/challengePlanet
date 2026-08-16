@@ -14,7 +14,7 @@ from app.services.streak_service import today_str
 
 logger = get_logger("challengePlanet.reminder")
 
-_NOTIFY_BASE_URL = "http://10.100.0.2:8910"
+_NOTIFY_BASE_URL = settings.NOTIFY_CENTER_URL
 
 
 async def _get_unchecked_challenges(session: AsyncSession) -> list[Challenge]:
