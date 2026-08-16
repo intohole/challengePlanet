@@ -20,6 +20,7 @@ run:
 env:
   PORT: "8610"
   SERVICE_TOKEN: "${SERVICE_TOKEN}"
+  PM_GATEWAY_API_KEY: "${PM_GATEWAY_API_KEY}"
   LION_NAMESPACE: challengePlanet
   LION_BASE_URL: "http://edge-01:9527"
   UC_BASE_URL: "https://songguokr.com/uc-api"
@@ -33,6 +34,7 @@ env:
 
 secrets:
   - SERVICE_TOKEN
+  - PM_GATEWAY_API_KEY
   - UC_APP_KEY
   - UC_APP_SECRET
   - UC_JWT_SECRET
