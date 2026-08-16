@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings
@@ -15,7 +16,7 @@ class Settings(BaseSettings):
     FEEDBACK_TEMPERATURE: float = 0.8
     BEEMEMORY_BASE_URL: str = "http://localhost:8700"
     NOTIFY_CENTER_URL: str = "http://10.100.0.1:8910"
-    SERVICE_TOKEN: str = "dev-service-token-2026"
+    SERVICE_TOKEN: str = os.environ.get("SERVICE_TOKEN", "dev-service-token-2026")
     LION_NAMESPACE: str = "challengePlanet"
     LION_BASE_URL: str = "http://localhost:9527"
     UC_BASE_URL: str = "https://songguokr.com/uc-api"
