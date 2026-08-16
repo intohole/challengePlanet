@@ -56,7 +56,7 @@ class AIService:
 
     async def parse_challenge_input(self, raw_input: str) -> dict[str, object]:
         llm = get_llm_service()
-        raw = await llm.ask(raw_input, system=PARSE_SYSTEM, temperature=0.3, max_tokens=256, timeout=15.0, task_type="extract")
+        raw = await llm.ask(raw_input, system=PARSE_SYSTEM, temperature=0.3, max_tokens=256, timeout=30.0, task_type="extract")
         parsed = parse_llm_json(raw)
         if "raw_response" in parsed:
             parsed = {
