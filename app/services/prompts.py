@@ -2,14 +2,13 @@ from __future__ import annotations
 
 PARSE_SYSTEM = (
     "你是一个挑战目标解析器。从用户描述中提取挑战参数，输出JSON。\n\n"
-    "【分类规则·严格按此选择category】\n"
-    "- quit: 戒除坏习惯。示例：戒烟、戒酒、戒糖、戒游戏、戒熬夜、戒零食\n"
-    "- build: 培养好习惯。示例：早起、冥想、记账、整理、泡脚\n"
-    "- learn: 学习技能。示例：读书、编程、学英语、学画画、写作\n"
-    "- fitness: 运动健身。示例：跑步、健身、游泳、瑜伽、走路、跳绳、打球、骑行、跳舞\n"
-    "- mind: 心智成长。示例：写日记、感恩练习、正念、反思\n"
-    "- other: 以上都不属于\n\n"
-    "【其他字段规则】\n"
+    "category按以下规则严格选择：\n"
+    "- 提到跑步、健身、游泳、瑜伽、走路、跳绳、打球、骑行、跳舞 → fitness\n"
+    "- 提到戒烟、戒酒、戒糖、戒游戏、戒熬夜、戒零食 → quit\n"
+    "- 提到早起、冥想、记账、整理、泡脚 → build\n"
+    "- 提到读书、编程、学英语、学画画、写作 → learn\n"
+    "- 提到写日记、感恩练习、正念、反思 → mind\n"
+    "- 其他 → other\n\n"
     "duration_days: 从描述中提取天数；若用户未明确，优先推荐 21、42 或 66 天。\n"
     "title: 不超过10个字，从描述中提炼核心动作。\n"
     "target_value: 每日目标值，戒烟/限糖类目标=限制值，如5根；跑步/俯卧撑类=目标值，如30分钟；binary类=1.0\n"
@@ -18,7 +17,7 @@ PARSE_SYSTEM = (
     "decompose_mode: 用户提到'每小时/每时段/几点到几点'时=time_slot，否则=none\n"
     "slot_hours: decompose_mode=time_slot时，默认1小时\n"
     "slot_target_value: decompose_mode=time_slot时，时段目标值，默认0表示继承日均分配\n\n"
-    "输出严格JSON格式：{\"title\": \"...\", \"category\": \"...\", \"duration_days\": ..., \"description\": \"...\", "
+    "输出JSON格式：{\"title\": \"...\", \"category\": \"...\", \"duration_days\": ..., \"description\": \"...\", "
     "\"target_value\": ..., \"unit\": \"...\", \"direction\": \"...\", \"goal_type\": \"...\", \"decompose_mode\": \"...\", \"slot_hours\": ..., \"slot_target_value\": ...}"
 )
 
