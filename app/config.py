@@ -14,15 +14,15 @@ class Settings(BaseSettings):
     LLM_MAX_TOKENS: int = 4096
     PLANNING_TEMPERATURE: float = 0.7
     FEEDBACK_TEMPERATURE: float = 0.8
-    BEEMEMORY_BASE_URL: str = "http://localhost:8700"
-    NOTIFY_CENTER_URL: str = os.environ.get("NOTIFY_CENTER_URL", "http://10.100.0.1:8910")
-    SERVICE_TOKEN: str = os.environ.get("SERVICE_TOKEN", "dev-service-token-2026")
+    BEEMEMORY_BASE_URL: str = os.environ.get("BEEMEMORY_BASE_URL", "http://edge-01:8700")
+    NOTIFY_CENTER_URL: str = os.environ.get("NOTIFY_CENTER_URL", "http://edge-01:8910")
+    SERVICE_TOKEN: str = os.environ.get("SERVICE_TOKEN", "")
     LION_NAMESPACE: str = "challengePlanet"
-    LION_BASE_URL: str = "http://localhost:9527"
+    LION_BASE_URL: str = os.environ.get("LION_BASE_URL", "http://edge-01:9527")
     UC_BASE_URL: str = "https://songguokr.com/uc-api"
-    UC_APP_KEY: str = ""
-    UC_APP_SECRET: str = ""
-    UC_JWT_SECRET: str = ""
+    UC_APP_KEY: str = os.environ.get("UC_APP_KEY", "")
+    UC_APP_SECRET: str = os.environ.get("UC_APP_SECRET", "")
+    UC_JWT_SECRET: str = os.environ.get("UC_JWT_SECRET", "")
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

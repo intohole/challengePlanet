@@ -46,7 +46,11 @@ def _import_models() -> None:
     from app.models import adaptive, challenge, checkin, points, squad, sub_goal  # noqa: F401
 
 
+_WHITELIST_TABLES = frozenset({"challenges", "checkins", "adaptive_suggestions"})
+
 async def _ensure_column(conn: object, table: str, column: str, ddl: str) -> None:
+    if table not in _WHITELIST_TABLES:
+        raise ValueError(f"migration: table {table} not in whitelist")
     rows = await conn.execute(text(f"PRAGMA table_info({table})"))
     cols = {row[1] for row in rows.fetchall()}
     if column not in cols:

@@ -4,9 +4,10 @@ import asyncio
 from datetime import datetime
 
 from nexus.logging import get_logger
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.checkin import CheckIn
+from app.models.checkin import CheckIn, AIInsight
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository, InsightRepository
 from app.repositories.points_repository import ChallengeMetaRepository
@@ -230,10 +231,8 @@ class CheckInService:
     async def delete_checkin(
         self, session: AsyncSession, checkin_id: int, user_id: str,
     ) -> None:
-        from sqlalchemy import select
-        from app.models.checkin import CheckIn as _CheckIn
         result = await session.execute(
-            select(_CheckIn).where(_CheckIn.id == checkin_id, _CheckIn.user_id == user_id)
+            select(CheckIn).where(CheckIn.id == checkin_id, CheckIn.user_id == user_id)
         )
         checkin = result.scalar_one_or_none()
         if checkin is None:

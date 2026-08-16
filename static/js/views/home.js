@@ -338,8 +338,7 @@ window.cpViews.home = (function () {
         const phaseColor = phasePct < 0.25 ? 'rgba(52,211,153,' : (phasePct < 0.6 ? 'rgba(245,158,11,' : 'rgba(167,139,250,')
         let cls = '', mark = '<span class="st">·</span>'
         if (st === 'checked' || st === 'completed') {
-          const mini = rec.checkin_type === 'mini'
-          cls = mini ? ' mini' : ' checked'
+          cls = ' checked'
           mark = '<span class="st">✓</span>'
         }
         else if (st === 'frozen') { cls = ' frozen'; mark = '<span class="st">❄</span>' }
@@ -350,7 +349,7 @@ window.cpViews.home = (function () {
         const clickable = rec ? ' onclick="cpViews.home.openDayDetail(\'' + ds + '\')"' : ''
         html += '<div class="cp-cal-cell' + cls + '"' + clickable + ' style="' + (ds < today && !rec ? 'background:' + phaseColor + '0.08)' : '') + '">' + mark + '<span>' + (i + 1) + '</span></div>'
       }
-      html += '</div><div class="cp-cal-legend"><span>✓ 已打卡</span><span style="color:#c084fc">✓ 微打卡</span><span>❄ 冻结</span><span>✚ 补签</span><span>· 缺失</span></div>'
+      html += '</div><div class="cp-cal-legend"><span>✓ 已打卡</span><span>❄ 冻结</span><span>✚ 补签</span><span>· 缺失</span></div>'
       if (d.mercy) {
         const missed = d.mercy.missed_dates || []
         html += '<div class="cp-mercy-row">'

@@ -21,16 +21,21 @@ env:
   PORT: "8610"
   SERVICE_TOKEN: "${SERVICE_TOKEN}"
   LION_NAMESPACE: challengePlanet
+  LION_BASE_URL: "http://edge-01:9527"
   UC_BASE_URL: "https://songguokr.com/uc-api"
   UC_APP_KEY: "${UC_APP_KEY}"
   UC_APP_SECRET: "${UC_APP_SECRET}"
+  UC_JWT_SECRET: "${UC_JWT_SECRET}"
   UC_ENABLED: "true"
+  BEEMEMORY_BASE_URL: "http://edge-01:8700"
+  NOTIFY_CENTER_URL: "http://edge-01:8910"
   TZ: "Asia/Shanghai"
 
 secrets:
   - SERVICE_TOKEN
   - UC_APP_KEY
   - UC_APP_SECRET
+  - UC_JWT_SECRET
 
 health:
   path: /health
