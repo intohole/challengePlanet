@@ -18,22 +18,14 @@ run:
   web: python3 -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --timeout-keep-alive 30
 
 env:
-  PORT: "8610"
-  SERVICE_TOKEN: "${SERVICE_TOKEN}"
   PM_GATEWAY_API_KEY: "${PM_GATEWAY_API_KEY}"
-  LION_NAMESPACE: challengePlanet
-  LION_BASE_URL: "http://edge-01:9527"
-  UC_BASE_URL: "https://songguokr.com/uc-api"
   UC_APP_KEY: "${UC_APP_KEY}"
   UC_APP_SECRET: "${UC_APP_SECRET}"
   UC_JWT_SECRET: "${UC_JWT_SECRET}"
   UC_ENABLED: "true"
-  BEEMEMORY_BASE_URL: "http://edge-01:8700"
-  NOTIFY_CENTER_URL: "http://edge-01:8910"
   TZ: "Asia/Shanghai"
 
 secrets:
-  - SERVICE_TOKEN
   - PM_GATEWAY_API_KEY
   - UC_APP_KEY
   - UC_APP_SECRET
