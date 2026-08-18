@@ -19,10 +19,6 @@ class Settings(BaseSettings):
     SERVICE_TOKEN: str = os.environ.get("SERVICE_TOKEN", "")
     LION_NAMESPACE: str = "challengePlanet"
     LION_BASE_URL: str = os.environ.get("LION_BASE_URL", "http://edge-01:9527")
-    UC_BASE_URL: str = "https://songguokr.com/uc-api"
-    UC_APP_KEY: str = os.environ.get("UC_APP_KEY", "")
-    UC_APP_SECRET: str = os.environ.get("UC_APP_SECRET", "")
-    UC_JWT_SECRET: str = os.environ.get("UC_JWT_SECRET", "")
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

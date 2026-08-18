@@ -3,6 +3,7 @@ app:
   display_name: "星轨挑战"
   description: "AI驱动的习惯养成与目标挑战工具"
   app_group: "学习成长"
+  tags: ["学习","打卡","目标","习惯"]
   icon_url: "icon.svg"
   is_public: true
   workers: 1
@@ -19,17 +20,10 @@ run:
 
 env:
   PM_GATEWAY_API_KEY: "${PM_GATEWAY_API_KEY}"
-  UC_APP_KEY: "${UC_APP_KEY}"
-  UC_APP_SECRET: "${UC_APP_SECRET}"
-  UC_JWT_SECRET: "${UC_JWT_SECRET}"
-  UC_ENABLED: "true"
   TZ: "Asia/Shanghai"
 
 secrets:
   - PM_GATEWAY_API_KEY
-  - UC_APP_KEY
-  - UC_APP_SECRET
-  - UC_JWT_SECRET
 
 health:
   path: /health

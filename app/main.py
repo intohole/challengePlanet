@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from nexus.middleware import LoadingSplashMiddleware, NoCacheMiddleware
-from nexus import close_uc_sdk, init_uc_sdk, is_ironman_available, startup_ironman, register_health_detail
+from nexus import close_uc_sdk, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, startup_ironman, register_health_detail
 from nexus.logging import get_logger, setup_logging
 from nexus.notify import async_init_notify_client
 from nexus.scheduler import get_scheduler
@@ -44,17 +44,11 @@ async def lifespan(app: FastAPI):
             logger.warning("Ironman degraded: %s", result.get("error", "unknown"))
     logger.info("Ironman available: %s", is_ironman_available())
     await async_init_notify_client()
-    if settings.UC_BASE_URL and settings.UC_APP_KEY:
-        try:
-            init_uc_sdk(
-                base_url=settings.UC_BASE_URL,
-                app_key=settings.UC_APP_KEY,
-                app_secret=settings.UC_APP_SECRET,
-                jwt_secret=settings.UC_JWT_SECRET or "",
-            )
-            logger.info("UC SDK initialized: %s", settings.UC_BASE_URL)
-        except Exception as e:
-            logger.warning("UC SDK init failed: %s", e)
+    try:
+        await init_uc_sdk_from_lion()
+        logger.info("UC SDK initialized from Lion")
+    except Exception as e:
+        logger.warning("UC SDK init failed: %s", e)
     scheduler = get_scheduler()
     scheduler.add_cron_job(
         send_checkin_reminders,
@@ -132,8 +126,12 @@ async def _health_lion_check() -> str:
 
 async def _health_uc_check() -> str:
     import httpx
+    try:
+        sdk = get_uc_sdk()
+    except Exception:
+        return "unavailable"
     async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.get(f"{settings.UC_BASE_URL}/health")
+        resp = await client.get(f"{sdk.base_url}/health")
         return "ok" if resp.status_code == 200 else f"status:{resp.status_code}"
 
 

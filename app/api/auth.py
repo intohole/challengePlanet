@@ -4,7 +4,6 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from nexus import get_uc_sdk
 
-from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -22,12 +21,25 @@ class LoginResponse(BaseModel):
     user: dict[str, object]
 
 
+@router.get("/config")
+async def uc_config() -> dict[str, object]:
+    sdk = get_uc_sdk()
+    configured = bool(getattr(sdk, "is_configured", lambda: False)())
+    app_key = str(getattr(sdk, "app_key", "") or "")
+    return {
+        "enabled": configured,
+        "base_url": "/uc-api" if configured else "",
+        "app_key": app_key if configured else "",
+    }
+
+
 @router.post("/login", response_model=LoginResponse)
 async def login(req: LoginRequest) -> LoginResponse:
-    if not settings.UC_BASE_URL or not settings.UC_APP_KEY:
-        raise HTTPException(status_code=503, detail="认证服务未配置，请联系管理员")
     try:
         sdk = get_uc_sdk()
+    except Exception:
+        raise HTTPException(status_code=503, detail="认证服务未配置，请联系管理员")
+    try:
         result = await sdk.login(username=req.username, password=req.password)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"用户中心暂时不可用: {e}")
