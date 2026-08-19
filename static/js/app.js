@@ -71,6 +71,12 @@ window.cpCat = cat => window.cpCategoryMap[cat] || window.cpCategoryMap.other
 
 window.cpEsc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 
+window.cpMd = s => {
+  if (window.NexusMarkdown && window.NexusMarkdown.render) return window.NexusMarkdown.render(String(s == null ? '' : s))
+  return window.cpEsc(s)
+}
+if (window.NexusMarkdown && window.NexusMarkdown.injectLibs) window.NexusMarkdown.injectLibs()
+
 window.cpTodayStr = () => {
   const d = new Date()
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')

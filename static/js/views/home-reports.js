@@ -90,7 +90,7 @@
     if (o.peak_hour >= 0) {
       h += '<div class="cp-overview-peak"><i class="fas fa-flag"></i> 高峰时段：' + o.peak_hour + ':00 - ' + (o.peak_hour + 1) + ':00</div>'
     }
-    if (o.insight) h += '<div class="cp-overview-insight"><i class="fas fa-lightbulb"></i> ' + window.cpEsc(o.insight) + '</div>'
+    if (o.insight) h += '<div class="cp-overview-insight nx-md"><i class="fas fa-lightbulb"></i> ' + window.cpMd(o.insight) + '</div>'
     return h
   }
 
@@ -119,7 +119,7 @@
       const dir = r.direction === 'decrease' ? '高风险时段' : '高效时段'
       h += '<div class="cp-chart-insight"><i class="fas fa-flag"></i> ' + dir + '：' + r.peak_hour + ':00 - ' + (r.peak_hour + 1) + ':00</div>'
     }
-    if (r.insight) h += '<div class="cp-chart-insight"><i class="fas fa-lightbulb"></i> ' + window.cpEsc(r.insight) + '</div>'
+    if (r.insight) h += '<div class="cp-chart-insight nx-md"><i class="fas fa-lightbulb"></i> ' + window.cpMd(r.insight) + '</div>'
     return h
   }
 
@@ -161,7 +161,7 @@
     hhtml += '<span>均值 ' + (r.avg_value || 0).toFixed(1) + ' ' + window.cpEsc(ch.unit) + '</span>'
     const tdMap = { improving: '进步中 ↑', worsening: '需关注 ↓', stable: '稳定 →' }
     hhtml += '<span>趋势 ' + (tdMap[r.trend_direction] || '稳定 →') + '</span></div>'
-    if (r.insight) hhtml += '<div class="cp-chart-insight"><i class="fas fa-lightbulb"></i> ' + window.cpEsc(r.insight) + '</div>'
+    if (r.insight) hhtml += '<div class="cp-chart-insight nx-md"><i class="fas fa-lightbulb"></i> ' + window.cpMd(r.insight) + '</div>'
     return hhtml
   }
 
@@ -226,7 +226,7 @@
     h += '<div class="cp-cs-item"><div class="cp-cs-val" style="color:var(--red)">' + r.hard_exceed_days + '</div><div class="cp-cs-label">硬超出</div></div>'
     h += '<div class="cp-cs-item"><div class="cp-cs-val">' + r.total_days + '</div><div class="cp-cs-label">总天数</div></div>'
     h += '</div></div>'
-    if (r.insight) h += '<div class="cp-chart-insight"><i class="fas fa-lightbulb"></i> ' + window.cpEsc(r.insight) + '</div>'
+    if (r.insight) h += '<div class="cp-chart-insight nx-md"><i class="fas fa-lightbulb"></i> ' + window.cpMd(r.insight) + '</div>'
     return h
   }
 })()
