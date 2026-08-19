@@ -27,7 +27,7 @@
         <h1>星轨挑战</h1>
         <p>AI 打卡教练 · 陪你每一天</p>
       </div>
-      <div class="cp-login-field">
+      <div class="cp-login-field" v-if="!showForgot">
         <div>
           <label class="cp-login-label">用户名</label>
           <div class="cp-login-input-wrap">
@@ -47,6 +47,16 @@
           <span v-if="loginLoading" style="display:inline-flex;align-items:center;gap:8px;"><span class="cp-gen-spinner"></span>登录中...</span>
           <span v-else>登录</span>
         </button>
+        <div class="cp-forgot-row"><span class="cp-forgot-link" @click="openForgot">{{ forgotLoading ? '加载中…' : '忘记密码？' }}</span></div>
+      </div>
+      <div v-else-if="showForgot" class="cp-forgot-card">
+        <p v-if="forgotError" class="cp-forgot-error"><i class="fas fa-circle-exclamation"></i>{{ forgotError }}</p>
+        <div v-if="forgotComp && forgotSdk" class="cp-forgot-panel">
+          <component :is="forgotComp" :sdk="forgotSdk" @back="closeForgot" @done="closeForgot"></component>
+        </div>
+        <div v-else class="cp-forgot-loading">
+          <span class="cp-gen-spinner"></span>找回密码加载中…
+        </div>
       </div>
       <button v-if="hasSession" @click="continueSession" class="cp-continue-btn">继续上次挑战 →</button>
     </div>
@@ -93,6 +103,11 @@ createApp({
     const loginLoading = ref(false)
     const loginError = ref('')
     const hasSession = ref(false)
+    const showForgot = ref(false)
+    const forgotSdk = ref(null)
+    const forgotComp = Vue.shallowRef(window.NuxForgotPassword || null)
+    const forgotLoading = ref(false)
+    const forgotError = ref('')
     onMounted(() => { if (localStorage.getItem('uc_access_token')) hasSession.value = true })
     async function doLogin() {
       if (!form.value.username.trim() || !form.value.password) return
@@ -113,7 +128,52 @@ createApp({
       } finally { loginLoading.value = false }
     }
     function continueSession() { window.location.href = (window.PATH_PREFIX || '') + '/' }
-    return { form, loginLoading, loginError, hasSession, doLogin, continueSession }
+    function notify(msg, type) {
+      if (window.showToast) { window.showToast(msg, type); return }
+      forgotError.value = msg
+    }
+    async function openForgot() {
+      if (forgotLoading.value) return
+      forgotLoading.value = true
+      forgotError.value = ''
+      const base = 'https://cdn.jsdmirror.com/gh/intohole/nexus-ui@v2.10.16'
+      const loadScript = (url) => new Promise((resolve, reject) => {
+        const s = document.createElement('script')
+        s.src = url; s.onload = resolve; s.onerror = reject
+        document.head.appendChild(s)
+      })
+      try {
+        let sdk = window.ucSDK || window.__UC_SDK__ || null
+        if (!sdk) {
+          if (!window.UserCenterSDK) {
+            try { await loadScript(base + '/js/user-center-sdk.js') } catch (e) {}
+          }
+          if (!window.ucConfig || !window.ucConfig.base_url) {
+            try {
+              const url = window.UC_CONFIG_URL || (window.PATH_PREFIX || '') + '/api/auth/config'
+              const res = await fetch(url, { headers: { 'Accept': 'application/json' } })
+              if (res.ok) window.ucConfig = await res.json()
+            } catch (e) {}
+            if (!window.ucConfig) window.ucConfig = {}
+          }
+          if (window.UserCenterSDK && typeof window.UserCenterSDK.ensureGlobalSdk === 'function') {
+            sdk = window.UserCenterSDK.ensureGlobalSdk()
+          }
+        }
+        if (!sdk) { notify('用户中心暂不可用，请稍后再试', 'warning'); return }
+        forgotSdk.value = sdk
+        if (!window.NuxForgotPassword) {
+          try { await loadScript(base + '/js/components/nux-forgot-password.js') } catch (e) {}
+          forgotComp.value = window.NuxForgotPassword || null
+        }
+        if (!forgotComp.value) { notify('找回密码组件加载失败', 'error'); return }
+        showForgot.value = true
+      } catch (e) {
+        notify('找回密码暂不可用，请稍后再试', 'error')
+      } finally { forgotLoading.value = false }
+    }
+    function closeForgot() { showForgot.value = false; forgotError.value = '' }
+    return { form, loginLoading, loginError, hasSession, doLogin, continueSession, showForgot, forgotSdk, forgotComp, forgotLoading, forgotError, openForgot, closeForgot }
   }
 }).mount('#app')
 </script>
