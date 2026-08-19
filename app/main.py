@@ -95,7 +95,7 @@ app.include_router(scene_router, prefix=API_PREFIX)
 app.include_router(share_router, prefix=API_PREFIX)
 
 from nexus import create_auth_router, get_uc_sdk
-app.include_router(create_auth_router(prefix="/api/auth", uc_sdk_provider=get_uc_sdk, tags=["认证"], endpoints={"config"}))
+app.include_router(create_auth_router(prefix="/api/auth", uc_sdk_provider=get_uc_sdk, tags=["认证"], password_ops=True, endpoints={"config"}))
 
 
 @app.get("/health")
