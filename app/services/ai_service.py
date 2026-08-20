@@ -8,6 +8,7 @@ from nexus.logging import get_logger
 from app.config import settings
 from app.services.ai_analysis_service import AIAnalysisService
 from app.services.prompts import (
+    COMPANION_SYSTEM,
     DECLARATION_SYSTEM,
     FEEDBACK_SYSTEM,
     PARSE_SYSTEM,
@@ -187,6 +188,21 @@ class AIService:
         user_msg = f"挑战：{challenge_title}\n中断天数：{missed_days}天"
         llm = get_llm_service()
         raw = await llm.ask(user_msg, system=REPAIR_SYSTEM, temperature=0.7, max_tokens=128, timeout=20.0, task_type="assistant")
+        return raw.strip()
+
+    async def generate_companion_message(
+        self, challenge_title: str, streak: int, phase_key: str, reasons: list[str]
+    ) -> str:
+        reason_text = "；".join(reasons) if reasons else "目前节奏稳定"
+        user_msg = (
+            f"挑战：{challenge_title}\n当前连续：{streak}天\n阶段：{phase_key}\n"
+            f"断签风险信号：{reason_text}"
+        )
+        llm = get_llm_service()
+        raw = await llm.ask(
+            user_msg, system=COMPANION_SYSTEM,
+            temperature=0.8, max_tokens=96, timeout=20.0, task_type="assistant",
+        )
         return raw.strip()
 
     async def generate_share_quote(self, challenge_title: str, streak: int) -> str:

@@ -11,7 +11,9 @@ from app.models.challenge import Challenge
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import ChallengeMetaRepository
+from app.services.ai_service import AIService
 from app.services.challenge_service import ChallengeService
+from app.services.companion_service import assess_risk, companion_text
 from app.services.mercy_service import load_valid_dates
 from app.services.streak_service import calc_streak, today_str
 
@@ -114,6 +116,8 @@ class GuidanceService:
         avg_completion = int(benchmark["avg_completion"])
         completion_rate = (completed * 100) // challenge.duration_days if challenge.duration_days > 0 else 0
         percentile = self._calc_percentile(completed)
+        risk = assess_risk(checkins, streak, today_str())
+        companion_msg = await self._build_companion(challenge, streak, phase_key, risk)
         return {
             "phase": phase_key,
             "phase_name": phase["name"],
@@ -137,7 +141,22 @@ class GuidanceService:
             "milestone_tip": last_milestone_tip,
             "is_at_risk": streak == 0 and completed > 0,
             "encouragement": self._build_encouragement(completed, streak, percentile),
+            "companion": {
+                "score": int(risk["score"]),
+                "level": str(risk["level"]),
+                "reasons": list(risk["reasons"]),
+                "micro_action": str(risk["micro_action"]),
+                "message": companion_msg,
+            },
         }
+
+    async def _build_companion(self, challenge, streak: int, phase_key: str, risk: dict[str, object]) -> str:
+        try:
+            return await AIService().generate_companion_message(
+                challenge.title, streak, phase_key, list(risk["reasons"])
+            )
+        except Exception:
+            return companion_text(risk)
 
     def _calc_percentile(self, completed: int) -> int:
         if completed <= 0:

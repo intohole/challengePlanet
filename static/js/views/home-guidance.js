@@ -45,6 +45,28 @@
     if (g.is_at_risk) {
       h += '<div class="cp-risk-warn"><i class="fas fa-triangle-exclamation"></i><span>连续中断了！今天重新打卡即可恢复节奏，中断不可怕，重启才重要。</span></div>'
     }
+    h += this._companionBubble(g.companion)
+    h += '</div>'
+    return h
+  }
+
+  V._companionBubble = function (c) {
+    if (!c || c.level === 'low') return ''
+    const hour = new Date().getHours()
+    const greet = hour < 5 ? '夜深了' : (hour < 12 ? '上午好' : (hour < 18 ? '下午好' : '晚上好'))
+    const levelTxt = { high: '今天有点危险', medium: '今天需要留意' }[c.level] || '今天的提醒'
+    const icon = c.level === 'high' ? 'fa-heart-crack' : 'fa-hand-holding-heart'
+    let h = '<div class="cp-companion ' + (c.level === 'high' ? 'cp-companion-hot' : '') + '">'
+    h += '<div class="cp-companion-head"><div class="cp-companion-avatar"><i class="fas ' + icon + '"></i></div>'
+    h += '<div class="cp-companion-meta"><div class="cp-companion-name">' + greet + '，我是你的习惯伙伴</div><div class="cp-companion-tag">' + levelTxt + '</div></div>'
+    h += '</div>'
+    if ((c.reasons || []).length) {
+      h += '<div class="cp-companion-reasons">' + (c.reasons.map(function (r) { return '<span>' + window.cpEsc(r) + '</span>' }).join('')) + '</div>'
+    }
+    if (c.message) h += '<p class="cp-companion-msg">' + window.cpEsc(c.message) + '</p>'
+    if (c.micro_action) {
+      h += '<div class="cp-companion-action"><i class="fas fa-bolt"></i><span>' + window.cpEsc(c.micro_action) + '</span></div>'
+    }
     h += '</div>'
     return h
   }

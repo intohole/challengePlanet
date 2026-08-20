@@ -18,6 +18,14 @@ class NextMilestone(BaseModel):
     days_to_go: int = 0
 
 
+class CompanionData(BaseModel):
+    score: int = 0
+    level: str = "low"
+    reasons: list[str] = Field(default_factory=list)
+    micro_action: str = ""
+    message: str = ""
+
+
 class GuidanceResponse(BaseModel):
     phase: str = "adaptation"
     phase_name: str = "适应期"
@@ -36,6 +44,7 @@ class GuidanceResponse(BaseModel):
     milestone_tip: str = ""
     is_at_risk: bool = False
     encouragement: str = ""
+    companion: CompanionData = Field(default_factory=CompanionData)
 
 
 class SharedConfigResponse(BaseModel):
