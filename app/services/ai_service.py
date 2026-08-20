@@ -99,9 +99,11 @@ class AIService:
 
     async def generate_challenge_plan_stream(
         self, title: str, description: str, category: str, duration: int,
-        scene_template: str = "",
+        scene_template: str = "", adjust_hint: str = "",
     ) -> AsyncGenerator[str, None]:
         user_msg = f"挑战：{title}\n描述：{description or '无'}\n分类：{category}\n天数：{duration}"
+        if adjust_hint.strip():
+            user_msg += f"\n\n此前已生成过一版计划，现用户提出调整意见，请严格据此重新生成完整计划：{adjust_hint.strip()}"
         system = self._build_plan_system(scene_template, duration)
         llm = get_llm_service()
         async for token in llm.stream_ask(

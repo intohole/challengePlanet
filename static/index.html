@@ -120,6 +120,13 @@
             <div v-if="d.tip" class="cp-plan-day-tip">💡 {{ d.tip }}</div>
           </div>
         </div>
+        <div class="cp-adjust">
+          <label class="cp-label"><i class="fas fa-sliders"></i> 想调整哪里？一句话告诉 AI</label>
+          <div class="cp-adjust-row">
+            <input v-model="state.create.adjustHint" class="cp-field" maxlength="60" placeholder="如：太难了减半 / 更适合上班族 / 加点趣味">
+            <button class="cp-btn-primary cp-adjust-btn" :disabled="state.create.adjusting || !state.create.adjustHint.trim()" @click="cr.applyAdjust()"><i class="fas fa-wand-magic-sparkles"></i> 调整</button>
+          </div>
+        </div>
         <div v-if="state.create.suggestions.length" class="cp-sugg"><span v-for="sg in state.create.suggestions" :key="sg" class="cp-sugg-chip">{{ sg }}</span></div>
       </template>
     </div>

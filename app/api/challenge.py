@@ -67,7 +67,7 @@ async def create_challenge_nl(
         last_day = 0
         try:
             async for token in ai.generate_challenge_plan_stream(
-                title, description, category, duration, request.scene_template
+                title, description, category, duration, request.scene_template, request.adjust_hint
             ):
                 collected.append(token)
                 yield sse_event_dict("token", {"token": token})

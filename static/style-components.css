@@ -138,6 +138,10 @@
 .cp-form-row { margin-bottom: 14px; }
 .cp-sugg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .cp-sugg-chip { font-size: 11px; color: var(--text-secondary); border: 1px dashed var(--card-border); padding: 4px 10px; border-radius: 12px; background: none; cursor: pointer; }
+.cp-adjust { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--card-border); }
+.cp-adjust-row { display: flex; gap: 8px; }
+.cp-adjust-row .cp-field { flex: 1; min-width: 0; font-size: 13px; }
+.cp-adjust-btn { width: auto; flex-shrink: 0; padding: 11px 16px; font-size: 13px; }
 .cp-days-stepper { display: flex; gap: 8px; }
 .cp-days-stepper .cp-pick-btn { flex: 1; }
 

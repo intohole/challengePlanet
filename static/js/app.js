@@ -22,7 +22,7 @@ const state = reactive({
   celebrate: false,
   celebrateText: '',
   stars: [],
-  create: { show: false, step: 1, rawInput: '', startMode: 'today', customDate: '', startDate: '', sceneTemplate: '', phase: 'idle', parsed: null, editTitle: '', editDays: 66, editCategory: 'build', editDesc: '', planText: '', plan: [], suggestions: [], error: '', saving: false, source: 'web', genDay: 0, genTotal: 0, startedAt: 0 },
+  create: { show: false, step: 1, rawInput: '', startMode: 'today', customDate: '', startDate: '', sceneTemplate: '', phase: 'idle', parsed: null, editTitle: '', editDays: 66, editCategory: 'build', editDesc: '', planText: '', plan: [], suggestions: [], error: '', saving: false, source: 'web', genDay: 0, genTotal: 0, startedAt: 0, adjustHint: '', adjusting: false },
   dayDetail: null,
   mend: { show: false, dates: [], left: 0, busy: false },
   freeze: { show: false, dates: [], left: 0, busy: false },

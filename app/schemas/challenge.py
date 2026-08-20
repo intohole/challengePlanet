@@ -22,6 +22,7 @@ class NLCreateRequest(BaseModel):
     raw_input: str = Field(..., description="自然语言描述, 如: 我想30天戒烟")
     start_date: str = Field("", description="开始日期 YYYY-MM-DD")
     scene_template: str = Field("", description="场景模板")
+    adjust_hint: str = Field("", description="生成后的一句话调整指令, 如: 太难了，每天任务减半")
     target_value: float = Field(1.0, description="每日目标值(0表示binary)")
     unit: str = Field("", description="单位: 根/杯/分钟/页")
     direction: str = Field("increase", description="increase(越多越好) | decrease(越少越好)")

@@ -19,6 +19,8 @@ window.cpCreate = (function () {
     c.sceneTemplate = ''
     c.genDay = 0
     c.genTotal = 0
+    c.adjustHint = ''
+    c.adjusting = false
   }
 
   const C = {
@@ -89,7 +91,7 @@ window.cpCreate = (function () {
       c.planText = ''
       c.plan = []
       c.suggestions = []
-      await window.api.streamPost('/challenges/nl-create', { raw_input: raw, start_date: c.startDate, scene_template: c.sceneTemplate || '' }, {
+      await window.api.streamPost('/challenges/nl-create', { raw_input: raw, start_date: c.startDate, scene_template: c.sceneTemplate || '', adjust_hint: (c.adjustHint || '').trim() }, {
         onEvent: (event, data) => {
           if (!data) return
           if (data.step === 'parsing') c.phase = 'parsing'
@@ -132,6 +134,16 @@ window.cpCreate = (function () {
       })
       if (c.phase === 'planning') c.phase = c.plan.length ? 'preview' : 'idle'
       if (c.phase === 'idle' && !c.error && !c.plan.length) c.error = '生成中断，请重试'
+    },
+
+    async applyAdjust() {
+      const c = st()
+      if (!(c.adjustHint || '').trim() || c.phase === 'parsing' || c.phase === 'planning') return
+      c.adjusting = true
+      c.genDay = 0
+      c.genTotal = c.editDays || c.genTotal || 0
+      await this.startGenerate()
+      c.adjusting = false
     },
 
     async confirmCreate() {
