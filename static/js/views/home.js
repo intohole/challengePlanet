@@ -10,6 +10,7 @@ window.cpViews.home = (function () {
 
     render(el) {
       this.el = el
+      this._mdJobs = []
       const s = window.appState
       const h = new Date().getHours()
       const greet = h < 6 ? '夜深了' : h < 12 ? '早上好' : h < 14 ? '中午好' : h < 18 ? '下午好' : '晚上好'
@@ -44,8 +45,27 @@ window.cpViews.home = (function () {
         window.renderGalaxy(gx, { total: s.current.total_days, completed: s.current.completed_days || 0, streak: s.current.streak || 0, color: cat.color, icon: s.current.icon || '' })
       }
       this._renderMiniHourly()
+      this._flushMarkdown()
       const nz = el.querySelector('#cp-nux-checkin')
       if (nz && window.cpNuxMount) window.cpNuxMount(nz)
+    },
+
+    _pushMd(text) {
+      this._mdSeq = (this._mdSeq || 0) + 1
+      const id = 'cp-md-' + this._mdSeq
+      this._mdJobs.push({ id: id, text: text })
+      return id
+    },
+
+    _flushMarkdown() {
+      const jobs = this._mdJobs || []
+      this._mdJobs = []
+      jobs.forEach(job => {
+        const el = document.getElementById(job.id)
+        if (!el) return
+        if (!window.NexusMarkdown) { el.textContent = job.text || ''; return }
+        window.NexusMarkdown.renderToAsync(el, job.text || '').catch(() => { el.textContent = job.text || '' })
+      })
     },
 
     onShow() { this.load() },
@@ -158,7 +178,7 @@ window.cpViews.home = (function () {
       html += this._collapsible('reports', '数据报表', 'fa-chart-pie', 'var(--primary-light)', this._reportContent(s))
 
       if (d.weekly && d.weekly.content) {
-        html += this._collapsible('weekly', '本周洞察', 'fa-lightbulb', 'var(--amber)', '<div class="cp-weekly-text">' + window.cpEsc(d.weekly.content) + '</div><div class="cp-weekly-meta">本周进度 ' + (d.weekly.week_checkins || 0) + '/' + (d.weekly.week_days || 7) + ' 天</div>')
+        html += this._collapsible('weekly', '本周洞察', 'fa-lightbulb', 'var(--amber)', '<div class="cp-weekly-md nx-md" id="' + this._pushMd(d.weekly.content) + '"></div><div class="cp-weekly-meta">本周进度 ' + (d.weekly.week_checkins || 0) + '/' + (d.weekly.week_days || 7) + ' 天</div>')
       }
 
       html += '<button class="cp-fab" onclick="cpCreate.open()"><i class="fas fa-plus"></i></button>'
@@ -241,7 +261,7 @@ window.cpViews.home = (function () {
           html += '<div class="cp-tomorrow-enhanced"><div class="cp-tomorrow-icon">🌅</div><div class="cp-tomorrow-body"><div class="cp-tomorrow-label">明日预告</div><div class="cp-tomorrow-title">' + window.cpEsc(next.title) + '</div>' + (next.description ? '<div class="cp-tomorrow-desc">' + window.cpEsc(next.description) + '</div>' : '') + '</div></div>'
         }
         if (d.lastFeedback) {
-          html += '<div class="cp-ai-card"><div class="cp-ai-head"><i class="fas fa-robot"></i> AI 教练反馈</div><p>' + window.cpEsc(d.lastFeedback) + '</p>'
+          html += '<div class="cp-ai-card"><div class="cp-ai-head"><i class="fas fa-robot"></i> AI 教练反馈</div><div class="cp-md nx-md" id="' + this._pushMd(d.lastFeedback) + '"></div>'
           if (d.chest) html += '<span class="cp-chest-tag">🎁 惊喜宝箱 +' + d.chest + ' 分</span>'
           html += '</div>'
         } else if (d.chest) {

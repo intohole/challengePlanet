@@ -6,6 +6,7 @@ from nexus import get_llm_service, parse_llm_json
 from nexus.logging import get_logger
 
 from app.config import settings
+from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.prompts import (
     ADJUST_TASKS_SYSTEM,
     DECOMPOSE_SYSTEM,
@@ -37,7 +38,7 @@ class AIAnalysisService:
             temperature=0.6, max_tokens=512, timeout=30.0,
             task_type="creative",
         )
-        return raw.strip()
+        return sanitize_coach_text(raw.strip(), max_len=512)
 
     async def diagnose_break(
         self, challenge_title: str, missed_count: int, total_days: int,

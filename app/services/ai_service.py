@@ -7,6 +7,7 @@ from nexus.logging import get_logger
 
 from app.config import settings
 from app.services.ai_analysis_service import AIAnalysisService
+from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.plan_adjust import apply_numeric_adjust
 from app.services.prompts import (
     COMPANION_SYSTEM,
@@ -163,7 +164,7 @@ class AIService:
             temperature=settings.FEEDBACK_TEMPERATURE,
             max_tokens=256, timeout=30.0, task_type="assistant",
         )
-        return raw.strip()
+        return sanitize_coach_text(raw.strip())
 
     def _build_soft_exceed_hint(
         self, value: float, target: float, direction: str, is_soft_exceeded: bool, mood: str = "",
@@ -194,7 +195,7 @@ class AIService:
         user_msg = f"挑战：{challenge_title}\n中断天数：{missed_days}天"
         llm = get_llm_service()
         raw = await llm.ask(user_msg, system=REPAIR_SYSTEM, temperature=0.7, max_tokens=128, timeout=20.0, task_type="assistant")
-        return raw.strip()
+        return sanitize_coach_text(raw.strip())
 
     async def generate_companion_message(
         self, challenge_title: str, streak: int, phase_key: str, reasons: list[str]
@@ -209,7 +210,7 @@ class AIService:
             user_msg, system=COMPANION_SYSTEM,
             temperature=0.8, max_tokens=96, timeout=20.0, task_type="assistant",
         )
-        return raw.strip()
+        return sanitize_coach_text(raw.strip())
 
     async def generate_share_quote(self, challenge_title: str, streak: int) -> str:
         user_msg = f"挑战：{challenge_title}\n已连续坚持：{streak}天"

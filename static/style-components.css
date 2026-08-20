@@ -66,9 +66,26 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
   a[title="关于我们"], a[aria-label="关于我们"] { bottom: calc(146px + env(safe-area-inset-bottom, 0px)) !important; }
 }
 
-.cp-ai-card { padding: 14px; border-radius: var(--radius); border: 1px solid rgba(217,119,6,.22); background: rgba(217,119,6,.06); text-align: left; }
-.cp-ai-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--primary-light); margin-bottom: 6px; }
+.cp-ai-card { padding: 14px; border-radius: var(--radius); border: 1px solid rgba(129,140,248,.2); background: linear-gradient(135deg, rgba(129,140,248,.08), rgba(167,139,250,.05)); text-align: left; position: relative; overflow: hidden; }
+.cp-ai-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--primary), var(--purple)); opacity: .8; }
+.cp-ai-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--primary-light); margin-bottom: 8px; }
+.cp-ai-head i { width: 22px; height: 22px; border-radius: 7px; background: linear-gradient(135deg, var(--primary), var(--purple)); color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 12px var(--primary-glow); }
 .cp-ai-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.7; white-space: pre-wrap; }
+.cp-md, .cp-weekly-md { font-size: 13px; color: var(--text-secondary); line-height: 1.7; word-break: break-word; }
+.cp-md > *:first-child, .cp-weekly-md > *:first-child { margin-top: 0; }
+.cp-md > *:last-child, .cp-weekly-md > *:last-child { margin-bottom: 0; }
+.cp-md p, .cp-weekly-md p { margin: 6px 0; }
+.cp-md strong, .cp-weekly-md strong { color: var(--text-primary); font-weight: 650; }
+.cp-md h1, .cp-md h2, .cp-md h3, .cp-md h4, .cp-weekly-md h1, .cp-weekly-md h2, .cp-weekly-md h3, .cp-weekly-md h4 { color: var(--text-primary); font-weight: 700; margin: 10px 0 6px; line-height: 1.4; }
+.cp-md h1, .cp-weekly-md h1 { font-size: 16px; } .cp-md h2, .cp-weekly-md h2 { font-size: 15px; } .cp-md h3, .cp-weekly-md h3 { font-size: 14px; }
+.cp-md ul, .cp-weekly-md ul, .cp-md ol, .cp-weekly-md ol { margin: 6px 0 6px 18px; padding: 0; }
+.cp-md li, .cp-weekly-md li { margin: 3px 0; }
+.cp-md blockquote, .cp-weekly-md blockquote { margin: 8px 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--primary-light); color: var(--text-muted); }
+.cp-md code:not(pre code), .cp-weekly-md code { background: rgba(129,140,248,.12); color: var(--primary-light); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.cp-md a, .cp-weekly-md a { color: var(--primary-light); text-decoration: underline; text-underline-offset: 2px; }
+.cp-md hr, .cp-weekly-md hr { border: none; border-top: 1px solid var(--card-border); margin: 10px 0; }
+.cp-md pre, .cp-weekly-md pre { background: rgba(15,23,42,.5); border: 1px solid var(--card-border); border-radius: var(--radius-sm); padding: 10px 12px; overflow-x: auto; margin: 8px 0; }
+.cp-md pre code, .cp-weekly-md pre code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--text-primary); background: transparent; padding: 0; }
 .cp-chest-tag { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--amber); background: rgba(255,202,40,.1); padding: 4px 10px; border-radius: 12px; }
 .cp-tomorrow { margin-top: 10px; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
 
@@ -87,7 +104,6 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-mercy-row .cp-btn-ghost { flex: 1; font-size: 12px; }
 .cp-repair-card { padding: 14px; border-radius: var(--radius); border: 1px solid rgba(255,202,40,.3); background: rgba(255,202,40,.06); }
 .cp-repair-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 10px; }
-.cp-weekly-text { font-size: 13px; color: var(--text-secondary); line-height: 1.7; white-space: pre-wrap; }
 .cp-weekly-meta { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
 
 .cp-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }

@@ -35,6 +35,8 @@
 .cp-timeline-reflection { font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; padding: 6px 10px; background: rgba(15,23,42,.025); border-radius: 8px; }
 .cp-timeline-feedback { font-size: 11px; color: var(--primary-light); margin-top: 5px; display: flex; gap: 5px; align-items: flex-start; line-height: 1.5; }
 .cp-timeline-feedback i { color: var(--primary); margin-top: 2px; flex-shrink: 0; }
+.cp-timeline-feedback .cp-md { font-size: 12px; line-height: 1.6; flex: 1; min-width: 0; }
+.cp-timeline-feedback .cp-md * { font-size: 12px; }
 
 .cp-quick-checkin { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
 .cp-quick-btn { width: 100%; padding: 12px; font-size: 14px; font-weight: 600; }
