@@ -56,7 +56,7 @@ def sse_create(token: str, raw_input: str, adjust_hint: str = "") -> tuple[str, 
                     line = line.decode("utf-8", "ignore").strip()
                     if line.startswith("data:"):
                         payload = json.loads(line[5:].strip())
-                        step = payload.get("step", "")
+                        step = payload.get("type", "")
                         if step and step not in steps:
                             steps.append(step)
                         if step == "parsed":
@@ -129,15 +129,7 @@ check("next_milestone含tip与days_to_go",
       f"tip={nm.get('tip')} dtg={nm.get('days_to_go')}")
 check("guidance含milestone_tip非空", bool(g.get("milestone_tip")), f"mt={g.get('milestone_tip', '')[:40]}")
 
-print("== 5. 作息节奏洞察(report/hourly) ==")
-st, hourly = req("GET", f"/challenges/{cid}/report/hourly?days=30", token=token)
-check("小时分布返回24项", st == 200 and isinstance(hourly.get("items"), list) and len(hourly.get("items", [])) == 24,
-      f"st={st} len={len(hourly.get('items', [])) if isinstance(hourly.get('items'), list) else 'NA'}")
-check("小时分布含peak_hour", "peak_hour" in hourly, f"keys={list(hourly.keys())}")
-check("小时分布insight含时段描述", bool(hourly.get("insight")) and ":00" in str(hourly.get("insight")),
-      f"ins={hourly.get('insight', '')[:60]}")
-
-print("== 6. 破戒陪伴(guidance.companion) ==")
+print("== 5. 破戒陪伴(guidance.companion) ==")
 st, ck = req("POST", f"/challenges/{cid}/checkin", {"mood": "good", "reflection": "阅读完成"}, token, timeout=90)
 check("打卡成功", st == 200 and ck.get("checkin", {}).get("id"), f"st={st} body={str(ck)[:120]}")
 st, g2 = req("GET", f"/challenges/{cid}/guidance", token=token)
@@ -154,6 +146,16 @@ check("companion.micro_action非空", bool(comp.get("micro_action")),
       f"ma={comp.get('micro_action', '')[:40]}")
 check("companion.message非空", bool(comp.get("message")),
       f"msg={comp.get('message', '')[:40]}")
+
+print("== 6. 作息节奏洞察(report/hourly, 打卡后) ==")
+st, hourly = req("GET", f"/challenges/{cid}/report/hourly?days=30", token=token)
+check("小时分布返回24项", st == 200 and isinstance(hourly.get("items"), list) and len(hourly.get("items", [])) == 24,
+      f"st={st} len={len(hourly.get('items', [])) if isinstance(hourly.get('items'), list) else 'NA'}")
+check("小时分布含peak_hour", "peak_hour" in hourly, f"keys={list(hourly.keys())}")
+check("打卡后peak_value>0", float(hourly.get("peak_value", 0)) > 0,
+      f"pv={hourly.get('peak_value')}")
+check("小时分布insight含时段描述", bool(hourly.get("insight")) and ":00" in str(hourly.get("insight")),
+      f"ins={hourly.get('insight', '')[:60]}")
 
 print("== 7. 断签高风险陪伴(连续中断场景) ==")
 cid2 = cid

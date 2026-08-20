@@ -94,8 +94,8 @@ window.cpCreate = (function () {
       await window.api.streamPost('/challenges/nl-create', { raw_input: raw, start_date: c.startDate, scene_template: c.sceneTemplate || '', adjust_hint: (c.adjustHint || '').trim() }, {
         onEvent: (event, data) => {
           if (!data) return
-          if (data.step === 'parsing') c.phase = 'parsing'
-          else if (data.step === 'parsed') {
+          if (data.type === 'parsing') c.phase = 'parsing'
+          else if (data.type === 'parsed') {
             c.parsed = data.parsed || {}
             c.editTitle = c.parsed.title || raw.slice(0, 20)
             c.editCategory = c.parsed.category || c.editCategory || 'build'
@@ -103,14 +103,14 @@ window.cpCreate = (function () {
             c.editDesc = data.parsed.description || ''
             c.genTotal = data.parsed.duration_days || c.editDays || 0
             c.phase = 'planning'
-          } else if (data.step === 'token') {
+          } else if (data.type === 'token') {
             c.phase = 'planning'
             c.planText += data.token || ''
-          } else if (data.step === 'day') {
+          } else if (data.type === 'day') {
             c.genDay = data.day || 0
             c.genTotal = data.total || c.genTotal
             c.phase = 'planning'
-          } else if (data.step === 'preview') {
+          } else if (data.type === 'preview') {
             if (data.parsed) {
               c.parsed = data.parsed
               c.editTitle = c.editTitle || data.parsed.title || ''
@@ -121,7 +121,7 @@ window.cpCreate = (function () {
             c.plan = data.plan || []
             c.suggestions = data.suggestions || []
             c.phase = 'preview'
-          } else if (data.step === 'error') {
+          } else if (data.type === 'error') {
             c.error = data.message || '生成失败，请换个描述试试'
             c.phase = 'idle'
           }
