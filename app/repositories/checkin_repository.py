@@ -11,6 +11,9 @@ from app.models.checkin import CheckIn, AIInsight
 
 
 class CheckInRepository(StatelessRepository[CheckIn]):
+    def __init__(self) -> None:
+        super().__init__(CheckIn)
+
     async def get_by_challenge(
         self, session: AsyncSession, challenge_id: int
     ) -> list[CheckIn]:
@@ -185,6 +188,9 @@ class CheckInRepository(StatelessRepository[CheckIn]):
 
 
 class InsightRepository(StatelessRepository[AIInsight]):
+    def __init__(self) -> None:
+        super().__init__(AIInsight)
+
     async def get_by_challenge(
         self, session: AsyncSession, challenge_id: int, limit: int = 10
     ) -> list[AIInsight]:
