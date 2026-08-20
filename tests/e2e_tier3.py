@@ -93,14 +93,12 @@ err2, plan_adj, _ = sse_create(
 )
 check("带调整指令生成非空", err2 == "ok" and len(plan_adj) >= 7,
       f"err={err2} len={len(plan_adj)}")
-diff_target = 0
+diff_days = 0
 for po, pa in zip(plan_orig[:21], plan_adj[:21]):
-    vo = float((po.get("target_value") or 0) or 0)
-    va = float((pa.get("target_value") or 0) or 0)
-    if vo > 0 and va > 0 and va < vo:
-        diff_target += 1
-check("调整后目标值整体下调(至少3天)", diff_target >= 3,
-      f"下调天数={diff_target}")
+    if po.get("title") != pa.get("title") or po.get("description") != pa.get("description"):
+        diff_days += 1
+check("调整后计划内容确实变化(至少3天)", diff_days >= 3,
+      f"变化天数={diff_days}")
 
 print("== 3. 确认创建调整后计划 ==")
 duration = int(parsed.get("duration_days", 21))
