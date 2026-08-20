@@ -115,12 +115,40 @@
     })
     h += '</div>'
     h += '<div class="cp-rose-axis"><span>0</span><span>6</span><span>12</span><span>18</span><span>23</span></div>'
+    h += this._hourlyRhythm(items, r.peak_hour)
     if (r.peak_hour >= 0) {
       const dir = r.direction === 'decrease' ? '高风险时段' : '高效时段'
       h += '<div class="cp-chart-insight"><i class="fas fa-flag"></i> ' + dir + '：' + r.peak_hour + ':00 - ' + (r.peak_hour + 1) + ':00</div>'
     }
     if (r.insight) h += '<div class="cp-chart-insight nx-md"><i class="fas fa-lightbulb"></i> ' + window.cpMd(r.insight) + '</div>'
     return h
+  }
+
+  V._hourlyRhythm = function (items, peak) {
+    const vals = items.map(i => i.total_value || 0)
+    const sum = vals.reduce((a, b) => a + b, 0)
+    if (sum <= 0) return ''
+    const avg = sum / vals.length
+    const high = [], low = []
+    let run = [], runIsHigh = null
+    for (let h = 0; h < 24; h++) {
+      const isHigh = vals[h] > avg * 0.5
+      if (runIsHigh === null) { runIsHigh = isHigh; run = [h] }
+      else if (runIsHigh === isHigh) run.push(h)
+      else { (runIsHigh ? high : low).push(run.slice()); run = [h]; runIsHigh = isHigh }
+    }
+    ;(runIsHigh ? high : low).push(run)
+    const fmt = r => r.length <= 1 ? r[0] + ':00' : r[0] + ':00–' + (r[r.length - 1] + 1) + ':00'
+    const hRuns = high.filter(r => r.some(h => vals[h] > avg)).sort((a, b) => b.length - a.length).slice(0, 2)
+    const lRuns = low.filter(r => r.length >= 3).sort((a, b) => b.length - a.length)
+    const peakHour = peak >= 0 ? peak : null
+    const lFilt = peakHour != null ? lRuns.filter(r => !r.some(h => h === peakHour)) : lRuns
+    const lowBand = (lFilt.length ? lFilt : lRuns)[0]
+    let txt = ''
+    if (hRuns.length) txt += '作息节奏：活跃集中在 ' + hRuns.map(fmt).join('、')
+    if (lowBand) txt += (txt ? '；' : '作息节奏：') + fmt(lowBand) + ' 是相对低谷，避开这时安排高难度任务更易坚持'
+    if (!txt) return ''
+    return '<div class="cp-rhythm"><i class="fas fa-chart-pie"></i> ' + txt + '</div>'
   }
 
   V._renderTrend = function (r, ch) {
