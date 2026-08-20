@@ -101,6 +101,34 @@
 .cp-gen-spinner { width: 18px; height: 18px; border: 2px solid var(--card-border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; flex-shrink: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .cp-typewriter { min-height: 90px; max-height: 160px; overflow-y: auto; padding: 12px; border-radius: var(--radius-sm); background: rgba(15,23,42,.03); border: 1px solid var(--card-border); font-size: 12px; color: var(--text-secondary); line-height: 1.7; white-space: pre-wrap; margin: 12px 0; }
+.cp-gen-panel { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
+.cp-gen-orbit { position: relative; width: 120px; height: 120px; margin: 0 auto 14px; }
+.cp-gen-orb-core { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 62px; height: 62px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; box-shadow: 0 0 28px var(--primary-glow); animation: gen-float 2.6s ease-in-out infinite; }
+.cp-gen-orb-core i { animation: gen-rocket 1.4s ease-in-out infinite; }
+@keyframes gen-float { 0%,100% { transform: translate(-50%, -50%) translateY(0); } 50% { transform: translate(-50%, -50%) translateY(-5px); } }
+@keyframes gen-rocket { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-12deg); } }
+.cp-gen-ring { position: absolute; top: 50%; left: 50%; border-radius: 50%; border: 1.5px solid var(--primary-glow); transform: translate(-50%, -50%); pointer-events: none; }
+.cp-gen-ring.r1 { width: 100%; height: 100%; animation: gen-ring 2.2s ease-out infinite; }
+.cp-gen-ring.r2 { width: 70%; height: 70%; animation: gen-ring 2.2s ease-out .8s infinite; }
+@keyframes gen-ring { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.55); } 60% { opacity: .8; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.3); } }
+.cp-gen-title { font-size: 15px; font-weight: 700; text-align: center; }
+.cp-gen-label { font-size: 12px; color: var(--text-muted); margin-top: 5px; text-align: center; }
+.cp-gen-label b { color: var(--primary-light); }
+.cp-gen-track { display: flex; gap: 5px; margin: 14px 0 8px; width: 100%; justify-content: center; }
+.cp-gen-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--card-border); transition: all .25s ease; }
+.cp-gen-dot.on { background: linear-gradient(135deg, var(--primary), var(--purple)); box-shadow: 0 0 8px var(--primary-glow); transform: scale(1.12); }
+@media (max-width: 480px) { .cp-gen-dot { width: 9px; height: 9px; } .cp-gen-track { gap: 4px; } }
+.cp-gen-status-line { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; color: var(--text-secondary); min-height: 20px; }
+.cp-typing-dots { display: inline-flex; gap: 3px; align-items: center; }
+.cp-typing-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--primary-light); animation: gen-blink 1.2s ease-in-out infinite; }
+.cp-typing-dots i:nth-child(2) { animation-delay: .2s; } .cp-typing-dots i:nth-child(3) { animation-delay: .4s; }
+@keyframes gen-blink { 0%,100% { opacity: .2; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
+.cp-gen-skel { width: 100%; margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.cp-gen-skel-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm); background: rgba(15,23,42,.03); border: 1px solid var(--card-border); transition: opacity .4s ease; }
+.cp-gen-skel-dot { width: 34px; height: 34px; border-radius: 50%; background: rgba(148,163,184,.1); flex-shrink: 0; animation: shimmer 1.5s ease-in-out infinite; }
+.cp-gen-skel-lines { flex: 1; }
+.cp-gen-skel-line { height: 11px; border-radius: 4px; background: rgba(148,163,184,.1); margin-bottom: 8px; animation: shimmer 1.5s ease-in-out infinite; }
+.cp-gen-skel-line.w60 { width: 60%; } .cp-gen-skel-line.w40 { width: 40%; margin-bottom: 0; }
 .cp-plan-list { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow-y: auto; margin: 12px 0; }
 .cp-plan-day { padding: 10px 12px; border-radius: var(--radius-sm); background: rgba(15,23,42,.025); border: 1px solid var(--card-border); }
 .cp-plan-day-head { font-size: 12px; font-weight: 600; color: var(--primary-light); margin-bottom: 3px; }

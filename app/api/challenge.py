@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from nexus import get_current_user_id_required
@@ -62,12 +64,20 @@ async def create_challenge_nl(
         yield sse_event_dict("parsed", {"parsed": parsed_out})
         yield sse_event_dict("planning")
         collected: list[str] = []
+        last_day = 0
         try:
             async for token in ai.generate_challenge_plan_stream(
                 title, description, category, duration, request.scene_template
             ):
                 collected.append(token)
                 yield sse_event_dict("token", {"token": token})
+                streamed = "".join(collected)
+                day_hits = [int(m) for m in re.findall(r'"day"\s*:\s*(\d+)', streamed)]
+                if day_hits:
+                    cur = max(day_hits)
+                    if cur != last_day:
+                        last_day = cur
+                        yield sse_event_dict("day", {"day": cur, "total": duration})
         except Exception:
             collected = []
         plan_data = ai.parse_plan_text("".join(collected), title, duration)

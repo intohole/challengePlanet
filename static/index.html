@@ -90,9 +90,23 @@
           <button v-for="(v,k) in {build:'习惯养成',quit:'戒除',learn:'学习',fitness:'运动',mind:'心灵',other:'其他'}" :key="k" class="cp-pick-btn" :class="{active:state.create.editCategory===k}" @click="cr.setCategory(k)">{{ v }}</button>
         </div></div>
       </template>
-      <div v-if="state.create.phase==='planning'">
-        <div class="cp-gen-status"><div class="cp-gen-spinner"></div>AI正在逐天规划...</div>
-        <div class="cp-typewriter">{{ state.create.planText || '正在构思计划框架...' }}</div>
+      <div v-if="state.create.phase==='planning'" class="cp-gen-panel">
+        <div class="cp-gen-orbit">
+          <div class="cp-gen-orb-core"><i class="fas fa-rocket"></i></div>
+          <i class="cp-gen-ring r1"></i><i class="cp-gen-ring r2"></i>
+        </div>
+        <div class="cp-gen-title">AI 正在为你规划专属旅程</div>
+        <div class="cp-gen-label">{{ state.create.genTotal ? '已规划 ' + (state.create.genDay || 1) + ' / ' + state.create.genTotal + ' 天挑战' : '正在拆解你的目标…' }}</div>
+        <div class="cp-gen-track">
+          <span v-for="i in 12" :key="i" class="cp-gen-dot" :class="{on: genRatio() >= i/12}"></span>
+        </div>
+        <div class="cp-gen-status-line"><span class="cp-typing-dots"><i></i><i></i><i></i></span><span>{{ genStatus() }}</span></div>
+        <div class="cp-gen-skel">
+          <div v-for="k in 3" :key="k" class="cp-gen-skel-card" :style="{opacity: (genRatio() > k*0.3 ? 1 : 0.35)}">
+            <div class="cp-gen-skel-dot"></div>
+            <div class="cp-gen-skel-lines"><div class="cp-gen-skel-line w60"></div><div class="cp-gen-skel-line w40"></div></div>
+          </div>
+        </div>
       </div>
       <div v-if="state.create.error" class="cp-error-box" style="margin-bottom:12px"><i class="fas fa-circle-exclamation"></i><span>{{ state.create.error }}</span></div>
       <template v-if="state.create.phase==='preview'">
@@ -111,7 +125,7 @@
     </div>
   </div>
   <div class="cp-modal-footer">
-    <button class="cp-btn-ghost" @click="cr.close()">取消</button>
+    <button class="cp-btn-ghost" @click="cr.close()">{{ (state.create.phase==='parsing' || state.create.phase==='planning') ? '停止生成' : '取消' }}</button>
     <button v-if="state.create.step===1" class="cp-btn-primary" :disabled="!state.create.rawInput.trim()" @click="cr.startGenerate()"><i class="fas fa-wand-magic-sparkles"></i> AI生成计划</button>
     <template v-else-if="state.create.phase==='preview'">
       <button class="cp-btn-ghost" @click="cr.startGenerate()"><i class="fas fa-rotate"></i> 换一批</button>

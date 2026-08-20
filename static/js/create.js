@@ -17,6 +17,8 @@ window.cpCreate = (function () {
     c.saving = false
     c.source = 'web'
     c.sceneTemplate = ''
+    c.genDay = 0
+    c.genTotal = 0
   }
 
   const C = {
@@ -96,11 +98,16 @@ window.cpCreate = (function () {
             c.editTitle = c.parsed.title || raw.slice(0, 20)
             c.editCategory = c.parsed.category || c.editCategory || 'build'
             c.editDays = c.parsed.duration_days || c.editDays || 66
-            c.editDesc = c.parsed.description || ''
+            c.editDesc = data.parsed.description || ''
+            c.genTotal = data.parsed.duration_days || c.editDays || 0
             c.phase = 'planning'
           } else if (data.step === 'token') {
             c.phase = 'planning'
             c.planText += data.token || ''
+          } else if (data.step === 'day') {
+            c.genDay = data.day || 0
+            c.genTotal = data.total || c.genTotal
+            c.phase = 'planning'
           } else if (data.step === 'preview') {
             if (data.parsed) {
               c.parsed = data.parsed

@@ -22,7 +22,7 @@ const state = reactive({
   celebrate: false,
   celebrateText: '',
   stars: [],
-  create: { show: false, step: 1, rawInput: '', startMode: 'today', customDate: '', startDate: '', sceneTemplate: '', phase: 'idle', parsed: null, editTitle: '', editDays: 66, editCategory: 'build', editDesc: '', planText: '', plan: [], suggestions: [], error: '', saving: false, source: 'web' },
+  create: { show: false, step: 1, rawInput: '', startMode: 'today', customDate: '', startDate: '', sceneTemplate: '', phase: 'idle', parsed: null, editTitle: '', editDays: 66, editCategory: 'build', editDesc: '', planText: '', plan: [], suggestions: [], error: '', saving: false, source: 'web', genDay: 0, genTotal: 0, startedAt: 0 },
   dayDetail: null,
   mend: { show: false, dates: [], left: 0, busy: false },
   freeze: { show: false, dates: [], left: 0, busy: false },
@@ -252,6 +252,22 @@ createApp({
       importShared,
       logout,
       openCreate: () => window.cpCreate.open(),
+      genRatio: () => {
+        const c = state.create
+        if (c.genTotal > 0) return Math.max(0.05, Math.min(1, (c.genDay || 0) / c.genTotal))
+        return 0.05
+      },
+      genStatus: () => {
+        const c = state.create
+        const total = c.genTotal || 0
+        const day = c.genDay || 0
+        if (!total || !day) return '正在理解你的目标，设计专属计划…'
+        const r = day / total
+        if (r < 0.2) return '正在设计适应期的小目标'
+        if (r < 0.6) return '正在铺开逐天进阶曲线'
+        if (r < 0.85) return '正在安排稳扎稳打的巩固期'
+        return '正在收尾，准备出发'
+      },
     }
   },
   mounted() {
