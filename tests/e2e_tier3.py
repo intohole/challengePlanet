@@ -86,6 +86,7 @@ check("登录返回token", st == 200 and bool(token), f"st={st} body={str(body)[
 print("== 2. 生成计划-对话微调(adjust_hint) ==")
 today = time.strftime("%Y-%m-%d")
 err, plan_orig, parsed = sse_create(token, "我想21天养成每天阅读30分钟的习惯")
+duration = int(parsed.get("duration_days", 21))
 check("原始生成计划非空", err == "ok" and len(plan_orig) >= 7,
       f"err={err} len={len(plan_orig)}")
 err2, plan_adj, _ = sse_create(
@@ -99,9 +100,13 @@ for po, pa in zip(plan_orig[:21], plan_adj[:21]):
         diff_days += 1
 check("调整后计划内容确实变化(至少3天)", diff_days >= 3,
       f"变化天数={diff_days}")
+pos_days = sum(1 for d in plan_adj[:duration] if float((d.get("target_value") or 0) or 0) > 0)
+exact15 = sum(1 for d in plan_adj[:duration] if float((d.get("target_value") or 0) or 0) == 15.0)
+check("确定性数值调整:目标值精确=15分钟(非LLM自由发挥)",
+      pos_days >= 3 and exact15 >= 3,
+      f"positive={pos_days} exact15={exact15} sample={[d.get('target_value') for d in plan_adj[:8]]}")
 
 print("== 3. 确认创建调整后计划 ==")
-duration = int(parsed.get("duration_days", 21))
 st, ch = req("POST", "/challenges/confirm", {
     "title": parsed.get("title") or "21天阅读挑战",
     "category": parsed.get("category", "build"),

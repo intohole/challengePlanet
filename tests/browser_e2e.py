@@ -142,6 +142,9 @@ def main() -> None:
             timeout=180000,
         )
         plan_after = page.evaluate("() => (window.appState.create.plan||[]).length")
+        tv_after = page.evaluate(
+            "() => (window.appState.create.plan||[]).filter(d => parseFloat(d.target_value||0) === 15).length"
+        )
         shot(page, "6b_adjust_preview.png")
         sent_hint = False
         for b in nl_create_bodies[n_before:]:
@@ -149,6 +152,7 @@ def main() -> None:
                 sent_hint = True
         check("调整请求携带adjust_hint", sent_hint, str(nl_create_bodies[n_before:])[:200])
         check("调整后plan非空", plan_after >= 7, f"len={plan_after}")
+        check("确定性数值调整:目标值精确=15", tv_after >= 3, f"exact15={tv_after}")
 
         print("== 7. 确认开启挑战 ==")
         page.click("button:has-text('开启挑战')")

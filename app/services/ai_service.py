@@ -7,6 +7,7 @@ from nexus.logging import get_logger
 
 from app.config import settings
 from app.services.ai_analysis_service import AIAnalysisService
+from app.services.plan_adjust import apply_numeric_adjust
 from app.services.prompts import (
     COMPANION_SYSTEM,
     DECLARATION_SYSTEM,
@@ -115,12 +116,17 @@ class AIService:
         ):
             yield token
 
-    def parse_plan_text(self, raw: str, title: str, duration: int) -> dict[str, object]:
+    def parse_plan_text(
+        self, raw: str, title: str, duration: int, adjust_hint: str = ""
+    ) -> dict[str, object]:
         parsed = parse_llm_json(raw)
         if "raw_response" not in parsed and isinstance(parsed.get("plan"), list):
             plan = [dict(d) for d in parsed["plan"] if isinstance(d, dict)]
             if plan:
-                parsed["plan"] = _fit_plan_length(plan, title, duration)
+                fitted = _fit_plan_length(plan, title, duration)
+                if adjust_hint.strip():
+                    fitted = apply_numeric_adjust(fitted, adjust_hint)
+                parsed["plan"] = fitted
                 return parsed
         logger.error("Plan parse failed, generating fallback")
         return {

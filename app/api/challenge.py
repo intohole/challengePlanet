@@ -80,7 +80,7 @@ async def create_challenge_nl(
                         yield sse_event_dict("day", {"day": cur, "total": duration})
         except Exception:
             collected = []
-        plan_data = ai.parse_plan_text("".join(collected), title, duration)
+        plan_data = ai.parse_plan_text("".join(collected), title, duration, request.adjust_hint)
         yield sse_event_dict("preview", {
             "parsed": parsed_out,
             "plan": plan_data.get("plan", []),
