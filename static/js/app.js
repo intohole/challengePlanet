@@ -268,6 +268,22 @@ createApp({
         if (r < 0.85) return '正在安排稳扎稳打的巩固期'
         return '正在收尾，准备出发'
       },
+      milestoneNodes: () => {
+        const c = state.create
+        const days = c.editDays || c.genTotal || (c.plan.length ? c.plan[c.plan.length - 1].day : 0)
+        if (!days || days < 7) return days === 1 ? [{ day: 1, label: '出发' }] : []
+        const all = []
+        for (let d = 7; d < days; d += 7) all.push(d)
+        let picked = all
+        if (all.length > 6) {
+          const gap = Math.ceil(all.length / 6)
+          picked = all.filter((_, i) => i % gap === 0)
+        }
+        const nodes = picked.map(d => ({ day: d, label: '回顾·盘点' }))
+        nodes.unshift({ day: 1, label: '出发' })
+        if (days > 1) nodes.push({ day: days, label: '收官冲刺' })
+        return nodes
+      },
     }
   },
   mounted() {

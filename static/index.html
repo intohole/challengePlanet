@@ -110,9 +110,13 @@
       </div>
       <div v-if="state.create.error" class="cp-error-box" style="margin-bottom:12px"><i class="fas fa-circle-exclamation"></i><span>{{ state.create.error }}</span></div>
       <template v-if="state.create.phase==='preview'">
+        <div class="cp-miles" v-if="milestoneNodes().length">
+          <span class="cp-miles-title">旅程节奏</span>
+          <span class="cp-miles-chip" v-for="mn in milestoneNodes()" :key="mn.day"><b>{{ mn.day }}</b>天 · {{ mn.label }}</span>
+        </div>
         <div class="cp-plan-list">
           <div v-for="d in state.create.plan" :key="d.day" class="cp-plan-day">
-            <div class="cp-plan-day-head"><span>第 {{ d.day }} 天</span><span v-if="d.difficulty" class="cp-plan-diff">难度 {{ '★'.repeat(d.difficulty) }}</span></div>
+            <div class="cp-plan-day-head"><span>第 {{ d.day }} 天</span><span v-if="d.day % 7 === 0 || d.day === state.create.editDays" class="cp-milestone-tag"><i class="fas fa-flag-checkered"></i> 里程碑</span><span v-if="d.difficulty" class="cp-plan-diff">难度 {{ '★'.repeat(d.difficulty) }}</span></div>
             <div class="cp-plan-day-title">{{ d.title }}</div>
             <div v-if="d.description" class="cp-plan-day-desc">{{ d.description }}</div>
             <div v-if="d.target_value && d.target_value > 0" class="cp-plan-day-target"><i class="fas fa-bullseye"></i> 目标 {{ d.target_value }} {{ d.unit }}</div>
