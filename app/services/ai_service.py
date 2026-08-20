@@ -158,13 +158,14 @@ class AIService:
             f"方向：{direction}{'(越少越好)' if direction == 'decrease' else '(越多越好)'}\n"
             f"心得：{reflection or '无'}{soft_exceed_hint}{memory_part}"
         )
+        system = get_mood_aware_prefix(mood) + FEEDBACK_SYSTEM
         llm = get_llm_service()
         raw = await llm.ask(
-            user_msg, system=get_mood_aware_prefix(mood) + FEEDBACK_SYSTEM,
+            user_msg, system=system,
             temperature=settings.FEEDBACK_TEMPERATURE,
             max_tokens=256, timeout=30.0, task_type="assistant",
         )
-        return sanitize_coach_text(raw.strip())
+        return sanitize_coach_text(raw.strip(), system=system)
 
     def _build_soft_exceed_hint(
         self, value: float, target: float, direction: str, is_soft_exceeded: bool, mood: str = "",
@@ -195,7 +196,7 @@ class AIService:
         user_msg = f"挑战：{challenge_title}\n中断天数：{missed_days}天"
         llm = get_llm_service()
         raw = await llm.ask(user_msg, system=REPAIR_SYSTEM, temperature=0.7, max_tokens=128, timeout=20.0, task_type="assistant")
-        return sanitize_coach_text(raw.strip())
+        return sanitize_coach_text(raw.strip(), system=REPAIR_SYSTEM)
 
     async def generate_companion_message(
         self, challenge_title: str, streak: int, phase_key: str, reasons: list[str]
@@ -210,7 +211,7 @@ class AIService:
             user_msg, system=COMPANION_SYSTEM,
             temperature=0.8, max_tokens=96, timeout=20.0, task_type="assistant",
         )
-        return sanitize_coach_text(raw.strip())
+        return sanitize_coach_text(raw.strip(), system=COMPANION_SYSTEM)
 
     async def generate_share_quote(self, challenge_title: str, streak: int) -> str:
         user_msg = f"挑战：{challenge_title}\n已连续坚持：{streak}天"

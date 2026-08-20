@@ -12,6 +12,7 @@ from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import ChallengeMetaRepository
 from app.schemas.challenge import ChallengeResponse
 from app.services.ai_service import AIService
+from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.mercy_service import MercyService, load_valid_dates
 from app.services.streak_service import calc_streak, today_str
 
@@ -243,6 +244,7 @@ class ChallengeService:
         task_steps_raw = task.get("steps", task.get("task_steps", []))
         task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
         remaining = max(0.0, challenge.target_value - today_total)
+        feedback = today_checkins[-1].ai_feedback if today_checkins else ""
         return {
             "challenge_id": challenge_id, "day_number": day_number, "date": today,
             "task": task, "task_title": str(task.get("title", "")),
@@ -262,14 +264,14 @@ class ChallengeService:
             "checkin_data": {
                 "mood": today_checkins[-1].mood if today_checkins else "",
                 "reflection": today_checkins[-1].reflection if today_checkins else "",
-                "ai_feedback": today_checkins[-1].ai_feedback if today_checkins else "",
+                "ai_feedback": sanitize_coach_text(feedback),
             } if today_checkins else None,
             "today_checkins": [
                 {
                     "id": c.id, "timestamp": c.timestamp.isoformat(),
                     "value": c.value, "sub_goal_id": c.sub_goal_id,
                     "mood": c.mood, "reflection": c.reflection,
-                    "context_tag": c.context_tag, "ai_feedback": c.ai_feedback,
+                    "context_tag": c.context_tag, "ai_feedback": sanitize_coach_text(c.ai_feedback),
                 }
                 for c in today_checkins
             ],

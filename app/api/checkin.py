@@ -17,6 +17,7 @@ from app.schemas.checkin import (
     MercyStatusResponse,
     RepairResponse,
 )
+from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.checkin_service import CheckInService
 from app.services.mercy_service import MercyService
 from app.api._common import bad_request
@@ -169,7 +170,7 @@ async def get_checkins(
         checkins = await service.get_checkins(session, challenge_id, user_id)
     except ValueError as e:
         raise bad_request(e)
-    return [CheckInResponse.model_validate(c) for c in checkins]
+    return [_sanitized_checkin(c) for c in checkins]
 
 
 @router.get("/{challenge_id}/checkins/today", response_model=list[CheckInResponse])
@@ -183,7 +184,13 @@ async def get_today_checkins(
         checkins = await service.get_today_checkins(session, challenge_id, user_id)
     except ValueError as e:
         raise bad_request(e)
-    return [CheckInResponse.model_validate(c) for c in checkins]
+    return [_sanitized_checkin(c) for c in checkins]
+
+
+def _sanitized_checkin(c) -> CheckInResponse:
+    data = CheckInResponse.model_validate(c).model_dump()
+    data["ai_feedback"] = sanitize_coach_text(c.ai_feedback)
+    return CheckInResponse(**data)
 
 
 @router.get("/{challenge_id}/insights", response_model=list[InsightResponse])

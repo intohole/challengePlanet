@@ -157,7 +157,7 @@
     <div class="cp-detail-row" v-if="state.dayDetail.taskTitle"><div class="cp-detail-label">当日任务</div><div class="cp-detail-val">{{ state.dayDetail.taskTitle }}</div></div>
     <div class="cp-detail-row" v-if="state.dayDetail.mood"><div class="cp-detail-label">心情</div><span class="cp-mood-tag">{{ home.moodLabel(state.dayDetail.mood) }}</span></div>
     <div class="cp-detail-row" v-if="state.dayDetail.reflection"><div class="cp-detail-label">打卡心得</div><div class="cp-detail-val">{{ state.dayDetail.reflection }}</div></div>
-    <div class="cp-detail-row" v-if="state.dayDetail.aiFeedback"><div class="cp-detail-label">AI 反馈</div><div class="cp-detail-val">{{ state.dayDetail.aiFeedback }}</div></div>
+    <div class="cp-detail-row" v-if="state.dayDetail.aiFeedback"><div class="cp-detail-label">AI 反馈</div><div class="cp-md" id="cp-dd-ai"></div></div>
   </div>
   <div class="cp-modal-footer">
     <button class="cp-btn-primary" @click="home.closeDayDetail()">关闭</button>

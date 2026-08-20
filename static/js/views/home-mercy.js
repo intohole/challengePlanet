@@ -30,6 +30,12 @@
       reflection: rec.reflection || '',
       aiFeedback: rec.ai_feedback || '',
     }
+    setTimeout(() => {
+      const box = document.getElementById('cp-dd-ai')
+      if (!box || !rec.ai_feedback) return
+      if (window.NexusMarkdown) window.NexusMarkdown.renderToAsync(box, rec.ai_feedback).catch(() => { box.textContent = rec.ai_feedback })
+      else box.textContent = rec.ai_feedback
+    }, 0)
   }
   V.closeDayDetail = function () { window.appState.dayDetail = null }
 
