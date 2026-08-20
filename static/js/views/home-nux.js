@@ -54,7 +54,10 @@
     }
     const api = { checkin: p => V.doCheckin(p && p.value >= 1 ? 'full' : 'mini'), 'quick-checkin': p => V.doNuxSubmit(p), mend: () => V.openMend(), freeze: () => V.openFreeze(), repair: () => V.doRepair(), 'open-day': ds => V.openDayDetail(ds) }
     const handlers = {}
-    Object.keys(api).forEach(k => { handlers['on' + k.replace(/-([a-z])/g, (m, c) => c.toUpperCase())] = api[k] })
+    Object.keys(api).forEach(k => {
+      const cased = k.replace(/^./, c => c.toUpperCase()).replace(/-([a-z])/g, (m, c) => c.toUpperCase())
+      handlers['on' + cased] = api[k]
+    })
     _app = Vue.createApp({
       components: { NuxCheckin: window.NuxCheckin },
       setup() { return { props, handlers } },
