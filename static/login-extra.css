@@ -1,40 +1,75 @@
-.cp-starfield { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.cp-star { position: absolute; width: 2px; height: 2px; background: #fff; border-radius: 50%; opacity: 0; animation: star-twinkle 3s ease-in-out infinite; }
-@keyframes star-twinkle { 0%, 100% { opacity: 0; transform: scale(.5); } 50% { opacity: .8; transform: scale(1.2); } }
-.cp-shooting-star { position: absolute; width: 80px; height: 1px; background: linear-gradient(90deg, transparent, rgba(217,119,6,.8), transparent); opacity: 0; animation: shooting 8s ease-in infinite; }
-@keyframes shooting { 0% { transform: translateX(-100px) translateY(0) rotate(-15deg); opacity: 0; } 5% { opacity: 1; } 15% { transform: translateX(400px) translateY(-80px) rotate(-15deg); opacity: 0; } 100% { opacity: 0; } }
+/* ===== 背景层：大气极光星云 ===== */
+.cp-nebula { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.cp-nebula i { position: absolute; border-radius: 50%; filter: blur(72px); -webkit-filter: blur(72px); will-change: transform, opacity; }
+.cp-nebula .nb1 { width: 600px; height: 600px; left: -160px; top: -140px; background: radial-gradient(circle, rgba(129,140,248,.55), transparent 66%); animation: nb-a 26s ease-in-out infinite alternate; }
+.cp-nebula .nb2 { width: 520px; height: 520px; right: -140px; top: 6%; background: radial-gradient(circle, rgba(167,139,250,.5), transparent 64%); animation: nb-b 34s ease-in-out infinite alternate; }
+.cp-nebula .nb3 { width: 560px; height: 560px; left: 28%; bottom: -220px; background: radial-gradient(circle, rgba(52,211,153,.24), transparent 62%); animation: nb-c 40s ease-in-out infinite alternate; }
+.cp-nebula .nb4 { width: 420px; height: 420px; right: 26%; top: -120px; background: radial-gradient(circle, rgba(96,165,250,.22), transparent 60%); animation: nb-d 22s ease-in-out infinite alternate; }
+@keyframes nb-a { from { transform: translate(0,0) scale(1); } to { transform: translate(70px,50px) scale(1.14); } }
+@keyframes nb-b { from { transform: translate(0,0) scale(1.06); } to { transform: translate(-60px,40px) scale(.94); } }
+@keyframes nb-c { from { transform: translate(0,0) scale(.94); } to { transform: translate(-40px,-40px) scale(1.1); } }
+@keyframes nb-d { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,-30px) scale(1.08); } }
 
-.cp-login-wrap { position: relative; z-index: 1; display: flex; min-height: 100vh; }
-.cp-login-left { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px; }
-.cp-login-card { padding: 36px 32px; max-width: 380px; width: 100%; border-radius: var(--radius-lg); animation: card-in .6s ease; }
-@keyframes card-in { from { opacity: 0; transform: translateY(20px) scale(.96); } to { opacity: 1; transform: none; } }
+/* ===== 星场：更多星点 + 纵深 + 流星 ===== */
+.cp-starfield { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.cp-star { position: absolute; border-radius: 50%; background: #E2E8F0; opacity: 0; animation: star-twinkle ease-in-out infinite; }
+@keyframes star-twinkle { 0%, 100% { opacity: 0; transform: scale(.5); } 50% { opacity: .9; transform: scale(1.25); } }
+.cp-shooting-star { position: absolute; width: 110px; height: 1.5px; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(224,231,255,.95), transparent); opacity: 0; transform: rotate(-18deg); }
+.cp-shooting-star::after { content: ''; position: absolute; right: -1px; top: 50%; width: 4px; height: 4px; margin-top: -2px; border-radius: 50%; background: rgba(224,231,255,.95); box-shadow: 0 0 8px 2px rgba(165,180,252,.6); }
+@keyframes shooting { 0% { transform: translate(-140px,0) rotate(-18deg); opacity: 0; } 6% { opacity: 1; } 18% { transform: translate(560px,120px) rotate(-18deg); opacity: 0; } 100% { transform: translate(560px,120px) rotate(-18deg); opacity: 0; } }
+
+/* ===== 漂浮星尘 ===== */
+.cp-dust { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.cp-dust i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: rgba(165,180,252,.5); box-shadow: 0 0 6px rgba(129,140,248,.5); opacity: 0; animation: dust-rise linear infinite; }
+@keyframes dust-rise { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .7; } 85% { opacity: .5; } 100% { transform: translateY(-110vh); opacity: 0; } }
+
+/* ===== 场景容器 ===== */
+.cp-login-wrap { position: relative; z-index: 2; display: flex; min-height: 100vh; }
+
+/* ===== 鼠标视差 ===== */
+.cp-login-card { transform: translate(var(--px, 0px), var(--py, 0px)); will-change: transform; }
+.cp-orbit-deco { transform: translateY(-50%) translate(calc(var(--px, 0px) * 1.4), calc(var(--py, 0px) * 0.7)); will-change: transform; }
+
+/* ===== 左侧登录卡片 ===== */
+.cp-login-left { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px; position: relative; }
+.cp-login-card { position: relative; padding: 38px 34px; max-width: 380px; width: 100%; border-radius: 22px; overflow: hidden; isolation: isolate; box-shadow: 0 20px 60px rgba(2,6,23,.55), inset 0 1px 0 rgba(255,255,255,.08); animation: card-fade .55s ease both; }
+@keyframes card-fade { from { opacity: 0; } to { opacity: 1; } }
+.cp-login-card::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(120% 120% at 0% 0%, rgba(129,140,248,.18), transparent 50%), radial-gradient(120% 120% at 100% 100%, rgba(167,139,250,.14), transparent 50%); animation: card-breathe 6s ease-in-out infinite; }
+@keyframes card-breathe { 0%,100% { opacity: .7; } 50% { opacity: 1; } }
+.cp-login-card::after { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; padding: 1px; background: linear-gradient(135deg, rgba(129,140,248,.55), rgba(52,211,153,.25), rgba(167,139,250,.5)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+.cp-card-glow { position: absolute; width: 360px; height: 360px; left: 50%; top: 0; transform: translate(-50%,-55%); z-index: 0; border-radius: 50%; background: radial-gradient(circle, rgba(129,140,248,.34), transparent 65%); filter: blur(28px); pointer-events: none; opacity: .85; animation: card-glow-float 7s ease-in-out infinite; }
+@keyframes card-glow-float { 0%,100% { transform: translate(-50%,-56%) scale(1); } 50% { transform: translate(-50%,-46%) scale(1.15); } }
+.cp-login-logo, .cp-login-field, .cp-forgot-card, .cp-continue-btn { position: relative; z-index: 1; }
 
 .cp-login-logo { text-align: center; margin-bottom: 28px; }
-.cp-login-logo-icon { width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-size: 28px; color: #fff; box-shadow: 0 0 36px var(--primary-glow); position: relative; animation: logo-pulse 3s ease-in-out infinite; }
-@keyframes logo-pulse { 0%, 100% { box-shadow: 0 0 28px var(--primary-glow); } 50% { box-shadow: 0 0 48px var(--primary-glow), 0 0 80px rgba(217,119,6,.15); } }
-.cp-login-logo-icon::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 1.5px solid rgba(217,119,6,.2); border-top-color: var(--primary-light); animation: orbit 4s linear infinite; }
-.cp-login-logo h1 { font-size: 24px; font-weight: 800; background: linear-gradient(135deg, var(--text-primary), var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.cp-login-logo p { font-size: 12px; margin-top: 4px; color: var(--text-muted); letter-spacing: .5px; }
+.cp-login-logo-icon { width: 66px; height: 66px; margin: 0 auto 13px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 29px; color: #fff; box-shadow: 0 0 40px var(--primary-glow); position: relative; animation: logo-pulse 3.4s ease-in-out infinite; }
+@keyframes logo-pulse { 0%, 100% { box-shadow: 0 0 30px var(--primary-glow); } 50% { box-shadow: 0 0 52px var(--primary-glow), 0 0 84px rgba(129,140,248,.2); } }
+.cp-login-logo-icon::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; border: 1.5px solid rgba(129,140,248,.22); border-top-color: var(--primary-light); animation: orbit 4.5s linear infinite; }
+.cp-login-logo-icon::before { content: ''; position: absolute; inset: -14px; border-radius: 50%; border: 1px dashed rgba(129,140,248,.14); border-bottom-color: var(--emerald); animation: orbit-rev 8s linear infinite; }
+@keyframes orbit-rev { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+.cp-login-logo h1 { font-size: 25px; font-weight: 800; background-image: linear-gradient(135deg, #F1F5F9, var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: .5px; }
+.cp-login-logo p { font-size: 12px; margin-top: 5px; color: var(--text-secondary); letter-spacing: .6px; }
 
 .cp-login-field { display: flex; flex-direction: column; gap: 16px; }
 .cp-login-input-wrap { position: relative; }
-.cp-login-input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; pointer-events: none; transition: color .2s; }
-.cp-login-input { background: rgba(15,23,42,.04); border: 1px solid var(--card-border); transition: all .2s; color: var(--text-primary); width: 100%; padding: 12px 16px 12px 42px; border-radius: var(--radius-sm); font-size: 14px; }
-.cp-login-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); outline: none; }
-.cp-login-input:focus + .cp-login-input-icon { color: var(--primary-light); }
-.cp-login-label { font-size: 12px; display: block; margin-bottom: 6px; color: var(--text-secondary); font-weight: 500; }
+.cp-login-input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; pointer-events: none; transition: color .25s, transform .25s; }
+.cp-login-input { background: rgba(148,163,184,.08); border: 1px solid var(--card-border); transition: border-color .25s, box-shadow .25s, background .25s; color: var(--text-primary); width: 100%; padding: 13px 16px 13px 43px; border-radius: 12px; font-size: 14px; }
+.cp-login-input::placeholder { color: var(--text-muted); }
+.cp-login-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow), 0 0 24px rgba(129,140,248,.2); outline: none; background: rgba(148,163,184,.12); }
+.cp-login-input-wrap:focus-within .cp-login-input-icon { color: var(--primary-light); transform: translateY(-50%) scale(1.1); }
+.cp-login-label { font-size: 12px; display: block; margin-bottom: 7px; color: var(--text-secondary); font-weight: 500; }
 
-.cp-login-btn { padding: 14px; border: none; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; font-weight: 700; cursor: pointer; font-size: 15px; transition: all .25s; box-shadow: 0 4px 24px var(--primary-glow); position: relative; overflow: hidden; }
-.cp-login-btn::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent); transform: translateX(-100%); transition: transform .6s; }
-.cp-login-btn:hover:not(:disabled)::before { transform: translateX(100%); }
-.cp-login-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 32px var(--primary-glow); }
-.cp-login-btn:active:not(:disabled) { transform: scale(.98); }
+.cp-login-btn { padding: 14px; border: none; border-radius: 12px; background: linear-gradient(135deg, var(--primary), var(--purple)); color: #fff; font-weight: 700; cursor: pointer; font-size: 15px; transition: transform .2s, box-shadow .25s, filter .2s; box-shadow: 0 6px 26px var(--primary-glow), 0 2px 0 rgba(255,255,255,.12) inset; position: relative; overflow: hidden; letter-spacing: .5px; }
+.cp-login-btn::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent); transform: translateX(-120%); transition: transform .6s ease; }
+.cp-login-btn:hover:not(:disabled)::before { transform: translateX(120%); }
+.cp-login-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 36px var(--primary-glow); filter: brightness(1.05); }
+.cp-login-btn:active:not(:disabled) { transform: translateY(0) scale(.985); }
 .cp-login-btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
 
-.cp-continue-btn { width: 100%; margin-top: 14px; padding: 11px; border-radius: var(--radius-sm); font-size: 13px; color: var(--text-secondary); background: rgba(217,119,6,.05); border: 1px solid var(--card-border); cursor: pointer; transition: all .2s; }
-.cp-continue-btn:hover { background: var(--card-hover); color: var(--primary-light); border-color: rgba(217,119,6,.3); }
+.cp-continue-btn { width: 100%; margin-top: 15px; padding: 11px; border-radius: 12px; font-size: 13px; color: var(--text-secondary); background: rgba(129,140,248,.06); border: 1px solid var(--card-border); cursor: pointer; transition: all .25s; }
+.cp-continue-btn:hover { background: rgba(129,140,248,.14); color: var(--primary-light); border-color: rgba(129,140,248,.4); transform: translateY(-1px); }
 
-.cp-forgot-row { text-align: right; margin-top: 2px; }
+.cp-forgot-row { text-align: right; margin-top: 3px; }
 .cp-forgot-link { font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: color .2s; }
 .cp-forgot-link:hover { color: var(--primary-light); }
 .cp-forgot-card { display: flex; flex-direction: column; gap: 12px; }
@@ -42,32 +77,55 @@
 .cp-forgot-error { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--red); }
 .cp-forgot-loading { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 24px 0; font-size: 13px; color: var(--text-muted); }
 
-.cp-login-right { flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px; position: relative; overflow: hidden; background: radial-gradient(circle at 20% 30%, rgba(217,119,6,.18), transparent 55%), radial-gradient(circle at 80% 80%, rgba(52,211,153,.1), transparent 50%); }
-.cp-login-right-inner { max-width: 440px; position: relative; z-index: 1; animation: content-in .8s ease .2s both; }
-@keyframes content-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
-.cp-login-right h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; line-height: 1.4; background: linear-gradient(135deg, var(--text-primary), var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+/* ===== 右侧场景：轨道星系 ===== */
+.cp-login-right { flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px; position: relative; overflow: hidden; }
+.cp-login-right::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 28%, rgba(129,140,248,.2), transparent 52%), radial-gradient(circle at 78% 84%, rgba(52,211,153,.12), transparent 48%), radial-gradient(circle at 60% 20%, rgba(167,139,250,.14), transparent 40%); animation: right-scene-breathe 8s ease-in-out infinite; }
+@keyframes right-scene-breathe { 0%,100% { opacity: .7; } 50% { opacity: 1; } }
+.cp-login-right-inner { max-width: 440px; position: relative; z-index: 1; animation: content-in .8s ease .15s both; }
+@keyframes content-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+.cp-login-right h2 { font-size: 29px; font-weight: 800; margin-bottom: 8px; line-height: 1.35; background: linear-gradient(135deg, #F1F5F9, var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .cp-login-right > .cp-login-right-inner > p { font-size: 14px; color: var(--text-secondary); }
 
-.cp-features { display: flex; flex-direction: column; gap: 12px; margin-top: 32px; }
-.cp-feature { padding: 14px 16px; display: flex; align-items: center; gap: 14px; border-radius: var(--radius); background: rgba(217,119,6,.04); border: 1px solid var(--card-border); transition: all .3s; cursor: default; }
-.cp-feature:hover { background: var(--card-hover); border-color: rgba(217,119,6,.3); transform: translateX(4px); }
-.cp-feature-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-.cp-feature-icon.purple { background: rgba(217,119,6,.15); color: var(--primary-light); }
-.cp-feature-icon.green { background: rgba(52,211,153,.15); color: var(--emerald); }
-.cp-feature-icon.amber { background: rgba(251,191,36,.15); color: var(--amber); }
-.cp-feature-icon.pink { background: rgba(217,119,6,.15); color: #B45309; }
+.cp-features { display: flex; flex-direction: column; gap: 12px; margin-top: 34px; }
+.cp-feature { padding: 15px 17px; display: flex; align-items: center; gap: 15px; border-radius: 16px; background: rgba(129,140,248,.05); border: 1px solid var(--card-border); transition: all .3s; cursor: default; overflow: hidden; position: relative; }
+.cp-feature::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(165,180,252,.5), transparent); opacity: 0; transition: opacity .3s; }
+.cp-feature:hover { background: rgba(129,140,248,.1); border-color: rgba(129,140,248,.42); transform: translateX(5px); box-shadow: 0 6px 22px rgba(129,140,248,.16); }
+.cp-feature:hover::after { opacity: 1; }
+.cp-feature-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.cp-feature-icon.purple { background: rgba(129,140,248,.16); color: var(--primary-light); box-shadow: 0 0 18px rgba(129,140,248,.25); }
+.cp-feature-icon.green { background: rgba(52,211,153,.16); color: var(--emerald); box-shadow: 0 0 18px rgba(52,211,153,.22); }
+.cp-feature-icon.amber { background: rgba(251,191,36,.16); color: var(--amber); box-shadow: 0 0 18px rgba(251,191,36,.22); }
+.cp-feature-icon.pink { background: rgba(129,140,248,.16); color: #B45309; }
 .cp-feature-text { flex: 1; }
 .cp-feature-title { font-weight: 600; font-size: 14px; }
 .cp-feature-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.5; }
 
-.cp-orbit-deco { position: absolute; top: 50%; right: -120px; transform: translateY(-50%); width: 400px; height: 400px; pointer-events: none; opacity: .3; }
-.cp-orbit-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(217,119,6,.15); }
-.cp-orbit-ring:nth-child(2) { inset: 40px; border-color: rgba(52,211,153,.12); }
-.cp-orbit-ring:nth-child(3) { inset: 80px; border-color: rgba(251,191,36,.1); }
-.cp-orbit-planet { position: absolute; width: 12px; height: 12px; border-radius: 50%; top: -6px; left: 50%; margin-left: -6px; }
-.cp-orbit-ring:nth-child(1) .cp-orbit-planet { background: var(--primary-light); box-shadow: 0 0 12px var(--primary-glow); animation: orbit-spin 12s linear infinite; }
-.cp-orbit-ring:nth-child(2) .cp-orbit-planet { background: var(--emerald); box-shadow: 0 0 10px var(--emerald-glow); animation: orbit-spin 8s linear infinite reverse; }
-.cp-orbit-ring:nth-child(3) .cp-orbit-planet { background: var(--amber); box-shadow: 0 0 10px rgba(251,191,36,.5); animation: orbit-spin 6s linear infinite; }
-@keyframes orbit-spin { from { transform: rotate(0deg) translateY(-200px) rotate(0deg); } to { transform: rotate(360deg) translateY(-200px) rotate(-360deg); } }
+/* ===== 轨道星系装饰 ===== */
+.cp-orbit-deco { position: absolute; top: 48%; right: -90px; width: 520px; height: 520px; pointer-events: none; opacity: .55; }
+.cp-orbit-ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(129,140,248,.22); box-shadow: 0 0 26px rgba(129,140,248,.12) inset; }
+.cp-orbit-ring::before { content: ''; position: absolute; inset: -2px; border-radius: 50%; border: 1px dashed rgba(165,180,252,.14); }
+.cp-orbit-ring:nth-child(2) { inset: 64px; border-color: rgba(52,211,153,.18); }
+.cp-orbit-ring:nth-child(3) { inset: 128px; border-color: rgba(251,191,36,.16); }
+.cp-orbit-ring:nth-child(4) { inset: 192px; border-color: rgba(167,139,250,.16); }
+.cp-orbit-sun { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #FDBA74, #F59E0B 55%, #D97706); box-shadow: 0 0 60px rgba(251,191,36,.55), 0 0 120px rgba(245,158,11,.3); animation: sun-pulse 4s ease-in-out infinite; }
+@keyframes sun-pulse { 0%,100% { box-shadow: 0 0 50px rgba(251,191,36,.5), 0 0 100px rgba(245,158,11,.28); } 50% { box-shadow: 0 0 70px rgba(251,191,36,.7), 0 0 140px rgba(245,158,11,.4); } }
+.cp-orbit-planet { position: absolute; width: 15px; height: 15px; border-radius: 50%; top: 0; left: 50%; margin: -7px 0 0 -7px; }
+.cp-orbit-planet::after { content: ''; position: absolute; left: 50%; top: 50%; width: 24px; height: 9px; margin: -4px 0 0 -12px; border-radius: 50%; border: 1.5px solid currentColor; opacity: .6; transform: rotate(-18deg); }
+.cp-orbit-ring:nth-child(1) .cp-orbit-planet { background: linear-gradient(135deg, #A5B4FC, #6366F1); color: #A5B4FC; box-shadow: 0 0 16px var(--primary-glow); animation: orbit-spin 14s linear infinite; }
+.cp-orbit-ring:nth-child(2) .cp-orbit-planet { width: 11px; height: 11px; margin: -5px 0 0 -5px; background: linear-gradient(135deg, #6EE7B7, #34D399); color: #34D399; box-shadow: 0 0 14px var(--emerald-glow); animation: orbit-spin 22s linear infinite reverse; }
+.cp-orbit-ring:nth-child(2) .cp-orbit-planet::after { display: none; }
+.cp-orbit-ring:nth-child(3) .cp-orbit-planet { width: 9px; height: 9px; margin: -4px 0 0 -4px; background: linear-gradient(135deg, #FBBF77, #F59E0B); color: #F59E0B; box-shadow: 0 0 12px rgba(251,191,36,.5); animation: orbit-spin 30s linear infinite; }
+.cp-orbit-ring:nth-child(3) .cp-orbit-planet::after { display: none; }
+.cp-orbit-ring:nth-child(4) .cp-orbit-planet { width: 7px; height: 7px; margin: -3px 0 0 -3px; background: linear-gradient(135deg, #C4B5FD, #A78BFA); color: #A78BFA; box-shadow: 0 0 12px rgba(167,139,250,.5); animation: orbit-spin 40s linear infinite reverse; }
+.cp-orbit-ring:nth-child(4) .cp-orbit-planet::after { display: none; }
+@keyframes orbit-spin { from { transform: rotate(0deg) translateY(-260px) rotate(0deg); } to { transform: rotate(360deg) translateY(-260px) rotate(-360deg); } }
 
-@media (max-width: 768px) { .cp-login-right { display: none; } .cp-login-card { box-shadow: none; } }
+/* ===== 响应式 ===== */
+@media (max-width: 768px) {
+  .cp-login-right { display: none; }
+  .cp-login-card { box-shadow: 0 16px 48px rgba(2,6,23,.5); }
+  .cp-orbit-deco { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-nebula i, .cp-star, .cp-shooting-star, .cp-dust i, .cp-orbit-planet, .cp-login-logo-icon, .cp-login-logo-icon::after, .cp-login-logo-icon::before { animation: none !important; }
+}
