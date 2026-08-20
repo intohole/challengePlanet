@@ -339,4 +339,27 @@
   }
 
   V._fmtTime = function (min) { return Math.floor(min / 60) + ':' + String(min % 60).padStart(2, '0') }
+
+  V.doNuxSubmit = async function (payload) {
+    const ch = window.appState.current
+    const d = this.data
+    const t = d.today
+    if (!ch || !t || d.checking) return
+    const tt = t.task_type || ch.task_type || 'binary'
+    const data = { value: payload.value || 0, reflection: payload.reflection || '', context_tag: '', sub_goal_id: null }
+    if (tt === 'counter' && data.value <= 0) { window.cpToast('请输入完成数量'); return }
+    d.checking = true
+    this.rerender()
+    try {
+      const res = await window.api.post('/challenges/' + ch.id + '/checkin', data)
+      const r = res.data || res
+      window.cpCelebrate('打卡成功 +' + (r.points_earned || 0) + ' 分')
+      await this._finishCheckin(r, ch, d, t.date)
+    } catch (e) {
+      window.cpToast(window.cpErrMsg(e, '打卡失败，请重试'))
+    } finally {
+      d.checking = false
+      this.rerender()
+    }
+  }
 })()

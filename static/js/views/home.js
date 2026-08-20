@@ -36,6 +36,7 @@ window.cpViews.home = (function () {
         html += this._main(s)
       }
       html += '</div>'
+      if (window.cpNuxTeardown) window.cpNuxTeardown()
       el.innerHTML = html
       const gx = el.querySelector('#galaxy-box')
       if (gx && s.current) {
@@ -43,6 +44,8 @@ window.cpViews.home = (function () {
         window.renderGalaxy(gx, { total: s.current.total_days, completed: s.current.completed_days || 0, streak: s.current.streak || 0, color: cat.color, icon: s.current.icon || '' })
       }
       this._renderMiniHourly()
+      const nz = el.querySelector('#cp-nux-checkin')
+      if (nz && window.cpNuxMount) window.cpNuxMount(nz)
     },
 
     onShow() { this.load() },
@@ -144,39 +147,20 @@ window.cpViews.home = (function () {
 
       if (d.loading && !d.today) return html + this._skeleton()
 
-      const shieldCount = (d.mercy && d.mercy.shields) || d.shields || 0
-      if (shieldCount > 0) html += '<div style="text-align:center"><span class="cp-shield-tag cp-shield-active">🛡️ 连续护盾 ×' + shieldCount + ' · 断签自动保护</span></div>'
-      if (d.mercy && d.mercy.shield_activated) html += '<div class="cp-repair-card cp-shield-active" style="border-color:rgba(129,140,248,.4);background:rgba(129,140,248,.08)"><p>🛡️ 护盾已自动生效！昨天的断签被保护，连续记录未中断。继续保持！</p></div>'
       if (d.error) html += '<div class="cp-error-box"><i class="fas fa-circle-exclamation"></i><span>' + window.cpEsc(d.error) + '</span><button class="cp-btn-ghost" onclick="cpViews.home.load()">重试</button></div>'
       if (d.adaptive) html += this._adaptiveCard(d.adaptive)
       if (d.guidance) html += this._guidanceCard(d.guidance)
       html += this._taskArea(s)
 
-      if (d.justRepaired) {
-        html += '<div class="cp-repair-card cp-shield-mend-card" style="text-align:center"><div class="cp-shield-mend-icon">🛡️</div><p>盾牌已重组！连续记录恢复，继续加油。</p></div>'
-      } else if (d.mercy && d.mercy.repair_available) {
-        html += '<div class="cp-repair-card" style="text-align:center"><div class="cp-shield-break-icon">🛡️</div><p>💛 昨天不小心断签了，别灰心！48小时内完成今天任务即可修复连续记录。</p><button class="cp-btn-primary" onclick="cpViews.home.doRepair()"><i class="fas fa-band-aid"></i> 立即修复 streak</button></div>'
-      }
       if (d.mercy && (d.mercy.missed_dates || []).length) html += this._diagEntry(d.mercy.missed_dates.length)
 
       html += this._todayTimeline(s)
       html += this._collapsible('reports', '数据报表', 'fa-chart-pie', 'var(--primary-light)', this._reportContent(s))
-      html += this._collapsible('calendar', '打卡日历', 'fa-calendar-check', 'var(--emerald)', this._calendarContent(s))
 
       if (d.weekly && d.weekly.content) {
         html += this._collapsible('weekly', '本周洞察', 'fa-lightbulb', 'var(--amber)', '<div class="cp-weekly-text">' + window.cpEsc(d.weekly.content) + '</div><div class="cp-weekly-meta">本周进度 ' + (d.weekly.week_checkins || 0) + '/' + (d.weekly.week_days || 7) + ' 天</div>')
       }
 
-      html += '<div class="glass-card" style="padding:16px">'
-      html += '<div class="cp-stats-row">'
-      const streakVal = ch.streak || 0
-      const prevStreak = ch.prev_streak || 0
-      const streakTrend = streakVal > prevStreak ? '↑' : (streakVal < prevStreak ? '↓' : '')
-      const streakTrendColor = streakVal >= prevStreak ? 'var(--emerald)' : 'var(--red)'
-      html += '<div class="cp-stat"><div class="cp-stat-icon">🔥</div><div class="cp-stat-num" style="color:var(--emerald)">' + streakVal + '</div><div class="cp-stat-label">连续打卡' + (streakTrend ? ' <span style="color:' + streakTrendColor + '">' + streakTrend + '</span>' : '') + '</div></div>'
-      html += '<div class="cp-stat"><div class="cp-stat-icon">✅</div><div class="cp-stat-num" style="color:var(--primary-light)">' + (ch.completed_days || 0) + '</div><div class="cp-stat-label">累计打卡</div></div>'
-      html += '<div class="cp-stat"><div class="cp-stat-icon">📅</div><div class="cp-stat-num" style="color:var(--amber)">' + (ch.total_days || 0) + '</div><div class="cp-stat-label">总天数</div></div>'
-      html += '<div class="cp-stat"><div class="cp-stat-icon">⭐</div><div class="cp-stat-num" style="color:var(--primary)">' + ((d.points && d.points.total) || 0) + '</div><div class="cp-stat-label">总积分</div></div></div></div>'
       html += '<button class="cp-fab" onclick="cpCreate.open()"><i class="fas fa-plus"></i></button>'
       return html
     },
@@ -238,16 +222,19 @@ window.cpViews.home = (function () {
       if (t.task_tip) html += '<p class="cp-task-tip"><i class="fas fa-lightbulb"></i><span>' + window.cpEsc(t.task_tip) + '</span></p>'
       if (t.task_steps && t.task_steps.length) html += '<div class="cp-task-steps-preview">' + t.task_steps.map(st => '<span class="cp-step-preview-tag">' + window.cpEsc(st) + '</span>').join('') + '</div>'
       html += '</div>'
-      if (isMultiMode) {
-        html += this._multiCheckinArea(tt, t, ch)
-      } else if (!t.checked_in) {
-        html += this._checkinArea(tt, t)
-      } else {
+      const hasSubGoals = !!(t.sub_goals && t.sub_goals.length)
+      const isDeco = ch.decompose_mode === 'time_slot' || hasSubGoals || tt === 'step'
+      html += '<div id="cp-nux-checkin"></div>'
+      if (isDeco) {
+        if (isMultiMode) html += this._multiCheckinArea(tt, t, ch)
+        else if (!t.checked_in) html += this._checkinArea(tt, t)
+        else html += '<button class="cp-btn-checkin done"><i class="fas fa-circle-check"></i> 今日已完成</button>'
+      }
+      if (t.checked_in) {
         if (tt === 'text' && t.checkin_data && t.checkin_data.reflection) {
           html += '<div class="glass-card cp-text-display"><div class="cp-text-display-head"><i class="fas fa-quote-left"></i> 今日记录</div><p class="cp-text-display-body">' + window.cpEsc(t.checkin_data.reflection) + '</p></div>'
         }
         if (d.declaration) html += '<div class="cp-declare">🔥 ' + window.cpEsc(d.declaration) + '</div>'
-        html += '<button class="cp-btn-checkin done"><i class="fas fa-circle-check"></i> 今日已完成</button>'
         const plan = ch.ai_plan || []
         const next = plan[t.day_number]
         if (next && next.title) {
@@ -317,46 +304,6 @@ window.cpViews.home = (function () {
         if (r.insight) html += '<div class="cp-mini-insight"><i class="fas fa-lightbulb"></i> ' + window.cpEsc(r.insight) + '</div>'
         box.innerHTML = html
       }).catch(() => { box.innerHTML = '<div class="cp-mini-empty">加载失败</div>' })
-    },
-
-    _calendarContent(s) {
-      const ch = s.current
-      const d = this.data
-      if (!ch.start_date) return ''
-      const today = window.cpTodayStr()
-      const statusMap = {}
-      d.checkins.forEach(c => { statusMap[c.date] = c })
-      const total = ch.total_days || 1
-      const end = ch.end_date || window.cpAddDays(ch.start_date, total - 1)
-      let html = '<div class="cp-calendar-grid">'
-      for (let i = 0; i < total; i++) {
-        const ds = window.cpAddDays(ch.start_date, i)
-        if (ds > end) break
-        const rec = statusMap[ds]
-        const st = rec ? (rec.status || 'checked') : ''
-        const phasePct = i / total
-        const phaseColor = phasePct < 0.25 ? 'rgba(52,211,153,' : (phasePct < 0.6 ? 'rgba(245,158,11,' : 'rgba(167,139,250,')
-        let cls = '', mark = '<span class="st">·</span>'
-        if (st === 'checked' || st === 'completed') {
-          cls = ' checked'
-          mark = '<span class="st">✓</span>'
-        }
-        else if (st === 'frozen') { cls = ' frozen'; mark = '<span class="st">❄</span>' }
-        else if (st === 'mended') { cls = ' mended'; mark = '<span class="st">✚</span>' }
-        else if (ds < today) { cls = ' missed'; mark = '<span class="st">·</span>' }
-        else if (ds > today) cls = ' future'
-        if (ds === today) cls += ' today'
-        const clickable = rec ? ' onclick="cpViews.home.openDayDetail(\'' + ds + '\')"' : ''
-        html += '<div class="cp-cal-cell' + cls + '"' + clickable + ' style="' + (ds < today && !rec ? 'background:' + phaseColor + '0.08)' : '') + '">' + mark + '<span>' + (i + 1) + '</span></div>'
-      }
-      html += '</div><div class="cp-cal-legend"><span>✓ 已打卡</span><span>❄ 冻结</span><span>✚ 补签</span><span>· 缺失</span></div>'
-      if (d.mercy) {
-        const missed = d.mercy.missed_dates || []
-        html += '<div class="cp-mercy-row">'
-        if (missed.length) html += '<button class="cp-btn-ghost" onclick="cpViews.home.openMend()"><i class="fas fa-plus"></i> 补签（本月剩 ' + (d.mercy.mend_left_this_month || 0) + ' 次）</button>'
-        html += '<button class="cp-btn-ghost" onclick="cpViews.home.openFreeze()"><i class="fas fa-snowflake"></i> 冻结（本周剩 ' + (d.mercy.freeze_left_this_week || 0) + ' 次）</button></div>'
-      }
-      return html
     },
 
     useTemplate(i) {
