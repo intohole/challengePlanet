@@ -172,10 +172,10 @@ window.cpViews.home = (function () {
 
       if (d.loading && !d.today) return html + this._skeleton()
 
+      html += this._taskArea(s)
       if (d.error) html += '<div class="cp-error-box"><i class="fas fa-circle-exclamation"></i><span>' + window.cpEsc(d.error) + '</span><button class="cp-btn-ghost" onclick="cpViews.home.load()">重试</button></div>'
       if (d.adaptive) html += this._adaptiveCard(d.adaptive)
       if (d.guidance) html += this._guidanceCard(d.guidance)
-      html += this._taskArea(s)
 
       if (d.mercy && (d.mercy.missed_dates || []).length) html += this._diagEntry(d.mercy.missed_dates.length)
 
