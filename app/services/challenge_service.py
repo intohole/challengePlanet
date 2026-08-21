@@ -13,6 +13,7 @@ from app.repositories.points_repository import ChallengeMetaRepository
 from app.schemas.challenge import ChallengeResponse
 from app.services.ai_service import AIService
 from app.services.ai_text_sanitizer import sanitize_coach_text
+from app.services.goal_rule_service import daily_target, is_ladder, ladder_progress_pct, resolve_mode
 from app.services.mercy_service import MercyService, load_valid_dates
 from app.services.streak_service import calc_streak, today_str
 
@@ -49,7 +50,10 @@ class ChallengeService:
         scene_template: str = "", target_value: float = 1.0, unit: str = "次",
         direction: str = "increase", goal_type: str = "hard",
         decompose_mode: str = "none", slot_hours: int = 1,
-        slot_target_value: float = 0.0,
+        slot_target_value: float = 0.0, goal_rule: str = "fixed",
+        goal_mode: str = "auto", ladder_start: float = 0.0,
+        ladder_goal: float = 0.0, ladder_interval: int = 1,
+        ladder_step: float = 1.0,
     ) -> Challenge:
         meta = CATEGORY_META.get(category, CATEGORY_META["other"])
         start_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else datetime.now()
@@ -63,7 +67,10 @@ class ChallengeService:
             "color": meta["color"], "icon": meta["icon"],
             "task_type": task_type, "scene_template": scene_template,
             "target_value": target_value, "unit": unit, "direction": direction,
-            "goal_type": goal_type, "decompose_mode": decompose_mode,
+            "goal_type": goal_type, "goal_rule": goal_rule, "goal_mode": goal_mode,
+            "ladder_start": ladder_start, "ladder_goal": ladder_goal,
+            "ladder_interval": ladder_interval, "ladder_step": ladder_step,
+            "decompose_mode": decompose_mode,
             "slot_hours": slot_hours, "slot_target_value": slot_target_value,
             "share_token": secrets.token_hex(16),
         })
@@ -166,6 +173,12 @@ class ChallengeService:
             decompose_mode=str(getattr(c, "decompose_mode", "none") or "none"),
             slot_hours=int(getattr(c, "slot_hours", 1) or 1),
             slot_target_value=float(getattr(c, "slot_target_value", 0.0) or 0.0),
+            goal_rule=str(getattr(c, "goal_rule", "fixed") or "fixed"),
+            goal_mode=str(getattr(c, "goal_mode", "auto") or "auto"),
+            ladder_start=float(getattr(c, "ladder_start", 0.0) or 0.0),
+            ladder_goal=float(getattr(c, "ladder_goal", 0.0) or 0.0),
+            ladder_interval=max(1, int(getattr(c, "ladder_interval", 1) or 1)),
+            ladder_step=float(getattr(c, "ladder_step", 1.0) or 1.0),
             mercy=item.get("mercy", {}),
             created_at=c.created_at,
         )
@@ -243,13 +256,15 @@ class ChallengeService:
     ) -> dict[str, object]:
         task_steps_raw = task.get("steps", task.get("task_steps", []))
         task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
-        remaining = max(0.0, challenge.target_value - today_total)
+        today_target = daily_target(challenge, day_number, adaptive_baseline=dynamic_baseline)
+        remaining = max(0.0, today_target - today_total)
         feedback = today_checkins[-1].ai_feedback if today_checkins else ""
         repeatable = (
             challenge.decompose_mode == "time_slot"
             or challenge.task_type in ("counter", "timer")
             or bool(sub_goals_list)
         )
+        ladder_progress = ladder_progress_pct(challenge, day_number) if is_ladder(challenge) else 0.0
         return {
             "challenge_id": challenge_id, "day_number": day_number, "date": today,
             "repeatable": repeatable, "task": task, "task_title": str(task.get("title", "")),
@@ -262,9 +277,17 @@ class ChallengeService:
             "unit": str(challenge.unit), "direction": str(challenge.direction),
             "goal_type": str(challenge.goal_type),
             "decompose_mode": str(challenge.decompose_mode),
-            "today_total": today_total, "today_target": challenge.target_value,
-            "dynamic_baseline": dynamic_baseline, "remaining": round(remaining, 2),
+            "goal_rule": str(challenge.goal_rule) or "fixed",
+            "goal_mode": resolve_mode(challenge),
+            "ladder_start": float(getattr(challenge, "ladder_start", 0.0) or 0.0),
+            "ladder_goal": float(getattr(challenge, "ladder_goal", 0.0) or 0.0),
+            "ladder_interval": max(1, int(getattr(challenge, "ladder_interval", 1) or 1)),
+            "ladder_step": float(getattr(challenge, "ladder_step", 1.0) or 1.0),
+            "today_total": today_total, "today_target": today_target,
+            "today_cap": today_target, "dynamic_baseline": dynamic_baseline,
+            "remaining": round(remaining, 2),
             "progress_pct": round(progress, 1),
+            "ladder_progress_pct": round(ladder_progress, 1),
             "checked_in": len(today_checkins) > 0,
             "checkin_data": {
                 "mood": today_checkins[-1].mood if today_checkins else "",

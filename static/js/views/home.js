@@ -243,6 +243,7 @@ window.cpViews.home = (function () {
         if (baseline > 0) html += '<span class="cp-task-progress-baseline">基准 ' + baseline.toFixed(1) + '</span>'
         html += '</div></div>'
       }
+      if (t.goal_rule === 'ladder' && t.today_total !== undefined) html += this._ladderBlock(t, ch)
       if (t.sub_goals && t.sub_goals.length) html += this._subGoalProgress(t.sub_goals, ch)
       if (t.task_tip) html += '<p class="cp-task-tip"><i class="fas fa-lightbulb"></i><span>' + window.cpEsc(t.task_tip) + '</span></p>'
       if (t.task_steps && t.task_steps.length) html += '<div class="cp-task-steps-preview">' + t.task_steps.map(st => '<span class="cp-step-preview-tag">' + window.cpEsc(st) + '</span>').join('') + '</div>'
@@ -277,6 +278,34 @@ window.cpViews.home = (function () {
         }
         html += '<div class="cp-sub-actions"><button class="cp-btn-ghost" onclick="cpViews.home.openReflection()"><i class="fas fa-pen"></i> ' + ((t.checkin_data && t.checkin_data.reflection) ? '查看/改心得' : '写心得') + '</button><button class="cp-btn-ghost" onclick="cpOpenShare()"><i class="fas fa-share-nodes"></i> 分享海报</button></div>'
       }
+      return html
+    },
+
+    _ladderBlock(t, ch) {
+      const cap = Number(t.today_cap) || Number(t.today_target) || 0
+      const total = Number(t.today_total) || 0
+      const remaining = Number(t.remaining)
+      const unit = window.cpEsc(t.unit || ch.unit || '')
+      const isDesc = ch.direction === 'decrease' || String(t.direction) === 'decrease'
+      const over = isDesc ? total > cap : total < cap
+      const ratio = cap > 0 ? Math.min(100, Math.round(total / cap * 100)) : 0
+      const barColor = over ? 'var(--red)' : 'var(--emerald)'
+      const label = isDesc ? '今日上限' : '今日目标'
+      const remainTxt = remaining !== undefined && remaining >= 0 ? '还可 ' + remaining + ' ' + unit : ''
+      let html = '<div class="cp-ladder-daily"><div class="cp-ladder-daily-head"><span>' + label + '</span>'
+      if (t.ladder_goal && t.ladder_start) {
+        const cur = Number(t.ladder_start)
+        const end = Number(t.ladder_goal)
+        html += '<span class="cp-ladder-daily-path">' + (isDesc ? (cur + '→' + end) : (cur + '→' + end)) + ' <i class="fas fa-stairs" style="font-size:11px"></i> 阶梯</span>'
+      }
+      html += '</div>'
+      html += '<div class="cp-ladder-daily-bar"><div class="cp-ladder-daily-fill" style="width:' + ratio + '%;background:' + barColor + '"></div></div>'
+      html += '<div class="cp-ladder-daily-stats">'
+      html += '<div class="cp-ladder-daily-stat"><b style="color:' + barColor + '">' + total + '</b><span>已记 ' + unit + '</span></div>'
+      html += '<div class="cp-ladder-daily-stat"><b>' + cap + '</b><span>' + (isDesc ? '上限' : '目标') + ' ' + unit + '</span></div>'
+      if (remainTxt) html += '<div class="cp-ladder-daily-stat right"><b>' + remaining + '</b><span>' + unit + ' 余量</span></div>'
+      html += (over ? '<div class="cp-ladder-daily-tip warn">' + (isDesc ? '已超过今日上限，放慢一点，明天继续' : '还没到目标，再努一把') + '</div>' : '<div class="cp-ladder-daily-tip ok">' + (isDesc ? '控制在范围内，很好' : '今天达标，继续保持') + '</div>')
+      html += '</div></div>'
       return html
     },
 

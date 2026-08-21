@@ -25,6 +25,31 @@ from app.services.guidance_service import GuidanceService
 router = APIRouter()
 
 
+def ladder_out(request: NLCreateRequest, parsed: dict[str, object]) -> dict[str, object]:
+    rule = str(request.goal_rule or parsed.get("goal_rule") or "fixed")
+    start = float(parsed.get("ladder_start", 0.0) or 0.0)
+    goal = float(parsed.get("ladder_goal", 0.0) or 0.0)
+    if request.goal_rule == "ladder" or (
+        rule == "ladder" and (request.ladder_start > 0 or start > 0)
+    ):
+        if goal <= 0:
+            goal = request.ladder_goal or float(parsed.get("target_value", 1.0) or 1.0)
+        return {
+            "goal_rule": "ladder",
+            "goal_mode": str(request.goal_mode or parsed.get("goal_mode") or "auto"),
+            "ladder_start": request.ladder_start or start or max(goal, request.target_value),
+            "ladder_goal": goal,
+            "ladder_interval": request.ladder_interval or int(parsed.get("ladder_interval", 1) or 1),
+            "ladder_step": request.ladder_step or float(parsed.get("ladder_step", 1.0) or 1.0),
+        }
+    return {
+        "goal_rule": "fixed" if rule == "fixed" else rule,
+        "goal_mode": str(request.goal_mode or parsed.get("goal_mode") or "auto"),
+        "ladder_start": 0.0, "ladder_goal": 0.0,
+        "ladder_interval": 1, "ladder_step": 1.0,
+    }
+
+
 @router.get("", response_model=list[ChallengeResponse])
 async def list_challenges(
     user_id: str = Depends(get_current_user_id_required),
@@ -68,6 +93,7 @@ async def create_challenge_nl(
             "decompose_mode": str(parsed.get("decompose_mode", "none")),
             "slot_hours": int(parsed.get("slot_hours", 1)),
             "slot_target_value": float(parsed.get("slot_target_value", 0.0)),
+            **ladder_out(request, parsed),
         }
         yield sse_event_dict("parsed", {"parsed": parsed_out})
         yield sse_event_dict("planning")
@@ -114,6 +140,9 @@ async def confirm_challenge(
         direction=request.direction, goal_type=request.goal_type,
         decompose_mode=request.decompose_mode, slot_hours=request.slot_hours,
         slot_target_value=request.slot_target_value,
+        goal_rule=request.goal_rule, goal_mode=request.goal_mode,
+        ladder_start=request.ladder_start, ladder_goal=request.ladder_goal,
+        ladder_interval=request.ladder_interval, ladder_step=request.ladder_step,
     )
     return await service.build_response(session, challenge, user_id)
 

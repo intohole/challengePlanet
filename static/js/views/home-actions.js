@@ -102,7 +102,12 @@
       const r = res.data || res
       const total = r.today_total || 0
       const target = (t.today_target || ch.target_value || 1)
-      window.cpCelebrate('已记录 +' + v + ' ' + (ch.unit || '') + ' · 今日 ' + total + '/' + target)
+      if (t.goal_rule === 'ladder' && ch.direction === 'decrease') {
+        const rem = Math.max(0, (r.remaining !== undefined ? r.remaining : (target - total)))
+        window.cpCelebrate('已记录 +' + v + ' ' + (ch.unit || '') + ' · 还可 ' + rem + (ch.unit || ''))
+      } else {
+        window.cpCelebrate('已记录 +' + v + ' ' + (ch.unit || '') + ' · 今日 ' + total + '/' + target)
+      }
       await this._finishCheckin(r, ch, d, t.date)
     } catch (e) {
       window.cpToast(window.cpErrMsg(e, '记录失败，请重试'))

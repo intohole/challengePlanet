@@ -22,6 +22,12 @@ class Challenge(Base):
     unit: Mapped[str] = mapped_column(String(16), default="次")
     direction: Mapped[str] = mapped_column(String(8), default="increase")
     goal_type: Mapped[str] = mapped_column(String(8), default="hard")
+    goal_rule: Mapped[str] = mapped_column(String(12), default="fixed")
+    goal_mode: Mapped[str] = mapped_column(String(8), default="auto")
+    ladder_start: Mapped[float] = mapped_column(Float, default=0.0)
+    ladder_goal: Mapped[float] = mapped_column(Float, default=0.0)
+    ladder_interval: Mapped[int] = mapped_column(Integer, default=1)
+    ladder_step: Mapped[float] = mapped_column(Float, default=1.0)
 
     decompose_mode: Mapped[str] = mapped_column(String(16), default="none")
     slot_hours: Mapped[int] = mapped_column(Integer, default=1)

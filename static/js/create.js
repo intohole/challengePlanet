@@ -21,6 +21,12 @@ window.cpCreate = (function () {
     c.genTotal = 0
     c.adjustHint = ''
     c.adjusting = false
+    c.goalRule = ''
+    c.ladderEn = false
+    c.ladderStart = 0
+    c.ladderGoal = 0
+    c.ladderInterval = 3
+    c.ladderStep = 1
   }
 
   const C = {
@@ -72,6 +78,53 @@ window.cpCreate = (function () {
     setDays(n) { st().editDays = n },
     setCategory(k) { st().editCategory = k },
 
+    syncLadder(p) {
+      const c = st()
+      if (!p || typeof p !== 'object') return
+      const dir = String(p.direction || '')
+      c.goalRule = String(p.goal_rule || 'fixed')
+      c.ladderEn = c.goalRule === 'ladder' && !!p.ladder_start
+      if (c.ladderEn) {
+        c.ladderStart = Number(p.ladder_start) || 0
+        c.ladderGoal = Number(p.ladder_goal) || 1
+        c.ladderInterval = Math.max(1, Number(p.ladder_interval) || 1)
+        c.ladderStep = Number(p.ladder_step) || 1
+        if (dir === 'decrease' && !c.ladderGoal) c.ladderGoal = 0
+      }
+    },
+
+    ladderDir() {
+      const sc = window.cpSceneMap[st().sceneTemplate]
+      return String(st().parsed && st().parsed.direction || (sc && sc.task_type === 'quit' ? 'decrease' : 'increase'))
+    },
+
+    ladderUnit() {
+      const c = st()
+      const sc = c.sceneTemplate && window.cpSceneMap[c.sceneTemplate]
+      return String(c.parsed && c.parsed.unit || (sc && sc.unit) || '次')
+    },
+
+    ladderNodes() {
+      const c = st()
+      if (!c.ladderEn || c.ladderGoal <= 0) return []
+      const days = Math.max(7, c.editDays || 66)
+      const interval = Math.max(1, c.ladderInterval || 1)
+      const step = c.ladderStep || 1
+      const isDesc = this.ladderDir() === 'decrease'
+      const nodes = []
+      for (let d = 1; d <= days; d += interval) {
+        const elapsed = Math.floor((d - 1) / interval)
+        let v = isDesc
+          ? Math.max(c.ladderGoal, c.ladderStart - elapsed * step)
+          : Math.min(c.ladderGoal, c.ladderStart + elapsed * step)
+        v = Math.round(v * 100) / 100
+        nodes.push({ day: d, value: v })
+        if (!isDesc && v >= c.ladderGoal) break
+        if (isDesc && v <= c.ladderGoal) break
+      }
+      return nodes
+    },
+
     back() {
       const c = st()
       if (c.phase === 'parsing' || c.phase === 'planning') window.api.cancel('/challenges/nl-create')
@@ -102,6 +155,7 @@ window.cpCreate = (function () {
             c.editDays = c.parsed.duration_days || c.editDays || 66
             c.editDesc = data.parsed.description || ''
             c.genTotal = data.parsed.duration_days || c.editDays || 0
+            this.syncLadder(data.parsed)
             c.phase = 'planning'
           } else if (data.type === 'token') {
             c.phase = 'planning'
@@ -173,6 +227,12 @@ window.cpCreate = (function () {
           decompose_mode: String(p.decompose_mode || 'none'),
           slot_hours: Number(p.slot_hours) || 1,
           slot_target_value: Number(p.slot_target_value) || 0,
+          goal_rule: c.ladderEn ? 'ladder' : (String(p.goal_rule || 'fixed')),
+          goal_mode: String(p.goal_mode || (c.ladderEn ? 'ceiling' : 'auto')),
+          ladder_start: c.ladderStart || 0,
+          ladder_goal: c.ladderEn ? (c.ladderGoal || 1) : 0,
+          ladder_interval: c.ladderEn ? (c.ladderInterval || 1) : 1,
+          ladder_step: c.ladderStep || 1,
         })
         const ch = res.data || res
         c.show = false

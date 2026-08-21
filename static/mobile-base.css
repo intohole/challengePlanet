@@ -96,3 +96,7 @@ display: none !important;
         --safe-right: 0px;
 }
 }
+@media (max-width: 480px){
+.cp-ladder-grid{grid-template-columns:repeat(2,1fr)!important}
+.cp-ladder-preview-inner{overflow-x:auto;-webkit-overflow-scrolling:touch}
+}

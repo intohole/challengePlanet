@@ -30,6 +30,12 @@ class NLCreateRequest(BaseModel):
     decompose_mode: str = Field("none", description="none(不拆) | time_slot(按时段)")
     slot_hours: int = Field(1, description="每个时段多少小时")
     slot_target_value: float = Field(0.0, description="每个时段的目标值")
+    goal_rule: str = Field("fixed", description="fixed | adaptive | ladder 目标如何变化")
+    goal_mode: str = Field("auto", description="ceiling | floor | range | auto(按direction推导)")
+    ladder_start: float = Field(0.0, description="阶梯起点(当前值)")
+    ladder_goal: float = Field(0.0, description="阶梯目标值")
+    ladder_interval: int = Field(1, description="每隔N天变化一次")
+    ladder_step: float = Field(1.0, description="每次变化量")
 
 
 class ChallengeConfirmRequest(BaseModel):
@@ -51,6 +57,13 @@ class ChallengeConfirmRequest(BaseModel):
     decompose_mode: str = Field("none", description="none | time_slot")
     slot_hours: int = Field(1, description="时段小时数")
     slot_target_value: float = Field(0.0, description="时段目标值")
+
+    goal_rule: str = Field("fixed", description="fixed | adaptive | ladder")
+    goal_mode: str = Field("auto", description="ceiling | floor | range | auto")
+    ladder_start: float = Field(0.0, description="阶梯起点(当前值)")
+    ladder_goal: float = Field(0.0, description="阶梯目标值")
+    ladder_interval: int = Field(1, description="每隔N天变化一次")
+    ladder_step: float = Field(1.0, description="每次变化量")
 
 
 class FromDecisionRequest(BaseModel):
@@ -95,6 +108,12 @@ class ChallengeResponse(BaseModel):
     decompose_mode: str = "none"
     slot_hours: int = 1
     slot_target_value: float = 0.0
+    goal_rule: str = "fixed"
+    goal_mode: str = "auto"
+    ladder_start: float = 0.0
+    ladder_goal: float = 0.0
+    ladder_interval: int = 1
+    ladder_step: float = 1.0
 
     mercy: MercySummary = Field(default_factory=MercySummary)
     created_at: Optional[datetime] = None
@@ -120,12 +139,20 @@ class TodayTaskResponse(BaseModel):
     direction: str = "increase"
     goal_type: str = "hard"
     decompose_mode: str = "none"
+    goal_rule: str = "fixed"
+    goal_mode: str = "auto"
+    ladder_start: float = 0.0
+    ladder_goal: float = 0.0
+    ladder_interval: int = 1
+    ladder_step: float = 1.0
 
     today_total: float = 0.0
     today_target: float = 1.0
+    today_cap: float = 1.0
     dynamic_baseline: float = 1.0
     remaining: float = 0.0
     progress_pct: float = 0.0
+    ladder_progress_pct: float = 0.0
 
     checked_in: bool = False
     checkin_data: Optional[dict[str, object]] = None

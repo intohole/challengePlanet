@@ -19,6 +19,7 @@ from app.services.checkin_background import (
     generate_weekly_report_task,
     save_memory,
 )
+from app.services.goal_rule_service import daily_target, is_ladder
 from app.services.mercy_service import load_valid_dates
 from app.services.points_service import PointsService
 from app.services.shield_service import ShieldService
@@ -71,9 +72,10 @@ class CheckInService:
             if sub_goal is not None:
                 sub_goal_id = sub_goal.id
 
-        target_snapshot = await self._compute_target_snapshot(session, challenge, sub_goal_id)
         start_dt = datetime.strptime(challenge.start_date, "%Y-%m-%d") if challenge.start_date else ts
         day_number = max(1, min((ts.date() - start_dt.date()).days + 1, challenge.duration_days))
+
+        target_snapshot = await self._compute_target_snapshot(session, challenge, sub_goal_id, day_number)
 
         completion_pct = self._calc_completion_pct(value, target_snapshot["target_value"], challenge.direction)
         is_soft_exceeded = self._is_soft_exceeded(value, target_snapshot, challenge)
@@ -93,7 +95,7 @@ class CheckInService:
         })
 
         today_total = await self._repo.sum_value_by_date(session, challenge_id, today)
-        remaining = self._calc_remaining(today_total, challenge.target_value, challenge.direction)
+        remaining = self._calc_remaining(today_total, target_snapshot["target_value"], challenge.direction)
         streak = await self._current_streak(session, challenge_id)
         base, chest = await self._points.award_checkin(
             session, user_id, challenge_id, streak,
@@ -118,7 +120,9 @@ class CheckInService:
             "points_earned": base, "chest_points": chest,
             "streak": streak, "already_checked": False,
             "declaration": "", "shields": shields,
-            "today_total": today_total, "today_target": challenge.target_value,
+            "today_total": today_total, "today_target": target_snapshot["target_value"],
+            "today_cap": target_snapshot["target_value"],
+            "goal_rule": str(challenge.goal_rule) or "fixed",
             "dynamic_baseline": target_snapshot["target_value"],
             "remaining": remaining, "is_soft_exceeded": is_soft_exceeded,
             "soft_exceeded_amount": soft_exceeded_amount,
@@ -126,7 +130,13 @@ class CheckInService:
 
     async def _compute_target_snapshot(
         self, session: AsyncSession, challenge, sub_goal_id: int | None,
+        day_number: int,
     ) -> dict[str, object]:
+        if is_ladder(challenge):
+            return {
+                "target_value": daily_target(challenge, day_number),
+                "goal_type": challenge.goal_type,
+            }
         if sub_goal_id is not None:
             sub_goal = await self._sub_goal_repo.get_by_id(session, sub_goal_id)
             if sub_goal is not None and sub_goal.challenge_id == challenge.id:
