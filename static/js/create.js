@@ -154,6 +154,8 @@ window.cpCreate = (function () {
       c.error = ''
       try {
         const scene = window.cpSceneMap[c.sceneTemplate]
+        const p = c.parsed || {}
+        const taskType = this.deriveTaskType(p, scene)
         const res = await window.api.post('/challenges/confirm', {
           title: c.editTitle.trim(),
           category: c.editCategory,
@@ -162,8 +164,15 @@ window.cpCreate = (function () {
           description: c.editDesc || '',
           plan: c.plan,
           source: c.source || 'web',
-          task_type: scene ? scene.task_type : 'binary',
+          task_type: taskType,
           scene_template: c.sceneTemplate || '',
+          target_value: Number(p.target_value) || 1,
+          unit: String(p.unit || (scene && scene.unit) || '次'),
+          direction: String(p.direction || (scene && scene.task_type === 'quit' ? 'decrease' : 'increase')),
+          goal_type: String(p.goal_type || 'hard'),
+          decompose_mode: String(p.decompose_mode || 'none'),
+          slot_hours: Number(p.slot_hours) || 1,
+          slot_target_value: Number(p.slot_target_value) || 0,
         })
         const ch = res.data || res
         c.show = false
@@ -177,6 +186,17 @@ window.cpCreate = (function () {
       } finally {
         c.saving = false
       }
+    },
+
+    deriveTaskType(p, scene) {
+      if (p && p.task_type && ['binary', 'counter', 'timer', 'step', 'text', 'choice'].indexOf(p.task_type) >= 0) return p.task_type
+      if (!p || typeof p !== 'object') return (scene && scene.task_type) || 'binary'
+      if (p.decompose_mode === 'time_slot') return 'counter'
+      const target = Number(p.target_value) || 0
+      const unit = String(p.unit || '').trim()
+      const countableUnits = ['杯','根','支','个','颗','圈','顿','遍','页','公里','km','分钟','小时','轮','张','篇','件','只','组']
+      if (target > 1 || countableUnits.indexOf(unit) >= 0) return 'counter'
+      return (scene && scene.task_type) || 'binary'
     },
   }
   return C

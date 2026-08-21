@@ -23,7 +23,7 @@
     const mercy = d.mercy || {}
     const tt = (t && t.task_type) || ch.task_type || 'binary'
     const active = ch.status === 'active'
-    const isDeco = ch.decompose_mode === 'time_slot' || (t && t.sub_goals && t.sub_goals.length) || tt === 'step'
+    const isDeco = ch.decompose_mode === 'time_slot' || (t && t.sub_goals && t.sub_goals.length) || tt === 'step' || tt === 'counter' || tt === 'timer'
     const props = {
       title: ch.title || '',
       icon: ch.icon || '🔥',

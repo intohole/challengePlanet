@@ -138,6 +138,7 @@ async function loadChallenges() {
 window.cpLoadChallenges = loadChallenges
 
 window.cpSelectChallenge = id => {
+  id = Number(id)
   const ch = state.challenges.find(c => c.id === id)
   if (!ch) return
   state.current = ch

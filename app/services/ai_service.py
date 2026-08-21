@@ -64,10 +64,11 @@ class AIService:
         if "raw_response" in parsed:
             parsed = {
                 "title": raw_input[:10], "category": "other", "duration_days": 30,
-                "description": raw_input, "target_value": 1.0, "unit": "次",
-                "direction": "increase", "goal_type": "hard",
+                "description": raw_input, "task_type": "binary", "target_value": 1.0,
+                "unit": "次", "direction": "increase", "goal_type": "hard",
                 "decompose_mode": "none", "slot_hours": 1, "slot_target_value": 0.0,
             }
+        parsed.setdefault("task_type", "binary")
         parsed.setdefault("target_value", 1.0)
         parsed.setdefault("unit", "次")
         parsed.setdefault("direction", "increase")

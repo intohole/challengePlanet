@@ -61,8 +61,17 @@
     const subGoals = t.sub_goals || []
     const unit = window.cpEsc(t.unit || ch.unit || '')
     if (d.showQuickForm) return this._quickForm(tt, t, ch, dis)
+    const isTimer = tt === 'timer'
+    const stepVal = isTimer ? 5 : 1
+    const presets = isTimer ? [5, 10, 15, 20, 30] : [1, 2, 3, 5]
     let html = '<div class="cp-quick-checkin">'
-    html += '<button class="cp-btn-primary cp-quick-btn" ' + dis + ' onclick="cpViews.home.openQuickForm()"><i class="fas fa-plus"></i> 记录一次</button>'
+    html += '<button class="cp-big-tap" ' + dis + ' onclick="cpViews.home.doFastTap(' + stepVal + ')"><i class="fas fa-hand-pointer"></i><span>记一笔</span><em>+' + (isTimer ? stepVal + '分' : stepVal + ' ' + unit) + '</em></button>'
+    html += '<div class="cp-tap-row">'
+    presets.forEach(v => {
+      const label = isTimer ? '+' + v + '分' : '+' + v
+      html += '<button class="cp-tap-chip" ' + dis + ' onclick="cpViews.home.doFastTap(' + v + ')"><i class="fas fa-plus"></i>' + label + '</button>'
+    })
+    html += '<button class="cp-tap-chip ghost" ' + dis + ' onclick="cpViews.home.openQuickForm()"><i class="fas fa-sliders"></i> 自定义</button></div>'
     if (subGoals.length) {
       html += '<div class="cp-quick-subgoals">'
       subGoals.forEach(sg => {

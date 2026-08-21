@@ -197,7 +197,7 @@ window.cpViews.home = (function () {
       }
       const tt = t.task_type || ch.task_type || 'binary'
       const ttLabel = { counter: '计数', timer: '计时', step: '分步', choice: '选择', text: '记录', binary: '打卡' }[tt] || '打卡'
-      const isMultiMode = ch.decompose_mode === 'time_slot' || tt === 'counter' || tt === 'timer'
+      const isMultiMode = !!t.repeatable || ch.decompose_mode === 'time_slot' || ch.task_type === 'counter' || ch.task_type === 'timer' || tt === 'counter' || tt === 'timer'
       html += '<div class="glass-card cp-task-card"><div class="cp-task-head"><span class="cp-task-day"><i class="fas fa-flag"></i>第 ' + (t.day_number || 1) + ' 天 · ' + (t.date || '') + '</span><div class="cp-task-head-right"><span class="cp-task-type-badge">' + ttLabel + '</span><span class="cp-task-pct">' + (t.progress_pct || 0) + '%</span></div></div><p class="cp-task-title">' + window.cpEsc(t.task_title || '完成今日打卡') + '</p>'
       if (t.task_description) html += '<p class="cp-task-desc">' + window.cpEsc(t.task_description) + '</p>'
       const baseline = t.dynamic_baseline || 0
@@ -242,13 +242,16 @@ window.cpViews.home = (function () {
       if (t.task_tip) html += '<p class="cp-task-tip"><i class="fas fa-lightbulb"></i><span>' + window.cpEsc(t.task_tip) + '</span></p>'
       if (t.task_steps && t.task_steps.length) html += '<div class="cp-task-steps-preview">' + t.task_steps.map(st => '<span class="cp-step-preview-tag">' + window.cpEsc(st) + '</span>').join('') + '</div>'
       html += '</div>'
-      const hasSubGoals = !!(t.sub_goals && t.sub_goals.length)
-      const isDeco = ch.decompose_mode === 'time_slot' || hasSubGoals || tt === 'step'
       html += '<div id="cp-nux-checkin"></div>'
-      if (isDeco) {
-        if (isMultiMode) html += this._multiCheckinArea(tt, t, ch)
-        else if (!t.checked_in) html += this._checkinArea(tt, t)
-        else html += '<button class="cp-btn-checkin done"><i class="fas fa-circle-check"></i> 今日已完成</button>'
+      if (isMultiMode) {
+        html += this._multiCheckinArea(tt, t, ch)
+      } else if (!t.checked_in) {
+        html += this._checkinArea(tt, t)
+      } else {
+        html += '<button class="cp-btn-checkin done"><i class="fas fa-circle-check"></i> 今日已完成</button>'
+      }
+      if (isMultiMode) {
+        html += '<div class="glass-card cp-today-viz"><div class="cp-section-title"><i class="fas fa-chart-column" style="color:var(--primary-light)"></i> 近 7 天节奏</div><div id="cp-mini-hourly-' + ch.id + '"></div></div>'
       }
       if (t.checked_in) {
         if (tt === 'text' && t.checkin_data && t.checkin_data.reflection) {
@@ -276,7 +279,6 @@ window.cpViews.home = (function () {
       const ch = s.current
       const d = this.data
       if (!ch) return ''
-      const isDecompose = ch.decompose_mode === 'time_slot' || ch.task_type === 'counter' || ch.task_type === 'timer'
       let html = '<div class="cp-report-head"><div class="cp-section-title" style="margin-bottom:0"><i class="fas fa-chart-pie" style="color:var(--primary-light)"></i> 数据报表</div>'
       html += '<button class="cp-btn-ghost cp-report-expand" onclick="cpViews.home.openReport()"><i class="fas fa-expand"></i> 完整报表</button></div>'
       html += '<div class="cp-report-quickgrid">'
@@ -286,9 +288,6 @@ window.cpViews.home = (function () {
       html += this._quickStat('连续', ch.streak || 0, '', '', '天', 'var(--primary-light)')
       html += this._quickStat('累计', ch.completed_days || 0, '/', ch.total_days || 0, '天', 'var(--primary)')
       html += '</div>'
-      if (isDecompose) {
-        html += '<div class="cp-report-mini-chart" id="cp-mini-hourly-' + ch.id + '"></div>'
-      }
       return html
     },
 

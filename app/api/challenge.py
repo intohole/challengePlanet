@@ -60,6 +60,14 @@ async def create_challenge_nl(
             "category": category,
             "duration_days": duration,
             "description": description,
+            "task_type": str(parsed.get("task_type", "binary")),
+            "target_value": float(parsed.get("target_value", 1.0)),
+            "unit": str(parsed.get("unit", "次")),
+            "direction": str(parsed.get("direction", "increase")),
+            "goal_type": str(parsed.get("goal_type", "hard")),
+            "decompose_mode": str(parsed.get("decompose_mode", "none")),
+            "slot_hours": int(parsed.get("slot_hours", 1)),
+            "slot_target_value": float(parsed.get("slot_target_value", 0.0)),
         }
         yield sse_event_dict("parsed", {"parsed": parsed_out})
         yield sse_event_dict("planning")

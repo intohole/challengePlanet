@@ -89,6 +89,29 @@
 
   V.doMini = function () { this.doCheckin('mini') }
 
+  V.doFastTap = async function (value) {
+    const ch = window.appState.current
+    const d = this.data
+    const t = d.today
+    if (!ch || !t || d.checking) return
+    const v = Number(value) || 1
+    d.checking = true
+    this.rerender()
+    try {
+      const res = await window.api.post('/challenges/' + ch.id + '/checkin', { value: v })
+      const r = res.data || res
+      const total = r.today_total || 0
+      const target = (t.today_target || ch.target_value || 1)
+      window.cpCelebrate('已记录 +' + v + ' ' + (ch.unit || '') + ' · 今日 ' + total + '/' + target)
+      await this._finishCheckin(r, ch, d, t.date)
+    } catch (e) {
+      window.cpToast(window.cpErrMsg(e, '记录失败，请重试'))
+    } finally {
+      d.checking = false
+      this.rerender()
+    }
+  }
+
   V.adjustCount = function (delta) {
     const d = this.data
     d.taskValue = Math.max(0, d.taskValue + delta)

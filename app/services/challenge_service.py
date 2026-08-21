@@ -245,9 +245,14 @@ class ChallengeService:
         task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
         remaining = max(0.0, challenge.target_value - today_total)
         feedback = today_checkins[-1].ai_feedback if today_checkins else ""
+        repeatable = (
+            challenge.decompose_mode == "time_slot"
+            or challenge.task_type in ("counter", "timer")
+            or bool(sub_goals_list)
+        )
         return {
             "challenge_id": challenge_id, "day_number": day_number, "date": today,
-            "task": task, "task_title": str(task.get("title", "")),
+            "repeatable": repeatable, "task": task, "task_title": str(task.get("title", "")),
             "task_description": str(task.get("description", "")),
             "task_tip": str(task.get("tip", "")),
             "task_type": str(task.get("task_type", challenge.task_type)),
