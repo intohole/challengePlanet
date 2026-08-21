@@ -99,6 +99,7 @@ async def run_migrations() -> None:
         await _ensure_column(conn, "checkins", "goal_type", "goal_type VARCHAR(8) DEFAULT 'hard'")
         await _ensure_column(conn, "checkins", "direction", "direction VARCHAR(8) DEFAULT 'increase'")
         await _ensure_column(conn, "checkins", "context_tag", "context_tag VARCHAR(32) DEFAULT ''")
+        await _ensure_column(conn, "checkins", "declaration", "declaration TEXT DEFAULT ''")
 
         await conn.execute(text(
             "UPDATE checkins SET timestamp = created_at WHERE timestamp IS NULL"

@@ -87,6 +87,40 @@ async def safe_declaration(ai: AIService, title: str, day_number: int) -> str:
         return ""
 
 
+async def fill_ai_after_checkin(
+    checkin_id: int,
+    user_id: str,
+    title: str,
+    day_number: int,
+    total_days: int,
+    mood: str,
+    reflection: str,
+    value: float,
+    target: float,
+    direction: str,
+    is_soft_exceeded: bool,
+) -> None:
+    try:
+        async with async_session() as session:
+            checkin = await CheckInRepository().get_by_id(session, checkin_id)
+            if checkin is None:
+                return
+            ai = AIService()
+            memory_context = await recall_context(user_id, title)
+            feedback = await safe_feedback(
+                ai, title, day_number, total_days, mood, reflection, memory_context,
+                value=value, target=target, direction=direction,
+                is_soft_exceeded=is_soft_exceeded,
+            )
+            declaration = await safe_declaration(ai, title, day_number)
+            await CheckInRepository().update(session, checkin, {
+                "ai_feedback": feedback, "declaration": declaration,
+            })
+            await session.commit()
+    except Exception as e:
+        logger.warning("async ai fill failed: %s", e)
+
+
 async def save_memory(
     user_id: str, title: str, day_number: int,
     mood: str, reflection: str, value: float,

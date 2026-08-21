@@ -14,12 +14,9 @@ from app.repositories.points_repository import ChallengeMetaRepository
 from app.repositories.squad_repository import SquadRepository
 from app.repositories.sub_goal_repository import SubGoalRepository
 from app.services.adaptive_service import evaluate_after_bad_mood_task
-from app.services.ai_service import AIService
 from app.services.checkin_background import (
+    fill_ai_after_checkin,
     generate_weekly_report_task,
-    recall_context,
-    safe_declaration,
-    safe_feedback,
     save_memory,
 )
 from app.services.mercy_service import load_valid_dates
@@ -47,7 +44,6 @@ class CheckInService:
         self._meta_repo = ChallengeMetaRepository()
         self._squad_repo = SquadRepository()
         self._points = points or PointsService()
-        self._ai = AIService()
         self._shields = ShieldService()
 
     async def do_checkin(
@@ -83,15 +79,6 @@ class CheckInService:
         is_soft_exceeded = self._is_soft_exceeded(value, target_snapshot, challenge)
         soft_exceeded_amount = max(0.0, value - target_snapshot["target_value"]) if is_soft_exceeded else 0.0
 
-        memory_context = await recall_context(user_id, challenge.title)
-        feedback = await safe_feedback(
-            self._ai, challenge.title, day_number, challenge.duration_days,
-            mood, reflection, memory_context,
-            value=value, target=target_snapshot["target_value"],
-            direction=challenge.direction, is_soft_exceeded=is_soft_exceeded,
-        )
-        declaration = await safe_declaration(self._ai, challenge.title, day_number)
-
         checkin = await self._repo.create(session, {
             "challenge_id": challenge_id, "user_id": user_id,
             "sub_goal_id": sub_goal_id, "day_number": day_number,
@@ -102,7 +89,7 @@ class CheckInService:
             "direction": challenge.direction,
             "completion_pct": completion_pct,
             "mood": mood, "reflection": reflection,
-            "ai_feedback": feedback, "context_tag": context_tag,
+            "context_tag": context_tag,
         })
 
         today_total = await self._repo.sum_value_by_date(session, challenge_id, today)
@@ -114,6 +101,12 @@ class CheckInService:
         )
         shields = await self._shields.award_milestone(session, challenge_id, streak)
         await self._maybe_award_squad_bonus(session, challenge_id, today)
+        _fire_and_forget(fill_ai_after_checkin(
+            checkin.id, user_id, challenge.title, day_number,
+            challenge.duration_days, mood, reflection, value,
+            target_snapshot["target_value"], challenge.direction,
+            is_soft_exceeded,
+        ))
         _fire_and_forget(save_memory(user_id, challenge.title, day_number, mood, reflection, value))
         if mood == "bad":
             _fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
@@ -121,10 +114,10 @@ class CheckInService:
             _fire_and_forget(generate_weekly_report_task(challenge_id))
 
         return {
-            "checkin": checkin, "ai_feedback": feedback,
+            "checkin": checkin, "ai_feedback": "",
             "points_earned": base, "chest_points": chest,
             "streak": streak, "already_checked": False,
-            "declaration": declaration, "shields": shields,
+            "declaration": "", "shields": shields,
             "today_total": today_total, "today_target": challenge.target_value,
             "dynamic_baseline": target_snapshot["target_value"],
             "remaining": remaining, "is_soft_exceeded": is_soft_exceeded,
@@ -211,16 +204,15 @@ class CheckInService:
         checkin = await self._repo.get_by_date(session, challenge_id, today)
         if checkin is None:
             raise ValueError("今日还未打卡")
-        memory_context = await recall_context(user_id, challenge.title)
-        feedback = await safe_feedback(
-            self._ai, challenge.title, checkin.day_number, challenge.duration_days,
-            mood, reflection, memory_context,
-            value=checkin.value, target=checkin.target_value,
-            direction=challenge.direction, is_soft_exceeded=False,
-        )
         updated = await self._repo.update(session, checkin, {
-            "mood": mood, "reflection": reflection, "ai_feedback": feedback,
+            "mood": mood, "reflection": reflection,
         })
+        _fire_and_forget(fill_ai_after_checkin(
+            checkin.id, user_id, challenge.title,
+            checkin.day_number, challenge.duration_days,
+            mood, reflection, checkin.value, checkin.target_value,
+            challenge.direction, False,
+        ))
         _fire_and_forget(
             save_memory(user_id, challenge.title, checkin.day_number, mood, reflection, checkin.value)
         )

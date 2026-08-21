@@ -102,7 +102,7 @@
     try {
       const res = await window.api.patch('/challenges/' + ch.id + '/checkin/today', { mood: rf.mood, reflection: rf.content })
       const r = res.data || res
-      if (r.ai_feedback) this.data.lastFeedback = r.ai_feedback
+      if (window.cpPollTodayAi && this.data.today) window.cpPollTodayAi(ch.id, this.data.today.date, 3)
       window.cpToast('心得已保存')
       rf.show = false
       await this.load()

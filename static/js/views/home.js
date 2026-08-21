@@ -105,6 +105,11 @@ window.cpViews.home = (function () {
       if (!d.declaration && today && today.checked_in) {
         try { d.declaration = localStorage.getItem('cp_decl_' + ch.id + '_' + today.date) || '' } catch (e) {}
       }
+      const apiDecl = today && today.checkin_data && today.checkin_data.declaration
+      if (apiDecl) {
+        d.declaration = apiDecl
+        try { localStorage.setItem('cp_decl_' + ch.id + '_' + today.date, apiDecl) } catch (e) {}
+      }
       const notStarted = ch.start_date && ch.start_date > window.cpTodayStr()
       if (!today && this._todayErr && !notStarted && ch.status === 'active') d.error = window.cpErrMsg(this._todayErr, '今日任务加载失败')
       else d.error = ''
@@ -332,5 +337,31 @@ window.cpViews.home = (function () {
 
     moodLabel(m) { return moodMap[m] || m },
   }
+
+  V._cacheDeclaration = function (chId, dateStr, text) {
+    try { localStorage.setItem('cp_decl_' + chId + '_' + dateStr, text) } catch (e) {}
+  }
+
+  V._pollTodayAi = async function (chId, dateStr, maxTry) {
+    for (let i = 0; i < maxTry; i++) {
+      await new Promise(r => setTimeout(r, 3500))
+      const t = await window.api.get('/challenges/' + chId + '/today').then(x => x.data || x).catch(() => null)
+      const cd = t && t.checkin_data
+      if (!t) break
+      const d = this.data
+      if (cd && cd.declaration) {
+        d.declaration = cd.declaration
+        this._cacheDeclaration(chId, dateStr, cd.declaration)
+      }
+      if (cd && cd.ai_feedback) {
+        d.lastFeedback = cd.ai_feedback
+        this.rerender()
+        return
+      }
+      this.rerender()
+    }
+  }
+
+  window.cpPollTodayAi = V._pollTodayAi.bind(V)
   return V
 })()

@@ -187,6 +187,7 @@
     }
     await this.load()
     await window.cpLoadChallenges()
+    if (!r.ai_feedback && dateStr && window.cpPollTodayAi) window.cpPollTodayAi(ch.id, dateStr, 3)
   }
 
   V.doQuickCheckin = async function () {

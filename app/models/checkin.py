@@ -36,6 +36,7 @@ class CheckIn(Base):
     mood: Mapped[str] = mapped_column(String(16), default="")
     reflection: Mapped[str] = mapped_column(Text, default="")
     ai_feedback: Mapped[str] = mapped_column(Text, default="")
+    declaration: Mapped[str] = mapped_column(Text, default="")
     context_tag: Mapped[str] = mapped_column(String(32), default="")
 
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

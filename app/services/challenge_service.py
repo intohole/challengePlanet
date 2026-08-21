@@ -270,6 +270,7 @@ class ChallengeService:
                 "mood": today_checkins[-1].mood if today_checkins else "",
                 "reflection": today_checkins[-1].reflection if today_checkins else "",
                 "ai_feedback": sanitize_coach_text(feedback),
+                "declaration": sanitize_coach_text(today_checkins[-1].declaration if today_checkins else ""),
             } if today_checkins else None,
             "today_checkins": [
                 {
