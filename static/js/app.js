@@ -31,6 +31,9 @@ const state = reactive({
   sharedConfig: { show: false, loading: false, config: null, importing: false, token: '' },
   diagnosis: { show: false, loading: false, report: null, applying: false },
   reportView: { show: false, tab: 'overview', loading: false, overview: null, hourly: null, trend: null, heatmap: null, completion: null },
+  companion: { show: false },
+  companionMeta: {},
+  companionQueue: { position: 0, wait: 0 },
 })
 window.appState = state
 
@@ -239,13 +242,26 @@ function logout() {
   window.location.href = window.cpPrefix + '/login'
 }
 
-createApp({
+const cpApp = createApp({
   setup() {
+    const companionChatRef = Vue.ref(null)
+    window.cpCompanionChatRef = companionChatRef
+    const companionQuickReplies = [
+      { icon: '💪', text: '今天有点不想坚持了' },
+      { icon: '📊', text: '帮我看看我的进度' },
+      { icon: '🔥', text: '给我点鼓励' },
+      { icon: '🧭', text: '我该怎么做才能坚持' },
+    ]
+    const riskLabel = l => ({ high: '高风险', medium: '需留意', low: '节奏稳定' }[l] || '节奏稳定')
     return {
       state,
       cpScenes: window.cpScenes,
       home: window.cpViews.home,
       cr: window.cpCreate,
+      cpCompanion: window.cpCompanion,
+      companionChatRef,
+      companionQuickReplies,
+      riskLabel,
       switchView,
       openShare,
       saveShareImage,
@@ -303,4 +319,6 @@ createApp({
       window.cpToast(window.cpErrMsg(e, '加载失败，请下拉刷新或稍后再试'))
     })
   }
-}).mount('#app')
+})
+if (window.NuxAiChat) cpApp.component('nux-ai-chat', NuxAiChat)
+cpApp.mount('#app')

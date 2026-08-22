@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.services.companion_service import assess_risk, companion_text
+from app.services.companion_service import assess_risk, companion_meta, companion_text
 
 passed = []
 failed = []
@@ -58,6 +58,21 @@ check("companion_text 引用原因", any("中断" in txt for _ in [0]) or "重�
 # 场景6: companion_text 兜底文案
 r4 = assess_risk([], 0, today)
 check("无风险兜底文案", "稳住" in companion_text(r4) or "打卡" in companion_text(r4))
+
+# 场景7: companion_meta 提取字段
+state = {
+    "challenge_id": 1, "completed_days": 3, "streak": 2, "phase": "adaptation",
+    "risk": {"level": "medium", "score": 55}, "ladder_progress_pct": 60,
+}
+meta = companion_meta(state)
+check("meta 含全部字段", all(k in meta for k in ("challenge_id", "completed_days", "streak", "phase", "risk_level", "risk_score", "ladder_progress_pct")))
+check("meta 风险等级映射", meta["risk_level"] == "medium" and meta["risk_score"] == 55)
+check("meta 阶梯进度", meta["ladder_progress_pct"] == 60)
+
+# 场景8: companion_meta 无风险时兜底 low
+meta2 = companion_meta({"challenge_id": 2, "completed_days": 0, "streak": 0, "phase": "adaptation", "ladder_progress_pct": None})
+check("meta 无风险兜底 low", meta2["risk_level"] == "low" and meta2["risk_score"] == 0)
+check("meta 无阶梯为 null", meta2["ladder_progress_pct"] is None)
 
 print("\n== 风险引擎 通过 %d / 失败 %d ==" % (len(passed), len(failed)))
 if failed:

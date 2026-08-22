@@ -6,7 +6,7 @@
 <title>星轨挑战 · AI打卡教练</title>
 <script>window.PATH_PREFIX = window.PATH_PREFIX || ''</script>
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.10.17/css/nexus-all.css">
+<link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.10.18/css/nexus-all.css">
 <link rel="stylesheet" href="/static/style.css?v=20260728">
 <link rel="stylesheet" href="/static/style-components.css?v=20260821">
 <link rel="stylesheet" href="/static/style-checkin.css?v=20260728">
@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="/static/mobile-base.css?v=20260821">
 <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
 <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.17/js/nexus-all.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.18/js/nexus-all.js"></script>
 
 
 
@@ -304,6 +304,40 @@
 </div>
 </div></transition>
 
+<transition name="modal"><div v-if="state.companion.show" class="cp-modal-overlay cp-companion-overlay" @click.self="cpCompanion.close()">
+<div class="cp-companion-panel glass">
+  <div class="cp-modal-header">
+    <h3><i class="fas fa-robot" style="color:var(--primary)"></i> 挑战伴学 · {{ state.current ? state.current.title : '' }}</h3>
+    <button class="cp-modal-close" @click="cpCompanion.close()"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div v-if="state.companionMeta.completed_days !== undefined" class="cp-companion-status">
+    <span class="cp-companion-stat"><i class="fas fa-fire"></i> 连续 {{ state.companionMeta.streak || 0 }} 天</span>
+    <span class="cp-companion-stat"><i class="fas fa-calendar-check"></i> 已完成 {{ state.companionMeta.completed_days }} 天</span>
+    <span class="cp-companion-stat" :class="'cp-risk-' + (state.companionMeta.risk_level || 'low')"><i class="fas fa-heart-pulse"></i> {{ riskLabel(state.companionMeta.risk_level) }}</span>
+    <span v-if="state.companionMeta.ladder_progress_pct !== undefined && state.companionMeta.ladder_progress_pct !== null" class="cp-companion-stat"><i class="fas fa-stairs"></i> 阶梯 {{ state.companionMeta.ladder_progress_pct }}%</span>
+  </div>
+  <div class="cp-companion-chat">
+    <nux-ai-chat
+      ref="companionChatRef"
+      :send-handler="cpCompanion.sendHandler"
+      :welcome="{ icon: '🤖', title: '我是你的挑战伴学', description: '聊聊今天的进展，我会陪你稳住节奏、给出可执行的建议～' }"
+      :quick-replies="companionQuickReplies"
+      :features="{ stopButton: true, streamFallback: false, scrollToBottomButton: true, smartScroll: true, messageCopy: true, aiTag: true }"
+      :input-config="{ enterToSend: true, autoResize: false, maxLength: 500, maxRows: 4 }"
+      :roles="{ user: { avatar: '👤', label: '我' }, assistant: { avatar: '🤖', label: '挑战伴学', aiTag: true } }"
+      placeholder="说说今天的进展或困扰..."
+    >
+      <template #input-before>
+        <div v-if="state.companionQueue.position > 0" class="cp-companion-queue">
+          <span class="cp-companion-queue-spinner"></span>
+          <span>AI 正在排队（第 {{ state.companionQueue.position }} 位，约 {{ state.companionQueue.wait }} 秒），马上就好～</span>
+        </div>
+      </template>
+    </nux-ai-chat>
+  </div>
+</div>
+</div></transition>
+
 </div>
 <script src="/static/js/galaxy.js?v=20260728"></script>
 <script src="/static/js/share-poster.js?v=20260728"></script>
@@ -319,11 +353,15 @@
 <script src="/static/js/views/squad.js?v=20260728"></script>
 <script src="/static/js/views/rank.js?v=20260728"></script>
 <script src="/static/js/views/me.js?v=20260728"></script>
-<script src="/static/js/app.js?v=20260728"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.17/js/components/nux-float-about.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.17/js/components/nux-checkin.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.18/js/components/nux-ai-chat-helpers.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.18/js/components/nux-ai-chat-template.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.18/js/components/nux-ai-chat.js"></script>
+<script src="/static/js/home-companion.js?v=20260822"></script>
+<script src="/static/js/app.js?v=20260822"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.18/js/components/nux-float-about.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.18/js/components/nux-checkin.js"></script>
 <script>window.UC_CONFIG_URL = (window.PATH_PREFIX || '') + '/api/v1/auth/config'</script>
-<script src="https://songguokr.com/nexus-ui/v2.10.17/js/components/nux-float-user-center.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.18/js/components/nux-float-user-center.js"></script>
 <script>(function(){var el=document.getElementById('app-loading');if(!el)return;var done=false;function hide(){if(done)return;done=true;el.style.opacity='0';setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},300)}var app=document.getElementById('app');if(app){function check(){if(app.getAttribute('data-v-app')!==null)hide()}check();var mo=new MutationObserver(check);mo.observe(app,{childList:true,attributes:true,subtree:true})}if(window.addEventListener)window.addEventListener('load',function(){setTimeout(function(){if(!done)hide()},100)});setTimeout(function(){if(!done)hide()},10000)})();</script>
 </body>
 </html>

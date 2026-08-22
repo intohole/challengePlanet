@@ -11,12 +11,7 @@ from nexus import get_llm_service
 from nexus.chat.context import ChatContext
 from nexus.chat.handler import BaseChatHandler
 
-from app.db.database import async_session
-from app.repositories.challenge_repository import ChallengeRepository
-from app.repositories.checkin_repository import CheckInRepository
-from app.services.companion_service import _detect_phase, assess_risk
-from app.services.goal_rule_service import is_ladder, ladder_progress_pct
-from app.services.streak_service import calc_streak, day_number_of, today_str
+from app.services.companion_service import companion_meta, load_challenge_state
 
 
 class ChallengeChatHandler(BaseChatHandler):
@@ -33,7 +28,7 @@ class ChallengeChatHandler(BaseChatHandler):
             state["error"] = "no_challenge"
             context.domain_state = state
             return
-        state.update(await _load_challenge_state(str(context.conversation.user_id), challenge_id))
+        state.update(await load_challenge_state(str(context.conversation.user_id), challenge_id))
         context.domain_state = state
         if state.get("error"):
             return
@@ -60,57 +55,12 @@ class ChallengeChatHandler(BaseChatHandler):
         yield {"type": "meta", **self.stream_meta(context)}
 
     def stream_meta(self, context: ChatContext) -> dict:
-        state = context.domain_state
-        risk = state.get("risk") or {}
-        return {
-            "challenge_id": state.get("challenge_id"),
-            "completed_days": state.get("completed_days", 0),
-            "streak": state.get("streak", 0),
-            "phase": state.get("phase", ""),
-            "risk_level": risk.get("level", "low"),
-            "risk_score": risk.get("score", 0),
-            "ladder_progress_pct": state.get("ladder_progress_pct"),
-        }
+        return companion_meta(context.domain_state)
 
     async def on_reply_complete(
         self, context: ChatContext, user_message: str, reply: str
     ) -> dict | None:
-        state = context.domain_state
-        risk = state.get("risk") or {}
-        return {
-            "challenge_id": state.get("challenge_id"),
-            "completed_days": state.get("completed_days", 0),
-            "streak": state.get("streak", 0),
-            "phase": state.get("phase", ""),
-            "risk_level": risk.get("level", "low"),
-            "risk_score": risk.get("score", 0),
-            "ladder_progress_pct": state.get("ladder_progress_pct"),
-        }
-
-
-async def _load_challenge_state(user_id: str, challenge_id: int) -> dict:
-    async with async_session() as session:
-        challenge = await ChallengeRepository().get_by_id(session, challenge_id)
-        if challenge is None or challenge.user_id != user_id:
-            return {"error": "not_found"}
-        checkins = await CheckInRepository().get_by_challenge(session, challenge_id)
-        valid = {c.date for c in checkins}
-        today = today_str()
-        streak = calc_streak(valid, today)
-        phase = _detect_phase(len(checkins))
-        risk = assess_risk(checkins, streak, today)
-        day_number = day_number_of(challenge.start_date, today) if challenge.start_date else 1
-        ladder_pct = ladder_progress_pct(challenge, day_number) if is_ladder(challenge) else None
-        return {
-            "challenge": challenge,
-            "checkins": checkins,
-            "completed_days": len(checkins),
-            "streak": streak,
-            "phase": phase,
-            "risk": risk,
-            "day_number": day_number,
-            "ladder_progress_pct": ladder_pct,
-        }
+        return companion_meta(context.domain_state)
 
 
 def _build_parts(state: dict) -> list[str]:

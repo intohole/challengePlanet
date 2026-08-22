@@ -20,6 +20,7 @@ from app.schemas.challenge import (
 from app.schemas.guidance import GuidanceResponse, ImportResponse, SharedConfigResponse
 from app.services.ai_service import AIService
 from app.services.challenge_service import ChallengeService
+from app.services.companion_service import companion_meta, load_challenge_state
 from app.services.guidance_service import GuidanceService
 
 router = APIRouter()
@@ -199,6 +200,17 @@ async def get_guidance(
     if result is None:
         raise HTTPException(status_code=404, detail="挑战不存在")
     return GuidanceResponse(**result)
+
+
+@router.get("/{challenge_id}/companion-status")
+async def get_companion_status(
+    challenge_id: int,
+    user_id: str = Depends(get_current_user_id_required),
+) -> dict:
+    state = await load_challenge_state(user_id, challenge_id)
+    if state.get("error"):
+        raise HTTPException(status_code=404, detail="挑战不存在")
+    return companion_meta({**state, "challenge_id": challenge_id})
 
 
 @router.get("/shared/{share_token}", response_model=SharedConfigResponse)

@@ -60,7 +60,7 @@ def _patch_db(monkeypatch, challenge: SimpleNamespace | None, checkins: list | N
     async def fake_get_checkins(self, session: object, challenge_id: int) -> list:
         return checkins or []
 
-    monkeypatch.setattr("app.services.challenge_chat_handler.async_session", FakeSession)
+    monkeypatch.setattr("app.services.companion_service.async_session", FakeSession)
     monkeypatch.setattr(ChallengeRepository, "get_by_id", fake_get_by_id)
     monkeypatch.setattr(CheckInRepository, "get_by_challenge", fake_get_checkins)
 

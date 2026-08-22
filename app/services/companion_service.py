@@ -2,6 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+from app.db.database import async_session
+from app.repositories.challenge_repository import ChallengeRepository
+from app.repositories.checkin_repository import CheckInRepository
+from app.services.goal_rule_service import is_ladder, ladder_progress_pct
+from app.services.streak_service import calc_streak, day_number_of, today_str
+
 _DROP_LOOKBACK = 4
 
 
@@ -92,3 +98,41 @@ def companion_text(risk: dict[str, object]) -> str:
         return "你的节奏保持得很好！今天也稳稳打卡。"
     lead = "我看到" + "、".join(reasons[:2]) + "。"
     return lead + action + "。"
+
+
+async def load_challenge_state(user_id: str, challenge_id: int) -> dict:
+    async with async_session() as session:
+        challenge = await ChallengeRepository().get_by_id(session, challenge_id)
+        if challenge is None or challenge.user_id != user_id:
+            return {"error": "not_found"}
+        checkins = await CheckInRepository().get_by_challenge(session, challenge_id)
+        valid = {c.date for c in checkins}
+        today = today_str()
+        streak = calc_streak(valid, today)
+        phase = _detect_phase(len(checkins))
+        risk = assess_risk(checkins, streak, today)
+        day_number = day_number_of(challenge.start_date, today) if challenge.start_date else 1
+        ladder_pct = ladder_progress_pct(challenge, day_number) if is_ladder(challenge) else None
+        return {
+            "challenge": challenge,
+            "checkins": checkins,
+            "completed_days": len(checkins),
+            "streak": streak,
+            "phase": phase,
+            "risk": risk,
+            "day_number": day_number,
+            "ladder_progress_pct": ladder_pct,
+        }
+
+
+def companion_meta(state: dict) -> dict:
+    risk = state.get("risk") or {}
+    return {
+        "challenge_id": state.get("challenge_id"),
+        "completed_days": state.get("completed_days", 0),
+        "streak": state.get("streak", 0),
+        "phase": state.get("phase", ""),
+        "risk_level": risk.get("level", "low"),
+        "risk_score": risk.get("score", 0),
+        "ladder_progress_pct": state.get("ladder_progress_pct"),
+    }
