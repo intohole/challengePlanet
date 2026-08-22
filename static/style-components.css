@@ -422,6 +422,10 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-companion-chat .nx-ai-chat { height: 100%; }
 .cp-companion-queue { display: flex; align-items: center; gap: 8px; padding: 8px 14px; margin: 8px 12px 0; font-size: 12px; color: var(--primary); background: rgba(139,92,246,.08); border: 1px solid rgba(139,92,246,.2); border-radius: 10px; }
 .cp-companion-queue-spinner { width: 14px; height: 14px; border: 2px solid rgba(139,92,246,.25); border-top-color: var(--primary); border-radius: 50%; animation: cp-spin .8s linear infinite; flex-shrink: 0; }
+.cp-companion-header-actions { display: flex; align-items: center; gap: 6px; }
+.cp-session-toggle.active { background: rgba(139,92,246,.14); color: var(--primary); }
+.cp-companion-sessions { max-height: 38vh; min-height: 0; overflow-y: auto; border-bottom: 1px solid var(--card-border); background: var(--card-bg, #fff); }
+.cp-companion-sessions .nx-conv-list { padding: 6px 12px 8px; }
 @keyframes cp-spin { to { transform: rotate(360deg); } }
 @media (min-width: 768px) {
   .cp-companion-overlay { padding: 24px; align-items: center; }

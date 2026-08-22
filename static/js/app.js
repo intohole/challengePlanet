@@ -31,7 +31,7 @@ const state = reactive({
   sharedConfig: { show: false, loading: false, config: null, importing: false, token: '' },
   diagnosis: { show: false, loading: false, report: null, applying: false },
   reportView: { show: false, tab: 'overview', loading: false, overview: null, hourly: null, trend: null, heatmap: null, completion: null },
-  companion: { show: false },
+  companion: { show: false, sessions: false },
   companionMeta: {},
   companionQueue: { position: 0, wait: 0 },
 })
@@ -321,4 +321,5 @@ const cpApp = createApp({
   }
 })
 if (window.NuxAiChat) cpApp.component('nux-ai-chat', NuxAiChat)
+if (window.NuxConversationList) cpApp.component('nux-conversation-list', NuxConversationList)
 cpApp.mount('#app')

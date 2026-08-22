@@ -37,6 +37,44 @@ window.cpCompanion = (function () {
     return fetch(window.cpPrefix + url, { method: method, headers: headers(), body: JSON.stringify(data || {}) }).then(check).then(function (r) { return r.json() }).then(function (d) { return d.data || d })
   }
 
+  function bindParams(url, params) {
+    if (!params) return url
+    var qs = Object.keys(params).filter(function (k) { return params[k] !== null && params[k] !== undefined && params[k] !== '' })
+      .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]) }).join('&')
+    return qs ? url + (url.indexOf('?') >= 0 ? '&' : '?') + qs : url
+  }
+
+  var conversationApi = {
+    get: function (url, params) { return getJSON(bindParams(url, params)) },
+    post: function (url, data) { return sendJSON('POST', url, data) },
+    patch: function (url, data) { return sendJSON('PATCH', url, data) },
+    delete: function (url) { return sendJSON('DELETE', url) }
+  }
+
+  function sessionFilter(res) {
+    var arr = Array.isArray(res) ? res : (res && Array.isArray(res.data) ? res.data : (res && Array.isArray(res.items) ? res.items : []))
+    var cid = currentChallengeId
+    return arr.filter(function (c) { return c.meta && String(c.meta.challenge_id) === String(cid) })
+  }
+
+  function currentId() { return conversationId }
+
+  function switchConversation(conv) {
+    if (!conv || !conv.id) return
+    conversationId = conv.id
+    window.appState.companion.sessions = false
+    loadHistory()
+  }
+
+  function onSessionCreated(conv) {
+    if (!conv || !conv.id) return
+    conversationId = conv.id
+    window.appState.companion.sessions = false
+    sendJSON('PATCH', '/api/chat/conversations/' + conversationId, { meta: { challenge_id: currentChallengeId } })
+      .then(loadHistory)
+      .catch(function () {})
+  }
+
   function readSSE(response, onData, onDone, onError) {
     var reader = response.body.getReader()
     var decoder = new TextDecoder()
@@ -80,11 +118,9 @@ window.cpCompanion = (function () {
     return getJSON('/api/chat/conversations/' + conversationId + '/messages?page_size=50').then(function (res) {
       var items = (res && res.items) || []
       var msgs = items.map(function (m) { return { id: m.id, role: m.role, content: m.content } })
-      if (msgs.length) {
-        Vue.nextTick(function () {
-          if (chatRef && chatRef.value) chatRef.value.setMessages(msgs)
-        })
-      }
+      Vue.nextTick(function () {
+        if (chatRef && chatRef.value) chatRef.value.setMessages(msgs)
+      })
     }).catch(function () {})
   }
 
@@ -117,6 +153,10 @@ window.cpCompanion = (function () {
         if (type === 'queue_ready') { setQueue(0, 0); return }
         if (type === 'delta') { accumulated += data.content || ''; callbacks.onChunk(data.content || '', accumulated); return }
         if (type === 'meta') { applyMeta(data); return }
+        if (type === 'thinking' || type === 'tool' || type === 'tool_executed' || type === 'references') {
+          if (callbacks.routeRich) callbacks.routeRich(type, data)
+          return
+        }
         if (type === 'done') { setQueue(0, 0); callbacks.onDone(accumulated); return }
         if (type === 'error') { setQueue(0, 0); callbacks.onError(new Error(data.message || 'AI服务暂时不可用')) }
       }, function () {
@@ -135,6 +175,11 @@ window.cpCompanion = (function () {
     })
   }
 
+  function toggleSessions() {
+    var s = window.appState
+    s.companion.sessions = !s.companion.sessions
+  }
+
   function open() {
     var s = window.appState
     var ch = s.current
@@ -143,6 +188,7 @@ window.cpCompanion = (function () {
     currentChallengeId = null
     chatRef = window.cpCompanionChatRef || null
     s.companion.show = true
+    s.companion.sessions = false
     s.companionMeta = {}
     getJSON('/api/v1/challenges/' + ch.id + '/companion-status').then(function (meta) {
       applyMeta(meta)
@@ -158,5 +204,5 @@ window.cpCompanion = (function () {
     window.appState.companion.show = false
   }
 
-  return { open: open, close: close, sendHandler: sendHandler, loadHistory: loadHistory }
+  return { open: open, close: close, toggleSessions: toggleSessions, sendHandler: sendHandler, loadHistory: loadHistory, currentId: currentId, conversationApi: conversationApi, sessionFilter: sessionFilter, switchConversation: switchConversation, onSessionCreated: onSessionCreated }
 })()
