@@ -8,6 +8,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from nexus.middleware import LoadingSplashMiddleware, NoCacheMiddleware
 from nexus import close_uc_sdk, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, startup_ironman, register_health_detail
+from nexus.chat.engine import ChatEngine
+from nexus.chat.router import chat_router
 from nexus.logging import get_logger, setup_logging
 from nexus.notify import async_init_notify_client
 from nexus.scheduler import get_scheduler
@@ -25,8 +27,9 @@ from app.api.sub_goal import router as sub_goal_router
 from app.api.squad import router as squad_router
 from app.config import settings
 from app.core.middleware import register_middleware
-from app.db.database import init_db, run_migrations
+from app.db.database import init_db, run_migrations, engine as db_engine
 from app.services.reminder_service import send_checkin_reminders
+from app.services.challenge_chat_handler import challenge_chat_handler
 
 setup_logging()
 logger = get_logger("challengePlanet.main")
@@ -93,6 +96,7 @@ app.include_router(points_router, prefix=API_PREFIX)
 app.include_router(portal_router, prefix=API_PREFIX)
 app.include_router(scene_router, prefix=API_PREFIX)
 app.include_router(share_router, prefix=API_PREFIX)
+app.include_router(chat_router(ChatEngine(db_engine).register("challengePlanet", challenge_chat_handler), "challengePlanet"))
 
 from nexus import create_auth_router, get_uc_sdk
 app.include_router(create_auth_router(prefix="/api/auth", uc_sdk_provider=get_uc_sdk, tags=["认证"], password_ops=True, endpoints={"config"}))
