@@ -73,23 +73,6 @@
     dust.innerHTML = html2
   }
 
-  var scene = document.querySelector('.cp-login-wrap')
-  if (scene && !reduce && !isMobile) {
-    var raf = 0
-    var tx = 0, ty = 0, cx = 0, cy = 0
-    window.addEventListener('pointermove', function (e) {
-      tx = (e.clientX / window.innerWidth - 0.5) * 26
-      ty = (e.clientY / window.innerHeight - 0.5) * 26
-      if (!raf) raf = requestAnimationFrame(tick)
-    }, { passive: true })
-    function tick() {
-      cx += (tx - cx) * 0.06
-      cy += (ty - cy) * 0.06
-      scene.style.setProperty('--px', cx.toFixed(2) + 'px')
-      scene.style.setProperty('--py', cy.toFixed(2) + 'px')
-      raf = 0
-    }
-  }
 })()
 
 const { createApp, ref, onMounted } = Vue
