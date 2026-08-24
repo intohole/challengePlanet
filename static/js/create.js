@@ -50,10 +50,15 @@ window.cpCreate = (function () {
     selectScene(sceneId) {
       const c = st()
       c.sceneTemplate = c.sceneTemplate === sceneId ? '' : sceneId
-      const scene = window.cpSceneMap[sceneId]
-      if (scene && c.sceneTemplate && !c.rawInput.trim()) {
-        c.rawInput = scene.samples[0]
+    },
+
+    scenePlaceholder() {
+      const c = st()
+      if (c.sceneTemplate) {
+        const scene = window.cpSceneMap[c.sceneTemplate]
+        if (scene && scene.samples && scene.samples.length) return '例如：' + scene.samples[0]
       }
+      return '如：42天戒烟、每天读书30分钟、21天学会Python...'
     },
 
     close() {

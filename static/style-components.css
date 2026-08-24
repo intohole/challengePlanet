@@ -58,7 +58,7 @@
 .cp-text-display-head { font-size: 12px; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
 .cp-text-display-body { font-size: 14px; line-height: 1.7; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; }
 
-.cp-fab { position: fixed; right: max(20px, calc((100vw - var(--cp-axis, 680px)) / 2 + 20px)); bottom: 80px; width: 52px; height: 52px; border-radius: 50%; border: none; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(217,119,6,.35); z-index: 50; transition: transform .2s, box-shadow .2s; }
+.cp-fab { position: fixed; right: max(20px, calc((100vw - var(--cp-axis, 680px)) / 2 + 20px)); bottom: calc(var(--nav-h) + 24px + env(safe-area-inset-bottom, 0px)); width: 52px; height: 52px; border-radius: 50%; border: none; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(217,119,6,.35); z-index: 50; transition: transform .2s, box-shadow .2s; }
 .cp-fab:active { transform: scale(.9); }
 .cp-fab:hover { box-shadow: 0 6px 28px rgba(99,91,255,.5); }
 a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important; }
