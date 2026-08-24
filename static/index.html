@@ -27,17 +27,21 @@
 <div id="app" v-cloak>
 
 <header class="cp-header">
-  <div class="cp-logo"><div class="cp-logo-icon"><i class="fas fa-meteor"></i></div><div class="cp-logo-wrap"><span class="cp-logo-text">星轨挑战</span><span class="cp-logo-tag">AI 打卡教练</span></div></div>
-  <div class="cp-header-right"><span class="cp-user-name">{{ state.nickname }}</span></div>
+  <div class="cp-header-inner">
+    <div class="cp-logo"><div class="cp-logo-icon"><i class="fas fa-meteor"></i></div><div class="cp-logo-wrap"><span class="cp-logo-text">星轨挑战</span><span class="cp-logo-tag">AI 打卡教练</span></div></div>
+    <div class="cp-header-right"><span class="cp-user-name">{{ state.nickname }}</span></div>
+  </div>
 </header>
 
 <main class="cp-main"><div class="cp-container"><div id="view-root"></div></div></main>
 
 <nav class="cp-bottom-nav">
-  <button class="cp-nav-item" :class="{active:state.view==='home'}" @click="switchView('home')"><i class="fas fa-house"></i><span>首页</span></button>
-  <button class="cp-nav-item" :class="{active:state.view==='squad'}" @click="switchView('squad')"><i class="fas fa-users"></i><span>小队</span></button>
-  <button class="cp-nav-item" :class="{active:state.view==='rank'}" @click="switchView('rank')"><i class="fas fa-trophy"></i><span>排行</span></button>
-  <button class="cp-nav-item" :class="{active:state.view==='me'}" @click="switchView('me')"><i class="fas fa-user"></i><span>我的</span></button>
+  <div class="cp-nav-inner">
+    <button class="cp-nav-item" :class="{active:state.view==='home'}" @click="switchView('home')"><i class="fas fa-house"></i><span>首页</span></button>
+    <button class="cp-nav-item" :class="{active:state.view==='squad'}" @click="switchView('squad')"><i class="fas fa-users"></i><span>小队</span></button>
+    <button class="cp-nav-item" :class="{active:state.view==='rank'}" @click="switchView('rank')"><i class="fas fa-trophy"></i><span>排行</span></button>
+    <button class="cp-nav-item" :class="{active:state.view==='me'}" @click="switchView('me')"><i class="fas fa-user"></i><span>我的</span></button>
+  </div>
 </nav>
 
 <transition name="toast"><div v-if="state.toast" class="cp-toast glass">{{ state.toast }}</div></transition>
