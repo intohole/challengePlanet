@@ -6,14 +6,15 @@
 <title>星轨挑战 · AI打卡教练</title>
 <script>window.PATH_PREFIX = window.PATH_PREFIX || ''</script>
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.10.21/css/nexus-all.css">
+<link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.10.22/css/nexus-all.css">
 <link rel="stylesheet" href="/static/style.css?v=20260728">
 <link rel="stylesheet" href="/static/style-components.css?v=20260728">
 <link rel="stylesheet" href="/static/login-extra.css?v=20260821">
 <link rel="stylesheet" href="/static/mobile-base.css?v=20260728">
 <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.21/js/nexus-all.js"></script>
-
+<script src="https://songguokr.com/nexus-ui/v2.10.22/js/nexus-all.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.22/js/components/nux-login-page.js"></script>
+<script>window.UC_CONFIG_URL = (window.PATH_PREFIX || '') + '/api/v1/auth/config'</script>
 
 
 </head>
@@ -21,68 +22,23 @@
 <div class="cp-nebula"><i class="nb1"></i><i class="nb2"></i><i class="nb3"></i><i class="nb4"></i></div>
 <div class="cp-starfield" id="starfield"></div>
 <div class="cp-dust" id="dust"></div>
-<div id="app" v-cloak class="cp-login-wrap">
-  <div class="cp-login-left">
-    <div class="glass cp-login-card">
-      <div class="cp-card-glow"></div>
-      <div class="cp-login-logo">
-        <div class="cp-login-logo-icon"><i class="fas fa-meteor"></i></div>
-        <h1>星轨挑战</h1>
-        <p>AI 打卡教练 · 陪你每一天</p>
-      </div>
-      <div class="cp-login-field" v-if="!showForgot">
-        <div>
-          <label class="cp-login-label">用户名</label>
-          <div class="cp-login-input-wrap">
-            <input v-model="form.username" type="text" class="cp-login-input" placeholder="请输入用户名" @keyup.enter="doLogin">
-            <i class="fas fa-user cp-login-input-icon"></i>
-          </div>
-        </div>
-        <div>
-          <label class="cp-login-label">密码</label>
-          <div class="cp-login-input-wrap">
-            <input v-model="form.password" type="password" class="cp-login-input" placeholder="请输入密码" @keyup.enter="doLogin">
-            <i class="fas fa-lock cp-login-input-icon"></i>
-          </div>
-        </div>
-        <p v-if="loginError" style="font-size:12px;color:var(--red);line-height:1.5;display:flex;align-items:center;gap:6px;"><i class="fas fa-circle-exclamation"></i>{{ loginError }}</p>
-        <button class="cp-login-btn" @click="doLogin" :disabled="loginLoading||!form.username.trim()||!form.password">
-          <span v-if="loginLoading" style="display:inline-flex;align-items:center;gap:8px;"><span class="cp-gen-spinner"></span>登录中...</span>
-          <span v-else>登录</span>
-        </button>
-        <div class="cp-forgot-row"><span class="cp-forgot-link" @click="openForgot">{{ forgotLoading ? '加载中…' : '忘记密码？' }}</span></div>
-      </div>
-      <div v-else-if="showForgot" class="cp-forgot-card">
-        <p v-if="forgotError" class="cp-forgot-error"><i class="fas fa-circle-exclamation"></i>{{ forgotError }}</p>
-        <div v-if="forgotComp && forgotSdk" class="cp-forgot-panel">
-          <component :is="forgotComp" :sdk="forgotSdk" @back="closeForgot" @done="closeForgot"></component>
-        </div>
-        <div v-else class="cp-forgot-loading">
-          <span class="cp-gen-spinner"></span>找回密码加载中…
-        </div>
-      </div>
+<div id="app" v-cloak>
+  <nux-login-page
+    app-name="星轨挑战"
+    app-icon="☄️"
+    slogan="AI 打卡教练 · 陪你每一天"
+    description="说一个目标，AI 帮你拆解每一天"
+    variant="split"
+    :features="loginFeatures"
+    :show-register="false"
+    :loading="isLoading"
+    :error="loginError"
+    @login="handleLogin"
+  >
+    <template #footer>
       <button v-if="hasSession" @click="continueSession" class="cp-continue-btn">继续上次挑战 →</button>
-    </div>
-  </div>
-  <div class="cp-login-right">
-    <div class="cp-orbit-deco">
-      <div class="cp-orbit-sun"></div>
-      <div class="cp-orbit-ring"><div class="cp-orbit-planet"></div></div>
-      <div class="cp-orbit-ring"><div class="cp-orbit-planet"></div></div>
-      <div class="cp-orbit-ring"><div class="cp-orbit-planet"></div></div>
-      <div class="cp-orbit-ring"><div class="cp-orbit-planet"></div></div>
-    </div>
-    <div class="cp-login-right-inner">
-      <h2>说一个目标<br>AI帮你拆解每一天</h2>
-      <p>组队互相监督，让坚持看得见</p>
-      <div class="cp-features">
-        <div class="cp-feature"><div class="cp-feature-icon purple"><i class="fas fa-globe"></i></div><div class="cp-feature-text"><div class="cp-feature-title">星系进度</div><div class="cp-feature-desc">每个挑战都是一颗行星，点亮它的每一步轨迹</div></div></div>
-        <div class="cp-feature"><div class="cp-feature-icon green"><i class="fas fa-robot"></i></div><div class="cp-feature-text"><div class="cp-feature-title">AI教练</div><div class="cp-feature-desc">自动生成每日计划，打卡后还有暖心反馈</div></div></div>
-        <div class="cp-feature"><div class="cp-feature-icon amber"><i class="fas fa-users"></i></div><div class="cp-feature-text"><div class="cp-feature-title">小队互相监督</div><div class="cp-feature-desc">邀请好友组队，全员打卡人人加分</div></div></div>
-        <div class="cp-feature"><div class="cp-feature-icon pink"><i class="fas fa-gift"></i></div><div class="cp-feature-text"><div class="cp-feature-title">积分宝箱</div><div class="cp-feature-desc">连续打卡积分递增，随机掉落惊喜宝箱</div></div></div>
-      </div>
-    </div>
-  </div>
+    </template>
+  </nux-login-page>
 </div>
 <script>
 ;(function () {
@@ -117,8 +73,7 @@
   }
 
   var scene = document.querySelector('.cp-login-wrap')
-  var rightScene = document.querySelector('.cp-login-right')
-  if (scene && rightScene && !reduce && !isMobile) {
+  if (scene && !reduce && !isMobile) {
     var raf = 0
     var tx = 0, ty = 0, cx = 0, cy = 0
     window.addEventListener('pointermove', function (e) {
@@ -138,85 +93,42 @@
 
 const { createApp, ref, onMounted } = Vue
 window.api = new NexusApi({ baseUrl: (window.PATH_PREFIX || '') + '/api/v1', tokenKey: 'uc_access_token' })
-createApp({
+const LoginApp = createApp({
   setup() {
-    const form = ref({ username: '', password: '' })
-    const loginLoading = ref(false)
+    const isLoading = ref(false)
     const loginError = ref('')
     const hasSession = ref(false)
-    const showForgot = ref(false)
-    const forgotSdk = ref(null)
-    const forgotComp = Vue.shallowRef(window.NuxForgotPassword || null)
-    const forgotLoading = ref(false)
-    const forgotError = ref('')
+    const loginFeatures = [
+      { icon: '🌌', title: '星系进度', desc: '每个挑战都是一颗行星，点亮它的每一步轨迹' },
+      { icon: '🤖', title: 'AI教练', desc: '自动生成每日计划，打卡后还有暖心反馈' },
+      { icon: '👥', title: '小队互相监督', desc: '邀请好友组队，全员打卡人人加分' },
+      { icon: '🎁', title: '积分宝箱', desc: '连续打卡积分递增，随机掉落惊喜宝箱' }
+    ]
     onMounted(() => { if (localStorage.getItem('uc_access_token')) hasSession.value = true })
-    async function doLogin() {
-      if (!form.value.username.trim() || !form.value.password) return
-      loginLoading.value = true
+    async function handleLogin(form) {
+      if (!form || !form.username || !form.password) { loginError.value = '请输入用户名和密码'; return }
       loginError.value = ''
+      isLoading.value = true
       try {
-        const res = await window.api.post('/auth/login', { username: form.value.username.trim(), password: form.value.password })
+        const res = await window.api.post('/auth/login', { username: form.username.trim(), password: form.password })
         const d = res.data || res
         if (!d.access_token) throw new Error('登录失败：未获取到令牌')
         localStorage.setItem('uc_access_token', d.access_token)
         if (d.refresh_token) localStorage.setItem('uc_refresh_token', d.refresh_token)
         const user = d.user || {}
-        localStorage.setItem('cp_user_id', String(user.id || user.user_id || user.username || form.value.username.trim()))
-        localStorage.setItem('cp_nickname', String(user.nickname || user.name || user.username || form.value.username.trim()))
+        localStorage.setItem('cp_user_id', String(user.id || user.user_id || user.username || form.username.trim()))
+        localStorage.setItem('cp_nickname', String(user.nickname || user.name || user.username || form.username.trim()))
         window.location.href = (window.PATH_PREFIX || '') + '/'
       } catch (e) {
         loginError.value = (window.mapHttpError && e.name === 'NexusApiError') ? window.mapHttpError(e) : (e.message || '登录失败，请检查用户名和密码')
-      } finally { loginLoading.value = false }
+      } finally { isLoading.value = false }
     }
     function continueSession() { window.location.href = (window.PATH_PREFIX || '') + '/' }
-    function notify(msg, type) {
-      if (window.showToast) { window.showToast(msg, type); return }
-      forgotError.value = msg
-    }
-    async function openForgot() {
-      if (forgotLoading.value) return
-      forgotLoading.value = true
-      forgotError.value = ''
-      const base = 'https://songguokr.com/nexus-ui/v2.10.21'
-      const loadScript = (url) => new Promise((resolve, reject) => {
-        const s = document.createElement('script')
-        s.src = url; s.onload = resolve; s.onerror = reject
-        document.head.appendChild(s)
-      })
-      try {
-        let sdk = window.ucSDK || window.__UC_SDK__ || null
-        if (!sdk) {
-          if (!window.UserCenterSDK) {
-            try { await loadScript(base + '/js/user-center-sdk.js') } catch (e) {}
-          }
-          if (!window.ucConfig || !window.ucConfig.base_url) {
-            try {
-              const url = window.UC_CONFIG_URL || (window.PATH_PREFIX || '') + '/api/auth/config'
-              const res = await fetch(url, { headers: { 'Accept': 'application/json' } })
-              if (res.ok) window.ucConfig = await res.json()
-            } catch (e) {}
-            if (!window.ucConfig) window.ucConfig = {}
-          }
-          if (window.UserCenterSDK && typeof window.UserCenterSDK.ensureGlobalSdk === 'function') {
-            sdk = window.UserCenterSDK.ensureGlobalSdk()
-          }
-        }
-        if (!sdk) { notify('用户中心暂不可用，请稍后再试', 'warning'); return }
-        forgotSdk.value = sdk
-        if (!window.NuxForgotPassword) {
-          try { await loadScript(base + '/js/components/nux-forgot-password.js') } catch (e) {}
-          forgotComp.value = window.NuxForgotPassword || null
-        }
-        if (!forgotComp.value) { notify('找回密码组件加载失败', 'error'); return }
-        showForgot.value = true
-      } catch (e) {
-        notify('找回密码暂不可用，请稍后再试', 'error')
-      } finally { forgotLoading.value = false }
-    }
-    function closeForgot() { showForgot.value = false; forgotError.value = '' }
-    return { form, loginLoading, loginError, hasSession, doLogin, continueSession, showForgot, forgotSdk, forgotComp, forgotLoading, forgotError, openForgot, closeForgot }
+    return { isLoading, loginError, hasSession, loginFeatures, handleLogin, continueSession }
   }
-}).mount('#app')
+})
+LoginApp.component('nux-login-page', window.NuxLoginPage)
+LoginApp.mount('#app')
 </script>
 </body>
 </html>
