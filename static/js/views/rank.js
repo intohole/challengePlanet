@@ -21,7 +21,7 @@ window.cpViews.rank = (function () {
           html += '<div class="cp-rank-row' + (me ? ' self' : '') + '"><div class="cp-rank-no' + noCls + '">' + (i + 1) + '</div><div class="cp-rank-name">' + window.cpEsc(r.nickname || '挑战者') + (me ? '（我）' : '') + '</div><div class="cp-rank-pts">' + (r.points || 0) + ' 分</div></div>'
         })
       }
-      html += '<div class="cp-rule-card"><i class="fas fa-circle-info" style="color:var(--amber)"></i> 榜单每周一重置。连续打卡积分逐日递增（第1天 +6 分 … 第7天起 +12 分），还有随机惊喜宝箱 🎁。</div>'
+      html += '<div class="cp-rule-card"><i class="fas fa-circle-info cp-ic-amber"></i> 榜单每周一重置。连续打卡积分逐日递增（第1天 +6 分 … 第7天起 +12 分），还有随机惊喜宝箱 🎁。</div>'
       html += '</div>'
       el.innerHTML = html
     },

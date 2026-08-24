@@ -217,3 +217,16 @@ img, video, canvas { max-width: 100%; height: auto; }
   :root { --cp-axis: min(1120px, calc(100vw - 96px)); }
   .cp-nav-inner { max-width: 480px; }
 }
+
+.cp-pad16 { padding: 16px }
+.cp-ic-primary { color: var(--primary-light) }
+.cp-ic-emerald { color: var(--emerald) }
+.cp-ic-amber { color: var(--amber) }
+.cp-note-xs { font-size: 12px; color: var(--text-muted) }
+.cp-empty-tip { font-size: 13px; color: var(--text-muted); margin: 12px 0 }
+.cp-block { width: 100% }
+.cp-btn-inline { width: auto; padding: 11px 18px }
+.cp-input-row { display: flex; gap: 8px }
+.cp-input-row .cp-field { flex: 1; min-width: 0 }
+.cp-mb0 { margin-bottom: 0 }
+.cp-row-center { display: flex; justify-content: center }

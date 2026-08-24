@@ -51,8 +51,8 @@ window.cpViews.squad = (function () {
     _empty() {
       const d = this.data
       return '<div class="glass-card cp-empty"><div class="cp-empty-icon">👥</div><h2>还没有小队</h2><p>创建一个战队，或输入邀请码加入好友的小队</p></div>' +
-        '<div class="glass-card" style="padding:16px"><div class="cp-form-row"><label class="cp-label">创建小队</label><div style="display:flex;gap:8px"><input class="cp-field" placeholder="给小队起个名字" value="' + window.cpEsc(d.nameInput) + '" oninput="cpViews.squad.data.nameInput=this.value" onkeyup="if(event.key===\'Enter\')cpViews.squad.createSquad()"><button class="cp-btn-primary" style="width:auto;padding:11px 18px" onclick="cpViews.squad.createSquad()">创建</button></div></div>' +
-        '<div class="cp-form-row" style="margin-bottom:0"><label class="cp-label">加入小队</label><div style="display:flex;gap:8px"><input class="cp-field" placeholder="输入6位邀请码" value="' + window.cpEsc(d.codeInput) + '" oninput="cpViews.squad.data.codeInput=this.value" onkeyup="if(event.key===\'Enter\')cpViews.squad.joinSquad()"><button class="cp-btn-ghost" style="padding:11px 18px" onclick="cpViews.squad.joinSquad()">加入</button></div></div></div>'
+        '<div class="glass-card cp-pad16"><div class="cp-form-row"><label class="cp-label">创建小队</label><div class="cp-input-row"><input class="cp-field" placeholder="给小队起个名字" value="' + window.cpEsc(d.nameInput) + '" oninput="cpViews.squad.data.nameInput=this.value" onkeyup="if(event.key===\'Enter\')cpViews.squad.createSquad()"><button class="cp-btn-primary cp-btn-inline" onclick="cpViews.squad.createSquad()">创建</button></div></div>' +
+        '<div class="cp-form-row cp-mb0"><label class="cp-label">加入小队</label><div class="cp-input-row"><input class="cp-field" placeholder="输入6位邀请码" value="' + window.cpEsc(d.codeInput) + '" oninput="cpViews.squad.data.codeInput=this.value" onkeyup="if(event.key===\'Enter\')cpViews.squad.joinSquad()"><button class="cp-btn-ghost cp-btn-inline" onclick="cpViews.squad.joinSquad()">加入</button></div></div></div>'
     },
 
     _main() {
@@ -66,8 +66,8 @@ window.cpViews.squad = (function () {
         })
         html += '</div>'
       }
-      html += '<button class="cp-invite" onclick="cpViews.squad.copyInvite()"><i class="fas fa-ticket" style="color:var(--primary-light)"></i><code>' + window.cpEsc(sq.invite_code || '------') + '</code><span style="font-size:12px;color:var(--text-muted)">点击复制邀请码</span></button>'
-      html += '<div class="cp-rule-card"><i class="fas fa-users" style="color:var(--amber)"></i> 小队规则：全队都完成当日打卡，每人额外 +5 分。队友未打卡时可以提醒TA，每人每天限提醒1次。</div>'
+      html += '<button class="cp-invite" onclick="cpViews.squad.copyInvite()"><i class="fas fa-ticket cp-ic-primary"></i><code>' + window.cpEsc(sq.invite_code || '------') + '</code><span class="cp-note-xs">点击复制邀请码</span></button>'
+      html += '<div class="cp-rule-card"><i class="fas fa-users cp-ic-amber"></i> 小队规则：全队都完成当日打卡，每人额外 +5 分。队友未打卡时可以提醒TA，每人每天限提醒1次。</div>'
       if (d.board && d.board.members) {
         html += '<div class="cp-member-grid">'
         d.board.members.forEach(m => {
@@ -81,7 +81,7 @@ window.cpViews.squad = (function () {
       } else {
         html += this._skeleton()
       }
-      html += '<div style="display:flex;justify-content:center"><button class="cp-btn-ghost danger" onclick="cpViews.squad.leaveSquad()"><i class="fas fa-right-from-bracket"></i> 退出小队</button></div>'
+      html += '<div class="cp-row-center"><button class="cp-btn-ghost danger" onclick="cpViews.squad.leaveSquad()"><i class="fas fa-right-from-bracket"></i> 退出小队</button></div>'
       return html
     },
 
