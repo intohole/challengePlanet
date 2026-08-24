@@ -6,15 +6,15 @@
 <title>星轨挑战 · AI打卡教练</title>
 <script>window.PATH_PREFIX = window.PATH_PREFIX || ''</script>
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.10.26/css/nexus-all.css">
+<link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.10.27/css/nexus-all.css">
 <link rel="stylesheet" href="/static/style.css?v=20260728">
 <link rel="stylesheet" href="/static/style-components.css?v=20260728">
 <link rel="stylesheet" href="/static/login-extra.css?v=20260821">
 <link rel="stylesheet" href="/static/mobile-base.css?v=20260728">
 <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.26/js/nexus-all.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.26/js/components/nux-app-switcher.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.26/js/components/nux-login-page.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.27/js/nexus-all.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.27/js/components/nux-app-switcher.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.27/js/components/nux-login-page.js"></script>
 <script>window.UC_CONFIG_URL = (window.PATH_PREFIX || '') + '/api/v1/auth/config'</script>
 
 
@@ -31,10 +31,11 @@
     description="说一个目标，AI 帮你拆解每一天"
     variant="split"
     :features="loginFeatures"
-    :show-register="false"
+    :show-register="true"
     :loading="isLoading"
     :error="loginError"
     @login="handleLogin"
+    @register="handleRegister"
   >
     <template #footer>
       <button v-if="hasSession" @click="continueSession" class="cp-continue-btn">继续上次挑战 →</button>
@@ -125,7 +126,26 @@ const LoginApp = createApp({
       } finally { isLoading.value = false }
     }
     function continueSession() { window.location.href = (window.PATH_PREFIX || '') + '/' }
-    return { isLoading, loginError, hasSession, loginFeatures, handleLogin, continueSession }
+    async function handleRegister(form) {
+      if (!form || !form.username || !form.password) { loginError.value = '请输入用户名和密码'; return }
+      if (form.password !== form.confirmPassword) { loginError.value = '两次输入的密码不一致'; return }
+      loginError.value = ''
+      isLoading.value = true
+      try {
+        const res = await window.api.post('/auth/register', { username: form.username.trim(), password: form.password, email: (form.email || '').trim() })
+        const d = res.data || res
+        if (!d.access_token) throw new Error('注册失败：未获取到令牌')
+        localStorage.setItem('uc_access_token', d.access_token)
+        if (d.refresh_token) localStorage.setItem('uc_refresh_token', d.refresh_token)
+        const user = d.user || {}
+        localStorage.setItem('cp_user_id', String(user.id || user.user_id || user.username || form.username.trim()))
+        localStorage.setItem('cp_nickname', String(user.nickname || user.name || user.username || form.username.trim()))
+        window.location.href = (window.PATH_PREFIX || '') + '/'
+      } catch (e) {
+        loginError.value = (window.mapHttpError && e.name === 'NexusApiError') ? window.mapHttpError(e) : (e.message || '注册失败，请稍后重试')
+      } finally { isLoading.value = false }
+    }
+    return { isLoading, loginError, hasSession, loginFeatures, handleLogin, handleRegister, continueSession }
   }
 })
 LoginApp.component('nux-login-page', window.NuxLoginPage)
