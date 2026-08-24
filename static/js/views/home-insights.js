@@ -262,13 +262,9 @@
     if (!g) return ''
     let h = '<div class="glass-card cp-guidance-card">'
     h += '<div class="cp-guidance-head">'
-    h += '<div class="cp-phase-badge" style="background:' + (g.phase_color || '#D97706') + '20;color:' + (g.phase_color || '#D97706') + ';border-color:' + (g.phase_color || '#D97706') + '40">'
+    h += '<div class="cp-phase-badge" style="background:' + (g.phase_color || '#8B5CF6') + '20;color:' + (g.phase_color || '#8B5CF6') + ';border-color:' + (g.phase_color || '#8B5CF6') + '40">'
     h += '<span class="cp-phase-icon">' + (g.phase_icon || '🌱') + '</span>'
     h += '<div class="cp-phase-info"><div class="cp-phase-name">' + window.cpEsc(g.phase_name || '适应期') + '</div><div class="cp-phase-range">' + window.cpEsc(g.phase_range || '第1-7天') + '</div></div>'
-    h += '</div>'
-    if (g.percentile > 0) {
-      h += '<div class="cp-percentile"><span class="cp-percentile-num">' + g.percentile + '%</span><span class="cp-percentile-label">超越用户</span></div>'
-    }
     h += '</div>'
     if (g.encouragement) {
       h += '<p class="cp-guidance-encourage">' + window.cpEsc(g.encouragement) + '</p>'
@@ -278,18 +274,6 @@
     }
     if (g.phase_tip) {
       h += '<div class="cp-guidance-tip"><i class="fas fa-lightbulb"></i><span>' + window.cpEsc(g.phase_tip) + '</span></div>'
-    }
-    const b = g.benchmark
-    if (b) {
-      h += '<div class="cp-benchmark">'
-      h += '<div class="cp-benchmark-title"><i class="fas fa-chart-line"></i> 行业参考数据</div>'
-      h += '<div class="cp-benchmark-grid">'
-      h += '<div class="cp-benchmark-item"><div class="cp-benchmark-val">' + (b.avg_streak || 0) + '</div><div class="cp-benchmark-label">平均连续天数</div></div>'
-      h += '<div class="cp-benchmark-item"><div class="cp-benchmark-val">' + (b.avg_completion_rate || 0) + '%</div><div class="cp-benchmark-label">平均完成率</div></div>'
-      h += '<div class="cp-benchmark-item"><div class="cp-benchmark-val">第' + (b.drop_off_day || 0) + '天</div><div class="cp-benchmark-label">放弃高峰</div></div>'
-      h += '</div>'
-      if (b.scene_tip) h += '<p class="cp-benchmark-tip">' + window.cpEsc(b.scene_tip) + '</p>'
-      h += '</div>'
     }
     const m = g.next_milestone
     if (m && m.days_to_go > 0) {

@@ -5,7 +5,7 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, collapsedSections: {} },
+    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today' },
     _ignite: null,
 
     render(el) {
@@ -78,7 +78,7 @@ window.cpViews.home = (function () {
       if (!ch) { this.loadedFor = null; return }
       if (this.loadedFor !== ch.id) {
         this.loadedFor = ch.id
-        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, collapsedSections: {} }
+        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: this.data.activeTab || 'today' }
         this.rerender()
       }
       const safe = p => p.catch(() => null)
@@ -132,18 +132,10 @@ window.cpViews.home = (function () {
       return html
     },
 
-    _collapsible(id, title, icon, iconColor, content, defaultOpen) {
-      const isOpen = this.data.collapsedSections[id] !== undefined ? this.data.collapsedSections[id] : (defaultOpen !== false)
-      return '<div class="glass-card" style="padding:14px">' +
-        '<div class="cp-collapsible-head" onclick="cpViews.home.toggleSection(\'' + id + '\')">' +
-        '<div class="cp-section-title" style="margin-bottom:0"><i class="fas ' + icon + '" style="color:' + iconColor + '"></i> ' + title + '</div>' +
-        '<i class="fas fa-chevron-' + (isOpen ? 'up' : 'down') + '" style="color:var(--text-muted);font-size:12px;transition:transform .2s"></i></div>' +
-        (isOpen ? '<div class="cp-collapsible-body" style="margin-top:12px">' + content + '</div>' : '') + '</div>'
-    },
-
-    toggleSection(id) {
-      const d = this.data.collapsedSections
-      d[id] = !d[id]
+    switchTab(tab) {
+      const d = this.data
+      if (d.activeTab === tab) return
+      d.activeTab = tab
       this.rerender()
     },
 
@@ -160,33 +152,52 @@ window.cpViews.home = (function () {
         html += '</div>'
       }
 
+      html += '<div class="glass-card cp-hero cp-ch-titlebar"><div class="cp-ch-title-main"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(ch.title) + '</div>' + (ch.total_days ? '<span class="cp-ch-title-meta"><i class="fas fa-flag-checkered"></i> ' + (ch.completed_days || 0) + '/' + ch.total_days + ' 天</span>' : '') + '</div><div class="cp-hero-actions">' + (ch.share_token ? '<button class="cp-hero-share-btn" onclick="cpViews.home.openShareConfig()"><i class="fas fa-link"></i></button>' : '') + '<button class="cp-hero-share-btn cp-hero-companion-btn" onclick="cpCompanion.open()"><i class="fas fa-robot"></i></button></div></div>'
+
+      html += '<div class="cp-tabs"><button class="cp-tab' + (d.activeTab === 'today' ? ' active' : '') + '" onclick="cpViews.home.switchTab(\'today\')"><i class="fas fa-fire"></i><span>今日</span></button><button class="cp-tab' + (d.activeTab === 'progress' ? ' active' : '') + '" onclick="cpViews.home.switchTab(\'progress\')"><i class="fas fa-chart-line"></i><span>进度</span></button><button class="cp-tab' + (d.activeTab === 'insight' ? ' active' : '') + '" onclick="cpViews.home.switchTab(\'insight\')"><i class="fas fa-lightbulb"></i><span>洞察</span></button></div>'
+
+      if (d.loading && !d.today) return html + this._skeleton()
+      if (d.error) html += '<div class="cp-error-box"><i class="fas fa-circle-exclamation"></i><span>' + window.cpEsc(d.error) + '</span><button class="cp-btn-ghost" onclick="cpViews.home.load()">重试</button></div>'
+      if (d.activeTab === 'progress') html += this._tabProgress(s)
+      else if (d.activeTab === 'insight') html += this._tabInsight(s)
+      else html += this._tabToday(s)
+      html += '<button class="cp-fab" onclick="cpCreate.open()"><i class="fas fa-plus"></i></button>'
+      return html
+    },
+
+    _tabToday(s) {
+      const d = this.data
+      let html = ''
       if (d.guidance && d.guidance.is_at_risk) {
         html += '<div class="cp-risk-banner"><i class="fas fa-triangle-exclamation"></i><span>中断了！今天重新打卡，节奏就能恢复</span><button class="cp-risk-btn" onclick="cpViews.home.load()">立即打卡</button></div>'
       }
+      html += this._taskArea(s)
+      html += this._todayTimeline(s)
+      return html
+    },
 
-      html += '<div class="glass-card cp-hero cp-nebula-card"><div class="cp-hero-top"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(ch.title) + '</div><div class="cp-hero-actions">' + (ch.share_token ? '<button class="cp-hero-share-btn" onclick="cpViews.home.openShareConfig()"><i class="fas fa-link"></i></button>' : '') + '<button class="cp-hero-share-btn cp-hero-companion-btn" onclick="cpCompanion.open()"><i class="fas fa-robot"></i></button></div></div><div class="cp-hero-date">' + (ch.start_date || '?') + ' → ' + (ch.end_date || '?') + '</div>'
-      const scene = window.cpSceneMap[ch.scene_template]
-      if (scene) html += '<div class="cp-hero-scene"><span class="cp-hero-scene-icon">' + scene.icon + '</span><span class="cp-hero-scene-name">' + window.cpEsc(scene.name) + '</span><span class="cp-hero-scene-type">' + ({ counter: '计数打卡', timer: '计时打卡', text: '文字记录', step: '分步打卡', binary: '每日打卡' }[scene.task_type] || '打卡') + '</span></div>'
+    _tabProgress(s) {
+      const ch = s.current
+      const d = this.data
+      const tt = (d.today && d.today.task_type) || ch.task_type || 'binary'
+      const isMultiMode = !!(d.today && d.today.repeatable) || ch.decompose_mode === 'time_slot' || ch.task_type === 'counter' || ch.task_type === 'timer' || tt === 'counter' || tt === 'timer'
+      let html = '<div class="glass-card cp-hero cp-progress-card">'
       html += '<div class="cp-hero-progress"><div class="cp-hero-progress-bar"><div class="cp-hero-progress-fill" style="width:' + (ch.total_days ? Math.round((ch.completed_days || 0) / ch.total_days * 100) : 0) + '%"></div></div><span class="cp-hero-progress-text">' + (ch.total_days ? Math.round((ch.completed_days || 0) / ch.total_days * 100) : 0) + '%</span></div>'
       html += '<div class="cp-galaxy-wrap"><div id="galaxy-box"></div></div></div>'
+      html += '<div class="glass-card cp-progress-stats">' + this._reportContent(s) + '</div>'
+      if (isMultiMode) html += '<div class="glass-card cp-today-viz"><div class="cp-section-title"><i class="fas fa-chart-column" style="color:var(--primary-light)"></i> 近 7 天节奏</div><div id="cp-mini-hourly-' + ch.id + '"></div></div>'
+      return html
+    },
 
-      if (d.loading && !d.today) return html + this._skeleton()
-
-      html += this._taskArea(s)
-      if (d.error) html += '<div class="cp-error-box"><i class="fas fa-circle-exclamation"></i><span>' + window.cpEsc(d.error) + '</span><button class="cp-btn-ghost" onclick="cpViews.home.load()">重试</button></div>'
+    _tabInsight(s) {
+      const d = this.data
+      let html = ''
       if (d.adaptive) html += this._adaptiveCard(d.adaptive)
-      if (d.guidance) html += this._guidanceCard(d.guidance)
-
       if (d.mercy && (d.mercy.missed_dates || []).length) html += this._diagEntry(d.mercy.missed_dates.length)
-
-      html += this._todayTimeline(s)
-      html += this._collapsible('reports', '数据报表', 'fa-chart-pie', 'var(--primary-light)', this._reportContent(s))
-
       if (d.weekly && d.weekly.content) {
-        html += this._collapsible('weekly', '本周洞察', 'fa-lightbulb', 'var(--amber)', '<div class="cp-weekly-md nx-md" id="' + this._pushMd(d.weekly.content) + '"></div><div class="cp-weekly-meta">本周进度 ' + (d.weekly.week_checkins || 0) + '/' + (d.weekly.week_days || 7) + ' 天</div>')
+        html += '<div class="glass-card" style="padding:14px"><div class="cp-section-title" style="margin-bottom:8px"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> 本周洞察</div><div class="cp-weekly-md nx-md" id="' + this._pushMd(d.weekly.content) + '"></div><div class="cp-weekly-meta">本周进度 ' + (d.weekly.week_checkins || 0) + '/' + (d.weekly.week_days || 7) + ' 天</div></div>'
       }
-
-      html += '<button class="cp-fab" onclick="cpCreate.open()"><i class="fas fa-plus"></i></button>'
+      if (d.guidance) html += this._guidanceCard(d.guidance)
       return html
     },
 
@@ -255,9 +266,6 @@ window.cpViews.home = (function () {
         html += this._checkinArea(tt, t)
       } else {
         html += '<button class="cp-btn-checkin done"><i class="fas fa-circle-check"></i> 今日已完成</button>'
-      }
-      if (isMultiMode) {
-        html += '<div class="glass-card cp-today-viz"><div class="cp-section-title"><i class="fas fa-chart-column" style="color:var(--primary-light)"></i> 近 7 天节奏</div><div id="cp-mini-hourly-' + ch.id + '"></div></div>'
       }
       if (t.checked_in) {
         if (tt === 'text' && t.checkin_data && t.checkin_data.reflection) {

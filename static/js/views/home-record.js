@@ -207,7 +207,6 @@
       if (subGoal) html += '<div class="cp-timeline-sub">' + window.cpEsc(subGoal.title) + '</div>'
       if (c.mood) html += '<div class="cp-timeline-mood">' + ({ good: '😊', normal: '😐', bad: '😔' }[c.mood] || '') + '</div>'
       if (c.reflection) html += '<div class="cp-timeline-reflection">' + window.cpEsc(c.reflection) + '</div>'
-      if (c.ai_feedback) html += '<div class="cp-timeline-feedback"><i class="fas fa-robot"></i><div class="cp-md nx-md" id="' + this._pushMd(c.ai_feedback) + '"></div></div>'
       html += '</div></div>'
     })
     html += '</div></div>'
