@@ -193,5 +193,6 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 }
 
 @media (min-width: 1024px) {
-  :root { --cp-axis: 720px; }
+  :root { --cp-axis: min(1120px, calc(100vw - 96px)); }
+  .cp-nav-inner { max-width: 480px; }
 }
