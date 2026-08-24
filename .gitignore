@@ -16,3 +16,4 @@ data/*.sqlite
 .DS_Store
 node_modules/
 logs/
+tests/browser_shots/
