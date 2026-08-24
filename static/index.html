@@ -58,7 +58,7 @@
 
     <div v-if="state.create.step===1">
       <div class="cp-form-row">
-        <label class="cp-label">选择场景（决定打卡方式和难度曲线）</label>
+        <label class="cp-label">想坚持什么？选个方向</label>
         <div class="cp-scene-grid">
           <button v-for="s in cpScenes" :key="s.id" class="cp-scene-card" :class="{active: state.create.sceneTemplate===s.id}" @click="cr.selectScene(s.id)">
             <span class="cp-scene-icon">{{ s.icon }}</span>
@@ -66,11 +66,12 @@
             <span class="cp-scene-type">{{ s.task_type === 'counter' ? '计数' : s.task_type === 'timer' ? '计时' : s.task_type === 'text' ? '记录' : s.task_type === 'step' ? '分步' : '打卡' }}</span>
           </button>
         </div>
+        <div v-if="cr.sceneNote()" class="cp-scene-note"><span>{{ cr.sceneNote().icon }}</span><span><b>{{ cr.sceneNote().name }}</b> · {{ cr.sceneNote().desc }}</span></div>
       </div>
       <div class="cp-form-row">
-        <label class="cp-label">描述你的挑战目标</label>
+        <label class="cp-label">一句话说清你的目标</label>
         <textarea v-model="state.create.rawInput" class="cp-field" rows="3" style="resize:none;font-size:16px;line-height:1.6" :placeholder="cr.scenePlaceholder()"></textarea>
-        <p class="cp-create-tip">说得越具体，AI 规划越贴心</p>
+        <div class="cp-sample-chips"><span v-for="s in cr.sceneExamples()" :key="s" class="cp-sample-chip" @click="cr.fillSample(s)">{{ s }}</span></div>
       </div>
       <div class="cp-form-row">
         <label class="cp-label">开始日期</label>
@@ -120,6 +121,7 @@
           <span v-for="i in 12" :key="i" class="cp-gen-dot" :class="{on: genRatio() >= i/12}"></span>
         </div>
         <div class="cp-gen-status-line"><span class="cp-typing-dots"><i></i><i></i><i></i></span><span>{{ genStatus() }}</span></div>
+        <div v-if="state.create.genTitle" class="cp-gen-task"><b>{{ state.create.genDay ? '第 ' + state.create.genDay + ' 天' : '正在设计' }}</b><span>{{ state.create.genTitle }}</span></div>
         <div class="cp-gen-skel">
           <div v-for="k in 3" :key="k" class="cp-gen-skel-card" :style="{opacity: (genRatio() > k*0.3 ? 1 : 0.35)}">
             <div class="cp-gen-skel-dot"></div>
@@ -129,12 +131,26 @@
       </div>
       <div v-if="state.create.error" class="cp-error-box" style="margin-bottom:12px"><i class="fas fa-circle-exclamation"></i><span>{{ state.create.error }}</span></div>
       <template v-if="state.create.phase==='preview'">
+        <div class="cp-play-card" v-if="cr.playMode()">
+          <div class="cp-play-head">
+            <span class="cp-play-type">{{ cr.playMode().typeLabel }}</span>
+            <span class="cp-play-goal">{{ cr.playMode().goalText }}</span>
+            <span class="cp-play-dir">{{ cr.playMode().dirText }}</span>
+          </div>
+          <div v-if="cr.diffSvg()" class="cp-play-curve-wrap">
+            <div v-html="cr.diffSvg()"></div>
+            <div class="cp-phase-labels"><span>适应期</span><span>巩固期</span><span>维持期</span></div>
+          </div>
+        </div>
         <div class="cp-miles" v-if="milestoneNodes().length">
           <span class="cp-miles-title">旅程节奏</span>
           <span class="cp-miles-chip" v-for="mn in milestoneNodes()" :key="mn.day"><b>{{ mn.day }}</b>天 · {{ mn.label }}</span>
         </div>
+        <div class="cp-plan-toolbar" v-if="state.create.plan.length > 8">
+          <button class="cp-plan-toggle" @click="cr.togglePlan()"><i class="fas" :class="cr.expandPlan ? 'fa-chevron-up' : 'fa-chevron-down'"></i> {{ cr.expandPlan ? '收起计划' : '展开全部' }}<span class="cp-plan-count">{{ state.create.plan.length }} 天</span></button>
+        </div>
         <div class="cp-plan-list">
-          <div v-for="d in state.create.plan" :key="d.day" class="cp-plan-day">
+          <div v-for="d in cr.visiblePlan()" :key="d.day" class="cp-plan-day">
             <div class="cp-plan-day-head"><span>第 {{ d.day }} 天</span><span v-if="d.day % 7 === 0 || d.day === state.create.editDays" class="cp-milestone-tag"><i class="fas fa-flag-checkered"></i> 里程碑</span><span v-if="d.difficulty" class="cp-plan-diff">难度 {{ '★'.repeat(d.difficulty) }}</span></div>
             <div class="cp-plan-day-title">{{ d.title }}</div>
             <div v-if="d.description" class="cp-plan-day-desc">{{ d.description }}</div>

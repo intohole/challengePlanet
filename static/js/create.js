@@ -19,6 +19,8 @@ window.cpCreate = (function () {
     c.sceneTemplate = ''
     c.genDay = 0
     c.genTotal = 0
+    c.genTitle = ''
+    c.expandPlan = false
     c.adjustHint = ''
     c.adjusting = false
     c.goalRule = ''
@@ -60,6 +62,22 @@ window.cpCreate = (function () {
       }
       return '如：42天戒烟、每天读书30分钟、21天学会Python...'
     },
+
+    sceneNote() {
+      const c = st()
+      if (!c.sceneTemplate) return null
+      const scene = window.cpSceneMap[c.sceneTemplate]
+      if (!scene) return null
+      return { name: scene.name, icon: scene.icon, desc: scene.desc || '', samples: scene.samples || [] }
+    },
+
+    sceneExamples() {
+      const note = this.sceneNote()
+      if (note && note.samples && note.samples.length) return note.samples
+      return ['每天坚持一件事，21天养成习惯', '戒掉一个坏习惯，越到后面越轻松', '每天进步一点点，66天见证变化']
+    },
+
+    fillSample(s) { st().rawInput = s },
 
     close() {
       const c = st()
@@ -130,6 +148,66 @@ window.cpCreate = (function () {
       return nodes
     },
 
+    playMode() {
+      const c = st()
+      const p = c.parsed || {}
+      const sc = c.sceneTemplate && window.cpSceneMap[c.sceneTemplate]
+      const tt = this.deriveTaskType(p, sc)
+      const typeLabel = { binary: '每日打卡', counter: '计数打卡', timer: '计时打卡', text: '记录打卡', step: '分步打卡' }[tt] || '每日打卡'
+      const target = Number(p.target_value) || 0
+      const unit = String(p.unit || (sc && sc.unit) || '')
+      const goalText = target > 0 && unit ? '每日 ' + target + ' ' + unit : '完成即打卡'
+      const dir = String(p.direction || (sc && sc.task_type === 'quit' ? 'decrease' : 'increase'))
+      const dirText = c.ladderEn ? (dir === 'decrease' ? '目标逐日递减' : '目标逐日递增') : (dir === 'decrease' ? '越做越少' : '越做越好')
+      return { typeLabel, goalText, dirText, days: c.editDays || c.genTotal || 0 }
+    },
+
+    diffSvg() {
+      const c = st()
+      const plan = c.plan || []
+      const days = plan.length || c.editDays || 0
+      if (days < 3) return ''
+      const step = Math.max(1, Math.ceil(days / 24))
+      const pts = []
+      for (let d = 1; d <= days; d += step) {
+        const item = plan.find(x => x.day === d) || plan[plan.length - 1] || {}
+        const diff = Math.min(5, Math.max(1, Number(item.difficulty) || 1))
+        pts.push(Math.round((d / days) * 100) + ',' + Math.round(((6 - diff) / 5) * 100))
+      }
+      const last = plan[plan.length - 1] || {}
+      const ld = Math.min(5, Math.max(1, Number(last.difficulty) || 1))
+      pts.push('100,' + Math.round(((6 - ld) / 5) * 100))
+      const poly = pts.join(' ')
+      return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="cp-curve-svg">' +
+        '<line x1="20" y1="0" x2="20" y2="100" class="cp-curve-phase"/><line x1="80" y1="0" x2="80" y2="100" class="cp-curve-phase"/>' +
+        '<polygon points="' + poly + ' 100,100 0,100" class="cp-curve-fill"/>' +
+        '<polyline points="' + poly + '" class="cp-curve-line"/></svg>'
+    },
+
+    visiblePlan() {
+      const c = st()
+      const plan = c.plan || []
+      if (c.expandPlan) return plan
+      const days = c.editDays || (plan.length ? plan[plan.length - 1].day : 0)
+      if (!days || days < 14) return plan
+      const head = plan.filter(d => d.day <= 7)
+      const mids = plan.filter(d => d.day > 7 && d.day < days && d.day % 7 === 0)
+      let picked = mids
+      if (mids.length > 6) {
+        const gap = Math.ceil(mids.length / 6)
+        picked = mids.filter((_, i) => i % gap === 0)
+      }
+      const last = plan.find(d => d.day === days)
+      const seen = {}
+      const out = []
+      head.concat(picked, last ? [last] : []).forEach(d => {
+        if (d && !seen[d.day]) { seen[d.day] = 1; out.push(d) }
+      })
+      return out.sort((a, b) => a.day - b.day)
+    },
+
+    togglePlan() { st().expandPlan = !st().expandPlan },
+
     back() {
       const c = st()
       if (c.phase === 'parsing' || c.phase === 'planning') window.api.cancel('/challenges/nl-create')
@@ -165,6 +243,11 @@ window.cpCreate = (function () {
           } else if (data.type === 'token') {
             c.phase = 'planning'
             c.planText += data.token || ''
+            const titles = c.planText.match(/"title"\s*:\s*"([^"]+)"/g)
+            if (titles && titles.length) {
+              const m = titles[titles.length - 1].match(/"title"\s*:\s*"([^"]+)"/)
+              if (m && m[1] && m[1] !== c.genTitle) c.genTitle = m[1]
+            }
           } else if (data.type === 'day') {
             c.genDay = data.day || 0
             c.genTotal = data.total || c.genTotal
@@ -241,7 +324,8 @@ window.cpCreate = (function () {
         })
         const ch = res.data || res
         c.show = false
-        window.cpToast('挑战已开启，从今天开始！')
+        const first = (c.plan && c.plan[0]) || {}
+        window.cpToast('挑战已开启！第1天「' + (first.title || c.editTitle) + '」')
         await window.cpLoadChallenges()
         if (ch && ch.id) window.appState.current = window.appState.challenges.find(x => x.id === ch.id) || window.appState.current
         const home = window.cpViews.home

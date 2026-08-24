@@ -46,6 +46,12 @@
 .cp-scene-name { font-size: 12px; font-weight: 600; }
 .cp-scene-type { font-size: 9px; color: var(--text-muted); background: rgba(15,23,42,.05); padding: 1px 6px; border-radius: 6px; }
 .cp-scene-card.active .cp-scene-type { color: var(--primary-light); background: rgba(99,102,241,.18); }
+.cp-scene-note { display: flex; align-items: center; gap: 7px; margin-top: 8px; padding: 9px 12px; border-radius: var(--radius-sm); background: rgba(99,102,241,.06); border: 1px solid rgba(99,102,241,.16); font-size: 12px; color: var(--text-secondary); animation: fade-in-up .3s ease; }
+.cp-scene-note b { color: var(--primary-light); }
+.cp-sample-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.cp-sample-chip { font-size: 12px; color: var(--text-secondary); background: rgba(15,23,42,.04); border: 1px solid var(--card-border); padding: 5px 11px; border-radius: 12px; cursor: pointer; transition: all .2s; }
+.cp-sample-chip:active { transform: scale(.96); }
+.cp-sample-chip:hover { border-color: var(--primary); color: var(--primary-light); }
 
 .cp-plan-diff { font-size: 10px; color: var(--primary); }
 .cp-plan-day-target { display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 12px; color: var(--primary); font-weight: 600; }
@@ -63,3 +69,21 @@
 .cp-text-counter { text-align: right; font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 .cp-text-count { font-weight: 700; color: var(--text-secondary); transition: color .2s; }
 .cp-text-count.done { color: var(--emerald); }
+
+.cp-play-card { margin-bottom: 12px; padding: 12px 14px; border-radius: var(--radius); background: linear-gradient(135deg, rgba(99,102,241,.07), rgba(139,92,246,.05)); border: 1px solid rgba(99,102,241,.18); }
+.cp-play-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cp-play-type { font-size: 13px; font-weight: 700; color: var(--primary-light); }
+.cp-play-goal { font-size: 12px; color: var(--text-primary); font-weight: 600; }
+.cp-play-dir { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+.cp-play-curve-wrap { margin-top: 8px; }
+.cp-curve-svg { display: block; width: 100%; height: 56px; border-radius: 6px; }
+.cp-curve-fill { fill: rgba(99,102,241,.12); }
+.cp-curve-line { fill: none; stroke: var(--primary-light); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.cp-curve-phase { stroke: rgba(15,23,42,.09); stroke-width: 1; stroke-dasharray: 3 3; }
+.cp-phase-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 3px; padding: 0 20%; }
+.cp-plan-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cp-plan-toggle { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--primary-light); background: rgba(99,102,241,.08); border: 1px solid rgba(99,102,241,.16); padding: 6px 12px; border-radius: 14px; cursor: pointer; transition: all .2s; }
+.cp-plan-toggle:active { transform: scale(.96); }
+.cp-plan-count { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+.cp-gen-task { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 8px 12px; width: 100%; max-width: 340px; border-radius: var(--radius-sm); background: rgba(99,102,241,.07); border: 1px solid rgba(99,102,241,.16); font-size: 12px; color: var(--text-primary); animation: fade-in-up .3s ease; }
+.cp-gen-task b { color: var(--primary-light); flex-shrink: 0; }
