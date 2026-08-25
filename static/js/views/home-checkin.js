@@ -88,6 +88,7 @@
       if (d.taskValue <= 0 && tt === 'counter') { window.cpToast('请输入完成数量'); return }
       payload.value = d.taskValue
     } else if (tt === 'step') {
+      if (!d.taskSteps.length) { window.cpToast('先勾选完成的分步再打卡'); return }
       payload.value = d.taskSteps.length
       payload.reflection = d.taskSteps.join('；')
     } else if (tt === 'text') {
@@ -191,7 +192,7 @@
       const done = d.taskSteps.includes(st)
       h += '<div class="cp-step-item' + (done ? ' done' : '') + '" onclick="cpViews.home.toggleStep(\'' + encodeURIComponent(st) + '\')"><span class="cp-step-check">' + (done ? '✓' : '○') + '</span><span class="cp-step-text">' + window.cpEsc(st) + '</span></div>'
     })
-    h += '</div><button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-check"></i> 提交打卡 (' + d.taskSteps.length + '/' + steps.length + ')</button>'
+    h += '</div><button class="cp-btn-checkin"' + (d.taskSteps.length === 0 ? ' disabled' : '') + ' ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-list-check"></i> 打卡完成 (' + d.taskSteps.length + '/' + steps.length + ')</button>'
     h += this._miniLink(dis) + '</div>'
     return h
   }
@@ -206,18 +207,18 @@
     if (target > 0) h += '<div class="cp-text-counter"><span class="cp-text-count' + (len >= target ? ' done' : '') + '">' + len + '</span> / ' + target + ' ' + unit + '</div>'
     else h += '<div class="cp-text-counter"><span class="cp-text-count">' + len + '</span> 字</div>'
     h += '</div>'
-    h += '<button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-feather"></i> 提交记录</button>'
+    h += '<button class="cp-btn-checkin"' + ((target > 0 && len < target) ? ' style="background:rgba(5,150,105,.16);color:var(--emerald);box-shadow:none" ' : '') + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-circle-check"></i> 打卡完成</button>'
     h += this._miniLink(dis) + '</div>'
     return h
   }
 
   V._binaryUI = function (dis) {
     const d = this.data
-    return '<div class="cp-ignite-wrap"><button class="cp-ignite-btn" ' + dis + ' onpointerdown="cpViews.home.igniteDown(event)" onpointerup="cpViews.home.igniteUp()" onpointerleave="cpViews.home.igniteUp()" onpointercancel="cpViews.home.igniteUp()" oncontextmenu="return false"><i class="fas fa-fire"></i><span>' + (d.checking ? '点燃中' : '长按点火') + '</span></button><span class="cp-ignite-hint">按住 1 秒点燃今日，松手取消</span>' + this._miniLink(dis) + '</div>'
+    return '<div class="cp-ignite-wrap"><button class="cp-ignite-btn" ' + dis + ' onpointerdown="cpViews.home.igniteDown(event)" onpointerup="cpViews.home.igniteUp(true)" onpointerleave="cpViews.home.igniteUp(false)" onpointercancel="cpViews.home.igniteUp(false)" oncontextmenu="return false"><i class="fas fa-fire"></i><span>' + (d.checking ? '点燃中' : '点燃今日') + '</span></button><span class="cp-ignite-hint">点一下或按住点火，完成今日打卡</span>' + this._miniLink(dis) + '</div>'
   }
 
-  V._submitBtn = function (dis) {
-    return '<button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-check"></i> 提交打卡</button>'
+  V._submitBtn = function (dis, label) {
+    return '<button class="cp-btn-checkin" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-fire"></i>' + (label || '打卡完成') + '</button>'
   }
 
   V._miniLink = function (dis) {
@@ -252,15 +253,16 @@
     ig.raf = requestAnimationFrame(tick)
   }
 
-  V.igniteUp = function () {
+  V.igniteUp = function (commit) {
     const ig = this._ignite
     if (!ig) return
-    ig.done = true
     cancelAnimationFrame(ig.raf)
+    const quick = !!commit && !ig.done && (Date.now() - ig.start) < 300
     if (ig.btn) {
       ig.btn.classList.remove('charging')
       ig.btn.style.setProperty('--p', 0)
     }
     this._ignite = null
+    if (quick) this.doCheckin('full')
   }
 })()
