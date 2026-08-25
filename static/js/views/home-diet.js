@@ -36,7 +36,7 @@
     html += '<div class="cp-section-title"><i class="fas fa-weight-scale" style="color:var(--primary-light)"></i> 记录体重</div>'
     if (!(d.weightTrend && d.weightTrend.records && d.weightTrend.records.length)) html += '<div class="cp-weight-hint">选填 · 每天记一次更清晰，不测不影响打卡</div>'
     html += this._weightBox(ch)
-    if (d.weightTrend && d.weightTrend.records && d.weightTrend.records.length) html += this._weightTrend()
+    if (d.weightTrend && d.weightTrend.records && d.weightTrend.records.length) html += this._weightTrend(ch)
     html += '</div>'
     if (t.checked_in && d.lastFeedback) return html
     return html
@@ -69,20 +69,30 @@
     return '<div class="cp-weight-row"><input type="number" min="20" max="400" step="0.1" class="cp-field cp-weight-input" placeholder="今天体重 (kg)" value="' + window.cpEsc(d.weightInput || '') + '" oninput="cpViews.home.setWeight(this.value)"><button class="cp-btn-primary cp-weight-btn" ' + dis + ' onclick="cpViews.home.doWeightRecord()"><i class="fas fa-check"></i> 记录</button></div>'
   }
 
-  V._weightTrend = function () {
+  V._weightTrend = function (ch) {
     const d = this.data
     const recs = d.weightTrend.records || []
-    const maxW = Math.max.apply(null, recs.map(r => r.weight_kg)) || 0
-    const minW = Math.min.apply(null, recs.map(r => r.weight_kg)) || 0
-    const span = (maxW - minW) || 1
+    const baseW = Number(ch && ch.weight_kg) || 0
+    const goalW = Number(ch && ch.goal_weight) || 0
+    const maxW = Math.max.apply(null, recs.map(r => r.weight_kg))
+    const minW = Math.min.apply(null, recs.map(r => r.weight_kg))
+    const allMax = Math.max(maxW, baseW, goalW)
+    const allMin = Math.min(minW, baseW || maxW, goalW || minW)
+    const span = (allMax - allMin) || 1
+    const yAt = w => Math.round((allMax - w) / span * 80 + 10)
     const pts = recs.map((r, i) => {
       const x = recs.length === 1 ? 50 : Math.round(i / (recs.length - 1) * 100)
-      const y = Math.round(100 - (r.weight_kg - minW) / span * 80 - 10)
-      return x + ',' + y
+      return x + ',' + yAt(r.weight_kg)
     })
     const poly = pts.join(' ')
     let h = '<div class="cp-weight-trend"><div class="cp-section-title" style="margin-top:12px"><i class="fas fa-chart-line" style="color:var(--primary-light)"></i> 体重趋势（7日均值）</div>'
-    h += '<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="cp-weight-svg"><polyline points="' + poly + '" class="cp-weight-line"/><polygon points="' + poly + ' 100,100 0,100" class="cp-weight-fill"/></svg>'
+    h += '<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="cp-weight-svg">'
+    h += '<g class="cp-weight-guide">'
+    if (goalW > 0) h += '<line x1="0" y1="' + yAt(goalW) + '" x2="100" y2="' + yAt(goalW) + '" class="cp-weight-goalline"/>'
+    if (baseW > 0 && goalW > 0) h += '<line x1="0" y1="' + yAt(baseW) + '" x2="100" y2="' + yAt(goalW) + '" class="cp-weight-planline"/>'
+    h += '</g>'
+    h += '<polyline points="' + poly + '" class="cp-weight-line"/><polygon points="' + poly + ' 100,100 0,100" class="cp-weight-fill"/></svg>'
+    h += '<div class="cp-weight-legend">' + (baseW > 0 && goalW > 0 ? '<span><i class="cp-lg-dot plan"></i>计划</span>' : '') + (goalW > 0 ? '<span><i class="cp-lg-dot goal"></i>目标 ' + goalW + 'kg</span>' : '') + '<span><i class="cp-lg-dot actual"></i>实测</span></div>'
     h += '<div class="cp-weight-stats">'
     if (d.weightTrend.latest) h += '<div class="cp-weight-stat"><b>' + d.weightTrend.latest.weight_kg + '</b><span>今日</span></div>'
     if (d.weightTrend.latest && (d.weightTrend.latest.avg7 || 0) > 0) h += '<div class="cp-weight-stat"><b>' + d.weightTrend.latest.avg7 + '</b><span>7日均值</span></div>'

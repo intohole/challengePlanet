@@ -132,6 +132,16 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 
 .cp-section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; color: var(--text-primary); }
 .cp-weight-hint { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.5; }
+.cp-weight-svg { width: 100%; height: 110px; }
+.cp-weight-line { fill: none; stroke: var(--primary); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.cp-weight-fill { fill: rgba(129,140,248,.12); }
+.cp-weight-legend { display: flex; gap: 12px; font-size: 11px; color: var(--text-muted); margin-top: 6px; align-items: center; flex-wrap: wrap; }
+.cp-lg-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.cp-lg-dot.plan { background: repeating-linear-gradient(90deg, var(--primary-light) 0 3px, transparent 3px 6px); }
+.cp-lg-dot.goal { background: var(--amber); }
+.cp-lg-dot.actual { background: var(--primary); }
+.cp-weight-guide .cp-weight-planline { stroke: var(--text-muted); stroke-width: 1.5; stroke-dasharray: 3 2; opacity: .7; }
+.cp-weight-guide .cp-weight-goalline { stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 6 3; opacity: .8; }
 .cp-error-box { padding: 14px 16px; border-radius: var(--radius); border: 1px solid rgba(248,113,113,.25); background: rgba(248,113,113,.08); color: var(--red); font-size: 13px; display: flex; align-items: flex-start; gap: 8px; line-height: 1.6; }
 .cp-error-box button { margin-left: auto; flex-shrink: 0; }
 

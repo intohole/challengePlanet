@@ -144,6 +144,10 @@ def main() -> None:
         check("7日均值标题", "7日均值" in trend_text, trend_text)
         check("今日体重回填79.5", page.query_selector(".cp-weight-input").get_attribute("value") in ("79.5", "79.50"), "")
         check("有记录时隐藏空态引导", page.query_selector(".cp-weight-hint") is None, "")
+        plan_svg = page.query_selector(".cp-weight-svg")
+        check("虚线(计划轨迹)渲染", plan_svg.query_selector(".cp-weight-planline") is not None, "")
+        check("目标线(72kg)渲染", plan_svg.query_selector(".cp-weight-goalline") is not None, "")
+        check("图例包含计划和目标", ("计划" in page.query_selector(".cp-weight-legend").inner_text()) and ("目标 72kg" in page.query_selector(".cp-weight-legend").inner_text()), "")
 
         print("== 4. 输入描述后点AI估算,出现结果与打卡 ==")
         desc = "早餐鸡蛋牛奶，午餐盒饭，晚餐一碗面"
