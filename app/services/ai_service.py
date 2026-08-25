@@ -12,6 +12,7 @@ from app.services.plan_adjust import apply_numeric_adjust
 from app.services.prompts import (
     COMPANION_SYSTEM,
     DECLARATION_SYSTEM,
+    DIET_ESTIMATE_SYSTEM,
     FEEDBACK_SYSTEM,
     PARSE_SYSTEM,
     PLAN_SYSTEM,
@@ -76,6 +77,19 @@ class AIService:
         parsed.setdefault("decompose_mode", "none")
         parsed.setdefault("slot_hours", 1)
         parsed.setdefault("slot_target_value", 0.0)
+        return parsed
+
+    async def estimate_diet_calories(self, description: str) -> dict[str, object]:
+        llm = get_llm_service()
+        raw = await llm.ask(
+            description, system=DIET_ESTIMATE_SYSTEM,
+            temperature=0.3, max_tokens=256, timeout=30.0, task_type="extract",
+        )
+        parsed = parse_llm_json(raw)
+        if "raw_response" in parsed or not float(parsed.get("total_kcal", 0) or 0):
+            return {"total_kcal": 0, "min_kcal": 0, "max_kcal": 0, "confidence": 0, "items": []}
+        items = parsed.get("items")
+        parsed["items"] = items if isinstance(items, list) else []
         return parsed
 
     def _build_plan_system(self, scene_template: str, duration: int) -> str:

@@ -12,13 +12,16 @@
       return ''
     }
     const tt = t.task_type || ch.task_type || 'binary'
-    const ttLabel = { counter: '计数', timer: '计时', step: '分步', choice: '选择', text: '记录', binary: '打卡' }[tt] || '打卡'
+    const ttLabel = window.cpTaskTypeLabel(tt) || '打卡'
+    const isDiet = tt === 'diet' || ch.task_type === 'diet'
     const isMultiMode = !!t.repeatable || ch.decompose_mode === 'time_slot' || ch.task_type === 'counter' || ch.task_type === 'timer' || tt === 'counter' || tt === 'timer'
     html += '<div class="glass-card cp-task-card"><div class="cp-task-head"><span class="cp-task-day"><i class="fas fa-flag"></i>第 ' + (t.day_number || 1) + ' 天 · ' + (t.date || '') + '</span><div class="cp-task-head-right"><span class="cp-task-type-badge">' + ttLabel + '</span><span class="cp-task-pct">' + (t.progress_pct || 0) + '%</span></div></div><p class="cp-task-title">' + window.cpEsc(t.task_title || '完成今日打卡') + '</p>'
     if (t.task_description) html += '<p class="cp-task-desc">' + window.cpEsc(t.task_description) + '</p>'
     const baseline = t.dynamic_baseline || 0
     const isDecrease = ch.direction === 'decrease'
-    if (baseline > 0) {
+    if (isDiet) {
+      html += this._dietTargetPanel(t, ch)
+    } else if (baseline > 0) {
       const mainText = isDecrease ? '比昨天少 <b>' + baseline.toFixed(1) + '</b> 就行' : '比昨天多 <b>' + baseline.toFixed(1) + '</b> 就行'
       const refText = (t.task_target && t.task_target > 0) ? '<span class="cp-task-target-ref">目标 ' + t.task_target + ' ' + window.cpEsc(t.task_unit || '') + '（参考）</span>' : ''
       html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> ' + mainText + ' ' + window.cpEsc(t.task_unit || '') + refText + '</div>'
@@ -60,7 +63,9 @@
     if (t.task_steps && t.task_steps.length) html += '<div class="cp-task-steps-preview">' + t.task_steps.map(st => '<span class="cp-step-preview-tag">' + window.cpEsc(st) + '</span>').join('') + '</div>'
     html += '</div>'
     html += '<div id="cp-nux-checkin"></div>'
-    if (isMultiMode) {
+    if (isDiet) {
+      html += this._dietArea(t, ch, (d.today && d.today.checkins_date))
+    } else if (isMultiMode) {
       html += this._multiCheckinArea(tt, t, ch)
     } else if (!t.checked_in) {
       html += this._checkinArea(tt, t)

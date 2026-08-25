@@ -34,6 +34,7 @@ _EXPECTED_TABLES = (
     "streak_actions",
     "challenge_meta",
     "adaptive_suggestions",
+    "weight_records",
 )
 
 
@@ -44,7 +45,6 @@ async def get_db() -> AsyncSession:
 
 def _import_models() -> None:
     from app.models import adaptive, challenge, checkin, points, squad, sub_goal  # noqa: F401
-
 
 _WHITELIST_TABLES = frozenset({"challenges", "checkins", "adaptive_suggestions"})
 
@@ -96,6 +96,13 @@ async def run_migrations() -> None:
         await _ensure_column(conn, "challenges", "decompose_mode", "decompose_mode VARCHAR(16) DEFAULT 'none'")
         await _ensure_column(conn, "challenges", "slot_hours", "slot_hours INTEGER DEFAULT 1")
         await _ensure_column(conn, "challenges", "slot_target_value", "slot_target_value REAL DEFAULT 0.0")
+        await _ensure_column(conn, "challenges", "gender", "gender VARCHAR(8) DEFAULT ''")
+        await _ensure_column(conn, "challenges", "age", "age INTEGER DEFAULT 0")
+        await _ensure_column(conn, "challenges", "height_cm", "height_cm REAL DEFAULT 0.0")
+        await _ensure_column(conn, "challenges", "weight_kg", "weight_kg REAL DEFAULT 0.0")
+        await _ensure_column(conn, "challenges", "goal_weight", "goal_weight REAL DEFAULT 0.0")
+        await _ensure_column(conn, "challenges", "activity_level", "activity_level INTEGER DEFAULT 2")
+        await _ensure_column(conn, "challenges", "daily_calorie_target", "daily_calorie_target REAL DEFAULT 0.0")
 
         await _ensure_column(conn, "checkins", "sub_goal_id", "sub_goal_id INTEGER")
         await _ensure_column(conn, "checkins", "timestamp", "timestamp DATETIME")

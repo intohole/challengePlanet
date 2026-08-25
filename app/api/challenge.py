@@ -144,6 +144,9 @@ async def confirm_challenge(
         goal_rule=request.goal_rule, goal_mode=request.goal_mode,
         ladder_start=request.ladder_start, ladder_goal=request.ladder_goal,
         ladder_interval=request.ladder_interval, ladder_step=request.ladder_step,
+        gender=request.gender, age=request.age, height_cm=request.height_cm,
+        weight_kg=request.weight_kg, goal_weight=request.goal_weight,
+        activity_level=request.activity_level,
     )
     return await service.build_response(session, challenge, user_id)
 

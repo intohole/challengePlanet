@@ -78,6 +78,10 @@ class CheckInService:
         target_snapshot = await self._compute_target_snapshot(session, challenge, sub_goal_id, day_number)
 
         completion_pct = self._calc_completion_pct(value, target_snapshot["target_value"], challenge.direction)
+        if str(getattr(challenge, "task_type", "")) == "diet" and target_snapshot["target_value"] > 0:
+            from app.services.diet_service import assess_calorie
+            assess = assess_calorie(value, target_snapshot["target_value"])
+            completion_pct = 100.0 if assess["status"] == "ok" else min(90.0, max(30.0, float(assess["percent"])))
         is_soft_exceeded = self._is_soft_exceeded(value, target_snapshot, challenge)
         soft_exceeded_amount = max(0.0, value - target_snapshot["target_value"]) if is_soft_exceeded else 0.0
 
@@ -132,6 +136,11 @@ class CheckInService:
         self, session: AsyncSession, challenge, sub_goal_id: int | None,
         day_number: int,
     ) -> dict[str, object]:
+        if str(getattr(challenge, "task_type", "")) == "diet":
+            return {
+                "target_value": float(getattr(challenge, "daily_calorie_target", 0) or 0),
+                "goal_type": "soft",
+            }
         if is_ladder(challenge):
             return {
                 "target_value": daily_target(challenge, day_number),

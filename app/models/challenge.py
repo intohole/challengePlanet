@@ -33,6 +33,14 @@ class Challenge(Base):
     slot_hours: Mapped[int] = mapped_column(Integer, default=1)
     slot_target_value: Mapped[float] = mapped_column(Float, default=0.0)
 
+    gender: Mapped[str] = mapped_column(String(8), default="")
+    age: Mapped[int] = mapped_column(Integer, default=0)
+    height_cm: Mapped[float] = mapped_column(Float, default=0.0)
+    weight_kg: Mapped[float] = mapped_column(Float, default=0.0)
+    goal_weight: Mapped[float] = mapped_column(Float, default=0.0)
+    activity_level: Mapped[int] = mapped_column(Integer, default=2)
+    daily_calorie_target: Mapped[float] = mapped_column(Float, default=0.0)
+
     duration_days: Mapped[int] = mapped_column(Integer, default=30)
     start_date: Mapped[str] = mapped_column(String(10), default="")
     end_date: Mapped[str] = mapped_column(String(10), default="")

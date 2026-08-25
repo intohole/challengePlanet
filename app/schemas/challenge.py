@@ -65,6 +65,13 @@ class ChallengeConfirmRequest(BaseModel):
     ladder_interval: int = Field(1, description="每隔N天变化一次")
     ladder_step: float = Field(1.0, description="每次变化量")
 
+    gender: str = Field("", description="性别: 男/女")
+    age: int = Field(0, description="年龄")
+    height_cm: float = Field(0.0, description="身高cm")
+    weight_kg: float = Field(0.0, description="当前体重kg")
+    goal_weight: float = Field(0.0, description="目标体重kg")
+    activity_level: int = Field(2, description="活动量等级1-5")
+
 
 class FromDecisionRequest(BaseModel):
     title: str = Field(..., description="挑战标题")
@@ -115,6 +122,17 @@ class ChallengeResponse(BaseModel):
     ladder_interval: int = 1
     ladder_step: float = 1.0
 
+    gender: str = ""
+    age: int = 0
+    height_cm: float = 0.0
+    weight_kg: float = 0.0
+    goal_weight: float = 0.0
+    activity_level: int = 2
+    daily_calorie_target: float = 0.0
+    deficit_kcal: float = 0.0
+    tdee_kcal: float = 0.0
+    bmr_kcal: float = 0.0
+
     mercy: MercySummary = Field(default_factory=MercySummary)
     created_at: Optional[datetime] = None
 
@@ -160,6 +178,8 @@ class TodayTaskResponse(BaseModel):
     sub_goals: list[dict[str, object]] = Field(default_factory=list)
     streak: int = 0
     total_checkins: int = 0
+
+    diet: Optional[dict[str, object]] = None
 
 
 class WeeklyReportResponse(BaseModel):

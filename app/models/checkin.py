@@ -53,3 +53,16 @@ class AIInsight(Base):
     insight_type: Mapped[str] = mapped_column(String(16), default="daily")
     content: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class WeightRecord(Base):
+    __tablename__ = "weight_records"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    challenge_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("challenges.id"), index=True, nullable=False
+    )
+    user_id: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
+    date: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
+    weight_kg: Mapped[float] = mapped_column(Float, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

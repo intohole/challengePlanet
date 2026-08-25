@@ -18,6 +18,7 @@ from app.api.adaptive import router as adaptive_router
 from app.api.auth import router as auth_router
 from app.api.challenge import router as challenge_router
 from app.api.checkin import router as checkin_router
+from app.api.diet import router as diet_router
 from app.api.points import router as points_router
 from app.api.portal import router as portal_router
 from app.api.report import router as report_router
@@ -88,6 +89,7 @@ API_PREFIX = settings.API_PREFIX
 app.include_router(auth_router, prefix=API_PREFIX)
 app.include_router(challenge_router, prefix=API_PREFIX + "/challenges")
 app.include_router(checkin_router, prefix=API_PREFIX + "/challenges")
+app.include_router(diet_router, prefix=API_PREFIX + "/challenges")
 app.include_router(sub_goal_router, prefix=API_PREFIX + "/challenges")
 app.include_router(report_router, prefix=API_PREFIX + "/challenges")
 app.include_router(adaptive_router, prefix=API_PREFIX + "/challenges")

@@ -53,12 +53,22 @@ class ChallengeService:
         slot_target_value: float = 0.0, goal_rule: str = "fixed",
         goal_mode: str = "auto", ladder_start: float = 0.0,
         ladder_goal: float = 0.0, ladder_interval: int = 1,
-        ladder_step: float = 1.0,
+        ladder_step: float = 1.0, gender: str = "", age: int = 0,
+        height_cm: float = 0.0, weight_kg: float = 0.0,
+        goal_weight: float = 0.0, activity_level: int = 2,
     ) -> Challenge:
         meta = CATEGORY_META.get(category, CATEGORY_META["other"])
         start_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else datetime.now()
         start_str = start_dt.strftime("%Y-%m-%d")
         end_str = (start_dt + timedelta(days=duration_days - 1)).strftime("%Y-%m-%d")
+        daily_calorie_target: float = 0.0
+        if task_type == "diet" and weight_kg > 0 and age > 0 and height_cm > 0:
+            from app.services.diet_service import calc_daily_target
+            cal = calc_daily_target(
+                gender, age, height_cm, weight_kg, goal_weight,
+                activity_level, duration_days,
+            )
+            daily_calorie_target = cal["target_kcal"]
         challenge = await self._repo.create(session, {
             "user_id": user_id, "title": title, "description": description,
             "category": category, "duration_days": duration_days,
@@ -72,6 +82,10 @@ class ChallengeService:
             "ladder_interval": ladder_interval, "ladder_step": ladder_step,
             "decompose_mode": decompose_mode,
             "slot_hours": slot_hours, "slot_target_value": slot_target_value,
+            "gender": gender, "age": age, "height_cm": height_cm,
+            "weight_kg": weight_kg, "goal_weight": goal_weight,
+            "activity_level": activity_level,
+            "daily_calorie_target": daily_calorie_target,
             "share_token": secrets.token_hex(16),
         })
         await self._meta_repo.upsert(session, challenge.id, {
@@ -194,6 +208,13 @@ class ChallengeService:
             ladder_goal=float(getattr(c, "ladder_goal", 0.0) or 0.0),
             ladder_interval=max(1, int(getattr(c, "ladder_interval", 1) or 1)),
             ladder_step=float(getattr(c, "ladder_step", 1.0) or 1.0),
+            gender=str(getattr(c, "gender", "") or ""),
+            age=int(getattr(c, "age", 0) or 0),
+            height_cm=float(getattr(c, "height_cm", 0.0) or 0.0),
+            weight_kg=float(getattr(c, "weight_kg", 0.0) or 0.0),
+            goal_weight=float(getattr(c, "goal_weight", 0.0) or 0.0),
+            activity_level=int(getattr(c, "activity_level", 2) or 2),
+            daily_calorie_target=float(getattr(c, "daily_calorie_target", 0.0) or 0.0),
             mercy=item.get("mercy", {}),
             created_at=c.created_at,
         )
@@ -272,6 +293,8 @@ class ChallengeService:
         task_steps_raw = task.get("steps", task.get("task_steps", []))
         task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
         today_target = daily_target(challenge, day_number, adaptive_baseline=dynamic_baseline)
+        if str(getattr(challenge, "task_type", "")) == "diet" and float(getattr(challenge, "daily_calorie_target", 0) or 0) > 0:
+            today_target = float(challenge.daily_calorie_target)
         remaining = max(0.0, today_target - today_total)
         feedback = today_checkins[-1].ai_feedback if today_checkins else ""
         repeatable = (

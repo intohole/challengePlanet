@@ -56,11 +56,14 @@ window.cpScenes = [
   { id: 'writing', name: '写作', icon: '✍️', color: '#8b5cf6', task_type: 'text', unit: '篇', desc: '记录思考，沉淀每日成长', samples: ['30天每日写作打卡', '21天晨间日记'] },
   { id: 'gratitude', name: '感恩', icon: '🙏', color: '#fbbf24', task_type: 'text', unit: '件', desc: '每天记3件感恩的小事', samples: ['21天感恩日记', '每天记录3件感恩的事'] },
   { id: 'water', name: '饮水', icon: '💧', color: '#06b6d4', task_type: 'counter', unit: '杯', desc: '每天喝够8杯水，规律补水', samples: ['30天每天喝够8杯水', '21天养成喝水习惯'] },
+  { id: 'diet', name: '减重', icon: '⚖️', color: '#0ea5e9', task_type: 'diet', unit: '千卡', desc: '控制每日摄入，科学减重', samples: ['30天减重3公斤', '66天饮食控制科学减脂'] },
   { id: 'quit', name: '戒断', icon: '🚭', color: '#ef4444', task_type: 'binary', unit: '次', desc: '戒除坏习惯，目标逐日递减', samples: ['我要戒烟30天', '戒掉熬夜66天'] },
   { id: 'custom', name: '自定义', icon: '🎯', color: '#8b5cf6', task_type: 'binary', unit: '次', desc: '完全按你的想法来', samples: ['30天不喝奶茶', '每天给家人打个电话'] },
 ]
 window.cpSceneMap = {}
 window.cpScenes.forEach(s => { window.cpSceneMap[s.id] = s })
+
+window.cpTaskTypeLabel = tt => ({ counter: '计数', timer: '计时', text: '记录', step: '分步', diet: '减重', binary: '打卡' })[tt] || '打卡'
 
 window.cpCategoryMap = {
   build: { icon: 'fa-seedling', color: '#34d399', label: '习惯养成' },
@@ -256,6 +259,7 @@ const cpApp = createApp({
     return {
       state,
       cpScenes: window.cpScenes,
+      cpTaskTypeLabel: window.cpTaskTypeLabel,
       home: window.cpViews.home,
       cr: window.cpCreate,
       cpCompanion: window.cpCompanion,

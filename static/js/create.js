@@ -29,6 +29,12 @@ window.cpCreate = (function () {
     c.ladderGoal = 0
     c.ladderInterval = 3
     c.ladderStep = 1
+    c.gender = '男'
+    c.age = 28
+    c.heightCm = 170
+    c.weightKg = 70
+    c.goalWeight = 60
+    c.activityLevel = 2
   }
 
   const C = {
@@ -53,6 +59,21 @@ window.cpCreate = (function () {
       const c = st()
       c.sceneTemplate = c.sceneTemplate === sceneId ? '' : sceneId
     },
+
+    isDiet() {
+      const c = st()
+      if (c.sceneTemplate === 'diet') return true
+      if (c.parsed && c.parsed.task_type === 'diet') return true
+      return false
+    },
+
+    activityOptions() {
+      return [
+        { v: 1, l: '久坐' }, { v: 2, l: '轻度' }, { v: 3, l: '中度' }, { v: 4, l: '活跃' }, { v: 5, l: '高强度' },
+      ]
+    },
+
+    setGender(g) { st().gender = g },
 
     scenePlaceholder() {
       const c = st()
@@ -153,7 +174,7 @@ window.cpCreate = (function () {
       const p = c.parsed || {}
       const sc = c.sceneTemplate && window.cpSceneMap[c.sceneTemplate]
       const tt = this.deriveTaskType(p, sc)
-      const typeLabel = { binary: '每日打卡', counter: '计数打卡', timer: '计时打卡', text: '记录打卡', step: '分步打卡' }[tt] || '每日打卡'
+      const typeLabel = { binary: '每日打卡', counter: '计数打卡', timer: '计时打卡', text: '记录打卡', step: '分步打卡', diet: '饮食控制' }[tt] || '每日打卡'
       const target = Number(p.target_value) || 0
       const unit = String(p.unit || (sc && sc.unit) || '')
       const goalText = target > 0 && unit ? '每日 ' + target + ' ' + unit : '完成即打卡'
@@ -321,6 +342,12 @@ window.cpCreate = (function () {
           ladder_goal: c.ladderEn ? (c.ladderGoal || 1) : 0,
           ladder_interval: c.ladderEn ? (c.ladderInterval || 1) : 1,
           ladder_step: c.ladderStep || 1,
+          gender: c.gender || '',
+          age: Number(c.age) || 0,
+          height_cm: Number(c.heightCm) || 0,
+          weight_kg: Number(c.weightKg) || 0,
+          goal_weight: Number(c.goalWeight) || 0,
+          activity_level: Number(c.activityLevel) || 2,
         })
         const ch = res.data || res
         c.show = false
@@ -338,6 +365,7 @@ window.cpCreate = (function () {
     },
 
     deriveTaskType(p, scene) {
+      if (scene && scene.task_type === 'diet') return 'diet'
       if (p && p.task_type && ['binary', 'counter', 'timer', 'step', 'text', 'choice'].indexOf(p.task_type) >= 0) return p.task_type
       if (!p || typeof p !== 'object') return (scene && scene.task_type) || 'binary'
       if (p.decompose_mode === 'time_slot') return 'counter'

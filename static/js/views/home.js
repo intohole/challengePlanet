@@ -5,7 +5,7 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today' },
+    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '' },
     _ignite: null,
 
     render(el) {
@@ -78,11 +78,12 @@ window.cpViews.home = (function () {
       if (!ch) { this.loadedFor = null; return }
       if (this.loadedFor !== ch.id) {
         this.loadedFor = ch.id
-        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: this.data.activeTab || 'today' }
+        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: this.data.activeTab || 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '' }
         this.rerender()
       }
       const safe = p => p.catch(() => null)
-      const [today, checkins, mercy, weekly, points, adaptive, guidance] = await Promise.all([
+      const isDiet = ch.task_type === 'diet'
+      const [today, checkins, mercy, weekly, points, adaptive, guidance, dietTarget, weightTrend] = await Promise.all([
         window.api.get('/challenges/' + ch.id + '/today').then(r => r.data || r).catch(e => { this._todayErr = e; return null }),
         safe(window.api.get('/challenges/' + ch.id + '/checkins')),
         safe(window.api.get('/challenges/' + ch.id + '/mercy')),
@@ -90,6 +91,8 @@ window.cpViews.home = (function () {
         safe(window.api.get('/points/summary')),
         safe(window.api.get('/challenges/' + ch.id + '/adaptive/pending')),
         safe(window.api.get('/challenges/' + ch.id + '/guidance')),
+        isDiet ? safe(window.api.get('/challenges/' + ch.id + '/diet/target')) : Promise.resolve(null),
+        isDiet ? safe(window.api.get('/challenges/' + ch.id + '/weight/trend')) : Promise.resolve(null),
       ])
       const d = this.data
       d.today = today
@@ -102,6 +105,13 @@ window.cpViews.home = (function () {
       d.adaptive = (ad && ad.suggestion) || null
       const gd = guidance && (guidance.data || guidance)
       d.guidance = gd || null
+      const dt = dietTarget && (dietTarget.data || dietTarget)
+      d.dietTarget = isDiet ? (dt || null) : null
+      const wt = weightTrend && (weightTrend.data || weightTrend)
+      d.weightTrend = isDiet ? (wt || null) : null
+      if (!d.weightInput && wt && wt.latest) {
+        try { d.weightInput = String(Number(wt.latest.weight_kg) || '') } catch (e) {}
+      }
       if (!d.declaration && today && today.checked_in) {
         try { d.declaration = localStorage.getItem('cp_decl_' + ch.id + '_' + today.date) || '' } catch (e) {}
       }
