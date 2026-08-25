@@ -17,13 +17,14 @@ from app.services.streak_service import calc_streak, today_str
 logger = get_logger("challengePlanet.reminder")
 
 
-def _reminder_content(challenge: Challenge, risk: dict[str, object]) -> str:
+def _reminder_content(risk: dict[str, object], total: int = 1) -> str:
     level = str(risk.get("level", "low"))
+    head = f"你有 {total} 个挑战今天还没打卡，" if total > 1 else "今天还没打卡，"
     if level == "high":
-        return f"今天还没打卡，我注意到你最近节奏有些波动，这最容易松懈。{companion_text(risk)}"
+        return f"{head}我注意到你最近节奏有些波动，这最容易松懈。{companion_text(risk)}"
     if level == "medium":
-        return f"今天还没打卡哦！{companion_text(risk)}"
-    return f"今天还没打卡哦！坚持{challenge.duration_days}天挑战，别断了连击！{companion_text(risk)}"
+        return f"{head}记得留点时间完成它们。{companion_text(risk)}"
+    return f"{head}别让连击断在这里！{companion_text(risk)}"
 
 
 async def _get_unchecked_challenges(session: AsyncSession) -> list[Challenge]:
@@ -52,37 +53,44 @@ async def send_checkin_reminders() -> None:
             if not unchecked:
                 logger.info("No unchecked challenges found, skipping reminders.")
                 return
-            logger.info(
-                "Found %d unchecked challenges, sending reminders...", len(unchecked)
-            )
+            grouped: dict[int, list[Challenge]] = {}
+            for challenge in unchecked:
+                grouped.setdefault(challenge.user_id, []).append(challenge)
+            logger.info("Sending reminders to %d users...", len(grouped))
             client = get_notify_client()
             checkins_repo = CheckInRepository()
-            for challenge in unchecked:
+            for user_id, challenges in grouped.items():
                 try:
-                    checkins = await checkins_repo.get_by_challenge(session, challenge.id)
-                    valid = await load_valid_dates(session, challenge.id)
+                    representative = challenges[0]
+                    checkins = await checkins_repo.get_by_challenge(session, representative.id)
+                    valid = await load_valid_dates(session, representative.id)
                     streak = calc_streak(valid, today_str())
                     risk = assess_risk(checkins, streak, today_str())
-                    content = _reminder_content(challenge, risk)
-                    title = f"「{challenge.title}」打卡提醒"
+                    content = _reminder_content(risk, len(challenges))
+                    if len(challenges) > 1:
+                        title = f"{len(challenges)} 个挑战待打卡"
+                    else:
+                        title = f"「{representative.title}」打卡提醒"
                     priority = 4 if risk["level"] == "high" else 3
                     await client.send(
-                        user_id=str(challenge.user_id),
+                        user_id=str(user_id),
                         title=title,
                         content=content,
                         type="task",
                         priority=priority,
                         app_id="challengePlanet",
                         channels=["in_app"],
+                        link="/challengePlanet/",
+                        data={"challenge_count": len(challenges)},
                     )
                 except Exception as e:
                     logger.warning(
                         "Failed to send reminder to user %s: %s",
-                        challenge.user_id,
+                        user_id,
                         e,
                     )
             logger.info(
-                "Check-in reminders processed for %d challenges.", len(unchecked)
+                "Check-in reminders processed for %d users.", len(grouped)
             )
     except Exception as e:
         logger.error("Check-in reminder task failed: %s", e)
