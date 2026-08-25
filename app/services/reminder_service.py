@@ -59,36 +59,33 @@ async def send_checkin_reminders() -> None:
             logger.info("Sending reminders to %d users...", len(grouped))
             client = get_notify_client()
             checkins_repo = CheckInRepository()
+            items: list[dict[str, object]] = []
             for user_id, challenges in grouped.items():
-                try:
-                    representative = challenges[0]
-                    checkins = await checkins_repo.get_by_challenge(session, representative.id)
-                    valid = await load_valid_dates(session, representative.id)
-                    streak = calc_streak(valid, today_str())
-                    risk = assess_risk(checkins, streak, today_str())
-                    content = _reminder_content(risk, len(challenges))
-                    if len(challenges) > 1:
-                        title = f"{len(challenges)} 个挑战待打卡"
-                    else:
-                        title = f"「{representative.title}」打卡提醒"
-                    priority = 4 if risk["level"] == "high" else 3
-                    await client.send(
-                        user_id=str(user_id),
-                        title=title,
-                        content=content,
-                        type="task",
-                        priority=priority,
-                        app_id="challengePlanet",
-                        channels=["in_app"],
-                        link="/challengePlanet/",
-                        data={"challenge_count": len(challenges)},
-                    )
-                except Exception as e:
-                    logger.warning(
-                        "Failed to send reminder to user %s: %s",
-                        user_id,
-                        e,
-                    )
+                representative = challenges[0]
+                checkins = await checkins_repo.get_by_challenge(session, representative.id)
+                valid = await load_valid_dates(session, representative.id)
+                streak = calc_streak(valid, today_str())
+                risk = assess_risk(checkins, streak, today_str())
+                content = _reminder_content(risk, len(challenges))
+                if len(challenges) > 1:
+                    title = f"{len(challenges)} 个挑战待打卡"
+                else:
+                    title = f"「{representative.title}」打卡提醒"
+                priority = 4 if risk["level"] == "high" else 3
+                items.append(
+                    {
+                        "user_id": str(user_id),
+                        "title": title,
+                        "content": content,
+                        "type": "task",
+                        "priority": priority,
+                        "app_id": "challengePlanet",
+                        "channels": ["in_app"],
+                        "link": "/challengePlanet/",
+                        "data": {"challenge_count": len(challenges)},
+                    }
+                )
+            await client.send_many(items)
             logger.info(
                 "Check-in reminders processed for %d users.", len(grouped)
             )

@@ -23,6 +23,12 @@ class FakeNotifyClient:
         self.sent.append(kwargs)
         return {"ok": True}
 
+    async def send_many(self, items: list[dict[str, object]]) -> list[dict[str, object]]:
+        results: list[dict[str, object]] = []
+        for item in items:
+            results.append(await self.send(**item))
+        return results
+
 
 def _run() -> list[dict[str, object]]:
     async def main() -> list[dict[str, object]]:
