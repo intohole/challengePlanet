@@ -86,7 +86,7 @@ def test_reminder_aggregates_per_user() -> None:
     assert multi[0]["data"]["challenge_count"] == 2, multi
     assert multi[0]["title"] == "2 个挑战待打卡", multi
     assert multi[0]["link"] == "/challengePlanet/", multi
-    assert multi[0]["channels"] == ["in_app"], multi
+    assert multi[0]["channels"] == ["in_app", "email"], multi
     assert str(multi[0]["content"]).startswith("你有 2 个挑战今天还没打卡，"), multi
 
     solo = by_user["2002"]

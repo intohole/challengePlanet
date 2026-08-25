@@ -80,7 +80,7 @@ async def send_checkin_reminders() -> None:
                         "type": "task",
                         "priority": priority,
                         "app_id": "challengePlanet",
-                        "channels": ["in_app"],
+                        "channels": ["in_app", "email"],
                         "link": "/challengePlanet/",
                         "data": {"challenge_count": len(challenges)},
                     }
