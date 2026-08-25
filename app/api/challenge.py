@@ -80,7 +80,7 @@ async def create_challenge_nl(
         title = str(parsed.get("title", request.raw_input[:10]))
         category = str(parsed.get("category", "other"))
         duration = int(parsed.get("duration_days", 30))
-        description = str(parsed.get("description", request.raw_input))
+        description = ""
         parsed_out = {
             "title": title,
             "category": category,
@@ -159,6 +159,19 @@ async def create_from_decision(
         session, user_id, request.title, request.description, request.duration_days
     )
     return await service.build_response(session, challenge, user_id)
+
+
+@router.delete("/{challenge_id}")
+async def delete_challenge(
+    challenge_id: int,
+    user_id: str = Depends(get_current_user_id_required),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, str | bool]:
+    service = ChallengeService()
+    result = await service.delete_challenge(session, challenge_id, user_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="挑战不存在")
+    return result
 
 
 @router.get("/{challenge_id}/today", response_model=TodayTaskResponse)

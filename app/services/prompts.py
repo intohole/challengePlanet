@@ -28,7 +28,7 @@ PARSE_SYSTEM = (
     "decompose_mode: 用户提到'每小时/每时段/几点到几点'时=time_slot，否则=none\n"
     "slot_hours: decompose_mode=time_slot时，默认1小时\n"
     "slot_target_value: decompose_mode=time_slot时，时段目标值，默认0表示继承日均分配\n\n"
-    "输出JSON格式：{\"title\": \"...\", \"category\": \"...\", \"duration_days\": ..., \"description\": \"...\", "
+    "输出JSON格式：{\"title\": \"...\", \"category\": \"...\", \"duration_days\": ..., "
     "\"task_type\": \"...\", \"target_value\": ..., \"unit\": \"...\", \"direction\": \"...\", \"goal_type\": \"...\", \"decompose_mode\": \"...\", \"slot_hours\": ..., \"slot_target_value\": ...}"
 )
 

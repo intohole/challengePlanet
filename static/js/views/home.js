@@ -154,10 +154,10 @@ window.cpViews.home = (function () {
 
       html += '<div class="glass-card cp-hero cp-ch-titlebar"><div class="cp-ch-title-main"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(ch.title) + '</div>' + (ch.total_days ? '<span class="cp-ch-title-meta"><i class="fas fa-flag-checkered"></i> ' + (ch.completed_days || 0) + '/' + ch.total_days + ' 天</span>' : '') + '</div><div class="cp-hero-actions">' + (ch.share_token ? '<button class="cp-hero-share-btn" onclick="cpViews.home.openShareConfig()"><i class="fas fa-link"></i></button>' : '') + '<button class="cp-hero-share-btn cp-hero-companion-btn" onclick="cpCompanion.open()"><i class="fas fa-robot"></i></button></div></div>'
 
-      html += '<div class="cp-tabs"><button class="cp-tab' + (d.activeTab === 'today' ? ' active' : '') + '" onclick="cpViews.home.switchTab(\'today\')"><i class="fas fa-fire"></i><span>今日</span></button><button class="cp-tab' + (d.activeTab === 'progress' ? ' active' : '') + '" onclick="cpViews.home.switchTab(\'progress\')"><i class="fas fa-chart-line"></i><span>进度</span></button><button class="cp-tab' + (d.activeTab === 'insight' ? ' active' : '') + '" onclick="cpViews.home.switchTab(\'insight\')"><i class="fas fa-lightbulb"></i><span>洞察</span></button></div>'
-
       if (d.loading && !d.today) return html + this._skeleton()
       if (d.error) html += '<div class="cp-error-box"><i class="fas fa-circle-exclamation"></i><span>' + window.cpEsc(d.error) + '</span><button class="cp-btn-ghost" onclick="cpViews.home.load()">重试</button></div>'
+      html += this._todayTop(s)
+      html += '<div class="cp-tabs"><button class="cp-tab' + (d.activeTab === 'today' ? ' active' : '') + '" onclick="cpViews.home.switchTab(\'today\')"><i class="fas fa-fire"></i><span>今日</span></button><button class="cp-tab' + (d.activeTab === 'progress' ? ' active' : '') + '" onclick="cpViews.home.switchTab(\'progress\')"><i class="fas fa-chart-line"></i><span>进度</span></button><button class="cp-tab' + (d.activeTab === 'insight' ? ' active' : '') + '" onclick="cpViews.home.switchTab(\'insight\')"><i class="fas fa-lightbulb"></i><span>洞察</span></button></div>'
       if (d.activeTab === 'progress') html += this._tabProgress(s)
       else if (d.activeTab === 'insight') html += this._tabInsight(s)
       else html += this._tabToday(s)
@@ -165,15 +165,18 @@ window.cpViews.home = (function () {
       return html
     },
 
-    _tabToday(s) {
+    _todayTop(s) {
       const d = this.data
       let html = ''
       if (d.guidance && d.guidance.is_at_risk) {
         html += '<div class="cp-risk-banner"><i class="fas fa-triangle-exclamation"></i><span>中断了！今天重新打卡，节奏就能恢复</span><button class="cp-risk-btn" onclick="cpViews.home.load()">立即打卡</button></div>'
       }
       html += this._taskArea(s)
-      html += this._todayTimeline(s)
       return html
+    },
+
+    _tabToday(s) {
+      return this._todayTimeline(s)
     },
 
     useTemplate(i) {

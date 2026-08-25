@@ -207,6 +207,8 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-progress-bar { height: 5px; border-radius: 3px; background: rgba(15,23,42,.05); margin-top: 7px; overflow: hidden; }
 .cp-progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--primary), var(--primary-light)); transition: width .5s; }
 .cp-ch-row-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.cp-ch-row-end { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; color: var(--text-muted); transition: all .2s; }
+.cp-ch-row-end:hover { background: rgba(239,68,68,.12); color: #ef4444; }
 .cp-me-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 16px; }
 
 .cp-share-img { width: 100%; border-radius: var(--radius); display: block; }

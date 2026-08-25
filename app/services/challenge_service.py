@@ -100,6 +100,21 @@ class ChallengeService:
     async def get_challenge(self, session: AsyncSession, challenge_id: int) -> Challenge | None:
         return await self._repo.get_by_id(session, challenge_id)
 
+    async def delete_challenge(
+        self, session: AsyncSession, challenge_id: int, user_id: str,
+    ) -> dict[str, object] | None:
+        challenge = await self._repo.get_by_id(session, challenge_id)
+        if challenge is None or challenge.user_id != user_id:
+            return None
+        record_count = await self._checkin_repo.count_by_challenge(session, challenge.id)
+        if record_count == 0:
+            await self._repo.delete_with_children(session, challenge.id)
+            await session.commit()
+            return {"deleted": True, "status": "deleted", "message": "挑战已删除"}
+        await self._repo.update(session, challenge.id, {"status": "ended"})
+        await session.commit()
+        return {"deleted": True, "status": "ended", "message": "挑战已结束，战绩已保留"}
+
     async def get_challenge_stats(
         self, session: AsyncSession, challenge: Challenge,
     ) -> dict[str, int]:

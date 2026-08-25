@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.challenge import Challenge
+from app.models.adaptive import AdaptiveSuggestion
+from app.models.checkin import AIInsight, CheckIn
+from app.models.points import ChallengeMeta, StreakAction
+from app.models.sub_goal import SubGoal
 
 
 class ChallengeRepository:
@@ -36,6 +40,12 @@ class ChallengeRepository:
         await session.execute(
             update(Challenge).where(Challenge.id == challenge_id).values(**data)
         )
+        await session.flush()
+
+    async def delete_with_children(self, session: AsyncSession, challenge_id: int) -> None:
+        for model in (CheckIn, SubGoal, AIInsight, StreakAction, ChallengeMeta, AdaptiveSuggestion):
+            await session.execute(delete(model).where(model.challenge_id == challenge_id))
+        await session.execute(delete(Challenge).where(Challenge.id == challenge_id))
         await session.flush()
 
     async def get_all_active(self, session: AsyncSession) -> list[Challenge]:
