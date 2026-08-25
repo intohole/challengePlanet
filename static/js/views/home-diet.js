@@ -51,7 +51,7 @@
     const colorMap = { ok: 'var(--emerald)', under: 'var(--amber)', over: 'var(--red)' }
     let h = '<div class="cp-diet-result">'
     h += '<div class="cp-diet-result-head"><span class="cp-diet-result-title"><i class="fas ' + (iconMap[status] || 'fa-circle-question') + '" style="color:' + (colorMap[status] || 'var(--amber)') + '"></i> 今日摄入约 ' + total + ' 千卡</span><span class="cp-diet-conf">' + Math.round((res.confidence || 0) * 100) + '% 置信</span></div>'
-    if (goal > 0) h += '<div class="cp-diet-assess"><b style="color:' + (colorMap[status] || 'var(--amber)') + '">' + (assess.label || '估算') + '</b> · <span>目标 ' + goal + ' 千卡 · ' + window.cpEsc(res.deficit_kcal || 0) + ' 缺口</span></div>'
+    if (goal > 0) h += '<div class="cp-diet-assess"><b style="color:' + (colorMap[status] || 'var(--amber)') + '">' + (assess.label || '估算') + '</b> · <span>目标 ' + goal + ' 千卡 · 今日' + (total >= goal ? '超出 ' : '还可吃 ') + Math.round(Math.abs(goal - total)) + ' 千卡</span></div>'
     if (res.items && res.items.length) {
       h += '<div class="cp-diet-items">'
       res.items.forEach(it => { if (it && it.name) h += '<span class="cp-diet-item">' + window.cpEsc(it.name) + ' <i>' + window.cpEsc(it.kcal) + '</i></span>' })

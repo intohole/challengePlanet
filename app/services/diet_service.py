@@ -52,7 +52,8 @@ def assess_calorie(value: float, target: float) -> dict[str, object]:
         return {"status": "ok", "label": "在范围内", "percent": 100.0}
     if ratio < 1 - TOLERANCE:
         return {"status": "under", "label": "摄入偏少", "percent": round(ratio * 100, 1)}
-    return {"status": "over", "label": "摄入偏多", "percent": round((2 - ratio) * 100, 1)}
+    pct = round(max(0.0, (2 - ratio) * 100), 1)
+    return {"status": "over", "label": "摄入偏多", "percent": pct}
 
 
 class DietService:
@@ -66,10 +67,9 @@ class DietService:
         result = await self._ai.estimate_diet_calories(description)
         target = float(getattr(challenge, "daily_calorie_target", 0) or 0)
         total = float(result.get("total_kcal", 0) or 0)
-        if target > 0:
-            result["assessment"] = assess_calorie(total, target) if total > 0 else {
-                "status": "unknown", "label": "暂无目标", "percent": 100.0,
-            }
+        result["assessment"] = assess_calorie(total, target) if target > 0 and total > 0 else {
+            "status": "unknown", "label": "暂无目标", "percent": 100.0,
+        }
         cal = calc_daily_target(
             str(getattr(challenge, "gender", "") or ""),
             int(getattr(challenge, "age", 0) or 0),
