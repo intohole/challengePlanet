@@ -131,6 +131,7 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 .cp-empty > p { color: var(--text-secondary); margin-bottom: 22px; }
 
 .cp-section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; color: var(--text-primary); }
+.cp-weight-hint { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.5; }
 .cp-error-box { padding: 14px 16px; border-radius: var(--radius); border: 1px solid rgba(248,113,113,.25); background: rgba(248,113,113,.08); color: var(--red); font-size: 13px; display: flex; align-items: flex-start; gap: 8px; line-height: 1.6; }
 .cp-error-box button { margin-left: auto; flex-shrink: 0; }
 

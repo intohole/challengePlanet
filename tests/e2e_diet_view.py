@@ -143,6 +143,7 @@ def main() -> None:
         check("记录体重区块", page.query_selector(".cp-weight-input") is not None, "")
         check("7日均值标题", "7日均值" in trend_text, trend_text)
         check("今日体重回填79.5", page.query_selector(".cp-weight-input").get_attribute("value") in ("79.5", "79.50"), "")
+        check("有记录时隐藏空态引导", page.query_selector(".cp-weight-hint") is None, "")
 
         print("== 4. 输入描述后点AI估算,出现结果与打卡 ==")
         desc = "早餐鸡蛋牛奶，午餐盒饭，晚餐一碗面"

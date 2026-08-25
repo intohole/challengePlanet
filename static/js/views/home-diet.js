@@ -34,6 +34,7 @@
     html += '</div>'
     html += '<div class="glass-card cp-diet-area">'
     html += '<div class="cp-section-title"><i class="fas fa-weight-scale" style="color:var(--primary-light)"></i> 记录体重</div>'
+    if (!(d.weightTrend && d.weightTrend.records && d.weightTrend.records.length)) html += '<div class="cp-weight-hint">选填 · 每天记一次更清晰，不测不影响打卡</div>'
     html += this._weightBox(ch)
     if (d.weightTrend && d.weightTrend.records && d.weightTrend.records.length) html += this._weightTrend()
     html += '</div>'
