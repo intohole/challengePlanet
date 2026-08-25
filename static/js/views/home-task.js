@@ -62,7 +62,6 @@
     if (t.task_tip) html += '<p class="cp-task-tip"><i class="fas fa-lightbulb"></i><span>' + window.cpEsc(t.task_tip) + '</span></p>'
     if (t.task_steps && t.task_steps.length) html += '<div class="cp-task-steps-preview">' + t.task_steps.map(st => '<span class="cp-step-preview-tag">' + window.cpEsc(st) + '</span>').join('') + '</div>'
     html += '</div>'
-    html += '<div id="cp-nux-checkin"></div>'
     if (isDiet) {
       html += this._dietArea(t, ch, (d.today && d.today.checkins_date))
     } else if (isMultiMode) {
@@ -72,6 +71,7 @@
     } else {
       html += '<button class="cp-btn-checkin done"><i class="fas fa-circle-check"></i> 今日已完成</button>'
     }
+    html += '<div id="cp-nux-checkin"></div>'
     if (t.checked_in) {
       if (tt === 'text' && t.checkin_data && t.checkin_data.reflection) {
         html += '<div class="glass-card cp-text-display"><div class="cp-text-display-head"><i class="fas fa-quote-left"></i> 今日记录</div><p class="cp-text-display-body">' + window.cpEsc(t.checkin_data.reflection) + '</p></div>'
