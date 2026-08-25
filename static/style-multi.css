@@ -30,6 +30,10 @@
 .cp-timeline-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; z-index: 1; box-shadow: 0 0 0 3px rgba(255,255,255,.9); }
 .cp-timeline-body { flex: 1; min-width: 0; padding-bottom: 4px; }
 .cp-timeline-val { font-size: 14px; font-weight: 700; }
+.cp-timeline-valrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cp-timeline-del { border: none; background: none; color: var(--text-muted); font-size: 11px; cursor: pointer; padding: 6px 4px; min-height: 32px; display: inline-flex; align-items: center; gap: 4px; border-radius: 8px; flex-shrink: 0; transition: color .15s; }
+.cp-timeline-del:hover { color: var(--red); }
+.cp-timeline-del:active { transform: scale(.96); }
 .cp-timeline-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 .cp-timeline-mood { font-size: 14px; margin-top: 2px; }
 .cp-timeline-reflection { font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; padding: 6px 10px; background: rgba(15,23,42,.025); border-radius: 8px; }

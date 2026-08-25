@@ -203,7 +203,8 @@
       html += '<div class="cp-timeline-time">' + time + '</div>'
       html += '<div class="cp-timeline-dot" style="background:' + valueColor + '"></div>'
       html += '<div class="cp-timeline-body">'
-      html += '<div class="cp-timeline-val" style="color:' + valueColor + '">' + c.value + ' ' + window.cpEsc(c.unit || ch.unit || '') + '</div>'
+      html += '<div class="cp-timeline-valrow"><div class="cp-timeline-val" style="color:' + valueColor + '">' + c.value + ' ' + window.cpEsc(c.unit || ch.unit || '') + '</div>'
+      html += '<button class="cp-timeline-del" onclick="cpViews.home.removeTodayRecord(' + c.id + ')"><i class="fas fa-trash-can"></i> 撤销</button></div>'
       if (subGoal) html += '<div class="cp-timeline-sub">' + window.cpEsc(subGoal.title) + '</div>'
       if (c.mood) html += '<div class="cp-timeline-mood">' + ({ good: '😊', normal: '😐', bad: '😔' }[c.mood] || '') + '</div>'
       if (c.reflection) html += '<div class="cp-timeline-reflection">' + window.cpEsc(c.reflection) + '</div>'
@@ -211,6 +212,19 @@
     })
     html += '</div></div>'
     return html
+  }
+
+  V.removeTodayRecord = async function (checkinId) {
+    const ch = window.appState.current
+    if (!ch) return
+    if (!window.confirm('撤销这条打卡记录？撤销后不可恢复。')) return
+    try {
+      await window.api.delete('/challenges/' + ch.id + '/checkins/' + checkinId)
+      window.cpToast('已撤销该条打卡')
+      await this.load()
+      await window.cpLoadChallenges()
+      this.rerender()
+    } catch (e) { window.cpToast(window.cpErrMsg(e, '撤销失败')) }
   }
 
   V._adaptiveCard = function (a) {
