@@ -96,10 +96,14 @@ window.cpCompanion = (function () {
     return process()
   }
 
+  var initChallengeId = null
+  var initPromise = null
   function ensureConversation(challengeId) {
     if (conversationId && currentChallengeId === challengeId) return Promise.resolve()
+    if (initPromise && initChallengeId === challengeId) return initPromise
+    initChallengeId = challengeId
     currentChallengeId = challengeId
-    return getJSON('/api/chat/conversations?page_size=50').then(function (res) {
+    initPromise = getJSON('/api/chat/conversations?page_size=50').then(function (res) {
       var items = (res && res.items) || []
       var hit = null
       for (var i = 0; i < items.length; i++) {
@@ -110,7 +114,14 @@ window.cpCompanion = (function () {
         conversationId = c.id
         return sendJSON('PATCH', '/api/chat/conversations/' + conversationId, { meta: { challenge_id: challengeId } })
       })
+    }).catch(function (e) {
+      conversationId = ''
+      currentChallengeId = null
+      throw e
+    }).finally(function () {
+      initPromise = null
     })
+    return initPromise
   }
 
   function loadHistory() {
@@ -137,13 +148,28 @@ window.cpCompanion = (function () {
     q.wait = wait || 0
   }
 
+  function getCurrentChallengeId() {
+    var s = window.appState
+    return (s && s.current && s.current.id) || null
+  }
+
   function sendHandler(content, callbacks) {
-    var accumulated = ''
     setQueue(0, 0)
     if (!conversationId) {
-      callbacks.onError(new Error('会话初始化中，请稍后再试'))
+      ensureConversation(getCurrentChallengeId()).then(function () {
+        if (conversationId) runStream(content, callbacks)
+        else callbacks.onError(new Error('伴学会话初始化失败，请稍后再试'))
+      }).catch(function () {
+        callbacks.onError(new Error('伴学会话初始化失败，请稍后再试'))
+      })
       return
     }
+    runStream(content, callbacks)
+  }
+
+  function runStream(content, callbacks) {
+    var accumulated = ''
+    setQueue(0, 0)
     fetch(window.cpPrefix + '/api/chat/conversations/' + conversationId + '/messages/stream', {
       method: 'POST', headers: headers(), body: JSON.stringify({ content: content })
     }).then(check).then(function (response) {
