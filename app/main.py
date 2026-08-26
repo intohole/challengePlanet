@@ -11,7 +11,7 @@ from nexus import close_uc_sdk, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_av
 from nexus.chat.engine import ChatEngine
 from nexus.chat.router import chat_router
 from nexus.logging import get_logger, setup_logging
-from nexus.notify import async_init_notify_client
+from nexus.notify import async_init_notify_client, register_notify_proxy
 from nexus.scheduler import get_scheduler
 
 from app.api.adaptive import router as adaptive_router
@@ -99,6 +99,8 @@ app.include_router(portal_router, prefix=API_PREFIX)
 app.include_router(scene_router, prefix=API_PREFIX)
 app.include_router(share_router, prefix=API_PREFIX)
 app.include_router(chat_router(ChatEngine(db_engine).register("challengePlanet", challenge_chat_handler), "challengePlanet"))
+
+register_notify_proxy(app)
 
 from nexus import create_auth_router, get_uc_sdk
 app.include_router(create_auth_router(prefix="/api/auth", uc_sdk_provider=get_uc_sdk, tags=["认证"], password_ops=True, endpoints={"config"}))
