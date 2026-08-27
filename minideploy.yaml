@@ -7,7 +7,7 @@ app:
   icon_url: "icon.svg"
   is_public: true
   workers: 1
-  path_prefix: /challengePlanet
+  path_prefix: /challengeplanet
   depends_on: ["lion","prompt-manager","beeMemory"]
 
 build:
