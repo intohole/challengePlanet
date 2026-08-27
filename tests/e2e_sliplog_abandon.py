@@ -96,7 +96,9 @@ def main() -> None:
             )
             print("slip_ui:", json.dumps(ui, ensure_ascii=False))
             check("记一笔区域渲染", ui["hasQuickArea"] and ui["bigTap"])
-            check("逐次记录文案", "如实记录" in ui["slipNote"] or "做一次记一次" in ui["slipNote"], ui["slipNote"])
+            ck = page.evaluate("() => !!(window.cpViews.home.data.today&&window.cpViews.home.data.today.checked_in)")
+            expect_note = "状态有变？如实补记就好" if ck else "没忍住？抽一根记一根，如实记录"
+            check("逐次记录文案", ui["slipNote"] == expect_note, f"checked_in={ck} note={ui['slipNote']}")
 
             before = page.evaluate("() => window.cpViews.home.data.today.today_total || 0")
             page.click(".cp-tap-chip:not(.ghost)")
