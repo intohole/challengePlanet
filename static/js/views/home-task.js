@@ -6,8 +6,8 @@
     const d = this.data
     const t = d.today
     let html = ''
+    if (ch.status !== 'active') return '<div class="glass-card cp-task-card"><p class="cp-task-title">' + (ch.status === 'completed' ? '🎉 挑战完成，太棒了！' : '挑战已结束，打卡战绩已保留') + '</p><p class="cp-task-desc">可在「我的」页创建新挑战，继续保持节奏。</p></div>'
     if (!t) {
-      if (ch.status !== 'active') return '<div class="glass-card cp-task-card"><p class="cp-task-title">🎉 挑战已' + (ch.status === 'completed' ? '完成，太棒了！' : '结束') + '</p><p class="cp-task-desc">可在「我的」页创建新挑战，继续保持节奏。</p></div>'
       if (ch.start_date && ch.start_date > window.cpTodayStr()) return '<div class="glass-card cp-task-card"><p class="cp-task-title">挑战尚未开始</p><p class="cp-task-desc">将于 ' + ch.start_date + ' 正式开始，先去准备一下吧。</p></div>'
       return ''
     }
@@ -15,6 +15,7 @@
     const ttLabel = window.cpTaskTypeLabel(tt) || '打卡'
     const isDiet = tt === 'diet' || ch.task_type === 'diet'
     const isMultiMode = !!t.repeatable || ch.decompose_mode === 'time_slot' || ch.task_type === 'counter' || ch.task_type === 'timer' || tt === 'counter' || tt === 'timer'
+    const slipBinary = !isDiet && !isMultiMode && (ch.direction === 'decrease' || ch.category === 'quit')
     html += '<div class="glass-card cp-task-card"><div class="cp-task-head"><span class="cp-task-day"><i class="fas fa-flag"></i>第 ' + (t.day_number || 1) + ' 天 · ' + (t.date || '') + '</span><div class="cp-task-head-right"><span class="cp-task-type-badge">' + ttLabel + '</span><span class="cp-task-pct">' + (t.progress_pct || 0) + '%</span></div></div><p class="cp-task-title">' + window.cpEsc(t.task_title || '完成今日打卡') + '</p>'
     if (t.task_description) html += '<p class="cp-task-desc">' + window.cpEsc(t.task_description) + '</p>'
     const baseline = t.dynamic_baseline || 0
@@ -28,7 +29,7 @@
     } else if (t.task_target && t.task_target > 0) {
       html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> 今日目标 <b>' + t.task_target + '</b> ' + window.cpEsc(t.task_unit || '') + '</div>'
     }
-    if (isMultiMode && t.today_total !== undefined) {
+    if ((isMultiMode || slipBinary) && t.today_total !== undefined) {
       const staticTarget = t.today_target || 1
       let pct, barColor
       if (baseline > 0) {
@@ -64,8 +65,8 @@
     html += '</div>'
     if (isDiet) {
       html += this._dietArea(t, ch, (d.today && d.today.checkins_date))
-    } else if (isMultiMode) {
-      html += this._multiCheckinArea(tt, t, ch)
+    } else if (isMultiMode || slipBinary) {
+      html += this._multiCheckinArea(tt, t, ch, slipBinary)
     } else if (!t.checked_in) {
       html += this._checkinArea(tt, t)
     } else {

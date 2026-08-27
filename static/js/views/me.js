@@ -23,7 +23,7 @@ window.cpViews.me = (function () {
           const cur = s.current && s.current.id === c.id
           const done = c.status === 'completed'
           const statusLabel = done ? '已完成' : (c.status === 'active' ? '进行中' : '已结束')
-          html += '<button class="cp-ch-row' + (cur ? ' current' : '') + '" onclick="cpSelectChallenge(\'' + c.id + '\')"><span class="cp-ch-row-icon">' + (c.icon || window.cpTemplates[0].icon) + '</span><span class="cp-ch-row-info"><span class="cp-ch-row-title">' + window.cpEsc(c.title) + '<span class="cp-ch-status' + (done ? ' done' : '') + '">' + statusLabel + '</span></span><span class="cp-progress-bar"><span class="cp-progress-fill" style="width:' + pct + '%"></span></span><span class="cp-ch-row-meta">' + (c.completed_days || 0) + '/' + c.total_days + ' 天 · 连续 ' + (c.streak || 0) + ' 天</span></span>' + (cur ? '<span class="cp-ic-primary"><i class="fas fa-circle-check"></i></span>' : '') + '<span class="cp-ch-row-end" title="' + ((c.completed_days || 0) > 0 ? '结束挑战' : '删除挑战') + '" onclick="event.stopPropagation();cpViews.me.endChallenge(' + c.id + ')"><i class="fas fa-' + ((c.completed_days || 0) > 0 ? 'flag-checkered' : 'trash') + '"></i></span></button>'
+          html += '<button class="cp-ch-row' + (cur ? ' current' : '') + '" onclick="cpSelectChallenge(\'' + c.id + '\')"><span class="cp-ch-row-icon">' + (c.icon || window.cpTemplates[0].icon) + '</span><span class="cp-ch-row-info"><span class="cp-ch-row-title">' + window.cpEsc(c.title) + '<span class="cp-ch-status' + (done ? ' done' : '') + '">' + statusLabel + '</span></span><span class="cp-progress-bar"><span class="cp-progress-fill" style="width:' + pct + '%"></span></span><span class="cp-ch-row-meta">' + (c.completed_days || 0) + '/' + c.total_days + ' 天 · 连续 ' + (c.streak || 0) + ' 天</span></span>' + (cur ? '<span class="cp-ic-primary"><i class="fas fa-circle-check"></i></span>' : '') + '<span class="cp-ch-row-end" title="' + ((c.completed_days || 0) > 0 ? '放弃挑战' : '删除挑战') + '" onclick="event.stopPropagation();cpViews.me.endChallenge(' + c.id + ')"><i class="fas fa-' + ((c.completed_days || 0) > 0 ? 'flag' : 'trash') + '"></i></span></button>'
         })
       }
       html += '<button class="cp-btn-ghost cp-block" onclick="cpCreate.open()"><i class="fas fa-plus"></i> 新建挑战</button></div>'
@@ -46,12 +46,12 @@ window.cpViews.me = (function () {
       if (!c || c.status !== 'active') return
       const hasRecord = (c.completed_days || 0) > 0
       const msg = hasRecord
-        ? '结束该挑战？打过的卡会保留为战绩，不再出现在首页，之后可重新开始。'
+        ? '放弃该挑战？已有 ' + (c.completed_days || 0) + ' 天打卡战绩会保留，挑战将不再出现在首页。'
         : '删除该挑战？还没有打卡记录，删除后不可恢复。'
       if (!window.confirm(msg)) return
       window.api.delete('/challenges/' + id)
         .then(() => {
-          window.cpToast(hasRecord ? '已结束挑战' : '已删除挑战')
+          window.cpToast(hasRecord ? '已放弃挑战，战绩保留' : '已删除挑战')
           return window.cpLoadChallenges()
         })
         .then(() => this.rerender())

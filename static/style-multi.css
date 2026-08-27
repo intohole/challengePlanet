@@ -43,6 +43,7 @@
 .cp-timeline-feedback .cp-md * { font-size: 12px; }
 
 .cp-quick-checkin { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
+.cp-slip-note { margin: -4px 0 0; text-align: center; font-size: 12px; color: var(--text-muted); }
 .cp-quick-btn { width: 100%; padding: 12px; font-size: 14px; font-weight: 600; }
 .cp-big-tap { position: relative; width: 100%; padding: 16px 14px; border: none; border-radius: 16px; background: linear-gradient(135deg, var(--primary), var(--purple)); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 8px 24px var(--primary-glow); transition: transform .15s ease, box-shadow .2s; overflow: hidden; }
 .cp-big-tap i { font-size: 20px; }

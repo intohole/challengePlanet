@@ -81,7 +81,7 @@
     }
   }
 
-  V._multiCheckinArea = function (tt, t, ch) {
+  V._multiCheckinArea = function (tt, t, ch, slipBinary) {
     const d = this.data
     const dis = d.checking ? 'disabled' : ''
     const subGoals = t.sub_goals || []
@@ -92,12 +92,16 @@
     const presets = isTimer ? [5, 10, 15, 20, 30] : [1, 2, 3, 5]
     let html = '<div class="cp-quick-checkin">'
     html += '<button class="cp-big-tap" ' + dis + ' onclick="cpViews.home.doFastTap(' + stepVal + ')"><i class="fas fa-hand-pointer"></i><span>记一笔</span><em>+' + (isTimer ? stepVal + '分' : stepVal + ' ' + unit) + '</em></button>'
+    html += '<p class="cp-slip-note">' + (t.checked_in ? '状态有变？如实补记就好' : (slipBinary ? '没忍住？抽一根记一根，如实记录' : '做一次记一次')) + '</p>'
     html += '<div class="cp-tap-row">'
     presets.forEach(v => {
       const label = isTimer ? '+' + v + '分' : '+' + v
       html += '<button class="cp-tap-chip" ' + dis + ' onclick="cpViews.home.doFastTap(' + v + ')"><i class="fas fa-plus"></i>' + label + '</button>'
     })
     html += '<button class="cp-tap-chip ghost" ' + dis + ' onclick="cpViews.home.openQuickForm()"><i class="fas fa-sliders"></i> 自定义</button></div>'
+    if (!t.checked_in) html += slipBinary
+      ? '<button class="cp-mini-link" ' + dis + ' onclick="cpViews.home.doCheckin(\'full\')">今天做到了？点亮今日打卡</button>'
+      : this._miniLink(dis)
     if (subGoals.length) {
       html += '<div class="cp-quick-subgoals">'
       subGoals.forEach(sg => {
