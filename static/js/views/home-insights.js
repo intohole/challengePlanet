@@ -195,44 +195,22 @@
 
   V._renderHeatmap = function (r, ch) {
     if (!r || !r.cells || !r.cells.length) return '<div class="cp-mini-empty">暂无热力图数据</div>'
-    const cells = r.cells
-    const weeks = []
-    let curWeek = []
-    const first = new Date(cells[0].date + 'T00:00:00')
-    const firstDay = first.getDay()
-    for (let i = 0; i < firstDay; i++) curWeek.push(null)
-    cells.forEach(c => {
-      curWeek.push(c)
-      if (curWeek.length === 7) { weeks.push(curWeek); curWeek = [] }
-    })
-    if (curWeek.length) weeks.push(curWeek)
-    const monthLabels = []
-    let lastMonth = -1
-    weeks.forEach((w, i) => {
-      for (let j = 0; j < 7; j++) {
-        const c = w[j]
-        if (c) {
-          const m = parseInt(c.date.slice(5, 7), 10)
-          if (m !== lastMonth) { monthLabels.push({ idx: i, label: m + '月' }); lastMonth = m }
-        }
-      }
-    })
-    let h = '<div class="cp-heatmap">'
-    h += '<div class="cp-heatmap-months">'
-    monthLabels.forEach(ml => { h += '<span class="cp-heatmap-month" style="left:' + (ml.idx * 14) + 'px">' + ml.label + '</span>' })
-    h += '</div>'
-    h += '<div class="cp-heatmap-grid">'
-    weeks.forEach(w => {
-      h += '<div class="cp-heatmap-week">'
-      w.forEach(c => {
-        if (!c) { h += '<div class="cp-heat-cell empty"></div>'; return }
-        h += '<div class="cp-heat-cell level-' + c.level + '" title="' + c.date + ' ' + c.value + ' ' + window.cpEsc(ch.unit) + '"></div>'
-      })
-      h += '</div>'
-    })
-    h += '</div></div>'
+    setTimeout(() => { V._mountHeatmap(r) }, 50)
+    let h = '<div id="cp-nux-heat"></div>'
     h += '<div class="cp-heatmap-stats"><span>活跃 ' + r.active_days + '天</span><span>达标 ' + r.on_track_days + '天</span><span>共 ' + r.total_days + '天</span></div>'
     return h
+  }
+
+  V._mountHeatmap = function (r) {
+    const el = document.getElementById('cp-nux-heat')
+    if (!el || !window.NuxCalendar) return
+    if (window.cpNuxHeatApp) { try { window.cpNuxHeatApp.unmount() } catch (e) {} }
+    window.cpNuxHeatApp = Vue.createApp({
+      components: { NuxCalendar: window.NuxCalendar },
+      data() { return { cells: r.cells || [] } },
+      template: '<nux-calendar mode="heatmap" :cells="cells"></nux-calendar>'
+    })
+    try { window.cpNuxHeatApp.mount(el) } catch (e) {}
   }
 
   V._renderCompletion = function (r, ch) {
