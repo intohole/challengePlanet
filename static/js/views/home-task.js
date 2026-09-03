@@ -23,9 +23,10 @@
     if (isDiet) {
       html += this._dietTargetPanel(t, ch)
     } else if (baseline > 0) {
-      const mainText = isDecrease ? '比昨天少 <b>' + baseline.toFixed(1) + '</b> 就行' : '比昨天多 <b>' + baseline.toFixed(1) + '</b> 就行'
-      const refText = (t.task_target && t.task_target > 0) ? '<span class="cp-task-target-ref">目标 ' + t.task_target + ' ' + window.cpEsc(t.task_unit || '') + '（参考）</span>' : ''
-      html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> ' + mainText + ' ' + window.cpEsc(t.task_unit || '') + refText + '</div>'
+      const unit = window.cpEsc(t.task_unit || '')
+      const mainText = isDecrease ? '比昨天少 <b>' + baseline.toFixed(1) + '</b> ' + unit + ' 就行' : '比昨天多 <b>' + baseline.toFixed(1) + '</b> ' + unit + ' 就行'
+      const refText = (t.task_target && t.task_target > 0) ? '<span class="cp-task-target-ref">目标 ' + t.task_target + ' ' + unit + '（参考）</span>' : ''
+      html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> ' + mainText + refText + '</div>'
     } else if (t.task_target && t.task_target > 0) {
       html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> 今日目标 <b>' + t.task_target + '</b> ' + window.cpEsc(t.task_unit || '') + '</div>'
     }
