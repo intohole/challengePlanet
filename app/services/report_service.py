@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.datetime_utils import now_china
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository, InsightRepository
 from app.repositories.sub_goal_repository import SubGoalRepository
@@ -32,7 +33,7 @@ class ReportService:
         days: int = 7,
     ) -> dict[str, object]:
         challenge = await self._get_challenge(session, challenge_id, user_id)
-        start_dt = datetime.now() - timedelta(days=days - 1)
+        start_dt = now_china() - timedelta(days=days - 1)
         rows = await self._checkin_repo.get_hourly_distribution(
             session, challenge_id, start_dt.strftime("%Y-%m-%d"), today_str()
         )
@@ -58,7 +59,7 @@ class ReportService:
         days: int = 30,
     ) -> dict[str, object]:
         challenge = await self._get_challenge(session, challenge_id, user_id)
-        start_dt = datetime.now() - timedelta(days=days - 1)
+        start_dt = now_china() - timedelta(days=days - 1)
         start_date = start_dt.strftime("%Y-%m-%d")
         rows = await self._checkin_repo.get_daily_totals(session, challenge_id, start_date, today_str())
         row_map = {r["date"]: r for r in rows}
@@ -99,9 +100,9 @@ class ReportService:
         year: int | None = None,
     ) -> dict[str, object]:
         challenge = await self._get_challenge(session, challenge_id, user_id)
-        target_year = year or datetime.now().year
+        target_year = year or now_china().year
         start_date = f"{target_year}-01-01"
-        end_date = today_str() if target_year == datetime.now().year else f"{target_year}-12-31"
+        end_date = today_str() if target_year == now_china().year else f"{target_year}-12-31"
         rows = await self._checkin_repo.get_daily_totals(session, challenge_id, start_date, end_date)
         row_map = {r["date"]: r for r in rows}
         start_dt = datetime.strptime(start_date, "%Y-%m-%d")
@@ -122,7 +123,7 @@ class ReportService:
     ) -> dict[str, object]:
         challenge = await self._get_challenge(session, challenge_id, user_id)
         days = 7 if period == "week" else 30
-        start_dt = datetime.now() - timedelta(days=days - 1)
+        start_dt = now_china() - timedelta(days=days - 1)
         rows = await self._checkin_repo.get_daily_totals(
             session, challenge_id, start_dt.strftime("%Y-%m-%d"), today_str()
         )
@@ -172,7 +173,7 @@ class ReportService:
             "last_30d_avg": stats["last_30d_avg"],
             "best_hour": best_hour, "worst_hour": worst_hour,
             "peak_hour": stats["peak_hour"],
-            "generated_at": datetime.now(), "insight": insight,
+            "generated_at": now_china(), "insight": insight,
         }
 
     def _overview_insight(self, stats: dict[str, object], challenge) -> str:

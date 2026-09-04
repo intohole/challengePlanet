@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.datetime_utils import now_china
 from app.models.challenge import Challenge
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
@@ -58,7 +59,7 @@ class ChallengeService:
         goal_weight: float = 0.0, activity_level: int = 2,
     ) -> Challenge:
         meta = CATEGORY_META.get(category, CATEGORY_META["other"])
-        start_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else datetime.now()
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else now_china()
         start_str = start_dt.strftime("%Y-%m-%d")
         end_str = (start_dt + timedelta(days=duration_days - 1)).strftime("%Y-%m-%d")
         daily_calorie_target: float = 0.0
@@ -226,7 +227,7 @@ class ChallengeService:
         if challenge is None or challenge.user_id != user_id:
             return None
         start_date = datetime.strptime(challenge.start_date, "%Y-%m-%d")
-        day_number = max(1, min((datetime.now() - start_date).days + 1, challenge.duration_days))
+        day_number = max(1, min((now_china() - start_date).days + 1, challenge.duration_days))
         plan_list = self._parse_plan(challenge.ai_plan)
         task = plan_list[day_number - 1] if plan_list and day_number <= len(plan_list) else {}
         today = today_str()

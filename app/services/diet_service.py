@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.datetime_utils import now_china
 from app.repositories.weight_repository import WeightRepository
 from app.services.ai_service import AIService
 
@@ -89,7 +88,7 @@ class DietService:
         self, session: AsyncSession, challenge_id: int, user_id: str,
         weight_kg: float, date: str | None = None,
     ) -> dict[str, object]:
-        date = date or datetime.now().strftime("%Y-%m-%d")
+        date = date or now_china().strftime("%Y-%m-%d")
         existing = await self._weights.get_by_date(session, challenge_id, date)
         if existing is not None:
             await self._weights.update(session, existing, weight_kg)

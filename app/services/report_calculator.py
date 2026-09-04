@@ -153,7 +153,7 @@ class ReportCalculator:
         valid = await load_valid_dates(session, challenge_id)
         streak = calc_streak(valid, today)
 
-        start_dt = datetime.now() - timedelta(days=6)
+        start_dt = now_china() - timedelta(days=6)
         hourly_rows = await self._checkin_repo.get_hourly_distribution(
             session, challenge_id, start_dt.strftime("%Y-%m-%d"), today
         )

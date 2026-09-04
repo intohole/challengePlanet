@@ -56,7 +56,7 @@ class ShareService:
         streak = calc_streak(valid, today_str())
         completed_days = len(checkins)
         start_date = datetime.strptime(challenge.start_date, "%Y-%m-%d")
-        current_day = min((datetime.now() - start_date).days + 1, challenge.duration_days)
+        current_day = min((now_china() - start_date).days + 1, challenge.duration_days)
         progress = _calc_progress(completed_days, challenge.duration_days)
         share_quote = await self._get_or_create_quote(session, challenge, streak)
         share_text = (

@@ -2,28 +2,30 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 
+from app.core.datetime_utils import now_china
+
 _DATE_FMT = "%Y-%m-%d"
 MAX_MISSED_LISTED = 14
 
 
 def today_str() -> str:
-    return datetime.now().strftime(_DATE_FMT)
+    return now_china().strftime(_DATE_FMT)
 
 
 def week_key_of(dt: datetime | None = None) -> str:
-    current = dt or datetime.now()
+    current = dt or now_china()
     iso = current.isocalendar()
     return f"{iso[0]}-W{iso[1]:02d}"
 
 
 def week_dates_of(dt: datetime | None = None) -> list[str]:
-    current = (dt or datetime.now()).date()
+    current = (dt or now_china()).date()
     monday = current - timedelta(days=current.weekday())
     return [(monday + timedelta(days=i)).strftime(_DATE_FMT) for i in range(7)]
 
 
 def month_prefix_of(dt: datetime | None = None) -> str:
-    return (dt or datetime.now()).strftime("%Y-%m")
+    return (dt or now_china()).strftime("%Y-%m")
 
 
 def shift_date(date_str: str, days: int) -> str:

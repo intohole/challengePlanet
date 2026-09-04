@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import secrets
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.datetime_utils import now_china
 from app.models.challenge import Challenge
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
@@ -217,7 +218,7 @@ class GuidanceService:
         config = await self.get_shared_config(session, share_token)
         if config is None:
             return None
-        start_dt = datetime.now()
+        start_dt = now_china()
         start_str = start_dt.strftime("%Y-%m-%d")
         end_str = (start_dt + timedelta(days=int(config["duration_days"]) - 1)).strftime("%Y-%m-%d")
         challenge = await self._repo.create(session, {

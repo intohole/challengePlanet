@@ -13,6 +13,7 @@ from app.repositories.checkin_repository import CheckInRepository, InsightReposi
 from app.repositories.points_repository import ChallengeMetaRepository
 from app.repositories.squad_repository import SquadRepository
 from app.repositories.sub_goal_repository import SubGoalRepository
+from app.core.datetime_utils import now_china
 from app.services.adaptive_service import evaluate_after_bad_mood_task
 from app.services.checkin_background import (
     fill_ai_after_checkin,
@@ -63,7 +64,7 @@ class CheckInService:
         if challenge is None or challenge.user_id != user_id:
             raise ValueError("挑战不存在")
 
-        ts = timestamp or datetime.now()
+        ts = timestamp or now_china()
         today = ts.strftime("%Y-%m-%d")
         hhmm = ts.strftime("%H:%M")
 

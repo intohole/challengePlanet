@@ -73,7 +73,7 @@ class CheckInRepository(StatelessRepository[CheckIn]):
     async def list_recent(
         self, session: AsyncSession, challenge_id: int, days: int = 7
     ) -> list[CheckIn]:
-        cutoff = datetime.now() - timedelta(days=days)
+        cutoff = now_china() - timedelta(days=days)
         result = await session.execute(
             select(CheckIn).where(
                 CheckIn.challenge_id == challenge_id,
