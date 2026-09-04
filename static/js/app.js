@@ -18,6 +18,7 @@ const state = reactive({
   challenges: [],
   current: null,
   pendingCount: 0,
+  loadError: '',
   toast: '',
   celebrate: false,
   celebrateText: '',
@@ -132,9 +133,15 @@ window.cpCopyFallback = text => {
 }
 
 async function loadChallenges() {
-  const res = await window.api.get('/challenges')
-  const d = res.data || res
-  state.challenges = Array.isArray(d) ? d : (d.items || d.challenges || [])
+  try {
+    const res = await window.api.get('/challenges')
+    const d = res.data || res
+    state.challenges = Array.isArray(d) ? d : (d.items || d.challenges || [])
+    state.loadError = ''
+  } catch (e) {
+    if (!state.challenges.length) state.challenges = []
+    state.loadError = window.cpErrMsg(e, '加载失败，请稍后重试')
+  }
   const prevId = state.current && state.current.id
   const active = state.challenges.find(c => c.status === 'active') || state.challenges[0] || null
   state.current = (prevId && state.challenges.find(c => c.id === prevId)) || active

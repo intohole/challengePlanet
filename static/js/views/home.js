@@ -31,7 +31,7 @@ window.cpViews.home = (function () {
       if (!s.booted) {
         html += this._skeleton()
       } else if (!s.challenges.length) {
-        html += this._empty()
+        html += s.loadError ? '<div class="cp-error-box cp-error-box-full"><i class="fas fa-circle-exclamation"></i><span>' + window.cpEsc(s.loadError) + '</span><button class="cp-btn-ghost" onclick="cpViews.home.load()">重试</button></div>' : this._empty()
       } else if (s.current) {
         html += this._main(s)
       }
