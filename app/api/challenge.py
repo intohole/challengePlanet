@@ -4,9 +4,21 @@ import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from nexus import get_current_user_id_required
+from nexus import get_datacenter_client, DOMAIN_GROWTH
 from nexus.streaming import sse_event_dict, sse_response
 from sqlalchemy.ext.asyncio import AsyncSession
+
+_security = HTTPBearer(auto_error=False)
+
+
+async def get_bearer_token(
+    creds: HTTPAuthorizationCredentials | None = Depends(_security),
+) -> str:
+    if creds is None:
+        return ""
+    return creds.credentials
 
 from app.db.database import get_db
 from app.schemas.challenge import (
@@ -130,6 +142,7 @@ async def confirm_challenge(
     request: ChallengeConfirmRequest,
     user_id: str = Depends(get_current_user_id_required),
     session: AsyncSession = Depends(get_db),
+    bearer: str = Depends(get_bearer_token),
 ) -> ChallengeResponse:
     service = ChallengeService()
     plan = [day.model_dump() for day in request.plan]
@@ -148,6 +161,14 @@ async def confirm_challenge(
         weight_kg=request.weight_kg, goal_weight=request.goal_weight,
         activity_level=request.activity_level,
     )
+    if bearer:
+        try:
+            dc = await get_datacenter_client()
+            await dc.report(bearer, domain=DOMAIN_GROWTH, asset_type="challenge",
+                            app="challengeplanet", ref_id=challenge.id, title=request.title,
+                            summary=f"{request.category} · {request.duration_days}天")
+        except Exception:
+            pass
     return await service.build_response(session, challenge, user_id)
 
 
@@ -156,11 +177,20 @@ async def create_from_decision(
     request: FromDecisionRequest,
     user_id: str = Depends(get_current_user_id_required),
     session: AsyncSession = Depends(get_db),
+    bearer: str = Depends(get_bearer_token),
 ) -> ChallengeResponse:
     service = ChallengeService()
     challenge = await service.create_from_decision(
         session, user_id, request.title, request.description, request.duration_days
     )
+    if bearer:
+        try:
+            dc = await get_datacenter_client()
+            await dc.report(bearer, domain=DOMAIN_GROWTH, asset_type="challenge",
+                            app="challengeplanet", ref_id=challenge.id, title=request.title,
+                            summary=f"{request.duration_days}天挑战")
+        except Exception:
+            pass
     return await service.build_response(session, challenge, user_id)
 
 
