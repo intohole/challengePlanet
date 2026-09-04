@@ -76,24 +76,7 @@ window.cpCompanion = (function () {
   }
 
   function readSSE(response, onData, onDone, onError) {
-    var reader = response.body.getReader()
-    var decoder = new TextDecoder()
-    var buffer = ''
-    function process() {
-      return reader.read().then(function (result) {
-        if (result.done) { if (onDone) onDone(); return }
-        buffer += decoder.decode(result.value, { stream: true })
-        var lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-        lines.forEach(function (line) {
-          if (line.indexOf('data: ') === 0) {
-            try { onData(JSON.parse(line.slice(6))) } catch (e) {}
-          }
-        })
-        return process()
-      }).catch(function (err) { if (onError) onError(err) })
-    }
-    return process()
+    return window.NexusStream.read(response, { onChunk: onData, onDone: onDone, onError: onError })
   }
 
   var initChallengeId = null
