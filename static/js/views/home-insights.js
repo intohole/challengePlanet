@@ -271,8 +271,7 @@
 
   V._companionBubble = function (c) {
     if (!c || c.level === 'low') return ''
-    const hour = new Date().getHours()
-    const greet = hour < 5 ? '夜深了' : (hour < 12 ? '上午好' : (hour < 18 ? '下午好' : '晚上好'))
+    const greet = (window.NexusUtils && NexusUtils.getGreeting) ? NexusUtils.getGreeting() : '你好'
     const levelTxt = { high: '今天有点危险', medium: '今天需要留意' }[c.level] || '今天的提醒'
     const icon = c.level === 'high' ? 'fa-heart-crack' : 'fa-hand-holding-heart'
     let h = '<div class="cp-companion ' + (c.level === 'high' ? 'cp-companion-hot' : '') + '">'
