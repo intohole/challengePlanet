@@ -6,6 +6,7 @@ from datetime import datetime
 from nexus.logging import get_logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.datetime_utils import now_china
 from app.models.challenge import Challenge
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository

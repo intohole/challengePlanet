@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexus import StatelessRepository
 
+from app.core.datetime_utils import now_china
 from app.models.checkin import CheckIn, AIInsight
 
 

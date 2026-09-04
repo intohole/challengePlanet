@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.datetime_utils import now_china
 from app.repositories.checkin_repository import CheckInRepository
 from app.services.mercy_service import load_valid_dates
 from app.services.streak_service import calc_streak, today_str
