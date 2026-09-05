@@ -113,6 +113,10 @@ window.cpCelebrate = text => {
 }
 window.cpErrMsg = (e, fallback) => {
   if (window.mapHttpError && e && e.name === 'NexusApiError') return window.mapHttpError(e)
+  if (window.NexusErrorText) {
+    const mapped = window.NexusErrorText.fromError(e, fallback || '操作失败，请稍后重试')
+    return mapped.message || mapped.title
+  }
   return (e && e.message) || fallback || '操作失败，请稍后重试'
 }
 window.cpCopy = text => {

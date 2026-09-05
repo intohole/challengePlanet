@@ -187,7 +187,7 @@ async def create_from_decision(
         try:
             dc = await get_datacenter_client()
             await dc.report(bearer, domain=DOMAIN_GROWTH, asset_type="challenge",
-                            app="challengeplanet", ref_id=challenge.id, title=request.title,
+                            app="challengeplanet", ref_id=str(challenge.id), title=request.title,
                             summary=f"{request.duration_days}天挑战")
         except Exception:
             pass

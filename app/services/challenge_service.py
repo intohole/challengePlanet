@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import secrets
 from datetime import datetime, timedelta
 
@@ -17,6 +18,8 @@ from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.goal_rule_service import daily_target, is_ladder, ladder_progress_pct, resolve_mode
 from app.services.mercy_service import MercyService, load_valid_dates
 from app.services.streak_service import calc_streak, today_str
+
+logger = logging.getLogger(__name__)
 
 CATEGORY_META: dict[str, dict[str, str]] = {
     "quit": {"icon": "🚭", "color": "#ef4444", "label": "戒除"},
@@ -220,13 +223,25 @@ class ChallengeService:
             created_at=c.created_at,
         )
 
+    def _parse_start_date(self, raw: str | None) -> datetime | None:
+        if not raw:
+            return None
+        try:
+            return datetime.strptime(raw, "%Y-%m-%d")
+        except (ValueError, TypeError):
+            logger.warning("challenge start_date 无法解析: %r", raw)
+            return None
+
     async def get_today_task(
         self, session: AsyncSession, challenge_id: int, user_id: str,
     ) -> dict[str, object] | None:
         challenge = await self._repo.get_by_id(session, challenge_id)
         if challenge is None or challenge.user_id != user_id:
             return None
-        start_date = datetime.strptime(challenge.start_date, "%Y-%m-%d")
+        parsed_start = self._parse_start_date(challenge.start_date)
+        if parsed_start is None:
+            return None
+        start_date: datetime = parsed_start
         day_number = max(1, min((now_china() - start_date).days + 1, challenge.duration_days))
         plan_list = self._parse_plan(challenge.ai_plan)
         task = plan_list[day_number - 1] if plan_list and day_number <= len(plan_list) else {}
@@ -355,12 +370,17 @@ class ChallengeService:
         items: list[dict[str, object]] = []
         for challenge in challenges:
             checked = await self._checkin_repo.get_by_date(session, challenge.id, today)
-            detail = await self.get_today_task(session, challenge.id, user_id)
-            items.append({
+            base_item: dict[str, object] = {
                 "challenge_id": challenge.id, "title": challenge.title,
                 "icon": challenge.icon, "color": challenge.color,
                 "checked": checked is not None,
-                "today_task_title": str((detail or {}).get("task_title", "")),
-            })
+                "today_task_title": "",
+            }
+            try:
+                detail = await self.get_today_task(session, challenge.id, user_id)
+                base_item["today_task_title"] = str((detail or {}).get("task_title", ""))
+            except Exception as e:
+                logger.warning("portal today 单条挑战构建失败 id=%s: %s", challenge.id, e)
+            items.append(base_item)
         pending = sum(1 for item in items if not item["checked"])
         return {"date": today, "pending_count": pending, "items": items}
