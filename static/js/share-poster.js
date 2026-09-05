@@ -114,7 +114,8 @@ window.cpSharePoster = (function () {
     ctx.fillText('已连续打卡 ' + (ch.streak || 0) + ' 天', px, 540)
 
     const rx = 375, ry = 660, rr = 62
-    const pct = ch.total_days ? Math.min(1, (ch.completed_days || 0) / ch.total_days) : 0
+    const st = window.NexusUseProgress ? window.NexusUseProgress.computeStats({ done: ch.completed_days || 0, total: ch.total_days || 0 }) : null
+    const pct = st ? st.percent / 100 : (ch.total_days ? Math.min(1, (ch.completed_days || 0) / ch.total_days) : 0)
     ctx.strokeStyle = 'rgba(148,163,255,.15)'
     ctx.lineWidth = 12
     ctx.beginPath()
