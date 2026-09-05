@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from nexus import get_current_user_id_required
-from nexus import get_datacenter_client, DOMAIN_GROWTH
+from nexus import get_datacenter_client, DOMAIN_GROWTH, report_core
 from nexus.streaming import sse_event_dict, sse_response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -192,6 +192,27 @@ async def create_from_decision(
         except Exception:
             pass
     return await service.build_response(session, challenge, user_id)
+
+
+@router.post("/datacenter/sync")
+async def sync_challenges_to_datacenter(
+    user_id: str = Depends(get_current_user_id_required),
+    session: AsyncSession = Depends(get_db),
+    bearer: str = Depends(get_bearer_token),
+) -> dict[str, object]:
+    service = ChallengeService()
+    challenges = await service.get_user_challenges(session, user_id)
+    items: list[dict[str, object]] = []
+    for c in challenges:
+        if c.status != "active":
+            continue
+        items.append({
+            "domain": DOMAIN_GROWTH, "asset_type": "challenge",
+            "app": "challengeplanet", "ref_id": str(c.id),
+            "title": c.title, "summary": f"{c.duration_days}天挑战",
+        })
+    result = await report_core(bearer, items)
+    return {"synced": result.get("succeeded", 0), "total": result.get("requested", 0)}
 
 
 @router.delete("/{challenge_id}")
