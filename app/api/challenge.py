@@ -210,6 +210,7 @@ async def sync_challenges_to_datacenter(
             "domain": DOMAIN_GROWTH, "asset_type": "challenge",
             "app": "challengeplanet", "ref_id": str(c.id),
             "title": c.title, "summary": f"{c.duration_days}天挑战",
+            "occurred_at": c.created_at.isoformat() if c.created_at else None,
         })
     result = await report_core(bearer, items)
     return {"synced": result.get("succeeded", 0), "total": result.get("requested", 0), "new": result.get("new", 0)}
