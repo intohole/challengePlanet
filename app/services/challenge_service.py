@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import secrets
 from datetime import datetime, timedelta
 
@@ -39,6 +40,12 @@ def _calc_progress(completed_days: int, duration_days: int) -> float:
     return round(completed_days * 100.0 / duration_days, 1)
 
 
+def _normalize_title(raw: str) -> str:
+    t = (raw or "").strip().strip('"\'“”‘’「」『』【】')
+    t = re.split(r"[，,。；;！!？?、]", t, maxsplit=1)[0].strip()
+    return t[:12] or "我的挑战"
+
+
 class ChallengeService:
     def __init__(self) -> None:
         self._repo = ChallengeRepository()
@@ -61,6 +68,7 @@ class ChallengeService:
         height_cm: float = 0.0, weight_kg: float = 0.0,
         goal_weight: float = 0.0, activity_level: int = 2,
     ) -> Challenge:
+        title = _normalize_title(title)
         meta = CATEGORY_META.get(category, CATEGORY_META["other"])
         start_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else now_china()
         start_str = start_dt.strftime("%Y-%m-%d")

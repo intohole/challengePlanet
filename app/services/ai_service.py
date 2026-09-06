@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import AsyncGenerator
 
 from nexus import get_llm_service, parse_llm_json
@@ -23,6 +24,12 @@ from app.services.prompts import (
 from app.services.scene_service import SceneService
 
 logger = get_logger("challengePlanet.ai")
+
+
+def _slice_title(raw: str) -> str:
+    t = (raw or "").strip().strip('"\'“”‘’「」『』【】')
+    t = re.split(r"[，,。；;！!？?、]", t, maxsplit=1)[0].strip()
+    return t[:10] or "我的挑战"
 
 
 def _fit_plan_length(plan: list[dict[str, object]], title: str, duration: int) -> list[dict[str, object]]:
@@ -64,7 +71,7 @@ class AIService:
         parsed = parse_llm_json(raw)
         if "raw_response" in parsed:
             parsed = {
-                "title": raw_input[:10], "category": "other", "duration_days": 30,
+                "title": _slice_title(raw_input), "category": "other", "duration_days": 30,
                 "task_type": "binary", "target_value": 1.0,
                 "unit": "次", "direction": "increase", "goal_type": "hard",
                 "decompose_mode": "none", "slot_hours": 1, "slot_target_value": 0.0,
