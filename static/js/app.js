@@ -78,6 +78,8 @@ window.cpCat = cat => window.cpCategoryMap[cat] || window.cpCategoryMap.other
 
 window.cpEsc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 
+window.cpTitleClean = s => String(s == null ? '' : s).replace(/[，,、]\s*(当前|进行中|打卡中|现在|目前)\s*$/, '').trim()
+
 window.cpMd = s => {
   if (window.NexusMarkdown && window.NexusMarkdown.render) return window.NexusMarkdown.render(String(s == null ? '' : s))
   return window.cpEsc(s)
@@ -267,6 +269,7 @@ const cpApp = createApp({
       { icon: '🧭', text: '我该怎么做才能坚持' },
     ]
     const riskLabel = l => ({ high: '高风险', medium: '需留意', low: '节奏稳定' }[l] || '节奏稳定')
+    const titleClean = t => window.cpTitleClean(t)
     return {
       state,
       cpScenes: window.cpScenes,
@@ -277,6 +280,7 @@ const cpApp = createApp({
       companionChatRef,
       companionQuickReplies,
       riskLabel,
+      titleClean,
       switchView,
       openShare,
       saveShareImage,

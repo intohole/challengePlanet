@@ -155,12 +155,12 @@ window.cpViews.home = (function () {
         html += '<div class="cp-ch-scroll">'
         s.challenges.forEach(c => {
           const cc = window.cpCat(c.category)
-          html += '<div class="cp-ch-chip' + (c.id === ch.id ? ' active' : '') + '" onclick="cpSelectChallenge(\'' + c.id + '\')"><i class="fas ' + cc.icon + '" style="color:' + cc.color + '"></i><span>' + window.cpEsc(c.title) + '</span><span class="cp-chip-badge">' + (c.completed_days || 0) + '/' + c.total_days + '</span></div>'
+          html += '<div class="cp-ch-chip' + (c.id === ch.id ? ' active' : '') + '" onclick="cpSelectChallenge(\'' + c.id + '\')"><i class="fas ' + cc.icon + '" style="color:' + cc.color + '"></i><span>' + window.cpEsc(window.cpTitleClean(c.title)) + '</span><span class="cp-chip-badge">' + (c.completed_days || 0) + '/' + c.total_days + '</span></div>'
         })
         html += '</div>'
       }
 
-      html += '<div class="glass-card cp-hero cp-ch-titlebar"><div class="cp-ch-title-main"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(ch.title) + '</div>' + (ch.total_days ? '<span class="cp-ch-title-meta"><i class="fas fa-flag-checkered"></i> ' + (ch.completed_days || 0) + '/' + ch.total_days + ' 天</span>' : '') + '</div><div class="cp-hero-actions">' + (ch.status === 'active' ? '<button class="cp-hero-share-btn" title="放弃挑战" onclick="cpViews.home.abandonCurrent()"><i class="fas fa-flag"></i></button>' : '') + (ch.share_token ? '<button class="cp-hero-share-btn" onclick="cpViews.home.openShareConfig()"><i class="fas fa-link"></i></button>' : '') + '<button class="cp-hero-share-btn cp-hero-companion-btn" onclick="cpCompanion.open()"><i class="fas fa-robot"></i></button></div></div>'
+      html += '<div class="glass-card cp-hero cp-ch-titlebar"><div class="cp-ch-title-main"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(window.cpTitleClean(ch.title)) + '</div>' + (ch.total_days ? '<span class="cp-ch-title-meta"><i class="fas fa-flag-checkered"></i> ' + (ch.completed_days || 0) + '/' + ch.total_days + ' 天</span>' : '') + '<div class="cp-hero-actions">' + (ch.status === 'active' ? '<button class="cp-hero-share-btn" title="放弃挑战" onclick="cpViews.home.abandonCurrent()"><i class="fas fa-flag"></i></button>' : '') + (ch.share_token ? '<button class="cp-hero-share-btn" onclick="cpViews.home.openShareConfig()"><i class="fas fa-link"></i></button>' : '') + '<button class="cp-hero-share-btn cp-hero-companion-btn" onclick="cpCompanion.open()"><i class="fas fa-robot"></i></button></div></div>'
 
       if (d.loading && !d.today) return html + this._skeleton()
       if (d.error) html += '<div class="cp-error-box"><i class="fas fa-circle-exclamation"></i><span>' + window.cpEsc(d.error) + '</span><button class="cp-btn-ghost" onclick="cpViews.home.load()">重试</button></div>'
@@ -192,8 +192,8 @@ window.cpViews.home = (function () {
       if (!ch || ch.status !== 'active') return
       const hasRecord = (ch.completed_days || 0) > 0
       const msg = hasRecord
-        ? '放弃「' + (ch.title || '') + '」？已有 ' + (ch.completed_days || 0) + ' 天打卡战绩会保留，挑战不再出现在首页。'
-        : '删除「' + (ch.title || '') + '」？还没有打卡记录，删除后不可恢复。'
+        ? '放弃「' + (window.cpTitleClean(ch.title) || '') + '」？已有 ' + (ch.completed_days || 0) + ' 天打卡战绩会保留，挑战不再出现在首页。'
+        : '删除「' + (window.cpTitleClean(ch.title) || '') + '」？还没有打卡记录，删除后不可恢复。'
       if (!window.confirm(msg)) return
       try {
         await window.api.delete('/challenges/' + ch.id)

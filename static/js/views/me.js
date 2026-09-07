@@ -5,8 +5,7 @@ window.cpViews.me = (function () {
     data: { points: null },
 
     titleClean(t) {
-      const s = String(t || '')
-      return s.replace(/[，,、]\s*(当前|进行中|打卡中|现在|目前)\s*$/, '').replace(/^\s+|\s+$/g, '')
+      return window.cpTitleClean(t)
     },
 
     render(el) {
