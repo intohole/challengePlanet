@@ -31,7 +31,7 @@ from app.schemas.challenge import (
 )
 from app.schemas.guidance import GuidanceResponse, ImportResponse, SharedConfigResponse
 from app.services.ai_service import AIService
-from app.services.challenge_service import ChallengeService
+from app.services.challenge_service import ChallengeService, _normalize_title
 from app.services.companion_service import companion_meta, load_challenge_state
 from app.services.guidance_service import GuidanceService
 
@@ -90,6 +90,7 @@ async def create_challenge_nl(
         except Exception:
             parsed = {}
         title = str(parsed.get("title", request.raw_input[:10]))
+        title = _normalize_title(title)
         category = str(parsed.get("category", "other"))
         duration = int(parsed.get("duration_days", 30))
         description = ""
