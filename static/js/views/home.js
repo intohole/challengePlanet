@@ -23,8 +23,7 @@ window.cpViews.home = (function () {
       html += '<div class="cp-greet"><div><h1>' + greet + '，' + window.cpEsc(s.nickname) + '</h1><p>' + window.cpTodayStr() + '</p></div>'
       if (s.booted && s.challenges.length) {
         const totalDone = s.challenges.reduce((a, c) => a + (c.completed_days || 0), 0)
-        const totalDays = s.challenges.reduce((a, c) => a + (c.total_days || 0), 0)
-        if (totalDays > 0) html += '<div class="cp-greet-stats"><span class="cp-greet-stat"><b>' + s.challenges.length + '</b>个挑战</span><span class="cp-greet-sep">·</span><span class="cp-greet-stat"><b>' + totalDone + '</b>/' + totalDays + '天</span></div>'
+        html += '<div class="cp-greet-stats"><span class="cp-greet-stat"><b>' + s.challenges.length + '</b>个挑战</span><span class="cp-greet-sep">·</span><span class="cp-greet-stat"><b>' + totalDone + '</b>次累计打卡</span></div>'
       }
       html += '</div>'
       html += '<div class="cp-view">'
