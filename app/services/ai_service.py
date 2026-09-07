@@ -29,7 +29,27 @@ logger = get_logger("challengePlanet.ai")
 def _slice_title(raw: str) -> str:
     t = (raw or "").strip().strip('"\'“”‘’「」『』【】')
     t = re.split(r"[，,。；;！!？?、]", t, maxsplit=1)[0].strip()
+    for suffix in ("当前", "进行中", "打卡中", "现在", "目前"):
+        if t.endswith(suffix):
+            t = t[: -len(suffix)].rstrip("，,、 ")
+            break
     return t[:10] or "我的挑战"
+
+
+_DECREASE_HINTS: tuple[str, ...] = (
+    "戒烟", "戒酒", "戒糖", "戒游戏", "戒零食", "戒手机", "戒熬夜",
+    "不熬夜", "少熬夜", "少抽烟", "减少", "减重", "减肥", "降", "控制",
+    "限制", "拒绝", "戒断", "不喝奶茶", "不吃零食", "少吃",
+)
+
+
+def _infer_direction(title: str, description: str, category: str, parsed_dir: str) -> str:
+    if parsed_dir in ("decrease", "increase"):
+        return parsed_dir
+    text = f"{title} {description}"
+    if category == "quit" or any(kw in text for kw in _DECREASE_HINTS):
+        return "decrease"
+    return "increase"
 
 
 def _fit_plan_length(plan: list[dict[str, object]], title: str, duration: int) -> list[dict[str, object]]:
@@ -79,7 +99,12 @@ class AIService:
         parsed.setdefault("task_type", "binary")
         parsed.setdefault("target_value", 1.0)
         parsed.setdefault("unit", "次")
-        parsed.setdefault("direction", "increase")
+        parsed["direction"] = _infer_direction(
+            str(parsed.get("title", "")),
+            raw_input,
+            str(parsed.get("category", "other")),
+            str(parsed.get("direction", "")),
+        )
         parsed.setdefault("goal_type", "hard")
         parsed.setdefault("decompose_mode", "none")
         parsed.setdefault("slot_hours", 1)

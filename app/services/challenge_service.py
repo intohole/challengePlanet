@@ -32,6 +32,7 @@ CATEGORY_META: dict[str, dict[str, str]] = {
 }
 
 SOURCE_LIFECOMPASS = "lifecompass"
+_STATUS_SUFFIXES: tuple[str, ...] = ("当前", "进行中", "打卡中", "现在", "目前")
 
 
 def _calc_progress(completed_days: int, duration_days: int) -> float:
@@ -43,6 +44,10 @@ def _calc_progress(completed_days: int, duration_days: int) -> float:
 def _normalize_title(raw: str) -> str:
     t = (raw or "").strip().strip('"\'“”‘’「」『』【】')
     t = re.split(r"[，,。；;！!？?、]", t, maxsplit=1)[0].strip()
+    for suffix in _STATUS_SUFFIXES:
+        if t.endswith(suffix):
+            t = t[: -len(suffix)].rstrip("，,、 ")
+            break
     return t[:12] or "我的挑战"
 
 
