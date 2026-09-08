@@ -17,7 +17,7 @@
 .cp-ch-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
 .cp-ch-chip { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: var(--radius-sm); border: 1px solid var(--card-border); background: rgba(15,23,42,.02); cursor: pointer; transition: all .2s; white-space: nowrap; flex-shrink: 0; color: var(--text-primary); }
 .cp-ch-chip.active { background: rgba(99,102,241,.14); border-color: var(--primary); }
-.cp-ch-chip span { font-size: 12px; font-weight: 600; }
+.cp-ch-chip span { font-size: 12px; font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
 .cp-chip-badge { font-size: 10px !important; color: var(--text-muted); background: rgba(15,23,42,.05); padding: 1px 6px; border-radius: 6px; }
 
 .cp-hero { padding: 20px 16px; text-align: center; position: relative; overflow: hidden; }

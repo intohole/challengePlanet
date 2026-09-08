@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import re
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -70,10 +71,12 @@ async def list_challenges(
 ) -> list[ChallengeResponse]:
     service = ChallengeService()
     challenges = await service.get_user_challenges(session, user_id)
-    results: list[ChallengeResponse] = []
-    for c in challenges:
-        results.append(await service.build_response(session, c, user_id))
-    return results
+    if not challenges:
+        return []
+    responses = await asyncio.gather(
+        *(service.build_response(session, c, user_id) for c in challenges)
+    )
+    return list(responses)
 
 
 @router.post("/nl-create", response_class=StreamingResponse)
