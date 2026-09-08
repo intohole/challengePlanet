@@ -256,7 +256,7 @@ class AIService:
         llm = get_llm_service()
         raw = await llm.ask(
             user_msg, system=COMPANION_SYSTEM,
-            temperature=0.8, max_tokens=96, timeout=20.0, task_type="assistant",
+            temperature=0.8, max_tokens=96, timeout=8.0, task_type="assistant",
         )
         return sanitize_coach_text(raw.strip(), system=COMPANION_SYSTEM)
 

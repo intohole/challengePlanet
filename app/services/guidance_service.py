@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import secrets
+import time
 from datetime import timedelta
 from typing import cast
 
@@ -69,6 +70,10 @@ MILESTONE_TIPS: dict[int, str] = {
     42: "42天深度巩固！你已超越95%的用户。坚持下去就是自动行为。",
     66: "66天习惯稳定期！你已超越98%的用户。这已成为你的第二天性。",
 }
+
+
+_COMPANION_CACHE: dict[str, dict[str, object]] = {}
+_COMPANION_TTL = 3600
 
 
 class GuidanceService:
@@ -153,9 +158,20 @@ class GuidanceService:
 
     async def _build_companion(self, challenge, streak: int, phase_key: str, risk: dict[str, object]) -> str:
         try:
-            return await AIService().generate_companion_message(
+            cache_key = f"{challenge.user_id}:{challenge.id}:{phase_key}:{streak}"
+            if cache_key in _COMPANION_CACHE:
+                entry = _COMPANION_CACHE[cache_key]
+                if entry["ts"] + _COMPANION_TTL > time.time():
+                    return str(entry["msg"])
+            msg = await AIService().generate_companion_message(
                 challenge.title, streak, phase_key, list(risk["reasons"])
             )
+            _COMPANION_CACHE[cache_key] = {"msg": msg, "ts": time.time()}
+            if len(_COMPANION_CACHE) > 512:
+                stale = [k for k, v in _COMPANION_CACHE.items() if v["ts"] + _COMPANION_TTL <= time.time()]
+                for k in stale[:128]:
+                    _COMPANION_CACHE.pop(k, None)
+            return msg
         except Exception:
             return companion_text(risk)
 
