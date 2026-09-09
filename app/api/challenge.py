@@ -39,6 +39,49 @@ from app.services.guidance_service import GuidanceService
 router = APIRouter()
 
 
+_PAIR_RE = re.compile(
+    r"从\s*(?:每天|每日|一天|现在|目前)?\s*(\d+(?:\.\d+)?)\s*(?:根|支|杯|瓶|颗|口|顿|个|次|支)?\s*(?:烟|香烟|戒|减|降|控制)?\s*(?:到|至|戒到|减到|降至)\s*(\d+(?:\.\d+)?)\s*(?:根|支|杯|瓶|颗|口|顿|个|次|支)?"
+)
+_MAX_RE = re.compile(
+    r"(?:每天|每日|一天)\s*(?:最多|控制在|不超过|在)\s*(\d+(?:\.\d+)?)\s*(根|支|杯|瓶|颗|口|顿|个)"
+)
+
+
+def _apply_quit_ladder(parsed: dict[str, object], raw_input: str) -> dict[str, object]:
+    if str(parsed.get("category", "")) != "quit":
+        return parsed
+    if str(parsed.get("goal_rule", "")) == "ladder" and float(parsed.get("ladder_start", 0) or 0) > 0:
+        return parsed
+    duration = max(1, int(parsed.get("duration_days", 30) or 30))
+    m = _PAIR_RE.search(raw_input)
+    if m is None:
+        c = _MAX_RE.search(raw_input)
+        if c is None:
+            return parsed
+        start = float(c.group(1))
+        goal = 0.0
+    else:
+        start = float(m.group(1))
+        goal = max(0.0, float(m.group(2)))
+    if start <= goal:
+        return parsed
+    span = start - goal
+    if span <= duration:
+        interval, step = 1, 1
+    else:
+        interval, step = max(1, int(-(-span // duration))), 1
+    parsed.update({
+        "goal_rule": "ladder",
+        "goal_mode": "ceiling",
+        "ladder_start": start,
+        "ladder_goal": goal,
+        "ladder_interval": interval,
+        "ladder_step": float(step),
+        "target_value": float(start),
+    })
+    return parsed
+
+
 def ladder_out(request: NLCreateRequest, parsed: dict[str, object]) -> dict[str, object]:
     rule = str(request.goal_rule or parsed.get("goal_rule") or "fixed")
     start = float(parsed.get("ladder_start", 0.0) or 0.0)
@@ -46,7 +89,7 @@ def ladder_out(request: NLCreateRequest, parsed: dict[str, object]) -> dict[str,
     if request.goal_rule == "ladder" or (
         rule == "ladder" and (request.ladder_start > 0 or start > 0)
     ):
-        if goal <= 0:
+        if goal <= 0 and start <= 0:
             goal = request.ladder_goal or float(parsed.get("target_value", 1.0) or 1.0)
         return {
             "goal_rule": "ladder",
@@ -90,6 +133,7 @@ async def create_challenge_nl(
         yield sse_event_dict("parsing")
         try:
             parsed = await ai.parse_challenge_input(request.raw_input)
+            parsed = _apply_quit_ladder(parsed, request.raw_input)
         except Exception:
             parsed = {}
         title = str(parsed.get("title", request.raw_input[:10]))
