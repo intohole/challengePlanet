@@ -371,6 +371,7 @@ window.cpCreate = (function () {
 
     deriveTaskType(p, scene) {
       if (scene && scene.task_type === 'diet') return 'diet'
+      if (scene && ['word', 'recite'].indexOf(scene.task_type) >= 0) return scene.task_type
       if (p && p.task_type && ['binary', 'counter', 'timer', 'step', 'text', 'choice'].indexOf(p.task_type) >= 0) return p.task_type
       if (!p || typeof p !== 'object') return (scene && scene.task_type) || 'binary'
       if (p.decompose_mode === 'time_slot') return 'counter'

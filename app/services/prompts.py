@@ -40,7 +40,7 @@ PLAN_SYSTEM = (
     '"tip": "小贴士", "task_type": "binary", "target_value": 0, '
     '"unit": "", "difficulty": 1, "steps": []}], '
     '"suggestions": ["建议1", "建议2", "建议3"]}\n'
-    "task_type: binary(是否完成)|counter(计数,如俯卧撑个数)|timer(计时,如冥想分钟)\n"
+    "task_type: binary(是否完成)|counter(计数,如俯卧撑个数)|timer(计时,如冥想分钟)|word(背英语单词)|recite(背诵古诗)\n"
     "target_value: 计数/计时类型的目标值; difficulty: 1-5难度等级\n"
     "渐进式难度设计原则：1)适应期(前20%):难度1-2，目标值50-70%；"
     "2)巩固期(20%-80%):难度2-4，目标值70%→100%；3)维持期(最后20%):难度3-5，100%。\n"

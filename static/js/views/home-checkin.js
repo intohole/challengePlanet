@@ -157,6 +157,8 @@
     if (tt === 'timer') return this._timerUI(t, dis)
     if (tt === 'step') return this._stepUI(t, dis)
     if (tt === 'text') return this._textUI(t, dis)
+    if (tt === 'word') return this._wordUI(t, dis)
+    if (tt === 'recite') return this._reciteUI(t, dis)
     return this._binaryUI(dis)
   }
 

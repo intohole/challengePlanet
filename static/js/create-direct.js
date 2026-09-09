@@ -33,10 +33,10 @@
 
     inferCategory(tt, scene) {
       if (scene && scene.id) {
-        const map = { quit: 'quit', running: 'fitness', fitness: 'fitness', study: 'learn', reading: 'learn', meditation: 'mind', morning: 'build', writing: 'build', gratitude: 'mind', water: 'build', diet: 'fitness' }
+        const map = { quit: 'quit', running: 'fitness', fitness: 'fitness', study: 'learn', reading: 'learn', meditation: 'mind', morning: 'build', writing: 'build', gratitude: 'mind', water: 'build', diet: 'fitness', english: 'learn', poem: 'learn', pomodoro: 'learn' }
         if (map[scene.id]) return map[scene.id]
       }
-      return { counter: 'fitness', timer: 'mind', text: 'other' }[tt] || 'build'
+      return { counter: 'fitness', timer: 'mind', text: 'other', word: 'learn', recite: 'learn' }[tt] || 'build'
     },
 
     async confirmDirect() {

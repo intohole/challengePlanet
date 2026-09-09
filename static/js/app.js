@@ -59,12 +59,15 @@ window.cpScenes = [
   { id: 'water', name: '饮水', icon: '💧', color: '#06b6d4', task_type: 'counter', unit: '杯', desc: '每天喝够8杯水，规律补水', default_target: 8, samples: ['30天每天喝够8杯水', '21天养成喝水习惯'], steps: ['准备一个水杯', '分时段喝完8杯水', '记录杯数'] },
   { id: 'diet', name: '减重', icon: '⚖️', color: '#0ea5e9', task_type: 'diet', unit: '千卡', desc: '控制每日摄入，科学减重', default_target: 300, samples: ['30天减重3公斤', '66天饮食控制科学减脂'], steps: ['记录三餐', '控制摄入在目标内', '记录体重变化'] },
   { id: 'quit', name: '戒断', icon: '🚭', color: '#ef4444', task_type: 'binary', unit: '次', desc: '戒除坏习惯，目标逐日递减', default_target: 0, samples: ['我要戒烟30天', '戒掉熬夜66天'], steps: ['识别触发场景', '用替代动作应对', '完成今日零接触'] },
+  { id: 'english', name: '英语', icon: '🔤', color: '#3b82f6', task_type: 'word', unit: '词', desc: '每日背单词，内置四级高频词库', default_target: 20, samples: ['30天每天背20个英语单词', '14天掌握高频核心词'], steps: ['看释义', '记例句', '自测默写'] },
+  { id: 'poem', name: '古诗', icon: '📜', color: '#b45309', task_type: 'recite', unit: '首', desc: '每日背一首唐诗，朗读到默写', default_target: 1, samples: ['30天背30首唐诗', '每天背一首古诗词'], steps: ['朗读全诗', '理解大意', '背诵全诗'] },
+  { id: 'pomodoro', name: '番茄', icon: '🍅', color: '#ef4444', task_type: 'timer', unit: '分钟', desc: '番茄工作法，25分钟专注打卡', default_target: 25, samples: ['每天4个番茄钟专注', '25分钟专注学习'], steps: ['设定任务', '专注25分钟', '休息5分钟'] },
   { id: 'custom', name: '自定义', icon: '🎯', color: '#8b5cf6', task_type: 'binary', unit: '次', desc: '完全按你的想法来', default_target: 1, samples: ['30天不喝奶茶', '每天给家人打个电话'], steps: [] },
 ]
 window.cpSceneMap = {}
 window.cpScenes.forEach(s => { window.cpSceneMap[s.id] = s })
 
-window.cpTaskTypeLabel = tt => ({ counter: '计数', timer: '计时', text: '记录', step: '分步', diet: '减重', binary: '打卡' })[tt] || '打卡'
+window.cpTaskTypeLabel = tt => ({ counter: '计数', timer: '计时', text: '记录', step: '分步', diet: '减重', binary: '打卡', word: '背词', recite: '背诵' })[tt] || '打卡'
 
 window.cpCategoryMap = {
   build: { icon: 'fa-seedling', color: '#34d399', label: '习惯养成' },

@@ -5,7 +5,7 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '' },
+    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work' },
     _ignite: null,
 
     render(el) {
@@ -189,15 +189,16 @@ window.cpViews.home = (function () {
 
     async abandonCurrent() {
       const ch = window.appState.current
-      if (!ch || ch.status !== 'active') return
-      const hasRecord = (ch.completed_days || 0) > 0
-      const msg = hasRecord
-        ? '放弃「' + (window.cpTitleClean(ch.title) || '') + '」？已有 ' + (ch.completed_days || 0) + ' 天打卡战绩会保留，挑战不再出现在首页。'
-        : '删除「' + (window.cpTitleClean(ch.title) || '') + '」？还没有打卡记录，删除后不可恢复。'
+      if (!ch) return
+      const msg = ch.status !== 'active'
+        ? '删除「' + (window.cpTitleClean(ch.title) || '') + '」？删除后不可恢复。'
+        : ((ch.completed_days || 0) > 0
+          ? '删除「' + (window.cpTitleClean(ch.title) || '') + '」？已有 ' + (ch.completed_days || 0) + ' 天打卡战绩，删除后不可恢复。'
+          : '删除「' + (window.cpTitleClean(ch.title) || '') + '」？删除后不可恢复。')
       if (!window.confirm(msg)) return
       try {
         await window.api.delete('/challenges/' + ch.id)
-        window.cpToast(hasRecord ? '已放弃挑战，战绩保留' : '已删除挑战')
+        window.cpToast('已删除挑战')
         this.loadedFor = null
         this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '' }
         await window.cpLoadChallenges()
