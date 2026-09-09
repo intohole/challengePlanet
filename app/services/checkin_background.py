@@ -70,13 +70,14 @@ async def safe_feedback(
         )
     except Exception as e:
         logger.warning("daily feedback fallback: %s", e)
+        prefix = f"第{day_number}天的记录已收到，"
         if is_soft_exceeded:
             if mood == "bad":
                 return "没关系，记录本身就是进步"
-            return "这个时段对你来说特别难，我们一起想办法"
+            return f"{prefix}超出目标不着急，先记下来，我们下次一起想办法"
         if mood == "bad":
             return "今天辛苦了，能记下来就已经很了不起了"
-        return "坚持就是胜利！明天继续加油"
+        return f"{prefix}保持自己的节奏，明天继续"
 
 
 async def safe_declaration(ai: AIService, title: str, day_number: int) -> str:

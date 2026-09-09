@@ -355,8 +355,13 @@ window.cpCreate = (function () {
         window.cpToast('挑战已开启！第1天「' + (first.title || c.editTitle) + '」')
         await window.cpLoadChallenges()
         if (ch && ch.id) window.appState.current = window.appState.challenges.find(x => x.id === ch.id) || window.appState.current
-        const home = window.cpViews.home
-        if (home && window.appState.view === 'home') { home.loadedFor = null; home.onShow(); home.rerender() }
+        const viewName = window.appState.view
+        const view = window.cpViews && window.cpViews[viewName]
+        if (view) {
+          if (view.loadedFor !== undefined) view.loadedFor = null
+          if (typeof view.onShow === 'function') view.onShow()
+          if (typeof view.rerender === 'function') view.rerender()
+        }
       } catch (e) {
         c.error = window.cpErrMsg(e, '创建失败，请重试')
       } finally {

@@ -52,24 +52,41 @@ def _infer_direction(title: str, description: str, category: str, parsed_dir: st
     return "increase"
 
 
+_FILL_VARIANTS: tuple[str, str, str] = (
+    "挑战真正开始前的最后一轮热身，用小行动找回对目标的掌控感",
+    "换个角度推进目标，把今天的任务拆成更小的一个动作先做起来",
+    "给自己设置一个小小的奖励仪式，完成后记录这一刻的感受",
+)
+
+_MILESTONE_DAYS: set[int] = {7, 14, 21, 28}
+
+
+def _derive_fill_item(day: int, base: dict[str, object], title: str, duration: int) -> dict[str, object]:
+    item = dict(base)
+    item["day"] = day
+    var = _FILL_VARIANTS[(day - 1) % len(_FILL_VARIANTS)]
+    if day in _MILESTONE_DAYS or day == duration:
+        item["title"] = f"阶段小结：回看前{day}天"
+        item["description"] = f"回顾这{day}天的进展，写下做得最好的1件事和明天要突破的1个点"
+        item["tip"] = "里程碑不追求量，而在于看见自己的变化"
+        item["difficulty"] = 1
+        return item
+    diff = 1 + ((day - 1) * 4 + (duration - 1)) // max(duration, 2)
+    item["title"] = str(base.get("title") or f"第{day}天")
+    item["description"] = str(base.get("description") or f"坚持{title}") + f"。今日重心：{var}"
+    item["tip"] = str(base.get("tip") or "保持自己的节奏")
+    item["difficulty"] = max(1, min(5, diff))
+    return item
+
+
 def _fit_plan_length(plan: list[dict[str, object]], title: str, duration: int) -> list[dict[str, object]]:
     if duration <= 0:
         duration = len(plan)
     fitted = plan[:duration]
-    template = dict(fitted[-1]) if fitted else {}
+    last = fitted[-1] if fitted else {}
     while len(fitted) < duration:
         day = len(fitted) + 1
-        item = dict(template)
-        item["day"] = day
-        item["title"] = str(template.get("title") or f"第{day}天")
-        item["description"] = str(template.get("description") or f"坚持{title}")
-        item["tip"] = str(template.get("tip") or "")
-        item.setdefault("task_type", template.get("task_type", "binary"))
-        item.setdefault("target_value", template.get("target_value", 0))
-        item.setdefault("unit", template.get("unit", ""))
-        item.setdefault("difficulty", template.get("difficulty", 1))
-        item.setdefault("steps", template.get("steps", []))
-        fitted.append(item)
+        fitted.append(_derive_fill_item(day, last, title, duration))
     for idx, item in enumerate(fitted):
         item["day"] = idx + 1
         item.setdefault("task_type", "binary")
