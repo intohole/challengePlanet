@@ -158,6 +158,7 @@ async def create_challenge_nl(
             "unit": str(parsed.get("unit", "次")),
             "direction": str(parsed.get("direction", "increase")),
             "goal_type": str(parsed.get("goal_type", "hard")),
+            "ladder_applied": str(parsed.get("goal_rule", "")) == "ladder",
             "decompose_mode": str(parsed.get("decompose_mode", "none")),
             "slot_hours": int(parsed.get("slot_hours", 1)),
             "slot_target_value": float(parsed.get("slot_target_value", 0.0)),
