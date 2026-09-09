@@ -134,7 +134,7 @@
     const workMin = Math.round(t.task_target || (ch && ch.target_value) || 25)
     let html = '<div class="cp-checkin-box">'
     html += '<div class="cp-pm-wrap">'
-    html += '<div class="cp-pm-ring' + (d.pmRunning ? ' running' : '') + '"><div class="cp-pm-time" id="cp-pm-time">' + this._pmFmt(d.pmLeft) + '</div><div class="cp-pm-phase">' + (isWork ? '🍅 专注中' : '☕ 休息中') + '</div></div>'
+    html += '<div class="cp-pm-ring' + (d.pmRunning ? ' running' : '') + '"><div class="cp-pm-time" id="cp-pm-time">' + this._pmFmt(d.pmLeft) + '</div><div class="cp-pm-phase">' + (isWork ? (d.pmRunning ? '🍅 专注中' : '🍅 专注计时') : '☕ 休息中') + '</div></div>'
     html += '<div class="cp-pm-controls">'
     html += '<button class="cp-pm-btn primary" ' + dis + ' onclick="cpViews.home.pmToggle()">' + (d.pmRunning ? '⏸ 暂停' : '▶ ' + (d.pmLeft < (isWork ? workMin * 60 : 300) ? '继续' : '开始专注')) + '</button>'
     html += '<button class="cp-pm-btn ghost" ' + dis + ' onclick="cpViews.home.pmReset()">↺ 重置</button></div>'
