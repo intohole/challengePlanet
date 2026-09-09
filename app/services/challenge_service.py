@@ -16,7 +16,7 @@ from app.repositories.points_repository import ChallengeMetaRepository
 from app.schemas.challenge import ChallengeResponse
 from app.services.ai_service import AIService
 from app.services.ai_text_sanitizer import sanitize_coach_text
-from app.services.goal_rule_service import daily_target, is_ladder, ladder_progress_pct, resolve_mode
+from app.services.goal_rule_service import daily_target, is_ladder, is_settled, ladder_progress_pct, resolve_mode
 from app.services.mercy_service import MercyService, load_valid_dates
 from app.services.streak_service import calc_streak, today_str
 
