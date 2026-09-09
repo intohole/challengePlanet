@@ -16,7 +16,6 @@ from app.schemas.adaptive import (
     DiagnoseApplyRequest,
     DiagnoseApplyResponse,
     DiagnoseResponse,
-    DiagnosisLatestResponse,
 )
 from app.services.adaptive_service import AdaptiveService
 from app.services.diagnosis_service import DiagnosisService
@@ -92,22 +91,6 @@ async def diagnose_break(
         raise bad_request(e)
     await session.commit()
     return DiagnoseResponse(**report)
-
-
-@router.get("/{challenge_id}/diagnosis", response_model=DiagnosisLatestResponse)
-async def get_latest_diagnosis(
-    challenge_id: int,
-    user_id: str = Depends(get_current_user_id_required),
-    session: AsyncSession = Depends(get_db),
-) -> DiagnosisLatestResponse:
-    service = DiagnosisService()
-    try:
-        report = await service.get_latest(session, challenge_id, user_id)
-    except ValueError as e:
-        raise bad_request(e)
-    if report is None:
-        return DiagnosisLatestResponse(report=None)
-    return DiagnosisLatestResponse(report=DiagnoseResponse(**report))
 
 
 @router.post("/{challenge_id}/diagnose/apply", response_model=DiagnoseApplyResponse)

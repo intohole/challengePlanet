@@ -171,8 +171,6 @@ check("建议方案合法", dg.get("suggestion_action") in ("lighten3", "micro",
 act = dg.get("suggestion_action") or "keep"
 st, aply = req("POST", "/challenges/%d/diagnose/apply" % cid3, {"action": act})
 check("应用诊断方案", st == 200 and aply.get("ok") is True, aply.get("message"))
-st, latest = req("GET", "/challenges/%d/diagnosis" % cid3)
-check("查询最新诊断", st == 200 and latest.get("report", {}).get("cause_label") == dg.get("cause_label"))
 
 print("== 7. 护盾里程碑(streak=7) ==")
 con = sqlite3.connect(DB)

@@ -192,17 +192,6 @@ class InsightRepository(StatelessRepository[AIInsight]):
     def __init__(self) -> None:
         super().__init__(AIInsight)
 
-    async def get_by_challenge(
-        self, session: AsyncSession, challenge_id: int, limit: int = 10
-    ) -> list[AIInsight]:
-        result = await session.execute(
-            select(AIInsight)
-            .where(AIInsight.challenge_id == challenge_id)
-            .order_by(AIInsight.created_at.desc())
-            .limit(limit)
-        )
-        return list(result.scalars().all())
-
     async def create(self, session: AsyncSession, data: dict[str, object]) -> AIInsight:
         return await super().create(session, data)
 

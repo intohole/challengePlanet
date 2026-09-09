@@ -43,17 +43,6 @@ class PointsRepository:
         result = await session.execute(stmt)
         return [(str(row[0]), int(row[1])) for row in result.fetchall()]
 
-    async def get_ledger(
-        self, session: AsyncSession, user_id: str, limit: int = 20
-    ) -> list[PointsLedger]:
-        result = await session.execute(
-            select(PointsLedger)
-            .where(PointsLedger.user_id == user_id)
-            .order_by(PointsLedger.created_at.desc())
-            .limit(limit)
-        )
-        return list(result.scalars().all())
-
 
 class StreakActionRepository:
     async def create(self, session: AsyncSession, data: dict[str, object]) -> StreakAction:

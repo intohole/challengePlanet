@@ -259,22 +259,6 @@ class CheckInService:
             raise ValueError("挑战不存在")
         return await self._repo.get_by_challenge(session, challenge_id)
 
-    async def get_today_checkins(
-        self, session: AsyncSession, challenge_id: int, user_id: str,
-    ) -> list[CheckIn]:
-        challenge = await self._challenge_repo.get_by_id(session, challenge_id)
-        if challenge is None or challenge.user_id != user_id:
-            raise ValueError("挑战不存在")
-        return await self._repo.list_by_date(session, challenge_id, today_str())
-
-    async def get_insights(
-        self, session: AsyncSession, challenge_id: int, user_id: str,
-    ) -> list:
-        challenge = await self._challenge_repo.get_by_id(session, challenge_id)
-        if challenge is None or challenge.user_id != user_id:
-            raise ValueError("挑战不存在")
-        return await self._insight_repo.get_by_challenge(session, challenge_id)
-
     async def get_weekly_report(
         self, session: AsyncSession, challenge_id: int, user_id: str,
     ) -> dict[str, object]:

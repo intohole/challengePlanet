@@ -173,38 +173,10 @@ async def get_checkins(
     return [_sanitized_checkin(c) for c in checkins]
 
 
-@router.get("/{challenge_id}/checkins/today", response_model=list[CheckInResponse])
-async def get_today_checkins(
-    challenge_id: int,
-    user_id: str = Depends(get_current_user_id_required),
-    session: AsyncSession = Depends(get_db),
-) -> list[CheckInResponse]:
-    service = CheckInService()
-    try:
-        checkins = await service.get_today_checkins(session, challenge_id, user_id)
-    except ValueError as e:
-        raise bad_request(e)
-    return [_sanitized_checkin(c) for c in checkins]
-
-
 def _sanitized_checkin(c) -> CheckInResponse:
     data = CheckInResponse.model_validate(c).model_dump()
     data["ai_feedback"] = sanitize_coach_text(c.ai_feedback)
     return CheckInResponse(**data)
-
-
-@router.get("/{challenge_id}/insights", response_model=list[InsightResponse])
-async def get_insights(
-    challenge_id: int,
-    user_id: str = Depends(get_current_user_id_required),
-    session: AsyncSession = Depends(get_db),
-) -> list[InsightResponse]:
-    service = CheckInService()
-    try:
-        insights = await service.get_insights(session, challenge_id, user_id)
-    except ValueError as e:
-        raise bad_request(e)
-    return [InsightResponse.model_validate(i) for i in insights]
 
 
 @router.get("/{challenge_id}/weekly-report", response_model=WeeklyReportResponse)

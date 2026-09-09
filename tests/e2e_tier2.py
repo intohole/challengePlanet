@@ -163,7 +163,8 @@ check("today_total累计=6.0", float(ck3.get("today_total", 0)) == 6.0,
       f"tt={ck3.get('today_total')}")
 
 print("== 6. 查询今日所有打卡记录 ==")
-st, today_ckins = req("GET", f"/challenges/{cid}/checkins/today", token=token)
+st, today_res = req("GET", f"/challenges/{cid}/today", token=token)
+today_ckins = today_res.get("today_checkins") if isinstance(today_res, dict) else None
 check("今日打卡列表3条", st == 200 and isinstance(today_ckins, list) and len(today_ckins) == 3,
       f"st={st} len={len(today_ckins) if isinstance(today_ckins, list) else 'NA'}")
 if isinstance(today_ckins, list) and today_ckins:
@@ -173,7 +174,7 @@ if isinstance(today_ckins, list) and today_ckins:
     check("打卡记录含context_tag", "context_tag" in today_ckins[0], "")
 
 print("== 7. 今日详情(含子目标进度) ==")
-st, detail = req("GET", f"/challenges/{cid}/today-detail", token=token)
+st, detail = req("GET", f"/challenges/{cid}/today", token=token)
 check("今日详情返回", st == 200 and isinstance(detail, dict),
       f"st={st} body={str(detail)[:200]}")
 check("今日详情today_total=6.0", float(detail.get("today_total", 0)) == 6.0,
@@ -198,7 +199,8 @@ ckid_to_delete = ck3.get("checkin", {}).get("id")
 st, del_body = req("DELETE", f"/challenges/{cid}/checkins/{ckid_to_delete}", token=token)
 check("删除打卡记录成功", st == 200 and del_body.get("ok") is True,
       f"st={st} body={del_body}")
-st, today_after_del = req("GET", f"/challenges/{cid}/checkins/today", token=token)
+st, today_res2 = req("GET", f"/challenges/{cid}/today", token=token)
+today_after_del = today_res2.get("today_checkins") if isinstance(today_res2, dict) else None
 check("删除后今日打卡2条",
       st == 200 and isinstance(today_after_del, list) and len(today_after_del) == 2,
       f"len={len(today_after_del) if isinstance(today_after_del, list) else 'NA'}")
@@ -383,7 +385,7 @@ st, bad_sub = req("POST", f"/challenges/{cid}/sub-goals", {
 }, token)
 check("超过4个子目标被拒绝400", st == 400, f"st={st} body={str(bad_sub)[:150]}")
 
-st, notfound = req("GET", "/challenges/999999/today-detail", token=token)
+st, notfound = req("GET", "/challenges/999999/today", token=token)
 check("不存在挑战404/400", st in (400, 404), f"st={st}")
 
 print("== 19. 他人挑战鉴权拦截 ==")
@@ -391,15 +393,12 @@ st, other_today = req("GET", f"/challenges/{cid2}/today", token=token)
 check("自己挑战可访问", st == 200, f"st={st}")
 
 print("== 20. 报表数据一致性验证 ==")
-st, final_today = req("GET", f"/challenges/{cid}/today-detail", token=token)
+st, final_today = req("GET", f"/challenges/{cid}/today", token=token)
 st, final_ov = req("GET", f"/challenges/{cid}/report/overview", token=token)
 if isinstance(final_today, dict) and isinstance(final_ov, dict):
-    check("today-detail与overview的today_total一致",
+    check("today与overview的today_total一致",
           float(final_today.get("today_total", 0)) == float(final_ov.get("today_total", 0)),
           f"td={final_today.get('today_total')} ov={final_ov.get('today_total')}")
-    check("today-detail与overview的direction一致",
-          final_today.get("direction") == final_ov.get("direction"),
-          f"td={final_today.get('direction')} ov={final_ov.get('direction')}")
 
 print(f"\n===== 结果: {len(passed)} 通过, {len(failed)} 失败 =====")
 for name, detail in failed:

@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.datetime_utils import now_china
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository, InsightRepository
-from app.repositories.sub_goal_repository import SubGoalRepository
 from app.services.report_calculator import ReportCalculator
 from app.services.streak_service import today_str
 
@@ -16,7 +15,6 @@ class ReportService:
     def __init__(self) -> None:
         self._challenge_repo = ChallengeRepository()
         self._checkin_repo = CheckInRepository()
-        self._sub_goal_repo = SubGoalRepository()
         self._insight_repo = InsightRepository()
         self._calc = ReportCalculator()
 
@@ -192,55 +190,3 @@ class ReportService:
             if best_hour >= 0:
                 return f"你在{best_hour:02d}:00-{best_hour + 1:02d}:00表现最好"
         return ""
-
-    async def get_today_checkins_with_sub_goals(
-        self, session: AsyncSession, challenge_id: int, user_id: str
-    ) -> dict[str, object]:
-        challenge = await self._get_challenge(session, challenge_id, user_id)
-        today = today_str()
-        today_checkins = await self._checkin_repo.list_by_date(session, challenge_id, today)
-        today_total = await self._checkin_repo.sum_value_by_date(session, challenge_id, today)
-        sub_goals = await self._sub_goal_repo.get_by_challenge(session, challenge_id)
-        sub_goal_list = await self._build_sub_goal_list(session, sub_goals, challenge, today)
-        from app.services.mercy_service import load_valid_dates
-        from app.services.streak_service import calc_streak
-        valid = await load_valid_dates(session, challenge_id)
-        streak = calc_streak(valid, today)
-        return {
-            "challenge_id": challenge_id, "today": today,
-            "today_total": today_total, "today_target": challenge.target_value,
-            "direction": challenge.direction, "unit": challenge.unit,
-            "goal_type": challenge.goal_type, "decompose_mode": challenge.decompose_mode,
-            "streak": streak,
-            "today_checkins": [self._format_checkin(c) for c in today_checkins],
-            "sub_goals": sub_goal_list,
-        }
-
-    async def _build_sub_goal_list(
-        self, session: AsyncSession, sub_goals, challenge, today: str,
-    ) -> list[dict[str, object]]:
-        result: list[dict[str, object]] = []
-        for sg in sub_goals:
-            today_value = await self._checkin_repo.sum_value_by_sub_goal(session, sg.id, today)
-            today_cnt_list = await self._checkin_repo.list_by_sub_goal(session, sg.id, today)
-            target = sg.target_value if sg.target_value > 0 else challenge.slot_target_value
-            pct = (today_value / target * 100) if target > 0 else 0.0
-            result.append({
-                "id": sg.id, "title": sg.title,
-                "time_window_start": sg.time_window_start,
-                "time_window_end": sg.time_window_end,
-                "target_value": target, "goal_type": sg.goal_type,
-                "weight": sg.weight, "today_value": today_value,
-                "today_checkin_count": len(today_cnt_list),
-                "progress_pct": round(min(pct, 100.0), 1),
-                "is_active": sg.is_active,
-            })
-        return result
-
-    def _format_checkin(self, c) -> dict[str, object]:
-        return {
-            "id": c.id, "timestamp": c.timestamp.isoformat(),
-            "value": c.value, "sub_goal_id": c.sub_goal_id,
-            "mood": c.mood, "reflection": c.reflection,
-            "context_tag": c.context_tag, "ai_feedback": c.ai_feedback,
-        }

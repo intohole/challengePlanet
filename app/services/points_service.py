@@ -99,8 +99,3 @@ class PointsService:
     ) -> list[dict[str, object]]:
         rows = await self._repo.get_week_leaderboard(session, week_key, scope_user_ids)
         return [{"user_id": uid, "points": pts} for uid, pts in rows]
-
-    async def get_ledger(
-        self, session: AsyncSession, user_id: str, limit: int = 20
-    ) -> list[PointsLedger]:
-        return await self._repo.get_ledger(session, user_id, limit)

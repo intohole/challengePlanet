@@ -12,17 +12,6 @@ class PointsSummaryResponse(BaseModel):
     week_key: str = ""
 
 
-class LedgerEntryResponse(BaseModel):
-    id: int
-    delta: int
-    reason: str
-    ref_id: Optional[str] = ""
-    week_key: str
-    created_at: Optional[datetime] = None
-
-    model_config = {"from_attributes": True}
-
-
 class LeaderboardEntry(BaseModel):
     user_id: str
     nickname: str = ""

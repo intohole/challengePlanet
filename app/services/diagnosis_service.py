@@ -130,23 +130,6 @@ class DiagnosisService:
         report["report_id"] = insight.id
         return report
 
-    async def get_latest(
-        self, session: AsyncSession, challenge_id: int, user_id: str
-    ) -> dict[str, object] | None:
-        await self._get_owned(session, challenge_id, user_id)
-        insights = await self._insight_repo.get_by_challenge(session, challenge_id, limit=10)
-        for insight in insights:
-            if insight.insight_type != "diagnosis":
-                continue
-            try:
-                report = json.loads(insight.content)
-            except (json.JSONDecodeError, TypeError):
-                return None
-            if isinstance(report, dict):
-                report["report_id"] = insight.id
-                return report
-        return None
-
     async def apply(
         self, session: AsyncSession, challenge_id: int, user_id: str, action: str
     ) -> dict[str, object]:

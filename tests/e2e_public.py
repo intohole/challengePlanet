@@ -190,8 +190,6 @@ print("== 13. 周报与洞察 ==")
 st, weekly = req("GET", f"/challenges/{cid}/weekly-report", token=token)
 check("周报结构正确", st == 200 and "week_checkins" in weekly and weekly.get("week_checkins") >= 1,
       f"={weekly}")
-st, insights = req("GET", f"/challenges/{cid}/insights", token=token)
-check("洞察列表可查", st == 200 and isinstance(insights, list), f"st={st}")
 
 print("== 14. 无token鉴权拦截 ==")
 st, _ = req("GET", "/challenges")

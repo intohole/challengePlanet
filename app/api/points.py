@@ -8,7 +8,6 @@ from app.db.database import get_db
 from app.schemas.points import (
     LeaderboardEntry,
     LeaderboardResponse,
-    LedgerEntryResponse,
     PointsSummaryResponse,
 )
 from app.services.points_service import PointsService
@@ -28,17 +27,6 @@ async def get_points_summary(
     total = await service.get_balance(session, user_id)
     week_points = await service.get_week_points(session, user_id, week_key)
     return PointsSummaryResponse(total=total, week_points=week_points, week_key=week_key)
-
-
-@router.get("/points/ledger", response_model=list[LedgerEntryResponse])
-async def get_points_ledger(
-    limit: int = 20,
-    user_id: str = Depends(get_current_user_id_required),
-    session: AsyncSession = Depends(get_db),
-) -> list[LedgerEntryResponse]:
-    service = PointsService()
-    entries = await service.get_ledger(session, user_id, min(max(limit, 1), 100))
-    return [LedgerEntryResponse.model_validate(e) for e in entries]
 
 
 @router.get("/leaderboard/weekly", response_model=LeaderboardResponse)

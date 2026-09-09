@@ -90,17 +90,3 @@ async def get_completion_rate(
     except ValueError as e:
         raise bad_request(e)
     return CompletionRateResponse(**result)
-
-
-@router.get("/{challenge_id}/today-detail")
-async def get_today_detail(
-    challenge_id: int,
-    user_id: str = Depends(get_current_user_id_required),
-    session: AsyncSession = Depends(get_db),
-) -> dict[str, object]:
-    service = ReportService()
-    try:
-        result = await service.get_today_checkins_with_sub_goals(session, challenge_id, user_id)
-    except ValueError as e:
-        raise bad_request(e)
-    return result

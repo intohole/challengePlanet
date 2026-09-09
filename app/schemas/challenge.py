@@ -217,21 +217,3 @@ class ShareDataResponse(BaseModel):
     share_text: str
     share_token: str
     share_quote: str = ""
-
-
-class SceneTemplateResponse(BaseModel):
-    scene_id: str
-    name: str
-    icon: str
-    color: str
-    description: str
-    task_type: str
-    default_target: float
-    unit: str
-    steps: list[str]
-    difficulty_curve: str
-    sample_prompts: list[str]
-
-
-class SceneListResponse(BaseModel):
-    scenes: list[SceneTemplateResponse]

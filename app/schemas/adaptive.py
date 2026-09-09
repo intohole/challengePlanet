@@ -48,10 +48,6 @@ class DiagnoseResponse(BaseModel):
     report_id: int = 0
 
 
-class DiagnosisLatestResponse(BaseModel):
-    report: Optional[DiagnoseResponse] = None
-
-
 class DiagnoseApplyRequest(BaseModel):
     action: str = Field(..., description="应用方案: lighten3/micro/keep")
 
