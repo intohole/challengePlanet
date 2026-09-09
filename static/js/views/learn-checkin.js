@@ -1,6 +1,5 @@
 ;(function () {
   const V = window.cpViews.home
-  const esc = window.cpEsc
   V._jsonCache = {}
   V._pmIv = null
 
@@ -37,10 +36,10 @@
     let html = '<div class="cp-checkin-box">'
     html += '<div class="cp-word-progress"><span>今日 ' + total + ' 词</span><span>' + (d.wordIdx + 1) + '/' + total + '</span></div>'
     html += '<div class="cp-word-card' + (d.wordRevealed ? ' revealed' : '') + '" onclick="cpViews.home.wordReveal()">'
-    html += '<div class="cp-word-main">' + esc(cur.w) + '</div>'
+    html += '<div class="cp-word-main">' + window.cpEsc(cur.w) + '</div>'
     if (d.wordRevealed) {
-      html += '<div class="cp-word-meaning">' + esc(cur.m) + '</div>'
-      if (cur.s) html += '<div class="cp-word-sample">📖 ' + esc(cur.s) + '</div>'
+      html += '<div class="cp-word-meaning">' + window.cpEsc(cur.m) + '</div>'
+      if (cur.s) html += '<div class="cp-word-sample">📖 ' + window.cpEsc(cur.s) + '</div>'
     }
     html += '</div>'
     if (!d.wordRevealed) {
@@ -101,10 +100,10 @@
     const p = d.poem
     if (!p) return '<div class="cp-checkin-box"><div class="cp-learn-loading">📜 正在准备今日诗篇...</div></div>'
     let html = '<div class="cp-checkin-box cp-poem-box">'
-    html += '<div class="cp-poem-title">' + esc(p.title) + '</div>'
-    html += '<div class="cp-poem-author">' + esc(p.dynasty) + ' · ' + esc(p.author) + '</div>'
-    html += '<div class="cp-poem-content">' + p.content.map(l => '<div class="cp-poem-line">' + esc(l) + '</div>').join('') + '</div>'
-    if (d.poemShow) html += '<div class="cp-poem-meaning">💡 ' + esc(p.meaning) + '</div>'
+    html += '<div class="cp-poem-title">' + window.cpEsc(p.title) + '</div>'
+    html += '<div class="cp-poem-author">' + window.cpEsc(p.dynasty) + ' · ' + window.cpEsc(p.author) + '</div>'
+    html += '<div class="cp-poem-content">' + p.content.map(l => '<div class="cp-poem-line">' + window.cpEsc(l) + '</div>').join('') + '</div>'
+    if (d.poemShow) html += '<div class="cp-poem-meaning">💡 ' + window.cpEsc(p.meaning) + '</div>'
     html += '<button class="cp-poem-toggle" onclick="cpViews.home.poemToggle()">' + (d.poemShow ? '收起译文' : '看译文') + '</button>'
     html += '<button class="cp-btn-checkin" ' + dis + ' onclick="cpViews.home.doCheckin(\'full\')"><i class="fas fa-feather-pointed"></i> 我已能背诵全诗</button>'
     html += '</div>'
