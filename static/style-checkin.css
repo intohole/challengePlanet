@@ -39,19 +39,20 @@
 .cp-step-preview-tag { font-size: 11px; color: var(--text-muted); background: rgba(15,23,42,.04); padding: 3px 8px; border-radius: 8px; border: 1px solid rgba(15,23,42,.05); }
 
 .cp-scene-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.cp-scene-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 4px; border-radius: var(--radius-sm); border: 1px solid var(--card-border); background: rgba(15,23,42,.02); cursor: pointer; transition: all .2s; color: var(--text-secondary); }
+.cp-scene-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 4px; border-radius: var(--radius-sm); border: 1px solid var(--card-border); background: #ffffff; cursor: pointer; transition: all .2s; color: var(--text-secondary); }
 .cp-scene-card:active { transform: scale(.95); }
-.cp-scene-card.active { border-color: var(--primary); background: rgba(99,102,241,.12); color: var(--text-primary); box-shadow: 0 0 12px rgba(99,102,241,.16); }
+.cp-scene-card.active { border-color: var(--scene-c, var(--primary)); background: var(--scene-c, var(--primary)); color: #fff; box-shadow: 0 0 12px var(--scene-c, var(--primary)); }
+.cp-scene-card.active .cp-scene-icon { filter: drop-shadow(0 2px 6px rgba(2,6,23,.2)); }
 .cp-scene-icon { font-size: 22px; }
 .cp-scene-name { font-size: 12px; font-weight: 600; }
 .cp-scene-type { font-size: 9px; color: var(--text-muted); background: rgba(15,23,42,.05); padding: 1px 6px; border-radius: 6px; }
-.cp-scene-card.active .cp-scene-type { color: var(--primary-light); background: rgba(99,102,241,.18); }
+.cp-scene-card.active .cp-scene-type { color: #fff; background: rgba(2,6,23,.18); }
 .cp-scene-note { display: flex; align-items: center; gap: 7px; margin-top: 8px; padding: 9px 12px; border-radius: var(--radius-sm); background: rgba(99,102,241,.06); border: 1px solid rgba(99,102,241,.16); font-size: 12px; color: var(--text-secondary); animation: fade-in-up .3s ease; }
 .cp-scene-note b { color: var(--primary-light); }
 .cp-sample-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.cp-sample-chip { font-size: 12px; color: var(--text-secondary); background: rgba(15,23,42,.04); border: 1px solid var(--card-border); padding: 5px 11px; border-radius: 12px; cursor: pointer; transition: all .2s; }
+.cp-sample-chip { font-size: 12px; color: #475569; background: #F1F5F9; border: 1px solid #E2E8F0; padding: 5px 11px; border-radius: 12px; cursor: pointer; transition: all .2s; }
 .cp-sample-chip:active { transform: scale(.96); }
-.cp-sample-chip:hover { border-color: var(--primary); color: var(--primary-light); }
+.cp-sample-chip:hover { border-color: var(--primary); color: var(--primary-light); background: rgba(99,102,241,.06); }
 
 .cp-plan-diff { font-size: 10px; color: var(--primary); }
 .cp-plan-day-target { display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 12px; color: var(--primary); font-weight: 600; }
@@ -87,3 +88,9 @@
 .cp-plan-count { font-size: 11px; color: var(--text-muted); font-weight: 400; }
 .cp-gen-task { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 8px 12px; width: 100%; max-width: 340px; border-radius: var(--radius-sm); background: rgba(99,102,241,.07); border: 1px solid rgba(99,102,241,.16); font-size: 12px; color: var(--text-primary); animation: fade-in-up .3s ease; }
 .cp-gen-task b { color: var(--primary-light); flex-shrink: 0; }
+
+.cp-footer-create .cp-btn-ghost { flex: 0 0 auto; min-width: 88px; }
+.cp-footer-create .cp-btn-primary { flex: 1; }
+.cp-btn-direct { flex: 1; min-height: 48px; padding: 13px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--emerald); background: rgba(16,185,129,.08); color: var(--emerald); font-weight: 600; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all .2s; }
+.cp-btn-direct:hover:not(:disabled) { background: rgba(16,185,129,.16); }
+.cp-btn-direct:disabled { opacity: .45; cursor: not-allowed; border-color: var(--card-border); color: var(--text-muted); background: rgba(148,163,184,.06); }

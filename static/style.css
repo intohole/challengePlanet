@@ -106,7 +106,7 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 .cp-pick-btn:hover { background: rgba(148,163,184,.12); }
 .cp-pick-btn.active { background: linear-gradient(135deg, var(--primary), var(--purple)); color: #fff; border-color: transparent; }
 
-.cp-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+.cp-modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
 .cp-modal { width: 100%; max-width: 480px; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; }
 .cp-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--card-border); flex-shrink: 0; background: rgba(255,255,255,.9); backdrop-filter: blur(12px); z-index: 2; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
 .cp-modal-header h3 { font-size: 17px; font-weight: 700; }

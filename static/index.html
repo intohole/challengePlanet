@@ -63,7 +63,7 @@
       <div class="cp-form-row">
         <label class="cp-label">想坚持什么？选个方向</label>
         <div class="cp-scene-grid">
-          <button v-for="s in cpScenes" :key="s.id" class="cp-scene-card" :class="{active: state.create.sceneTemplate===s.id}" @click="cr.selectScene(s.id)">
+          <button v-for="s in cpScenes" :key="s.id" class="cp-scene-card" :class="{active: state.create.sceneTemplate===s.id}" :style="{'--scene-c': s.color}" @click="cr.selectScene(s.id)">
             <span class="cp-scene-icon">{{ s.icon }}</span>
             <span class="cp-scene-name">{{ s.name }}</span>
             <span class="cp-scene-type">{{ cpTaskTypeLabel(s.task_type) }}</span>
@@ -190,9 +190,10 @@
       </template>
     </div>
   </div>
-  <div class="cp-modal-footer">
+  <div class="cp-modal-footer cp-footer-create">
     <button class="cp-btn-ghost" @click="cr.close()">{{ (state.create.phase==='parsing' || state.create.phase==='planning') ? '停止生成' : '取消' }}</button>
-    <button v-if="state.create.step===1" class="cp-btn-primary" :disabled="!state.create.rawInput.trim()" @click="cr.startGenerate()"><i class="fas fa-wand-magic-sparkles"></i> AI生成计划</button>
+    <button v-if="state.create.step===1" class="cp-btn-direct" :disabled="!cr.canDirect() || state.create.phase==='parsing' || state.create.phase==='planning'" @click="cr.confirmDirect()"><i class="fas fa-bolt"></i> 直接创建</button>
+    <button v-if="state.create.step===1" class="cp-btn-primary cp-btn-ai" :disabled="!state.create.rawInput.trim()" @click="cr.startGenerate()"><i class="fas fa-wand-magic-sparkles"></i> AI生成计划</button>
     <template v-else-if="state.create.phase==='preview'">
       <button class="cp-btn-ghost" @click="cr.startGenerate()"><i class="fas fa-rotate"></i> 换一批</button>
       <button class="cp-btn-primary" :disabled="state.create.saving" @click="cr.confirmCreate()"><i class="fas fa-rocket"></i> {{ state.create.saving ? '开启中...' : '开启挑战' }}</button>
@@ -395,8 +396,9 @@
 </div>
 <script src="/static/js/galaxy.js?v=20260728"></script>
 <script src="/static/js/share-poster.js?v=20260728"></script>
-<script src="/static/js/create.js?v=20260821"></script>
-<script src="/static/js/views/home.js?v=20260907"></script>
+<script src="/static/js/create.js?v=20260909"></script>
+<script src="/static/js/create-direct.js?v=20260909"></script>
+<script src="/static/js/views/home.js?v=20260909"></script>
 <script src="/static/js/views/home-diet.js?v=20260825"></script>
 <script src="/static/js/views/home-task.js?v=20260903"></script>
 <script src="/static/js/views/home-checkin.js?v=20260825"></script>
