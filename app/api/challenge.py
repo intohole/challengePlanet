@@ -90,10 +90,12 @@ def _apply_quit_ladder(parsed: dict[str, object], raw_input: str) -> dict[str, o
 
 
 def ladder_out(request: NLCreateRequest, parsed: dict[str, object]) -> dict[str, object]:
-    rule = str(request.goal_rule or parsed.get("goal_rule") or "fixed")
+    fields_set = getattr(request, "model_fields_set", None)
+    client_rule = str(request.goal_rule) if (fields_set and "goal_rule" in fields_set) else ""
+    rule = str(client_rule or parsed.get("goal_rule") or "fixed")
     start = float(parsed.get("ladder_start", 0.0) or 0.0)
     goal = float(parsed.get("ladder_goal", 0.0) or 0.0)
-    if request.goal_rule == "ladder" or (
+    if client_rule == "ladder" or (
         rule == "ladder" and (request.ladder_start > 0 or start > 0)
     ):
         if goal <= 0 and start <= 0:
