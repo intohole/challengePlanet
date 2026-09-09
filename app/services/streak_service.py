@@ -63,6 +63,8 @@ def list_missed_dates(
     valid_dates: set[str],
     today: str,
 ) -> list[str]:
+    if not valid_dates:
+        return []
     start = datetime.strptime(start_date, _DATE_FMT).date()
     last = min(
         datetime.strptime(end_date, _DATE_FMT).date(),

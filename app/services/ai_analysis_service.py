@@ -45,11 +45,11 @@ class AIAnalysisService:
         done_days: int, recent_summary: str,
     ) -> dict[str, object] | None:
         user_msg = (
-            f"挑战：{challenge_title}（共{total_days}天，已记录{done_days}天，本次中断{missed_count}天）\n"
+            f"挑战：{challenge_title}（共{total_days}天，已完成{max(done_days, 0)}天，本次中断{missed_count}天）\n"
             f"最近打卡记录：\n{recent_summary or '暂无'}"
         )
         llm = get_llm_service()
-        raw = await llm.ask(user_msg, system=DIAGNOSIS_SYSTEM, temperature=0.4, max_tokens=384, timeout=30.0, task_type="extract")
+        raw = await llm.ask(user_msg, system=DIAGNOSIS_SYSTEM, temperature=0.4, max_tokens=256, timeout=30.0, task_type="extract")
         parsed = parse_llm_json(raw)
         if "raw_response" in parsed:
             return None

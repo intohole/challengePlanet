@@ -67,10 +67,16 @@ class DiagnosisService:
 
     def _rule_narrative(self, cause: str, done_days: int, total_days: int) -> str:
         pct = round(done_days / total_days * 100) if total_days else 0
-        base = (
-            f"偶尔断签并不会毁掉习惯养成，研究证实真正关键的是尽快恢复节奏。"
-            f"你已经完成 {done_days}/{total_days} 天（{pct}%），这是实打实的进度，不会清零。"
-        )
+        if done_days <= 0:
+            base = (
+                f"偶尔断签并不会毁掉习惯养成，研究证实真正关键的是尽快恢复节奏。"
+                f"挑战共{total_days}天，进度不会清零，从今天的一个小行动开始就能重新接上节奏。"
+            )
+        else:
+            base = (
+                f"偶尔断签并不会毁掉习惯养成，研究证实真正关键的是尽快恢复节奏。"
+                f"你已经完成 {done_days}/{total_days} 天（{pct}%），这是实打实的进度，不会清零。"
+            )
         tail = {
             "task_hard": "从记录看任务量可能偏重，适当降档反而能走得更远。",
             "no_time": "最近时间似乎被挤压了，换成每天5分钟的微行动更容易守住节奏。",
@@ -104,13 +110,12 @@ class DiagnosisService:
         if ai_result:
             cause = str(ai_result["cause"])
             action = str(ai_result.get("suggestion_action") or _RULE_ACTION[cause])
-            narrative = str(ai_result.get("narrative") or "") or self._rule_narrative(cause, done_days, challenge.duration_days)
-            suggestion_text = str(ai_result.get("suggestion_text") or "") or ACTION_LABELS[action]
+            suggestion_text = ACTION_LABELS[action]
         else:
             cause = self._rule_cause(checkins)
             action = _RULE_ACTION[cause]
-            narrative = self._rule_narrative(cause, done_days, challenge.duration_days)
             suggestion_text = ACTION_LABELS[action]
+        narrative = self._rule_narrative(cause, done_days, challenge.duration_days)
         report: dict[str, object] = {
             "cause": cause,
             "cause_label": CAUSE_LABELS[cause],

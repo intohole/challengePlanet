@@ -30,10 +30,13 @@
 
   V._phaseSnap = function (g) {
     const m = g.next_milestone
+    const done = g.completed_days || 0
     let html = '<div class="glass-card cp-phase-snap">'
-    html += '<div class="cp-phase-snap-head"><span class="cp-phase-badge-n" style="color:' + (g.phase_color || '#8B5CF6') + '">' + (g.phase_icon || '🌱') + ' ' + window.cpEsc(g.phase_name || '') + (g.phase_range ? '<em>· ' + window.cpEsc(g.phase_range) + '</em>' : '') + '</span><b>第 ' + (g.completed_days || 0) + ' 天</b></div>'
-    if (m && m.days_to_go > 0) {
-      html += '<div class="cp-phase-snap-milestone"><span>🎯 距 ' + m.day + ' 天里程碑还差 ' + m.days_to_go + ' 天</span><div class="cp-phase-snap-bar"><div class="cp-phase-snap-fill" style="width:' + Math.min(100, Math.round(((g.completed_days || 0) / m.day) * 100)) + '%"></div></div></div>'
+    html += '<div class="cp-phase-snap-head"><span class="cp-phase-badge-n" style="color:' + (g.phase_color || '#8B5CF6') + '">' + (g.phase_icon || '🌱') + ' ' + window.cpEsc(g.phase_name || '') + (g.phase_range ? '<em>· ' + window.cpEsc(g.phase_range) + '</em>' : '') + '</span><b>' + (done ? '已打卡 ' + done + ' 天' : '还没开始打卡') + '</b></div>'
+    if (m && done === 0) {
+      html += '<div class="cp-phase-snap-milestone"><span>🎯 完成第 1 次打卡，点亮第一个里程碑</span><div class="cp-phase-snap-bar"><div class="cp-phase-snap-fill" style="width:0%"></div></div></div>'
+    } else if (m && m.days_to_go > 0) {
+      html += '<div class="cp-phase-snap-milestone"><span>🎯 距 ' + m.day + ' 天里程碑还差 ' + m.days_to_go + ' 天</span><div class="cp-phase-snap-bar"><div class="cp-phase-snap-fill" style="width:' + Math.min(100, Math.round((done / m.day) * 100)) + '%"></div></div></div>'
     }
     const tip = (m && m.tip) || g.phase_tip || ''
     if (tip) html += '<p class="cp-phase-snap-tip">' + window.cpEsc(tip) + '</p>'
