@@ -23,7 +23,7 @@
       html += this._dietTargetPanel(t, ch)
     } else if (t.goal_rule === 'ladder' && t.today_total !== undefined) {
       html += this._ladderBlock(t, ch)
-    } else if (baseline > 0) {
+    } else if (baseline > 0 && ((t.day_number || 1) > 1 || (ch.completed_days || 0) > 0)) {
       const unit = window.cpEsc(t.task_unit || '')
       const mainText = isDecrease ? '比昨天少 <b>' + baseline.toFixed(1) + '</b> ' + unit : '比昨天多 <b>' + baseline.toFixed(1) + '</b> ' + unit
       html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> ' + mainText + '</div>'
