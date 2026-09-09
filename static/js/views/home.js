@@ -8,6 +8,10 @@ window.cpViews.home = (function () {
     data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work' },
     _ignite: null,
 
+    _freshData(loading) {
+      return { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: !!loading, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work' }
+    },
+
     render(el) {
       this.el = el
       this._mdJobs = []
@@ -76,7 +80,7 @@ window.cpViews.home = (function () {
       if (!ch) { this.loadedFor = null; return }
       if (this.loadedFor !== ch.id) {
         this.loadedFor = ch.id
-        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: true, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: this.data.activeTab || 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '' }
+        this.data = this._freshData(true)
         this.rerender()
       }
       const safe = p => p.catch(() => null)
@@ -200,7 +204,7 @@ window.cpViews.home = (function () {
         await window.api.delete('/challenges/' + ch.id)
         window.cpToast('已删除挑战')
         this.loadedFor = null
-        this.data = { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '' }
+        this.data = this._freshData(false)
         await window.cpLoadChallenges()
         this.load()
       } catch (e) { window.cpToast(window.cpErrMsg(e, '操作失败')) }
