@@ -140,3 +140,21 @@
 .cp-pm-btn.ghost { border: 1px solid var(--card-border); background: rgba(148,163,184,.06); color: var(--text-secondary); }
 .cp-pm-btn:active { transform: scale(.96); }
 .cp-pm-hint { font-size: 12px; color: var(--text-muted); }
+.cp-quit-tally{display:flex;flex-direction:column;gap:10px;padding:16px 4px 4px;animation:fade-in-up .35s ease}
+.cp-quit-tally-head{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.cp-quit-tally-num{display:flex;align-items:baseline;gap:6px}
+.cp-quit-tally-num b{font-size:30px;line-height:1;color:var(--app-accent,#8b5cf6)}
+.cp-quit-tally-num span{font-size:14px;color:var(--text-secondary,#6b7280)}
+.cp-quit-tally-path{font-size:12px;color:var(--text-secondary,#6b7280);white-space:nowrap}
+.cp-quit-tally-bar{height:10px;border-radius:999px;background:rgba(127,127,127,.14);overflow:hidden}
+.cp-quit-tally-fill{height:100%;border-radius:999px;background:var(--app-accent,#8b5cf6);transition:width .3s}
+.cp-quit-tally-fill.ok{background:var(--emerald,#10b981)}
+.cp-quit-tally-fill.over{background:var(--amber,#f59e0b)}
+.cp-quit-tally-tip{font-size:13px;color:var(--text-secondary,#6b7280);display:flex;align-items:center;gap:6px}
+.cp-quit-tally-tip.warn{color:var(--amber,#b45309)}
+.cp-quit-tally-tip.ok{color:var(--emerald,#0d9488)}
+.cp-tap-smoke{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:18px 12px;border:none;border-radius:18px;background:linear-gradient(135deg,var(--app-accent,#8b5cf6),rgba(99,102,241,.75));color:#fff;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 10px 24px -10px rgba(99,102,241,.55);transition:transform .12s}
+.cp-tap-smoke:active{transform:scale(.96)}
+.cp-tap-smoke em{font-style:normal;font-size:12px;font-weight:500;opacity:.85}
+.cp-quit-tally-actions{display:flex;gap:8px}
+.cp-quit-tally-actions .cp-tap-chip{flex:1}

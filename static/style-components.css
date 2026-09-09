@@ -409,3 +409,6 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
   .cp-companion-overlay { padding: 24px; align-items: center; }
   .cp-companion-panel { height: 92vh; max-height: 92vh; border-radius: var(--radius-lg); }
 }
+.cp-ladder-tip{margin-top:10px;padding:8px 10px;border-radius:10px;background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(249,115,22,.06));color:var(--text-secondary,#6b7280);font-size:12px;line-height:1.5;display:flex;align-items:flex-start;gap:6px}
+.cp-ladder-tip.muted{background:rgba(127,127,127,.07)}
+.cp-ladder-tip b{color:var(--text,#1f2937)}

@@ -66,6 +66,8 @@
     html += '</div>'
     if (isDiet) {
       html += this._dietArea(t, ch, (d.today && d.today.checkins_date))
+    } else if (this._isTapQuit(t, ch)) {
+      html += this._tapQuitArea(tt, t, ch)
     } else if (isMultiMode || slipBinary) {
       html += this._multiCheckinArea(tt, t, ch, slipBinary)
     } else if (!t.checked_in) {

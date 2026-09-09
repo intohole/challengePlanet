@@ -26,11 +26,17 @@ PARSE_SYSTEM = (
     "unit: 目标单位（杯/根/口/个/颗/组/圈/次/页/篇/公里/分钟/小时/点等），binary类型可为空串\"\"\n"
     "direction: 戒除类（戒烟/戒酒/戒糖/戒游戏/戒零食/戒手机）一律 decrease；递减类语义（减、少到、从X降到Y、控制到、限制在）→ decrease(越少越好的记录类目标)；其他（累积、达到、坚持到）→ increase\n"
     "goal_type: 戒除/控制类=soft(督促不惩罚)，其他=hard(底线)\n"
+    "goal_rule: 梯度减量玩法。戒断类（戒烟/戒酒/戒糖等）且描述给出起点量与目标量的关系（'从每天20根戒到0'、'目前一天2杯减到半杯'、'每天最多5根'但用户已说明当下习惯量）→ \"ladder\"，同时给出：\n"
+    "  ladder_start=当前每天量（如20），ladder_goal=目标每天量（完全戒断填0），ladder_interval=每隔几天降一档（默认1=每天降），ladder_step=每档降多少（默认1，若一次性降幅大则适配）\n"
+    "  起点量或目标量无法从描述推导时，goal_rule=\"fixed\"（创建页再引导用户补梯度）\n"
     "decompose_mode: 用户提到'每小时/每时段/几点到几点'时=time_slot，否则=none\n"
     "slot_hours: decompose_mode=time_slot时，默认1小时\n"
     "slot_target_value: decompose_mode=time_slot时，时段目标值，默认0表示继承日均分配\n\n"
     "输出JSON格式：{\"title\": \"...\", \"category\": \"...\", \"duration_days\": ..., "
-    "\"task_type\": \"...\", \"target_value\": ..., \"unit\": \"...\", \"direction\": \"...\", \"goal_type\": \"...\", \"decompose_mode\": \"...\", \"slot_hours\": ..., \"slot_target_value\": ...}"
+    "\"task_type\": \"...\", \"target_value\": ..., \"unit\": \"...\", \"direction\": \"...\", \"goal_type\": \"...\", "
+    "\"goal_rule\": \"fixed|ladder\", \"ladder_start\": 数字可为0, \"ladder_goal\": 数字可为0, "
+    "\"ladder_interval\": 1, \"ladder_step\": 1, "
+    "\"decompose_mode\": \"...\", \"slot_hours\": ..., \"slot_target_value\": ...}"
 )
 
 PLAN_SYSTEM = (

@@ -58,6 +58,16 @@ window.cpCreate = (function () {
     selectScene(sceneId) {
       const c = st()
       c.sceneTemplate = c.sceneTemplate === sceneId ? '' : sceneId
+      this.applySceneLadder()
+    },
+
+    applySceneLadder() {
+      const c = st()
+      if (c.sceneTemplate === 'quit' && !c.ladderStart && !c.ladderGoal) {
+        c.ladderEn = true
+        c.ladderInterval = 1
+        c.ladderStep = 1
+      }
     },
 
     isDiet() {
@@ -150,10 +160,10 @@ window.cpCreate = (function () {
 
     ladderNodes() {
       const c = st()
-      if (!c.ladderEn || c.ladderGoal <= 0) return []
+      if (!c.ladderEn || c.ladderStart <= 0) return []
       const days = Math.max(7, c.editDays || 66)
       const interval = Math.max(1, c.ladderInterval || 1)
-      const step = c.ladderStep || 1
+      const step = Math.max(0.5, c.ladderStep || 1)
       const isDesc = this.ladderDir() === 'decrease'
       const nodes = []
       for (let d = 1; d <= days; d += interval) {
@@ -167,6 +177,10 @@ window.cpCreate = (function () {
         if (isDesc && v <= c.ladderGoal) break
       }
       return nodes
+    },
+
+    ladderInterval() {
+      return Math.max(1, st().ladderInterval || 1)
     },
 
     playMode() {
@@ -336,10 +350,10 @@ window.cpCreate = (function () {
           decompose_mode: String(p.decompose_mode || 'none'),
           slot_hours: Number(p.slot_hours) || 1,
           slot_target_value: Number(p.slot_target_value) || 0,
-          goal_rule: c.ladderEn ? 'ladder' : (String(p.goal_rule || 'fixed')),
-          goal_mode: String(p.goal_mode || (c.ladderEn ? 'ceiling' : 'auto')),
+          goal_rule: (c.ladderEn && c.ladderStart > 0) ? 'ladder' : (String(p.goal_rule || 'fixed')),
+          goal_mode: String(p.goal_mode || ((c.ladderEn && c.ladderStart > 0) ? 'ceiling' : 'auto')),
           ladder_start: c.ladderStart || 0,
-          ladder_goal: c.ladderEn ? (c.ladderGoal || 1) : 0,
+          ladder_goal: (c.ladderEn && c.ladderStart > 0) ? (c.ladderGoal || 0) : 0,
           ladder_interval: c.ladderEn ? (c.ladderInterval || 1) : 1,
           ladder_step: c.ladderStep || 1,
           gender: c.gender || '',

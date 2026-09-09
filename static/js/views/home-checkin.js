@@ -24,6 +24,28 @@
 
   V.doMini = function () { this.doCheckin('mini') }
 
+  V.doUndoLast = async function () {
+    const ch = window.appState.current
+    const d = this.data
+    const t = d.today
+    const lst = t && t.today_checkins
+    if (!ch || !lst || !lst.length || d.checking) return
+    const last = lst[lst.length - 1]
+    d.checking = true
+    this.rerender()
+    try {
+      await window.api.delete('/challenges/' + ch.id + '/checkins/' + last.id)
+      window.cpToast('已撤销一笔')
+      await this.load()
+      await window.cpLoadChallenges()
+    } catch (e) {
+      window.cpToast(window.cpErrMsg(e, '撤销失败，请重试'))
+    } finally {
+      d.checking = false
+      this.rerender()
+    }
+  }
+
   V.doFastTap = async function (value) {
     const ch = window.appState.current
     const d = this.data
@@ -38,8 +60,11 @@
       const total = r.today_total || 0
       const target = (t.today_target || ch.target_value || 1)
       if (t.goal_rule === 'ladder' && ch.direction === 'decrease') {
-        const rem = Math.max(0, (r.remaining !== undefined ? r.remaining : (target - total)))
-        window.cpCelebrate('已记录 +' + v + ' ' + (ch.unit || '') + ' · 还可 ' + rem + (ch.unit || ''))
+        const tot = (r.today_total !== undefined ? r.today_total : total)
+        const tgt = (r.today_target !== undefined ? r.today_target : target)
+        if (tot > tgt) window.cpCelebrate('已记录 +' + v + ' · 已超今日上限，今天辛苦了，明天梯度更低')
+        else if (tot >= tgt) window.cpCelebrate('已记录 +' + v + ' · 已达今日上限 ' + tgt + (ch.unit || '') + '，梯度守住！')
+        else window.cpCelebrate('已记录 +' + v + ' ' + (ch.unit || '') + ' · 还可 ' + Math.max(0, tgt - tot) + (ch.unit || ''))
       } else {
         window.cpCelebrate('已记录 +' + v + ' ' + (ch.unit || '') + ' · 今日 ' + total + '/' + target)
       }

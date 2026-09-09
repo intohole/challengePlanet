@@ -116,16 +116,18 @@
           <button v-for="(v,k) in {build:'习惯养成',quit:'戒除',learn:'学习',fitness:'运动',mind:'心灵',other:'其他'}" :key="k" class="cp-pick-btn" :class="{active:state.create.editCategory===k}" @click="cr.setCategory(k)">{{ v }}</button>
         </div></div>
         <div class="cp-ladder-card">
-          <button class="cp-pick-btn cp-ladder-toggle" :class="{active:state.create.ladderEn}" @click="state.create.ladderEn=!state.create.ladderEn"><i class="fas fa-stairs"></i> 阶梯玩法 <span class="cp-ladder-hint">{{ state.create.ladderEn ? '已开启' : (cr.ladderDir()==='decrease' ? '逐级递减' : '逐级递增') }}</span></button>
+          <button class="cp-pick-btn cp-ladder-toggle" :class="{active:state.create.ladderEn}" @click="state.create.ladderEn=!state.create.ladderEn"><i class="fas fa-stairs"></i> {{ cr.ladderDir()==='decrease' ? '梯度减量' : '阶梯玩法' }} <span class="cp-ladder-hint">{{ state.create.ladderEn ? '已开启' : (cr.ladderDir()==='decrease' ? '从当前量逐级减到目标' : '逐级递增') }}</span></button>
           <template v-if="state.create.ladderEn">
+            <div v-if="cr.ladderDir()==='decrease' && state.create.sceneTemplate==='quit'" class="cp-ladder-tip"><i class="fas fa-route"></i> 填「当前每天」与「目标每天」：系统按梯度自动生成每天上限，你只需一根一点，系统自动记账</div>
             <div class="cp-ladder-grid">
-              <label class="cp-ladder-field"><span>当前值</span><input type="number" min="0" step="0.5" v-model.number="state.create.ladderStart"></label>
-              <label class="cp-ladder-field"><span>目标值</span><input type="number" min="0" step="0.5" v-model.number="state.create.ladderGoal"></label>
+              <label class="cp-ladder-field"><span>{{ cr.ladderDir()==='decrease' ? '当前每天' : '当前值' }}</span><input type="number" min="0" step="0.5" v-model.number="state.create.ladderStart"></label>
+              <label class="cp-ladder-field"><span>{{ cr.ladderDir()==='decrease' ? '目标每天' : '目标值' }}</span><input type="number" min="0" step="0.5" v-model.number="state.create.ladderGoal"></label>
               <label class="cp-ladder-field"><span>每隔(天)</span><input type="number" min="1" step="1" v-model.number="state.create.ladderInterval"></label>
-              <label class="cp-ladder-field"><span>每次({{ cr.ladderUnit() }})</span><input type="number" min="0" step="0.5" v-model.number="state.create.ladderStep"></label>
+              <label class="cp-ladder-field"><span>每次{{ cr.ladderDir()==='decrease' ? '递减' : '递增' }}({{ cr.ladderUnit() }})</span><input type="number" min="0.5" step="0.5" v-model.number="state.create.ladderStep"></label>
             </div>
+            <div v-if="cr.ladderDir()==='decrease' && !state.create.ladderGoal" class="cp-ladder-tip muted"><i class="fas fa-flag-checkered"></i> 目标每天填 0 = 完全戒断</div>
             <div v-if="cr.ladderNodes().length" class="cp-ladder-preview">
-              <div class="cp-ladder-preview-title"><i class="fas fa-route"></i> 阶梯曲线</div>
+              <div class="cp-ladder-preview-title"><i class="fas fa-route"></i> 阶梯曲线 · 约 <b>{{ cr.ladderNodes().length*cr.ladderInterval() }}</b> 天到目标</div>
               <div class="cp-ladder-preview-inner"><span v-for="(n,i) in cr.ladderNodes()" :key="n.day" class="cp-ladder-node" :class="{last:i===cr.ladderNodes().length-1}"><b>{{ n.day }}</b>天 <i>{{ n.value }}</i></span></div>
             </div>
           </template>
