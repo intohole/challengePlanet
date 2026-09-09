@@ -2,7 +2,7 @@
   window.cpCreateDirect = {
     canDirect() {
       const c = window.appState.create
-      return !!(c.rawInput && c.rawInput.trim()) || !!c.sceneTemplate
+      return !!c.sceneTemplate
     },
 
     buildPlan(scene) {
