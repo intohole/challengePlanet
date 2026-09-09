@@ -6,7 +6,6 @@ window.cpViews.home = (function () {
     el: null,
     loadedFor: null,
     data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work' },
-    _ignite: null,
 
     _freshData(loading) {
       return { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: !!loading, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work' }
@@ -17,17 +16,9 @@ window.cpViews.home = (function () {
       this._mdJobs = []
       const s = window.appState
       const greet = (window.NexusUtils && NexusUtils.getGreeting) ? NexusUtils.getGreeting() : '你好'
-      let html = '<div class="cp-brand-banner cp-nebula-card"><span class="cp-brand-icon">🌍</span><div class="cp-brand-text"><div class="cp-brand-name">星轨挑战</div><div class="cp-brand-slogan">AI 打卡教练 · 陪你每一天</div></div>'
-      if (s.booted && s.challenges.length) {
-        html += s.pendingCount > 0
-          ? '<span class="cp-pending-badge"><i class="fas fa-bolt"></i>待打卡 ' + s.pendingCount + '</span>'
-          : '<span class="cp-pending-badge zero"><i class="fas fa-check"></i>已全完成</span>'
-      }
-      html += '</div>'
-      html += '<div class="cp-greet"><div><h1>' + greet + '，' + window.cpEsc(s.nickname) + '</h1><p>' + window.cpTodayStr() + '</p></div>'
-      if (s.booted && s.challenges.length) {
-        const totalDone = s.challenges.reduce((a, c) => a + (c.completed_days || 0), 0)
-        html += '<div class="cp-greet-stats"><span class="cp-greet-stat"><b>' + s.challenges.length + '</b>个挑战</span><span class="cp-greet-sep">·</span><span class="cp-greet-stat"><b>' + totalDone + '</b>次累计打卡</span></div>'
+      let html = '<div class="cp-greet"><div><h1>' + greet + '，' + window.cpEsc(s.nickname) + '</h1><p>' + window.cpTodayStr() + '</p></div>'
+      if (s.booted && s.challenges.length && s.pendingCount > 0) {
+        html += '<span class="cp-pending-badge"><i class="fas fa-bolt"></i>待打卡 ' + s.pendingCount + '</span>'
       }
       html += '</div>'
       html += '<div class="cp-view">'

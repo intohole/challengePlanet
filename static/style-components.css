@@ -227,23 +227,6 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-date-item:hover { background: var(--card-hover); border-color: var(--primary); }
 .cp-mercy-left { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
 
-.cp-ignite-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 6px 0 2px; }
-.cp-ignite-btn { --p: 0; width: 112px; height: 112px; border-radius: 50%; border: none; cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #fff; font-weight: 700; background: conic-gradient(var(--amber) calc(var(--p) * 1turn), rgba(255,202,40,.12) 0); transition: transform .15s; box-shadow: 0 8px 32px rgba(255,202,40,.22); touch-action: none; user-select: none; -webkit-user-select: none; }
-.cp-ignite-btn::before { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: linear-gradient(160deg, #FFF3E0, #FFE0B2); }
-.cp-ignite-btn::after { content: ''; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid rgba(251,191,36,.3); opacity: 0; transition: opacity .3s; }
-.cp-ignite-btn.charging::after { opacity: 1; animation: ignite-ring 1s ease-out infinite; }
-@keyframes ignite-ring { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(1.3); opacity: 0; } }
-.cp-ignite-btn i, .cp-ignite-btn span { position: relative; z-index: 1; }
-.cp-ignite-btn i { font-size: 28px; color: var(--amber); filter: drop-shadow(0 0 10px rgba(251,191,36,.8)); transition: filter .2s; }
-.cp-ignite-btn.charging i { animation: fire-flicker .15s ease-in-out infinite alternate; }
-@keyframes fire-flicker { from { filter: drop-shadow(0 0 8px rgba(251,191,36,.6)); transform: scale(1); } to { filter: drop-shadow(0 0 16px rgba(251,191,36,1)); transform: scale(1.1); } }
-.cp-ignite-btn span { font-size: 12px; }
-.cp-ignite-btn.charging { transform: scale(1.06); }
-.cp-ignite-btn:disabled { opacity: .55; cursor: not-allowed; }
-.cp-ignite-hint { font-size: 11px; color: var(--text-muted); }
-.cp-mini-link { border: none; background: none; color: var(--text-muted); font-size: 12px; cursor: pointer; padding: 4px 10px; }
-.cp-mini-link:active { color: var(--primary-light); }
-
 .cp-declare { padding: 13px 16px; border-radius: var(--radius); border: 1px solid rgba(255,202,40,.3); background: linear-gradient(135deg, rgba(255,202,40,.12), rgba(251,191,36,.04)); font-size: 15px; font-weight: 700; color: var(--amber); text-align: center; line-height: 1.6; animation: declare-in .5s ease; }
 @keyframes declare-in { from { opacity: 0; transform: translateY(8px) scale(.96); } to { opacity: 1; transform: none; } }
 

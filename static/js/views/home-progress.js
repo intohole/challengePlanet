@@ -10,6 +10,7 @@
     let html = '<div class="glass-card cp-hero cp-progress-card">'
     html += '<div class="cp-hero-progress"><div class="cp-hero-progress-bar"><div class="cp-hero-progress-fill" style="width:' + pct + '%"></div></div><span class="cp-hero-progress-text">' + pct + '% 完成</span></div>'
     html += '<div class="cp-galaxy-wrap"><div id="galaxy-box"></div></div></div>'
+    html += '<div id="cp-nux-checkin"></div>'
     html += '<div class="glass-card cp-progress-stats">' + this._reportContent(s) + '</div>'
     if (isMultiMode) html += '<div class="glass-card cp-today-viz"><div class="cp-section-title"><i class="fas fa-chart-column" style="color:var(--primary-light)"></i> 近 7 天节奏</div><div id="cp-mini-hourly-' + ch.id + '"></div></div>'
     return html

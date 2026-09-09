@@ -1,6 +1,51 @@
 ;(function () {
   const V = window.cpViews.home
 
+  V.doMainCheckin = async function () {
+    const s = window.appState
+    const ch = s.current
+    const d = this.data
+    const t = d.today
+    if (!ch || d.checking || (t && t.checked_in)) return
+    const tt = (t && t.task_type) || ch.task_type || 'binary'
+    const target = (t && t.task_target) || ch.target_value || 1
+    const isDecrease = ch.direction === 'decrease' || String(t && t.direction) === 'decrease'
+    let payload = { value: 1.0, reflection: '' }
+    if (isDecrease) {
+      payload.value = 0
+    } else if (tt === 'counter' || tt === 'timer') {
+      payload.value = Math.max(0, target - ((t && t.today_total) || 0))
+    } else if (tt === 'step') {
+      const steps = (t && t.task_steps) || []
+      payload.value = steps.length
+      payload.reflection = steps.join('；')
+    } else if (tt === 'text' && d.textValue && d.textValue.trim()) {
+      payload.value = 1
+      payload.reflection = d.textValue.trim()
+    }
+    d.checking = true
+    this.rerender()
+    try {
+      const res = await window.api.post('/challenges/' + ch.id + '/checkin', payload)
+      const r = res.data || res
+      window.cpCelebrate('点亮今日 +' + (r.points_earned || 0) + ' 分')
+      this._panel = ''
+      d.textValue = ''
+      await this._finishCheckin(r, ch, d, t && t.date)
+    } catch (e) {
+      window.cpToast(window.cpErrMsg(e, '打卡失败，请重试'))
+    } finally {
+      d.checking = false
+      this.rerender()
+    }
+  }
+
+  V.togglePanel = function (key) {
+    const d = this.data
+    this._panel = this._panel === key ? '' : key
+    this.rerender()
+  }
+
   V.doCheckin = async function (checkinType) {
     const s = window.appState
     const ch = s.current
@@ -107,17 +152,34 @@
     const d = this.data
     const t = d.today
     if (!ch || !t || d.checking || t.checked_in) return
-    const tt = t.task_type || ch.task_type || 'binary'
-    const payload = { value: 1.0, reflection: '' }
-    if (tt === 'counter' || tt === 'timer') {
-      if (d.taskValue <= 0 && tt === 'counter') { window.cpToast('请输入完成数量'); return }
-      payload.value = d.taskValue
-    } else if (tt === 'step') {
+    const steps = (t.task_steps) || []
+    if (steps.length) {
       if (!d.taskSteps.length) { window.cpToast('先勾选完成的分步再打卡'); return }
-      payload.value = d.taskSteps.length
-      payload.reflection = d.taskSteps.join('；')
+      d.taskValue = d.taskSteps.length
+      const payload = { value: d.taskSteps.length, reflection: d.taskSteps.join('；') }
+      d.checking = true
+      this.rerender()
+      try {
+        const res = await window.api.post('/challenges/' + ch.id + '/checkin', payload)
+        const r = res.data || res
+        window.cpCelebrate('打卡成功 +' + (r.points_earned || 0) + ' 分')
+        d.taskSteps = []
+        await this._finishCheckin(r, ch, d, t.date)
+      } catch (e) {
+        window.cpToast(window.cpErrMsg(e, '打卡失败，请重试'))
+      } finally {
+        d.checking = false
+        this.rerender()
+      }
+      return
+    }
+    const tt = t.task_type || ch.task_type || 'binary'
+    let payload = { value: 1.0, reflection: '' }
+    if (tt === 'counter' || tt === 'timer') {
+      if (d.taskValue <= 0) { window.cpToast('先输入数量'); return }
+      payload.value = d.taskValue
     } else if (tt === 'text') {
-      if (!d.textValue.trim()) { window.cpToast('请写点什么再提交'); return }
+      if (!d.textValue.trim()) { window.cpToast('先写点什么'); return }
       payload.value = d.textValue.length
       payload.reflection = d.textValue
     }
@@ -128,7 +190,6 @@
       const r = res.data || res
       window.cpCelebrate('打卡成功 +' + (r.points_earned || 0) + ' 分')
       d.taskValue = 0
-      d.taskSteps = []
       d.textValue = ''
       await this._finishCheckin(r, ch, d, t.date)
     } catch (e) {
@@ -146,7 +207,7 @@
     if (!ch || !t || d.checking) return
     const tt = t.task_type || ch.task_type || 'binary'
     const data = { value: payload.value || 0, reflection: payload.reflection || '', context_tag: '', sub_goal_id: null }
-    if (tt === 'counter' && data.value <= 0) { window.cpToast('请输入完成数量'); return }
+    if (tt === 'counter' && data.value <= 0) { window.cpToast('先输入数量'); return }
     d.checking = true
     this.rerender()
     try {
@@ -175,121 +236,135 @@
     if (!r.ai_feedback && dateStr && window.cpPollTodayAi) window.cpPollTodayAi(ch.id, dateStr, 3)
   }
 
-  V._checkinArea = function (tt, t) {
+  V._checkinArea = function (tt, t, ch) {
     const d = this.data
     const dis = d.checking ? 'disabled' : ''
-    if (tt === 'counter') return this._counterUI(t, dis)
-    if (tt === 'timer') return this._timerUI(t, dis)
-    if (tt === 'step') return this._stepUI(t, dis)
-    if (tt === 'text') return this._textUI(t, dis)
-    if (tt === 'word') return this._wordUI(t, dis)
-    if (tt === 'recite') return this._reciteUI(t, dis)
-    return this._binaryUI(dis)
+    let html = '<div class="cp-checkin-box">' + this._mainCTA(tt, t, ch, dis, !!t.checked_in)
+    const extras = this._extras(tt, t, ch, dis, !!t.checked_in)
+    if (extras) html += extras
+    html += '</div>'
+    return html
   }
 
-  V._counterUI = function (t, dis) {
+  V._mainCTA = function (tt, t, ch, dis, done) {
     const d = this.data
-    const target = t.task_target || 1
-    const unit = window.cpEsc(t.task_unit || '')
-    let h = '<div class="cp-checkin-box"><div class="cp-counter-row">'
-    h += '<button class="cp-counter-btn" ' + dis + ' onclick="cpViews.home.adjustCount(-5)">−5</button>'
-    h += '<div class="cp-counter-display"><span class="cp-counter-val">' + d.taskValue + '</span><span class="cp-counter-target">/ ' + target + ' ' + unit + '</span></div>'
-    h += '<button class="cp-counter-btn" ' + dis + ' onclick="cpViews.home.adjustCount(5)">+5</button></div>'
-    h += '<div class="cp-counter-quick">'
-    ;[0.25, 0.5, 0.75, 1].forEach(p => { const v = Math.round(target * p); h += '<button class="cp-quick-btn" ' + dis + ' onclick="cpViews.home.setCount(' + v + ')">' + v + '</button>' })
-    h += '</div>' + this._submitBtn(dis) + this._miniLink(dis) + '</div>'
-    return h
+    const unit = window.cpEsc(t.task_unit || ch.unit || '')
+    const target = (t.task_target && t.task_target > 0) ? t.task_target : (ch.target_value || 1)
+    const isDecrease = ch.direction === 'decrease' || String(t.direction) === 'decrease'
+    let title = '点亮今日'
+    let sub = ''
+    if (done) {
+      return '<button class="cp-cta-done" disabled><i class="fas fa-circle-check"></i><span>今日已完成</span></button>'
+    }
+    if (isDecrease) {
+      title = '今日守住，点亮'
+      sub = t.today_total > 0 ? '已记 ' + t.today_total + ' ' + unit + '，控制在目标内就算赢' : '没有破戒，就是最大的胜利'
+    } else if (tt === 'counter' || tt === 'timer') {
+      sub = '记为完成今日 ' + target + ' ' + unit
+    } else if (tt === 'step') {
+      sub = '分步都完成，一键打卡'
+    } else if (tt === 'text') {
+      sub = target > 0 ? '今日目标 ' + target + ' ' + unit + '，写没写都能点亮' : '完成了就来点亮'
+    }
+    return '<button class="cp-cta-main" ' + dis + ' onclick="cpViews.home.doMainCheckin()"><i class="fas fa-fire"></i><span>' + (d.checking ? '点亮中…' : title) + '</span>' + (sub ? '<em>' + sub + '</em>' : '') + '</button>'
   }
 
-  V._timerUI = function (t, dis) {
+  V._extras = function (tt, t, ch, dis, done) {
     const d = this.data
-    const target = t.task_target || 10
-    let h = '<div class="cp-checkin-box"><div class="cp-timer-display"><span class="cp-timer-val">' + this._fmtTime(d.taskValue) + '</span><span class="cp-timer-target">/ ' + target + ' ' + window.cpEsc(t.task_unit || '分钟') + '</span></div>'
-    h += '<div class="cp-timer-presets">'
-    ;[5, 10, 15, 20, 30].filter(p => p <= target * 1.5).forEach(p => { h += '<button class="cp-preset-btn" ' + dis + ' onclick="cpViews.home.setCount(' + p + ')">' + p + '分</button>' })
-    h += '</div>' + this._submitBtn(dis) + this._miniLink(dis) + '</div>'
-    return h
+    const isDecrease = ch.direction === 'decrease' || String(t.direction) === 'decrease'
+    const isPm = (ch && ch.scene_template === 'pomodoro') || (ch && ch.task_type === 'timer' && ch.scene_template === 'pomodoro')
+    const mini = done ? '' : '<button class="cp-extra-chip ghost" ' + dis + ' onclick="cpViews.home.doMini()">今天太累？微打卡</button>'
+    if (isPm) {
+      return '<button class="cp-extra-chip' + (this._panel === 'pm' ? ' active' : '') + '" ' + dis + ' onclick="cpViews.home.togglePanel(\'pm\')"><i class="fas fa-clock"></i>番茄钟</button>' + this._panelBody(tt, t, ch, dis)
+    }
+    if (isDecrease || tt === 'counter' || tt === 'timer') {
+      const has = (t.today_checkins || []).length > 0
+      return '<div class="cp-extra-row"><button class="cp-extra-chip' + (this._panel === 'quick' ? ' active' : '') + '" ' + dis + ' onclick="cpViews.home.togglePanel(\'quick\')"><i class="fas fa-pen"></i>' + (isDecrease ? '记一笔' : '记实际值') + '</button>' + (has ? '<button class="cp-extra-chip' + (this._panel === 'undo' ? ' active' : '') + '" ' + dis + ' onclick="cpViews.home.togglePanel(\'undo\')"><i class="fas fa-rotate-left"></i>撤销上一笔</button>' : '') + mini + '</div>' + this._panelBody(tt, t, ch, dis)
+    }
+    if (tt === 'step') {
+      return '<button class="cp-extra-chip' + (this._panel === 'steps' ? ' active' : '') + '" ' + dis + ' onclick="cpViews.home.togglePanel(\'steps\')"><i class="fas fa-list-check"></i>分步清单</button>' + this._panelBody(tt, t, ch, dis)
+    }
+    if (tt === 'text') {
+      if (done) return '<div class="cp-extra-row"></div>'
+      return '<div class="cp-extra-row"><button class="cp-extra-chip' + (this._panel === 'text' ? ' active' : '') + '" ' + dis + ' onclick="cpViews.home.togglePanel(\'text\')"><i class="fas fa-pen-nib"></i>写几句</button>' + mini + '</div>' + this._panelBody(tt, t, ch, dis)
+    }
+    if (tt === 'word') {
+      return '<div class="cp-extra-row"><button class="cp-extra-chip' + (this._panel === 'word' ? ' active' : '') + '" ' + dis + ' onclick="cpViews.home.togglePanel(\'word\')"><i class="fas fa-clipboard-list"></i>刷词卡</button></div>' + this._panelBody(tt, t, ch, dis)
+    }
+    if (tt === 'recite') {
+      return '<div class="cp-extra-row"><button class="cp-extra-chip' + (this._panel === 'poem' ? ' active' : '') + '" ' + dis + ' onclick="cpViews.home.togglePanel(\'poem\')"><i class="fas fa-feather-pointed"></i>看今日诗</button></div>' + this._panelBody(tt, t, ch, dis)
+    }
+    return '<div class="cp-extra-row">' + mini + '</div>'
   }
 
-  V._stepUI = function (t, dis) {
+  V._panelBody = function (tt, t, ch, dis) {
+    const key = this._panel
+    if (!key) return ''
+    if (key === 'quick') return this._quickPanel(tt, t, ch, dis)
+    if (key === 'steps') {
+      if (!(t.task_steps && t.task_steps.length)) return ''
+      return this._stepPanel(t, dis)
+    }
+    if (key === 'pm') {
+      if (!((ch && ch.scene_template === 'pomodoro') || (ch && ch.task_type === 'timer' && ch.scene_template === 'pomodoro'))) return ''
+      return window.cpExtraPanelRender ? window.cpExtraPanelRender('pm', tt, t, ch, dis) : ''
+    }
+    if (key === 'text') return this._textPanel(t, dis)
+    if (key === 'word') return this._wordUI(t, dis)
+    if (key === 'poem') return this._reciteUI(t, dis)
+    if (key === 'undo') return this._undoPanel(t, ch, dis)
+    return ''
+  }
+
+  V._quickPanel = function (tt, t, ch, dis) {
+    const d = this.data
+    const isTimer = tt === 'timer'
+    const unit = window.cpEsc(t.unit || ch.unit || '')
+    const presets = isTimer ? [5, 10, 15, 20, 30] : [1, 2, 3, 5]
+    const total = (t.today_total || 0)
+    const target = (t.task_target || ch.target_value || 1)
+    let html = '<div class="cp-extra-panel"><div class="cp-extra-head"><span class="cp-extra-pv">今日 ' + total + '/' + target + ' ' + unit + '</span></div><div class="cp-extra-btns">'
+    presets.forEach(v => {
+      const label = isTimer ? '+' + v + '分' : '+' + v
+      html += '<button class="cp-tap-chip" ' + dis + ' onclick="cpViews.home.doFastTap(' + v + ')"><i class="fas fa-plus"></i>' + label + '</button>'
+    })
+    html += '<button class="cp-tap-chip ghost" ' + dis + ' onclick="cpViews.home.openQuickForm()"><i class="fas fa-sliders"></i>自定义</button>'
+    html += '</div></div>'
+    return html
+  }
+
+  V._stepPanel = function (t, dis) {
     const d = this.data
     const steps = t.task_steps || []
-    let h = '<div class="cp-checkin-box"><div class="cp-step-list">'
+    let h = '<div class="cp-extra-panel"><div class="cp-step-list">'
     steps.forEach(st => {
       const done = d.taskSteps.includes(st)
       h += '<div class="cp-step-item' + (done ? ' done' : '') + '" onclick="cpViews.home.toggleStep(\'' + encodeURIComponent(st) + '\')"><span class="cp-step-check">' + (done ? '✓' : '○') + '</span><span class="cp-step-text">' + window.cpEsc(st) + '</span></div>'
     })
-    h += '</div><button class="cp-btn-checkin"' + (d.taskSteps.length === 0 ? ' disabled' : '') + ' ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-list-check"></i> 打卡完成 (' + d.taskSteps.length + '/' + steps.length + ')</button>'
-    h += this._miniLink(dis) + '</div>'
+    h += '</div><button class="cp-btn-checkin"' + (d.taskSteps.length === 0 ? ' disabled' : '') + ' ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-list-check"></i> 打卡完成 (' + d.taskSteps.length + '/' + steps.length + ')</button></div>'
     return h
   }
 
-  V._textUI = function (t, dis) {
+  V._textPanel = function (t, dis) {
     const d = this.data
     const target = t.task_target || 0
     const unit = window.cpEsc(t.task_unit || '字')
     const len = (d.textValue || '').length
-    let h = '<div class="cp-checkin-box"><div class="cp-text-area">'
-    h += '<textarea class="cp-text-input" ' + dis + ' placeholder="记录你的想法、感受或今天的收获..." oninput="cpViews.home.setText(this.value)" style="resize:none;font-size:15px;line-height:1.6;min-height:120px">' + window.cpEsc(d.textValue || '') + '</textarea>'
-    if (target > 0) h += '<div class="cp-text-counter"><span class="cp-text-count' + (len >= target ? ' done' : '') + '">' + len + '</span> / ' + target + ' ' + unit + '</div>'
-    else h += '<div class="cp-text-counter"><span class="cp-text-count">' + len + '</span> 字</div>'
-    h += '</div>'
-    h += '<button class="cp-btn-checkin"' + ((target > 0 && len < target) ? ' style="background:rgba(5,150,105,.16);color:var(--emerald);box-shadow:none" ' : '') + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-circle-check"></i> 打卡完成</button>'
-    h += this._miniLink(dis) + '</div>'
+    let h = '<div class="cp-extra-panel"><div class="cp-text-area">'
+    h += '<textarea class="cp-text-input" ' + dis + ' placeholder="写几句此刻的想法，以后回看会感动自己..." oninput="cpViews.home.setText(this.value)" style="resize:none;font-size:15px;line-height:1.6;min-height:96px">' + window.cpEsc(d.textValue || '') + '</textarea>'
+    h += '<div class="cp-text-counter"><span class="cp-text-count' + (target > 0 && len >= target ? ' done' : '') + '">' + len + '</span>' + (target > 0 ? ' / ' + target + ' ' + unit : ' 字') + '</div>'
+    h += '</div><button class="cp-btn-checkin" ' + dis + ' onclick="cpViews.home.doMainCheckin()"><i class="fas fa-circle-check"></i> 写入并点亮今日</button></div>'
     return h
   }
 
-  V._binaryUI = function (dis) {
-    const d = this.data
-    return '<div class="cp-ignite-wrap"><button class="cp-ignite-btn" ' + dis + ' onpointerdown="cpViews.home.igniteDown(event)" onpointerup="cpViews.home.igniteUp(true)" onpointerleave="cpViews.home.igniteUp(false)" onpointercancel="cpViews.home.igniteUp(false)" oncontextmenu="return false"><i class="fas fa-fire"></i><span>' + (d.checking ? '点燃中' : '点燃今日') + '</span></button><span class="cp-ignite-hint">点一下或按住点火，完成今日打卡</span>' + this._miniLink(dis) + '</div>'
-  }
-
-  V._submitBtn = function (dis, label) {
-    return '<button class="cp-btn-checkin" ' + dis + ' onclick="cpViews.home.doMultiCheckin()"><i class="fas fa-fire"></i>' + (label || '打卡完成') + '</button>'
-  }
-
-  V._miniLink = function (dis) {
-    return '<button class="cp-mini-link" ' + dis + ' onclick="cpViews.home.doMini()">今天太累？5分钟微打卡守住节奏</button>'
-  }
-
-  V._fmtTime = function (min) { return Math.floor(min / 60) + ':' + String(min % 60).padStart(2, '0') }
-
-  V.igniteDown = function (e) {
-    const d = this.data
-    if (d.checking || (d.today && d.today.checked_in)) return
-    if (e.cancelable) e.preventDefault()
-    const btn = e.currentTarget
-    if (!btn || btn.disabled) return
-    this.igniteUp()
-    const ig = { btn, start: Date.now(), raf: 0, done: false }
-    this._ignite = ig
-    btn.classList.add('charging')
-    const tick = () => {
-      if (this._ignite !== ig || ig.done) return
-      const p = Math.min(1, (Date.now() - ig.start) / 1000)
-      ig.btn.style.setProperty('--p', p.toFixed(3))
-      if (p >= 1) {
-        ig.done = true
-        this._ignite = null
-        ig.btn.classList.remove('charging')
-        this.doCheckin('full')
-        return
-      }
-      ig.raf = requestAnimationFrame(tick)
-    }
-    ig.raf = requestAnimationFrame(tick)
-  }
-
-  V.igniteUp = function (commit) {
-    const ig = this._ignite
-    if (!ig) return
-    cancelAnimationFrame(ig.raf)
-    const quick = !!commit && !ig.done && (Date.now() - ig.start) < 300
-    if (ig.btn) {
-      ig.btn.classList.remove('charging')
-      ig.btn.style.setProperty('--p', 0)
-    }
-    this._ignite = null
-    if (quick) this.doCheckin('full')
+  V._undoPanel = function (t, ch, dis) {
+    const lst = (t.today_checkins || []).slice().reverse()
+    if (!lst.length) return ''
+    let h = '<div class="cp-extra-panel">'
+    lst.slice(0, 3).forEach(c => {
+      h += '<div class="cp-undo-item"><span class="cp-undo-time">' + (c.timestamp || '').slice(11, 16) + '</span><span class="cp-undo-val">' + c.value + ' ' + window.cpEsc(c.unit || ch.unit || '') + '</span><button class="cp-undo-del" ' + dis + ' onclick="cpViews.home.doUndoLast()"><i class="fas fa-trash-can"></i></button></div>'
+    })
+    h += '</div>'
+    return h
   }
 })()

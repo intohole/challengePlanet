@@ -161,7 +161,7 @@
       missedDates: mercy.missed_dates || [],
       loading: d.loading && !d.today,
       celebrateText: (s.celebrate && s.celebrateText) || '',
-      task: !isDeco
+      task: false
     }
     const api = { checkin: p => V.doCheckin(p && p.value >= 1 ? 'full' : 'mini'), 'quick-checkin': p => V.doNuxSubmit(p), mend: () => V.openMend(), freeze: () => V.openFreeze(), repair: () => V.doRepair(), 'open-day': ds => V.openDayDetail(ds) }
     const handlers = {}

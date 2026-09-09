@@ -121,11 +121,9 @@
     return list[((t.day_number || 1) - 1) % list.length]
   }
 
-  const _origMulti = V._multiCheckinArea
-  V._multiCheckinArea = function (tt, t, ch, slipBinary) {
-    const isPm = (ch && ch.scene_template === 'pomodoro') || (ch && ch.task_type === 'timer' && ch.scene_template === 'pomodoro')
-    if (!isPm) return _origMulti.apply(this, [tt, t, ch, slipBinary])
-    return this._pomodoroUI(t, ch, this.data.checking ? 'disabled' : '')
+  window.cpExtraPanelRender = function (key, tt, t, ch, dis) {
+    if (key !== 'pm') return ''
+    return '<div class="cp-extra-panel">' + V._pomodoroUI(t, ch, dis) + '</div>'
   }
 
   V._pomodoroUI = function (t, ch, dis) {
