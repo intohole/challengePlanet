@@ -49,6 +49,8 @@
       }
       html += '<div class="cp-task-progress"><div class="cp-task-progress-bar"><div class="cp-task-progress-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>'
       html += '<div class="cp-task-progress-info"><span style="color:' + barColor + '">' + t.today_total + '</span><span class="cp-task-progress-sep">/</span><span>' + (t.today_target || t.task_target || staticTarget) + ' ' + window.cpEsc(t.unit || ch.unit || '') + '</span></div></div>'
+      const hint = this._remainHint(t, ch, isDecrease)
+      if (hint) html += hint
     }
     if (t.sub_goals && t.sub_goals.length) html += this._subGoalProgress(t.sub_goals, ch)
     html += '</div>'
@@ -83,6 +85,18 @@
     }
     html += '<div class="cp-sub-actions"><button class="cp-btn-ghost" onclick="cpViews.home.openReflection()"><i class="fas fa-pen"></i> ' + ((t.checkin_data && t.checkin_data.reflection) ? '查看/改心得' : '写心得') + '</button><button class="cp-btn-ghost" onclick="cpOpenShare()"><i class="fas fa-share-nodes"></i> 分享海报</button></div>'
     return html
+  }
+
+  V._remainHint = function (t, ch, isDecrease) {
+    if (t.settled) return ''
+    const unit = window.cpEsc(t.unit || ch.unit || '')
+    const target = (t.today_target || t.task_target || ch.target_value || 1)
+    if (isDecrease) {
+      const over = (t.today_total || 0) > (t.today_target || 0)
+      return '<div class="cp-remain-hint' + (over ? ' over' : '') + '"><i class="fas ' + (over ? 'fa-circle-exclamation' : 'fa-bullseye') + '"></i>' + (over ? '已超今日上限 ' + target + ' ' + unit + '，明天梯度会更低，稳住' : '守住 ' + target + ' ' + unit + ' 以内即为今日达标') + '</div>'
+    }
+    if ((t.remaining || 0) <= 0) return ''
+    return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>还差 <b>' + t.remaining + '</b> ' + unit + ' 达标</div>'
   }
 
   V._ladderBlock = function (t, ch) {

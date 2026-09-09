@@ -6,7 +6,7 @@
     const ch = s.current
     const d = this.data
     const t = d.today
-    if (!ch || d.checking || (t && t.checked_in)) return
+    if (!ch || d.checking || (t && t.settled)) return
     const tt = (t && t.task_type) || ch.task_type || 'binary'
     const target = (t && t.task_target) || ch.target_value || 1
     const isDecrease = ch.direction === 'decrease' || String(t && t.direction) === 'decrease'
@@ -28,7 +28,7 @@
     try {
       const res = await window.api.post('/challenges/' + ch.id + '/checkin', payload)
       const r = res.data || res
-      window.cpCelebrate('点亮今日 +' + (r.points_earned || 0) + ' 分')
+      window.cpCelebrate('今日达标 +' + (r.points_earned || 0) + ' 分')
       this._panel = ''
       d.textValue = ''
       await this._finishCheckin(r, ch, d, t && t.date)
@@ -239,8 +239,9 @@
   V._checkinArea = function (tt, t, ch) {
     const d = this.data
     const dis = d.checking ? 'disabled' : ''
-    let html = '<div class="cp-checkin-box">' + this._mainCTA(tt, t, ch, dis, !!t.checked_in)
-    const extras = this._extras(tt, t, ch, dis, !!t.checked_in)
+    const done = !!t.settled
+    let html = '<div class="cp-checkin-box">' + this._mainCTA(tt, t, ch, dis, done)
+    const extras = this._extras(tt, t, ch, dis, done)
     if (extras) html += extras
     html += '</div>'
     return html
@@ -251,22 +252,30 @@
     const unit = window.cpEsc(t.task_unit || ch.unit || '')
     const target = (t.task_target && t.task_target > 0) ? t.task_target : (ch.target_value || 1)
     const isDecrease = ch.direction === 'decrease' || String(t.direction) === 'decrease'
-    let title = '点亮今日'
-    let sub = ''
     if (done) {
       return '<button class="cp-cta-done" disabled><i class="fas fa-circle-check"></i><span>今日已完成</span></button>'
     }
+    let title = '今日完成'
+    let sub = ''
     if (isDecrease) {
-      title = '今日守住，点亮'
-      sub = t.today_total > 0 ? '已记 ' + t.today_total + ' ' + unit + '，控制在目标内就算赢' : '没有破戒，就是最大的胜利'
+      title = '守住今日'
+      sub = '不超 ' + target + ' ' + unit + ' 即达标'
     } else if (tt === 'counter' || tt === 'timer') {
-      sub = '记为完成今日 ' + target + ' ' + unit
+      title = '完成今日目标'
+      sub = '记为今日 ' + target + ' ' + unit
     } else if (tt === 'step') {
-      sub = '分步都完成，一键打卡'
+      title = '今日达标'
+      sub = '分步都完成即达标'
+    } else if (tt === 'word') {
+      title = '今日背词完成'
+      sub = '达成 ' + target + ' ' + unit
+    } else if (tt === 'recite') {
+      title = '今日背诵完成'
     } else if (tt === 'text') {
-      sub = target > 0 ? '今日目标 ' + target + ' ' + unit + '，写没写都能点亮' : '完成了就来点亮'
+      title = '完成今日记录'
+      sub = target > 0 ? '目标 ' + target + ' ' + unit : ''
     }
-    return '<button class="cp-cta-main" ' + dis + ' onclick="cpViews.home.doMainCheckin()"><i class="fas fa-fire"></i><span>' + (d.checking ? '点亮中…' : title) + '</span>' + (sub ? '<em>' + sub + '</em>' : '') + '</button>'
+    return '<button class="cp-cta-main" ' + dis + ' onclick="cpViews.home.doMainCheckin()"><i class="fas fa-fire"></i><span>' + (d.checking ? '记录中…' : title) + '</span>' + (sub ? '<em>' + sub + '</em>' : '') + '</button>'
   }
 
   V._extras = function (tt, t, ch, dis, done) {
@@ -353,7 +362,7 @@
     let h = '<div class="cp-extra-panel"><div class="cp-text-area">'
     h += '<textarea class="cp-text-input" ' + dis + ' placeholder="写几句此刻的想法，以后回看会感动自己..." oninput="cpViews.home.setText(this.value)" style="resize:none;font-size:15px;line-height:1.6;min-height:96px">' + window.cpEsc(d.textValue || '') + '</textarea>'
     h += '<div class="cp-text-counter"><span class="cp-text-count' + (target > 0 && len >= target ? ' done' : '') + '">' + len + '</span>' + (target > 0 ? ' / ' + target + ' ' + unit : ' 字') + '</div>'
-    h += '</div><button class="cp-btn-checkin" ' + dis + ' onclick="cpViews.home.doMainCheckin()"><i class="fas fa-circle-check"></i> 写入并点亮今日</button></div>'
+    h += '</div><button class="cp-btn-checkin" ' + dis + ' onclick="cpViews.home.doMainCheckin()"><i class="fas fa-circle-check"></i> 写入并完成今日</button></div>'
     return h
   }
 

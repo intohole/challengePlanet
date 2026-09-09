@@ -173,6 +173,7 @@ class TodayTaskResponse(BaseModel):
     ladder_progress_pct: float = 0.0
 
     checked_in: bool = False
+    settled: bool = False
     checkin_data: Optional[dict[str, object]] = None
     today_checkins: list[dict[str, object]] = Field(default_factory=list)
     sub_goals: list[dict[str, object]] = Field(default_factory=list)

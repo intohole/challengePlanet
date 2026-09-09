@@ -351,6 +351,7 @@ class ChallengeService:
             "progress_pct": round(progress, 1),
             "ladder_progress_pct": round(ladder_progress, 1),
             "checked_in": len(today_checkins) > 0,
+            "settled": is_settled(challenge, str(task.get("task_type", challenge.task_type)), today_total, today_target, len(today_checkins)),
             "checkin_data": {
                 "mood": today_checkins[-1].mood if today_checkins else "",
                 "reflection": today_checkins[-1].reflection if today_checkins else "",

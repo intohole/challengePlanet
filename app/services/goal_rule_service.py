@@ -69,3 +69,16 @@ def ladder_progress_pct(challenge: object, day_number: int) -> float:
     if span <= 0:
         return 100.0
     return max(0.0, min((cap - start) / (goal - start) * 100.0, 100.0))
+
+
+def is_settled(challenge: object, task_type: str, today_total: float, today_target: float, has_record: int) -> bool:
+    if task_type == "diet":
+        return has_record > 0
+    direction = str(getattr(challenge, "direction", "") or "increase")
+    if direction == "decrease":
+        if task_type == "binary":
+            return has_record > 0
+        return has_record > 0 and today_total <= today_target
+    if task_type == "text":
+        return has_record > 0
+    return today_target > 0 and today_total >= today_target

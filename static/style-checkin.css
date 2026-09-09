@@ -154,3 +154,21 @@
 .cp-undo-val { font-size: 14px; font-weight: 600; color: var(--text-primary); flex: 1; }
 .cp-undo-del { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 13px; padding: 6px 8px; }
 .cp-undo-del:active { color: var(--red); }
+
+.cp-remain-hint { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; color: var(--amber); font-weight: 600; }
+.cp-remain-hint i { font-size: 11px; }
+.cp-remain-hint b { font-size: 13px; }
+.cp-remain-hint.over { color: var(--red); }
+
+.cp-phase-snap { padding: 14px; }
+.cp-phase-snap-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.cp-phase-badge-n { font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+.cp-phase-badge-n em { font-style: normal; font-size: 11px; font-weight: 500; opacity: .8; }
+.cp-phase-snap-head b { font-size: 13px; font-weight: 700; color: var(--text-secondary); }
+.cp-phase-snap-milestone { padding: 9px 11px; border-radius: var(--radius-sm); background: rgba(99,102,241,.05); border: 1px solid rgba(99,102,241,.14); font-size: 12px; color: var(--text-primary); margin-bottom: 9px; }
+.cp-phase-snap-bar { height: 5px; border-radius: 3px; background: rgba(15,23,42,.07); overflow: hidden; margin-top: 7px; }
+.cp-phase-snap-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--primary), var(--emerald)); transition: width .5s; }
+.cp-phase-snap-tip { font-size: 12px; color: var(--text-secondary); line-height: 1.7; margin: 0 0 9px; }
+.cp-phase-snap-risk { display: flex; align-items: flex-start; gap: 7px; padding: 9px 11px; border-radius: var(--radius-sm); background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2); font-size: 12px; color: var(--amber); line-height: 1.6; }
+.cp-phase-snap-risk i { margin-top: 2px; }
+.cp-phase-snap-risk.hot { background: rgba(239,83,80,.07); border-color: rgba(239,83,80,.25); color: var(--red); }

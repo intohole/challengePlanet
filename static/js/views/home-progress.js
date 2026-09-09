@@ -19,12 +19,30 @@
   V._tabInsight = function (s) {
     const d = this.data
     let html = ''
+    if (d.guidance) html += this._phaseSnap(d.guidance)
+    if (d.weekly && d.weekly.content) {
+      html += '<div class="glass-card" style="padding:14px"><div class="cp-section-title" style="margin-bottom:8px"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> 本周洞察</div><div class="cp-weekly-md nx-md" id="' + this._pushMd(d.weekly.content) + '"></div><div class="cp-weekly-meta">本周 ' + (d.weekly.week_checkins || 0) + '/' + (d.weekly.week_days || 7) + ' 天</div></div>'
+    }
     if (d.adaptive) html += this._adaptiveCard(d.adaptive)
     if (d.mercy && (d.mercy.missed_dates || []).length) html += this._diagEntry(d.mercy.missed_dates.length)
-    if (d.weekly && d.weekly.content) {
-      html += '<div class="glass-card" style="padding:14px"><div class="cp-section-title" style="margin-bottom:8px"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> 本周洞察</div><div class="cp-weekly-md nx-md" id="' + this._pushMd(d.weekly.content) + '"></div><div class="cp-weekly-meta">本周进度 ' + (d.weekly.week_checkins || 0) + '/' + (d.weekly.week_days || 7) + ' 天</div></div>'
+    return html
+  }
+
+  V._phaseSnap = function (g) {
+    const m = g.next_milestone
+    let html = '<div class="glass-card cp-phase-snap">'
+    html += '<div class="cp-phase-snap-head"><span class="cp-phase-badge-n" style="color:' + (g.phase_color || '#8B5CF6') + '">' + (g.phase_icon || '🌱') + ' ' + window.cpEsc(g.phase_name || '') + (g.phase_range ? '<em>· ' + window.cpEsc(g.phase_range) + '</em>' : '') + '</span><b>第 ' + (g.completed_days || 0) + ' 天</b></div>'
+    if (m && m.days_to_go > 0) {
+      html += '<div class="cp-phase-snap-milestone"><span>🎯 距 ' + m.day + ' 天里程碑还差 ' + m.days_to_go + ' 天</span><div class="cp-phase-snap-bar"><div class="cp-phase-snap-fill" style="width:' + Math.min(100, Math.round(((g.completed_days || 0) / m.day) * 100)) + '%"></div></div></div>'
     }
-    if (d.guidance) html += this._guidanceCard(d.guidance)
+    const tip = (m && m.tip) || g.phase_tip || ''
+    if (tip) html += '<p class="cp-phase-snap-tip">' + window.cpEsc(tip) + '</p>'
+    const c = g.companion
+    if (c && (c.level === 'high' || c.level === 'medium')) {
+      const msg = c.message || c.micro_action || '今天重新打卡，节奏就能恢复'
+      html += '<div class="cp-phase-snap-risk' + (c.level === 'high' ? ' hot' : '') + '"><i class="fas ' + (c.level === 'high' ? 'fa-heart-crack' : 'fa-hand-holding-heart') + '"></i><span>' + window.cpEsc(msg) + '</span></div>'
+    }
+    html += '</div>'
     return html
   }
 
