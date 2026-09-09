@@ -39,7 +39,7 @@
       return { counter: 'fitness', timer: 'mind', text: 'other' }[tt] || 'build'
     },
 
-    async confirm() {
+    async confirmDirect() {
       const c = window.appState.create
       if (c.saving || !this.canDirect()) return
       c.saving = true
