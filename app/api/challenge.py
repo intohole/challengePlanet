@@ -8,8 +8,11 @@ from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from nexus import get_current_user_id_required
 from nexus import get_datacenter_client, DOMAIN_GROWTH, report_core
+from nexus.logging import get_logger
 from nexus.streaming import sse_event_dict, sse_response
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = get_logger("challengePlanet.api")
 
 _security = HTTPBearer(auto_error=False)
 
@@ -49,6 +52,7 @@ _MAX_RE = re.compile(
 
 def _apply_quit_ladder(parsed: dict[str, object], raw_input: str) -> dict[str, object]:
     if str(parsed.get("category", "")) != "quit":
+        logger.info("quit-ladder skip: category=%s", parsed.get("category"))
         return parsed
     if str(parsed.get("goal_rule", "")) == "ladder" and float(parsed.get("ladder_start", 0) or 0) > 0:
         return parsed
@@ -57,6 +61,7 @@ def _apply_quit_ladder(parsed: dict[str, object], raw_input: str) -> dict[str, o
     if m is None:
         c = _MAX_RE.search(raw_input)
         if c is None:
+            logger.info("quit-ladder skip: no numeric pair raw=%r", raw_input[:40])
             return parsed
         start = float(c.group(1))
         goal = 0.0
@@ -64,6 +69,7 @@ def _apply_quit_ladder(parsed: dict[str, object], raw_input: str) -> dict[str, o
         start = float(m.group(1))
         goal = max(0.0, float(m.group(2)))
     if start <= goal:
+        logger.info("quit-ladder skip: start<=goal start=%s goal=%s", start, goal)
         return parsed
     span = start - goal
     if span <= duration:
@@ -79,6 +85,7 @@ def _apply_quit_ladder(parsed: dict[str, object], raw_input: str) -> dict[str, o
         "ladder_step": float(step),
         "target_value": float(start),
     })
+    logger.info("quit-ladder applied: %s→%s interval=%s step=%s", start, goal, interval, step)
     return parsed
 
 
