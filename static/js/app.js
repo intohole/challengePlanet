@@ -341,4 +341,6 @@ const cpApp = createApp({
 })
 if (window.NuxAiChat) cpApp.component('nux-ai-chat', NuxAiChat)
 if (window.NuxConversationList) cpApp.component('nux-conversation-list', NuxConversationList)
+if (window.NuxMenuUser) cpApp.component('nux-menu-user', NuxMenuUser)
+if (window.NuxMenuAbout) cpApp.component('nux-menu-about', NuxMenuAbout)
 cpApp.mount('#app')
