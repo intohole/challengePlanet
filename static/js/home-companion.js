@@ -162,7 +162,7 @@ window.cpCompanion = (function () {
         if (type === 'queue_ready') { setQueue(0, 0); return }
         if (type === 'delta') { accumulated += data.content || ''; callbacks.onChunk(data.content || '', accumulated); return }
         if (type === 'meta') { applyMeta(data); return }
-        if (type === 'thinking' || type === 'tool' || type === 'tool_executed' || type === 'references') {
+        if (type === 'thinking' || type === 'tool' || type === 'tool_executed' || type === 'references' || type === 'widget' || type === 'widget_update') {
           if (callbacks.routeRich) callbacks.routeRich(type, data)
           return
         }
