@@ -213,7 +213,7 @@ window.cpViews.home = (function () {
     try { localStorage.setItem('cp_decl_' + chId + '_' + dateStr, text) } catch (e) {}
   }
 
-  V._pollTodayAi = async function (chId, dateStr, maxTry) {
+  V._pollTodayAi = async function (chId, dateStr, maxTry, changedFrom) {
     for (let i = 0; i < maxTry; i++) {
       await new Promise(r => setTimeout(r, 3500))
       const t = await window.api.get('/challenges/' + chId + '/today').then(x => x.data || x).catch(() => null)
@@ -224,7 +224,7 @@ window.cpViews.home = (function () {
         d.declaration = cd.declaration
         this._cacheDeclaration(chId, dateStr, cd.declaration)
       }
-      if (cd && cd.ai_feedback) {
+      if (cd && cd.ai_feedback && (!changedFrom || cd.ai_feedback !== changedFrom)) {
         d.lastFeedback = cd.ai_feedback
         this.rerender()
         return

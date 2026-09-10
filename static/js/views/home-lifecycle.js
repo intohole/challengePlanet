@@ -99,10 +99,11 @@
     const rf = window.appState.reflection
     if (!ch || rf.busy) return
     rf.busy = true
+    const prev = this.data.lastFeedback || ''
     try {
       const res = await window.api.patch('/challenges/' + ch.id + '/checkin/today', { mood: rf.mood, reflection: rf.content })
       const r = res.data || res
-      if (window.cpPollTodayAi && this.data.today) window.cpPollTodayAi(ch.id, this.data.today.date, 3)
+      if (window.cpPollTodayAi && this.data.today) window.cpPollTodayAi(ch.id, this.data.today.date, 8, prev)
       window.cpToast('心得已保存')
       rf.show = false
       await this.load()
