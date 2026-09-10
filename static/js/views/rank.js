@@ -8,7 +8,7 @@ window.cpViews.rank = (function () {
       this.el = el
       const d = this.data
       let html = '<div class="cp-greet"><div><h1>每周排行</h1><p>坚持打卡，冲击榜单</p></div></div><div class="cp-view">'
-      html += '<div class="cp-scope-tabs"><button class="cp-pick-btn' + (d.scope === 'global' ? ' active' : '') + '" onclick="cpViews.rank.setScope(\'global\')">好友周榜</button>'
+      html += '<div class="cp-scope-tabs"><button class="cp-pick-btn' + (d.scope === 'global' ? ' active' : '') + '" onclick="cpViews.rank.setScope(\'global\')">全服周榜</button>'
       if (d.squads.length) html += '<button class="cp-pick-btn' + (d.scope === 'squad' ? ' active' : '') + '" onclick="cpViews.rank.setScope(\'squad\')">小队榜</button>'
       html += '</div>'
       if (d.loading) html += '<div class="glass-card cp-skeleton-card"><div class="cp-skel-line w80"></div><div class="cp-skel-line w60"></div><div class="cp-skel-line w80"></div><div class="cp-skel-line w40"></div></div>'
