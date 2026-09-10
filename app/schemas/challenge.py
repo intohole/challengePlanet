@@ -95,6 +95,7 @@ class ChallengeResponse(BaseModel):
     total_days: int = 0
     completed_days: int = 0
     streak: int = 0
+    last_streak: int = 0
     start_date: str = ""
     end_date: str = ""
     status: str = "active"

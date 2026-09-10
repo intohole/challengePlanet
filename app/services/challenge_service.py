@@ -18,7 +18,7 @@ from app.services.ai_service import AIService
 from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.goal_rule_service import daily_target, is_ladder, is_settled, ladder_progress_pct, resolve_mode
 from app.services.mercy_service import MercyService, load_valid_dates
-from app.services.streak_service import calc_streak, today_str
+from app.services.streak_service import calc_streak, shift_date, streak_before, today_str
 
 logger = logging.getLogger(__name__)
 
@@ -146,10 +146,12 @@ class ChallengeService:
     ) -> dict[str, int]:
         checkins = await self._checkin_repo.get_by_challenge(session, challenge.id)
         valid = await load_valid_dates(session, challenge.id)
+        last = max(valid) if valid else ""
         return {
             "completed_days": len(checkins),
             "total_days": challenge.duration_days,
             "streak": calc_streak(valid, today_str()),
+            "last_streak": streak_before(valid, shift_date(last, 1)) if last else 0,
         }
 
     async def build_list_item(
@@ -195,6 +197,7 @@ class ChallengeService:
             total_days=stats["total_days"],
             completed_days=stats["completed_days"],
             streak=stats["streak"],
+            last_streak=stats["last_streak"],
             start_date=c.start_date,
             end_date=c.end_date,
             status=c.status,
