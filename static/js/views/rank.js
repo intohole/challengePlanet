@@ -53,7 +53,7 @@ window.cpViews.rank = (function () {
         const params = d.scope === 'squad' && d.squadId ? { scope: 'squad', squad_id: d.squadId } : { scope: 'global' }
         const res = await window.api.get('/leaderboard/weekly', params)
         const r = res.data || res
-        d.list = Array.isArray(r) ? r : (r.items || [])
+        d.list = Array.isArray(r) ? r : (r.entries || r.items || [])
       } catch (e) { d.error = window.cpErrMsg(e, '榜单加载失败') }
       finally { d.loading = false; this.rerender() }
     },
