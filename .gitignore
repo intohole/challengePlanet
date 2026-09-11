@@ -17,3 +17,5 @@ data/*.sqlite
 node_modules/
 logs/
 tests/browser_shots/
+
+data/*.bak*
