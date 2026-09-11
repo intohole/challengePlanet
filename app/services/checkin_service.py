@@ -63,6 +63,8 @@ class CheckInService:
         challenge = await self._challenge_repo.get_by_id(session, challenge_id)
         if challenge is None or challenge.user_id != user_id:
             raise ValueError("挑战不存在")
+        if str(getattr(challenge, "task_type", "")) == "text" and not (reflection or "").strip():
+            raise ValueError("记得先写下今日记录内容")
 
         ts = timestamp or now_china()
         today = ts.strftime("%Y-%m-%d")

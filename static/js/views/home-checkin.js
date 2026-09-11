@@ -19,9 +19,11 @@
       const steps = (t && t.task_steps) || []
       payload.value = steps.length
       payload.reflection = steps.join('；')
-    } else if (tt === 'text' && d.textValue && d.textValue.trim()) {
+    } else if (tt === 'text') {
+      const text = (d.textValue || '').trim()
+      if (!text) { window.cpToast('先写下今日记录'); return }
       payload.value = 1
-      payload.reflection = d.textValue.trim()
+      payload.reflection = text
     }
     d.checking = true
     this.rerender()
@@ -48,6 +50,16 @@
 
   V.openWord = function () {
     this._panel = 'word'
+    this.rerender()
+  }
+
+  V.openText = function () {
+    this._panel = 'text'
+    this.rerender()
+  }
+
+  V.openStep = function () {
+    this._panel = 'steps'
     this.rerender()
   }
 
@@ -156,7 +168,7 @@
     const ch = s.current
     const d = this.data
     const t = d.today
-    if (!ch || !t || d.checking || t.checked_in) return
+    if (!ch || !t || d.checking || t.settled) return
     const steps = (t.task_steps) || []
     if (steps.length) {
       if (!d.taskSteps.length) { window.cpToast('先勾选完成的分步再打卡'); return }
@@ -263,6 +275,12 @@
     if (tt === 'word') {
       return '<button class="cp-cta-main" ' + dis + ' onclick="cpViews.home.openWord()"><i class="fas fa-book"></i><span>今日背词</span><em>刷完当日词卡即自动达成</em></button>'
     }
+    if (tt === 'text') {
+      return '<button class="cp-cta-main" ' + dis + ' onclick="cpViews.home.openText()"><i class="fas fa-pen-nib"></i><span>今日记录</span><em>写下几句即自动完成</em></button>'
+    }
+    if (tt === 'step' && t.task_steps && t.task_steps.length) {
+      return '<button class="cp-cta-main" ' + dis + ' onclick="cpViews.home.openStep()"><i class="fas fa-list-check"></i><span>今日分步</span><em>勾选完成项后提交即自动判定</em></button>'
+    }
     let title = '今日完成'
     let sub = ''
     if (isDecrease) {
@@ -271,14 +289,8 @@
     } else if (tt === 'counter' || tt === 'timer') {
       title = '完成今日目标'
       sub = '记为今日 ' + target + ' ' + unit
-    } else if (tt === 'step') {
-      title = '今日达标'
-      sub = '分步都完成即达标'
     } else if (tt === 'recite') {
       title = '今日背诵完成'
-    } else if (tt === 'text') {
-      title = '完成今日记录'
-      sub = target > 0 ? '目标 ' + target + ' ' + unit : ''
     }
     return '<button class="cp-cta-main" ' + dis + ' onclick="cpViews.home.doMainCheckin()"><i class="fas fa-fire"></i><span>' + (d.checking ? '记录中…' : title) + '</span>' + (sub ? '<em>' + sub + '</em>' : '') + '</button>'
   }
