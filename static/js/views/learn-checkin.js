@@ -13,7 +13,9 @@
 
   V._wordUI = function (t, dis) {
     const d = this.data
-    if (!d.wordCards.length && !d.wordLoading) {
+    const dayKey = (t && t.day_number) || 1
+    if ((!d.wordCards.length || d.wordCardsDay !== dayKey) && !d.wordLoading) {
+      d.wordCardsDay = dayKey
       d.wordLoading = true
       this._loadWordCards(t).then(cards => {
         d.wordCards = cards || []
@@ -31,7 +33,9 @@
     const total = d.wordCards.length
     const cur = d.wordCards[d.wordIdx]
     if (!cur) {
-      return '<div class="cp-checkin-box"><div class="cp-word-done"><i class="fas fa-circle-check"></i> 今日 ' + d.wordSeen + ' 个单词已学完 <b>😀 ' + d.wordKnown + '</b> <b>🤔 ' + d.wordBlur + '</b> <b>😵 ' + d.wordForgot + '</b></div><button class="cp-btn-checkin" ' + dis + ' onclick="cpViews.home.doCheckin(\'full\')"><i class="fas fa-flag-checkered"></i> 完成今日背词</button></div>'
+      const doneLine = '<div class="cp-word-done"><i class="fas fa-circle-check"></i> 今日 ' + d.wordSeen + ' 个单词已学完 <b>😀 ' + d.wordKnown + '</b> <b>🤔 ' + d.wordBlur + '</b> <b>😵 ' + d.wordForgot + '</b></div>'
+      if (t && t.checked_in) return '<div class="cp-checkin-box">' + doneLine + '<p class="cp-word-hint">✅ 今日背词已自动完成</p></div>'
+      return '<div class="cp-checkin-box">' + doneLine + '<button class="cp-btn-checkin" ' + dis + ' onclick="cpViews.home.retryWordComplete()"><i class="fas fa-flag-checkered"></i> 记录未生效，点此重试</button></div>'
     }
     let html = '<div class="cp-checkin-box">'
     html += '<div class="cp-word-progress"><span>今日 ' + total + ' 词</span><span>' + (d.wordIdx + 1) + '/' + total + '</span></div>'
@@ -66,13 +70,36 @@
     if (g === 'known') d.wordKnown++
     else if (g === 'blur') d.wordBlur++
     else d.wordForgot++
-    if (d.wordIdx < d.wordCards.length - 1) {
+    const last = d.wordIdx >= d.wordCards.length - 1
+    if (last) d.wordIdx = d.wordCards.length
+    else {
       d.wordIdx++
       d.wordRevealed = false
-    } else {
-      d.wordIdx = d.wordCards.length
     }
     this.rerender()
+    if (last) this._autoCompleteWord()
+  }
+
+  V.retryWordComplete = function () { this._autoCompleteWord() }
+
+  V._autoCompleteWord = async function () {
+    const d = this.data
+    const ch = window.appState.current
+    const t = d.today
+    if (!ch || d.checking || (t && t.checked_in)) return
+    d.checking = true
+    this.rerender()
+    try {
+      const res = await window.api.post('/challenges/' + ch.id + '/checkin', { value: d.wordCards.length })
+      const r = res.data || res
+      window.cpToast('今日 ' + d.wordCards.length + ' 词已学完，背词打卡自动完成')
+      await this._finishCheckin(r, ch, d, t && t.date)
+    } catch (e) {
+      window.cpToast(window.cpErrMsg(e, '背词记录失败，请重试'))
+    } finally {
+      d.checking = false
+      this.rerender()
+    }
   }
 
   V._loadWordCards = async function (t) {
@@ -80,9 +107,21 @@
     const count = Math.max(5, Math.round(t.task_target || (ch && ch.target_value) || 20))
     const list = await this._loadJSON('/static/data/vocab.json')
     if (!list || !list.length) return []
-    const start = ((t.day_number || 1) - 1) * count % list.length
+    const key = 'vocab.shuffled'
+    let pool = V._jsonCache[key]
+    if (!pool) {
+      pool = list.slice()
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        const tmp = pool[i]
+        pool[i] = pool[j]
+        pool[j] = tmp
+      }
+      V._jsonCache[key] = pool
+    }
+    const start = ((t.day_number || 1) - 1) * count % pool.length
     const cards = []
-    for (let i = 0; i < count; i++) cards.push(list[(start + i) % list.length])
+    for (let i = 0; i < count; i++) cards.push(pool[(start + i) % pool.length])
     return cards
   }
 

@@ -46,6 +46,11 @@
     this.rerender()
   }
 
+  V.openWord = function () {
+    this._panel = 'word'
+    this.rerender()
+  }
+
   V.doCheckin = async function (checkinType) {
     const s = window.appState
     const ch = s.current
@@ -255,6 +260,9 @@
     if (done) {
       return '<button class="cp-cta-done" disabled><i class="fas fa-circle-check"></i><span>今日已完成</span></button>'
     }
+    if (tt === 'word') {
+      return '<button class="cp-cta-main" ' + dis + ' onclick="cpViews.home.openWord()"><i class="fas fa-book"></i><span>今日背词</span><em>刷完当日词卡即自动达成</em></button>'
+    }
     let title = '今日完成'
     let sub = ''
     if (isDecrease) {
@@ -266,9 +274,6 @@
     } else if (tt === 'step') {
       title = '今日达标'
       sub = '分步都完成即达标'
-    } else if (tt === 'word') {
-      title = '今日背词完成'
-      sub = '达成 ' + target + ' ' + unit
     } else if (tt === 'recite') {
       title = '今日背诵完成'
     } else if (tt === 'text') {
