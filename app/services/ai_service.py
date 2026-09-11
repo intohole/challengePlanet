@@ -27,13 +27,23 @@ logger = get_logger("challengePlanet.ai")
 
 
 def _slice_title(raw: str) -> str:
-    t = (raw or "").strip().strip('"\'“”‘’「」『』【】')
+    t = (raw or "").__str__().strip().strip('"\'“”‘’「」『』【】')
     t = re.split(r"[，,。；;！!？?、]", t, maxsplit=1)[0].strip()
     for suffix in ("当前", "进行中", "打卡中", "现在", "目前"):
         if t.endswith(suffix):
             t = t[: -len(suffix)].rstrip("，,、 ")
             break
     return t[:10] or "我的挑战"
+
+
+def _build_plan_user_msg(
+    title: str, description: str, category: str, duration: int,
+    target_value: float = 0, unit: str = "",
+) -> str:
+    goal_line = ""
+    if target_value > 0:
+        goal_line = f"\n用户每日硬性目标：每日 {target_value:g} {unit or ''}，每日计划的 target_value 不得低于此目标。"
+    return f"挑战：{title}\n描述：{description or '无'}\n分类：{category}\n天数：{duration}{goal_line}"
 
 
 _DECREASE_HINTS: tuple[str, ...] = (
@@ -79,7 +89,10 @@ def _derive_fill_item(day: int, base: dict[str, object], title: str, duration: i
     return item
 
 
-def _fit_plan_length(plan: list[dict[str, object]], title: str, duration: int) -> list[dict[str, object]]:
+def _fit_plan_length(
+    plan: list[dict[str, object]], title: str, duration: int,
+    target_value: float = 0, unit: str = "", default_kind: str = "binary",
+) -> list[dict[str, object]]:
     if duration <= 0:
         duration = len(plan)
     fitted = plan[:duration]
@@ -89,9 +102,16 @@ def _fit_plan_length(plan: list[dict[str, object]], title: str, duration: int) -
         fitted.append(_derive_fill_item(day, last, title, duration))
     for idx, item in enumerate(fitted):
         item["day"] = idx + 1
-        item.setdefault("task_type", "binary")
-        item.setdefault("target_value", 0)
-        item.setdefault("unit", "")
+        item.setdefault("task_type", default_kind)
+        task_type = str(item.get("task_type") or default_kind)
+        filled_target: float = float(item.get("target_value", 0) or 0)
+        if target_value > 0 and task_type in ("counter", "timer", "word", "recite"):
+            item["target_value"] = float(target_value)
+        else:
+            item.setdefault("target_value", float(filled_target) if filled_target > 0 else (float(target_value) if target_value > 0 else 0))
+        if target_value > 0 and not item.get("unit"):
+            item["unit"] = unit
+        item.setdefault("unit", unit)
         item.setdefault("difficulty", 1)
         item.setdefault("steps", [])
     return fitted
@@ -151,9 +171,9 @@ class AIService:
 
     async def generate_challenge_plan(
         self, title: str, description: str, category: str, duration: int,
-        scene_template: str = "",
+        scene_template: str = "", target_value: float = 0, unit: str = "",
     ) -> dict[str, object]:
-        user_msg = f"挑战：{title}\n描述：{description or '无'}\n分类：{category}\n天数：{duration}"
+        user_msg = _build_plan_user_msg(title, description, category, duration, target_value, unit)
         system = self._build_plan_system(scene_template, duration)
         llm = get_llm_service()
         raw = await llm.ask(
@@ -162,13 +182,14 @@ class AIService:
             max_tokens=settings.LLM_MAX_TOKENS, timeout=120.0,
             task_type="extract",
         )
-        return self.parse_plan_text(raw, title, duration)
+        return self.parse_plan_text(raw, title, duration, target_value=target_value, unit=unit)
 
     async def generate_challenge_plan_stream(
         self, title: str, description: str, category: str, duration: int,
         scene_template: str = "", adjust_hint: str = "",
+        target_value: float = 0, unit: str = "",
     ) -> AsyncGenerator[str, None]:
-        user_msg = f"挑战：{title}\n描述：{description or '无'}\n分类：{category}\n天数：{duration}"
+        user_msg = _build_plan_user_msg(title, description, category, duration, target_value, unit)
         if adjust_hint.strip():
             user_msg += f"\n\n此前已生成过一版计划，现用户提出调整意见，请严格据此重新生成完整计划：{adjust_hint.strip()}"
         system = self._build_plan_system(scene_template, duration)
@@ -182,13 +203,14 @@ class AIService:
             yield token
 
     def parse_plan_text(
-        self, raw: str, title: str, duration: int, adjust_hint: str = ""
+        self, raw: str, title: str, duration: int, adjust_hint: str = "",
+        target_value: float = 0, unit: str = "",
     ) -> dict[str, object]:
         parsed = parse_llm_json(raw)
         if "raw_response" not in parsed and isinstance(parsed.get("plan"), list):
             plan = [dict(d) for d in parsed["plan"] if isinstance(d, dict)]
             if plan:
-                fitted = _fit_plan_length(plan, title, duration)
+                fitted = _fit_plan_length(plan, title, duration, target_value, unit)
                 if adjust_hint.strip():
                     fitted = apply_numeric_adjust(fitted, adjust_hint)
                 parsed["plan"] = fitted
@@ -199,7 +221,8 @@ class AIService:
                 {
                     "day": i + 1, "title": f"第{i + 1}天",
                     "description": f"坚持{title}", "tip": "保持动力！",
-                    "task_type": "binary", "target_value": 0, "unit": "",
+                    "task_type": "binary", "target_value": float(target_value) if target_value > 0 else 0,
+                    "unit": unit if target_value > 0 else "",
                     "difficulty": 1, "steps": [],
                 }
                 for i in range(duration)

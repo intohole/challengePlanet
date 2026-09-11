@@ -149,7 +149,7 @@ async def create_challenge_nl(
         title = _normalize_title(title)
         category = str(parsed.get("category", "other"))
         duration = int(parsed.get("duration_days", 30))
-        description = ""
+        description = request.raw_input.strip()
         parsed_out = {
             "title": title,
             "category": category,
@@ -170,9 +170,14 @@ async def create_challenge_nl(
         yield sse_event_dict("planning")
         collected: list[str] = []
         last_day = 0
+        is_ladder = str(parsed.get("goal_rule", "")) == "ladder"
+        hard_target = 0.0 if is_ladder else float(parsed.get("target_value", 0.0) or 0.0)
+        hard_unit = "" if is_ladder else str(parsed.get("unit", ""))
         try:
             async for token in ai.generate_challenge_plan_stream(
-                title, description, category, duration, request.scene_template, request.adjust_hint
+                title, description, category, duration, request.scene_template, request.adjust_hint,
+                target_value=hard_target,
+                unit=hard_unit,
             ):
                 collected.append(token)
                 yield sse_event_dict("token", {"token": token})
@@ -185,7 +190,10 @@ async def create_challenge_nl(
                         yield sse_event_dict("day", {"day": cur, "total": duration})
         except Exception:
             collected = []
-        plan_data = ai.parse_plan_text("".join(collected), title, duration, request.adjust_hint)
+        plan_data = ai.parse_plan_text(
+            "".join(collected), title, duration, request.adjust_hint,
+            target_value=hard_target, unit=hard_unit,
+        )
         yield sse_event_dict("preview", {
             "parsed": parsed_out,
             "plan": plan_data.get("plan", []),
