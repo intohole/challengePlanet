@@ -16,9 +16,10 @@ from app.repositories.points_repository import ChallengeMetaRepository
 from app.schemas.challenge import ChallengeResponse
 from app.services.ai_service import AIService
 from app.services.ai_text_sanitizer import sanitize_coach_text
-from app.services.goal_rule_service import daily_target, is_ladder, is_period_settled, is_settled, ladder_progress_pct, resolve_mode
+from app.services.goal_rule_service import daily_target, is_ladder, is_settled, ladder_progress_pct, resolve_mode
 from app.services.mercy_service import MercyService, load_valid_dates
-from app.services.streak_service import calc_streak, shift_date, streak_before, today_str, week_dates_of
+from app.services.period_service import period_fields, week_aggregates
+from app.services.streak_service import calc_streak, shift_date, streak_before, today_str
 
 logger = logging.getLogger(__name__)
 
