@@ -72,6 +72,8 @@ class ChallengeService:
         ladder_step: float = 1.0, gender: str = "", age: int = 0,
         height_cm: float = 0.0, weight_kg: float = 0.0,
         goal_weight: float = 0.0, activity_level: int = 2,
+        period_days: int = 7, period_target: float = 0.0,
+        period_unit: str = "", sport_met: float = 0.0,
     ) -> Challenge:
         title = _normalize_title(title)
         meta = CATEGORY_META.get(category, CATEGORY_META["other"])
