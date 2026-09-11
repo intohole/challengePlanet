@@ -10,7 +10,7 @@
     const tt = (t && t.task_type) || ch.task_type || 'binary'
     const target = (t && t.task_target) || ch.target_value || 1
     const isDecrease = ch.direction === 'decrease' || String(t && t.direction) === 'decrease'
-    if (isDecrease && (tt === 'counter' || tt === 'timer')) { window.cpToast('直接点 +N 记账，完成与否由系统自动判定'); return }
+    if (tt === 'counter' || tt === 'timer') { window.cpToast('直接点 +N 记账，达标由系统自动判定'); return }
     let payload = { value: 1.0, reflection: '' }
     if (isDecrease) {
       payload.value = 0
@@ -120,7 +120,7 @@
         else if (tot >= tgt) window.cpCelebrate('已记录 +' + v + ' · 已达今日上限 ' + tgt + (ch.unit || '') + '，今日守住！')
         else window.cpCelebrate('已记录 +' + v + ' ' + (ch.unit || '') + ' · 还可 ' + Math.max(0, tgt - tot) + (ch.unit || ''))
       } else {
-        window.cpCelebrate('已记录 +' + v + ' ' + (ch.unit || '') + ' · 今日 ' + total + '/' + target)
+        window.cpCelebrate(total >= target ? '已记 ' + total + ' · 今日目标已达成' : '已记 ' + total + ' / 目标 ' + target + ' · 还差 ' + Math.max(0, target - total))
       }
       await this._finishCheckin(r, ch, d, t.date)
       return true
@@ -266,7 +266,8 @@
     const unit = window.cpEsc(t.task_unit || ch.unit || '')
     const target = (t.task_target && t.task_target > 0) ? t.task_target : (ch.target_value || 1)
     const isDecrease = ch.direction === 'decrease' || String(t.direction) === 'decrease'
-    if (isDecrease && (tt === 'counter' || tt === 'timer')) return this._capCta(tt, t, ch, dis)
+    const isCount = tt === 'counter' || tt === 'timer'
+    if (isCount) return isDecrease || !done ? this._tallyCta(tt, t, ch, dis) : '<button class="cp-cta-done" disabled><i class="fas fa-circle-check"></i><span>今日已完成</span></button>'
     if (done) {
       return '<button class="cp-cta-done" disabled><i class="fas fa-circle-check"></i><span>今日已完成</span></button>'
     }
@@ -287,9 +288,6 @@
     if (isDecrease) {
       title = '守住今日'
       sub = '不超 ' + target + ' ' + unit + ' 即达标'
-    } else if (tt === 'counter' || tt === 'timer') {
-      title = '完成今日目标'
-      sub = '记为今日 ' + target + ' ' + unit
     } else if (tt === 'recite') {
       title = '今日背诵完成'
     }
@@ -299,7 +297,9 @@
   V._extras = function (tt, t, ch, dis, done) {
     const d = this.data
     const isDecrease = ch.direction === 'decrease' || String(t.direction) === 'decrease'
-    if (isDecrease && (tt === 'counter' || tt === 'timer')) return ''
+    const isCount = tt === 'counter' || tt === 'timer'
+    if (isCount && !isDecrease && done) return '<div class="cp-extra-row"><button class="cp-extra-chip' + (this._panel === 'quick' ? ' active' : '') + '" ' + dis + ' onclick="cpViews.home.togglePanel(\'quick\')"><i class="fas fa-pen"></i>记实际值</button></div>' + this._panelBody(tt, t, ch, dis)
+    if (isCount) return ''
     const isPm = (ch && ch.scene_template === 'pomodoro') || (ch && ch.task_type === 'timer' && ch.scene_template === 'pomodoro')
     const mini = done ? '' : '<button class="cp-extra-chip ghost" ' + dis + ' onclick="cpViews.home.doMini()">今天太累？微打卡</button>'
     if (isPm) {

@@ -94,7 +94,7 @@ class DiagnosisService:
         if not missed:
             raise ValueError("当前没有断签记录，不需要诊断")
         checkins = await self._checkin_repo.get_by_challenge(session, challenge_id)
-        done_days = len(checkins)
+        done_days = len({c.date for c in checkins})
         recent_summary = "\n".join(
             f"第{c.day_number}天 {c.date} {c.created_at.hour if c.created_at else '?'}点打卡 "
             f"心情:{c.mood or '未记录'} 心得:{(c.reflection or '')[:40]}"

@@ -1,6 +1,7 @@
 # bugs Index
-> Total: 5 entries
+> Total: 6 entries
 
+- bug-count-tally-unify | counter/timer 统一记账台（去掉补齐式声明）、companion/诊断/周报天数收敛为distinct days、递减超限单笔恒100不扣积分 | 2026-09-11
 - bug-cap-mode-auto-judge | 戒断计数（戒烟一根一点）完成判定收敛：cap-mode（decrease+counter/timer）每日完成按「当日记录 vs 上限」自动判定，去掉守住今日声明；completed_days按天数；零记录日=守住 | 2026-09-11
 - bug-checkin-manual-vs-auto | text类型空reflection也可达标、step主按钮绕过勾选清单、doMultiCheckin用checked_in拦截致未达标无法追加，三处与「系统按记录判断」相悖，统一修复 | 2026-09-11
 - bug-cp-e2e-selectors | 根因: 登录页已迁移nexus-ui(nux-input/nux-login-submit), 旧.cp-login-input不存在; SPA站点reload禁用networkidle会永超时, 用domcontentloaded+等待appState.booted | 2026-08-27

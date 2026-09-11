@@ -179,14 +179,17 @@
     return html
   }
 
-  V._capCta = function (tt, t, ch, dis) {
+  V._tallyCta = function (tt, t, ch, dis) {
     const unit = window.cpEsc(t.unit || ch.unit || '')
     const cap = Number(t.today_cap) || Number(t.today_target) || Number(t.task_target) || Number(ch.target_value) || 1
     const total = Number(t.today_total) || 0
     const over = total > cap
     const isTimer = tt === 'timer'
+    const isDecrease = ch.direction === 'decrease' || String(t.direction) === 'decrease'
     const presets = isTimer ? [5, 10, 20, 30, 45] : [1, 2, 3, 5]
-    const state = over ? '已超今日上限 ' + cap + unit + '，放慢一点，明天继续' : (total > 0 ? '已记 ' + total + ' / 上限 ' + cap + ' ' + unit + '，还可 ' + Math.max(0, cap - total) : '今日还未记录 · 上限 ' + cap + ' ' + unit)
+    const state = isDecrease
+      ? (over ? '已超今日上限 ' + cap + unit + '，放慢一点，明天继续' : (total > 0 ? '已记 ' + total + ' / 上限 ' + cap + ' ' + unit + '，还可 ' + Math.max(0, cap - total) : '今日还未记录 · 上限 ' + cap + ' ' + unit))
+      : (total > 0 ? '已记 ' + total + ' / 目标 ' + cap + ' ' + unit + '，还差 ' + Math.max(0, cap - total) : '今日还未记录 · 目标 ' + cap + ' ' + unit)
     let html = '<div class="cp-cap-cta"><button class="cp-cta-main cp-cap-main" ' + dis + ' onclick="cpViews.home.doFastTap(1)"><i class="fas fa-plus"></i><span>记一笔</span><em>' + state + '</em></button><div class="cp-extra-btns">'
     presets.forEach(v => {
       const label = isTimer ? '+' + v + '分' : '+' + v

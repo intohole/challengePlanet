@@ -27,7 +27,7 @@ class AIAnalysisService:
             f"值:{c.get('value', 0)} 心得:{str(c.get('reflection', ''))[:50]}"
             for c in checkins[-7:]
         )
-        done_rate = len(checkins) / total_days * 100 if total_days > 0 else 0
+        done_rate = len({c.get('date') for c in checkins}) / total_days * 100 if total_days > 0 else 0
         user_msg = (
             f"挑战：{challenge_title} (共{total_days}天，累计记录率{done_rate:.0f}%)\n"
             f"最近打卡：\n{checkin_summary or '暂无记录'}"

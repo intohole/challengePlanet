@@ -32,7 +32,7 @@ def _recent_gap(checkins: list, today: str) -> bool:
 
 
 def assess_risk(checkins: list, streak: int, today: str) -> dict[str, object]:
-    completed = len(checkins)
+    completed = len({c.date for c in checkins})
     if completed <= 0:
         return {"score": 0, "level": "low", "reasons": [], "micro_action": "", "phase": "adaptation"}
 
@@ -109,14 +109,14 @@ async def load_challenge_state(user_id: str, challenge_id: int) -> dict:
         valid = {c.date for c in checkins}
         today = today_str()
         streak = calc_streak(valid, today)
-        phase = _detect_phase(len(checkins))
+        phase = _detect_phase(len(valid))
         risk = assess_risk(checkins, streak, today)
         day_number = day_number_of(challenge.start_date, today) if challenge.start_date else 1
         ladder_pct = ladder_progress_pct(challenge, day_number) if is_ladder(challenge) else None
         return {
             "challenge": challenge,
             "checkins": checkins,
-            "completed_days": len(checkins),
+            "completed_days": len(valid),
             "streak": streak,
             "phase": phase,
             "risk": risk,

@@ -189,7 +189,7 @@ class CheckInService:
         if target <= 0:
             return 100.0
         if direction == "decrease":
-            return min(max(0.0, (target - value) / target * 100 + 100), 100.0) if value > target else 100.0
+            return 100.0
         return min(value / target * 100, 100.0)
 
     def _is_soft_exceeded(self, value: float, target_snapshot: dict[str, object], challenge) -> bool:
