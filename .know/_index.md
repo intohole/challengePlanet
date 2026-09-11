@@ -1,5 +1,5 @@
 # Knowledge Index
-> Project: challengePlanet | Updated: 2026-09-11 | Total: 11 entries
+> Project: challengePlanet | Updated: 2026-09-11 | Total: 12 entries
 
 ## architecture
 - adr-challenge-end-delete | 有打卡记录挑战 | 2026-08-25
@@ -21,3 +21,6 @@
 
 ## optimization
 - opt-stop-llm-unused-field | 大模型每次调用都是昂贵外部资源, 不输出前端未使用的字段可省token | 2026-08-25
+
+## refactor
+- rf-checkin-review-fixes | 评审发现的可见路径错误与配置死字段全部修复并回归通过 | 2026-09-11
