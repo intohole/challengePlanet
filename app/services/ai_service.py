@@ -141,13 +141,12 @@ def _fit_plan_length(
         item.setdefault("task_type", default_kind)
         task_type = str(item.get("task_type") or default_kind)
         filled_target: float = float(item.get("target_value", 0) or 0)
-        if target_value > 0 and task_type in ("counter", "timer", "word", "recite"):
+        if target_value > 0:
             item["target_value"] = float(target_value)
+            item["unit"] = unit or str(item.get("unit") or "")
         else:
-            item.setdefault("target_value", float(filled_target) if filled_target > 0 else (float(target_value) if target_value > 0 else 0))
-        if target_value > 0 and not item.get("unit"):
-            item["unit"] = unit
-        item.setdefault("unit", unit)
+            item.setdefault("target_value", float(filled_target) if filled_target > 0 else 0)
+            item.setdefault("unit", unit)
         item.setdefault("difficulty", 1)
         item.setdefault("steps", [])
     return fitted
@@ -184,11 +183,17 @@ class AIService:
         parsed.setdefault("slot_target_value", 0.0)
         inferred_value, inferred_unit = _infer_daily_target(raw_input)
         if inferred_value > 0:
-            llm_value = float(parsed.get("target_value", 0) or 0)
-            if llm_value <= 0 or (llm_value < inferred_value / 2):
-                parsed["target_value"] = float(inferred_value)
+            parsed["target_value"] = float(inferred_value)
             if not parsed.get("unit"):
                 parsed["unit"] = inferred_unit or str(parsed.get("unit", "次") or "次")
+            else:
+                parsed["unit"] = str(parsed.get("unit") or "") or (inferred_unit or "次")
+            llm_title = str(parsed.get("title") or "")
+            num_text = str(int(inferred_value))
+            if not llm_title or num_text not in llm_title:
+                raw_title = _slice_title(raw_input)
+                if raw_title and raw_title != "我的挑战":
+                    parsed["title"] = raw_title
         return parsed
 
     async def estimate_diet_calories(self, description: str) -> dict[str, object]:
