@@ -89,7 +89,9 @@ class CheckInService:
         soft_exceeded_amount = max(0.0, value - target_snapshot["target_value"]) if is_soft_exceeded else 0.0
         calories = 0.0
         sport_met = float(getattr(challenge, "sport_met", 0.0) or 0.0)
-        if sport_met > 0 and float(getattr(challenge, "weight_kg", 0.0) or 0.0) > 0:
+        unit = str(getattr(challenge, "unit", "") or "")
+        is_time_based = str(getattr(challenge, "task_type", "")) == "timer" or unit in ("分钟", "小时", "分钟数", "min", "minute")
+        if sport_met > 0 and float(getattr(challenge, "weight_kg", 0.0) or 0.0) > 0 and is_time_based:
             from app.services.sport_metrics import calc_calories
             calories = calc_calories(sport_met, float(challenge.weight_kg), value)
 

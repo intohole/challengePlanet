@@ -24,7 +24,7 @@
       const c = window.appState.create
       c.sportMet = c.sportMet === met ? 0 : met
       c.sportLabel = c.sportMet ? label : ''
-      if (c.sportMet && !c.periodTarget) c.periodUnit = '千卡'
+      c.periodUnit = c.sportMet ? '千卡' : '分钟'
     },
 
     syncLadder(p) {

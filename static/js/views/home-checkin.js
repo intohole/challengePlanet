@@ -17,8 +17,8 @@
       payload.value = Math.max(0, target - ((t && t.today_total) || 0))
     } else if (tt === 'step') {
       const steps = (t && t.task_steps) || []
-      payload.value = steps.length
-      payload.reflection = steps.join('；')
+      if (!steps.length) { window.cpToast('请先在创建时配置分步清单'); return }
+      payload.value = steps.length, payload.reflection = steps.join('；')
     } else if (tt === 'text') {
       const text = (d.textValue || '').trim()
       if (!text) { window.cpToast('先写下今日记录'); return }
@@ -48,20 +48,11 @@
     this.rerender()
   }
 
-  V.openWord = function () {
-    this._panel = 'word'
-    this.rerender()
-  }
+  V.openWord = function () { this._panel = 'word'; this.rerender() }
 
-  V.openText = function () {
-    this._panel = 'text'
-    this.rerender()
-  }
+  V.openText = function () { this._panel = 'text'; this.rerender() }
 
-  V.openStep = function () {
-    this._panel = 'steps'
-    this.rerender()
-  }
+  V.openStep = function () { this._panel = 'steps'; this.rerender() }
 
   V.doCheckin = async function (checkinType) {
     const s = window.appState
@@ -112,7 +103,7 @@
     const ch = window.appState.current
     const d = this.data
     const t = d.today
-    if (!ch || !t || d.checking) return
+    if (!ch || !t || d.checking) return false
     const v = Number(value) || 1
     d.checking = true
     this.rerender()
@@ -131,8 +122,10 @@
         window.cpCelebrate('已记录 +' + v + ' ' + (ch.unit || '') + ' · 今日 ' + total + '/' + target)
       }
       await this._finishCheckin(r, ch, d, t.date)
+      return true
     } catch (e) {
       window.cpToast(window.cpErrMsg(e, '记录失败，请重试'))
+      return false
     } finally {
       d.checking = false
       this.rerender()
@@ -315,7 +308,7 @@
     }
     if (tt === 'text') {
       if (done) return '<div class="cp-extra-row"></div>'
-      return '<div class="cp-extra-row"><button class="cp-extra-chip' + (this._panel === 'text' ? ' active' : '') + '" ' + dis + ' onclick="cpViews.home.togglePanel(\'text\')"><i class="fas fa-pen-nib"></i>写几句</button>' + mini + '</div>' + this._panelBody(tt, t, ch, dis)
+      return '<div class="cp-extra-row"><button class="cp-extra-chip' + (this._panel === 'text' ? ' active' : '') + '" ' + dis + ' onclick="cpViews.home.togglePanel(\'text\')"><i class="fas fa-pen-nib"></i>写几句</button></div>' + this._panelBody(tt, t, ch, dis)
     }
     if (tt === 'word') {
       return '<div class="cp-extra-row"><button class="cp-extra-chip' + (this._panel === 'word' ? ' active' : '') + '" ' + dis + ' onclick="cpViews.home.togglePanel(\'word\')"><i class="fas fa-clipboard-list"></i>刷词卡</button></div>' + this._panelBody(tt, t, ch, dis)

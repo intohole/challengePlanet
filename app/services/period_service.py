@@ -1,13 +1,25 @@
 from __future__ import annotations
 
+from datetime import timedelta
+
+from app.core.datetime_utils import now_china
 from app.services.goal_rule_service import is_period_settled
 from app.services.streak_service import week_dates_of
 
 
-async def week_aggregates(session: object, challenge_id: int, today_checkins: list) -> dict[str, object]:
+def _window_dates(period_days: int) -> tuple[str, str]:
+    if period_days == 7:
+        dates = sorted(week_dates_of())
+        return dates[0], dates[-1]
+    today = now_china().date()
+    start = today - timedelta(days=period_days - 1)
+    return start.strftime("%Y-%m-%d"), today.strftime("%Y-%m-%d")
+
+
+async def week_aggregates(session: object, challenge_id: int, today_checkins: list, period_days: int = 7) -> dict[str, object]:
     from app.repositories.checkin_repository import CheckInRepository
-    dates = sorted(week_dates_of())
-    checkins = await CheckInRepository().list_by_date_range(session, challenge_id, dates[0], dates[-1])
+    start, end = _window_dates(max(1, period_days))
+    checkins = await CheckInRepository().list_by_date_range(session, challenge_id, start, end)
     return {
         "week_total": sum(float(c.value or 0.0) for c in checkins),
         "calories_today": sum(float(getattr(c, "calories", 0.0) or 0.0) for c in today_checkins),

@@ -71,6 +71,7 @@ window.cpViews.home = (function () {
       if (!ch) { this.loadedFor = null; return }
       if (this.loadedFor !== ch.id) {
         this.loadedFor = ch.id
+        if (window.cpClearLearnTimers) window.cpClearLearnTimers()
         this.data = this._freshData(true)
         this.rerender()
       }
