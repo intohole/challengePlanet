@@ -106,12 +106,14 @@
     const target = t.period_target || 0
     const pct = Math.min(100, Math.round(total / target * 100))
     const unit = window.cpEsc(t.period_unit || '')
+    const days = t.period_days || 7
+    const label = days === 7 ? '本周' : '每' + days + '天'
     const done = !!t.week_settled
     const color = done ? 'var(--emerald)' : 'var(--primary)'
-    let h = '<div class="cp-task-target"><i class="fas fa-calendar-week"></i> 本周目标 <b>' + target + '</b> ' + unit + (done ? ' <span style="color:var(--emerald)">✓ 已达成</span>' : '') + '</div>'
+    let h = '<div class="cp-task-target"><i class="fas fa-calendar-week"></i> ' + label + '目标 <b>' + target + '</b> ' + unit + (done ? ' <span style="color:var(--emerald)">✓ 已达成</span>' : '') + '</div>'
     h += '<div class="cp-task-progress"><div class="cp-task-progress-bar"><div class="cp-task-progress-fill" style="width:' + pct + '%;background:' + color + '"></div></div>'
     h += '<div class="cp-task-progress-info"><span style="color:' + color + '">' + total + '</span><span class="cp-task-progress-sep">/</span><span>' + target + ' ' + unit + '</span></div></div>'
-    if (!done) h += '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>还差 <b>' + Math.max(0, target - total) + '</b> ' + unit + ' 达成本周目标</div>'
+    if (!done) h += '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>还差 <b>' + Math.max(0, target - total) + '</b> ' + unit + ' 达成' + label + '目标</div>'
     return h
   }
 

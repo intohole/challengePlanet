@@ -31,6 +31,7 @@ window.cpCreate = (function () {
     c.ladderStep = 1
     c.periodTarget = 0
     c.periodUnit = '分钟'
+    c.periodDays = 7
     c.sportMet = 0
     c.sportLabel = ''
     c.gender = '男'
@@ -285,19 +286,27 @@ window.cpCreate = (function () {
       try {
         const scene = window.cpSceneMap[c.sceneTemplate]
         const p = c.parsed || {}
-        const taskType = this.deriveTaskType(p, scene)
+        let taskType = this.deriveTaskType(p, scene)
+        let unit = String(p.unit || (scene && scene.unit) || '次')
+        const sportMet = Number(c.sportMet) || 0
+        const plan = c.plan.map(d => ({ ...d }))
+        if (sportMet > 0) {
+          taskType = 'timer'
+          unit = '分钟'
+          plan.forEach(d => { d.unit = '分钟'; d.task_type = 'timer' })
+        }
         const res = await window.api.post('/challenges/confirm', {
           title: c.editTitle.trim(),
           category: c.editCategory,
           duration_days: c.editDays,
           start_date: c.startDate,
           description: c.editDesc || '',
-          plan: c.plan,
+          plan: plan,
           source: c.source || 'web',
           task_type: taskType,
           scene_template: c.sceneTemplate || '',
           target_value: Number(p.target_value) || 1,
-          unit: String(p.unit || (scene && scene.unit) || '次'),
+          unit: unit,
           direction: String(p.direction || (scene && scene.task_type === 'quit' ? 'decrease' : 'increase')),
           goal_type: String(p.goal_type || 'hard'),
           decompose_mode: String(p.decompose_mode || 'none'),
@@ -315,10 +324,10 @@ window.cpCreate = (function () {
           weight_kg: Number(c.weightKg) || 0,
           goal_weight: Number(c.goalWeight) || 0,
           activity_level: Number(c.activityLevel) || 2,
-          period_days: 7,
+          period_days: Math.max(1, Number(c.periodDays) || 7),
           period_target: Number(c.periodTarget) || 0,
-          period_unit: String(c.periodUnit || '分钟'),
-          sport_met: Number(c.sportMet) || 0,
+          period_unit: String(c.periodUnit || (sportMet > 0 ? '千卡' : '分钟')),
+          sport_met: sportMet,
         })
         const ch = res.data || res
         c.show = false

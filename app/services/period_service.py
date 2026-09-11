@@ -40,7 +40,6 @@ def period_fields(challenge: object, task_type: str, agg: dict[str, object]) -> 
         "period_unit": period_unit,
         "period_total": round(period_total, 1),
         "week_total": round(float(agg.get("week_total", 0.0)), 1),
-        "week_target": period_target,
         "week_settled": is_period_settled(
             challenge, task_type, period_total,
             period_target, 1 if agg.get("week_has_record") else 0,

@@ -190,7 +190,6 @@ class TodayTaskResponse(BaseModel):
     period_unit: str = ""
     period_total: float = 0.0
     week_total: float = 0.0
-    week_target: float = 0.0
     week_settled: bool = False
     calories_today: float = 0.0
     calories_week: float = 0.0

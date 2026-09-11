@@ -258,7 +258,12 @@
           d.stElapsed = 0
         } else {
           d.stRunning = true
-          window.cpToast('记录失败，计时已保留，可重试')
+          window.cpToast('记录失败，计时继续，可再点结束重试')
+          V._stIv = setInterval(() => {
+            d.stElapsed++
+            const el = document.getElementById('cp-sw-time')
+            if (el) el.textContent = V._pmFmt(d.stElapsed)
+          }, 1000)
         }
       } else {
         d.stElapsed = 0
