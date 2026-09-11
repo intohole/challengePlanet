@@ -52,6 +52,42 @@ _DECREASE_HINTS: tuple[str, ...] = (
     "限制", "拒绝", "戒断", "不喝奶茶", "不吃零食", "少吃",
 )
 
+_DAILY_TARGET_RE = re.compile(
+    r"(?:每天|每日|一天|每天一共|目标)?\s*([0-9一二两三四五六七八九十百]+)"
+    r"\s*(个|遍|次|页|题|词|个?单词|分?钟|小时|篇|组|个)",
+)
+
+
+def _cn_to_int(s: str) -> int:
+    if s.isdigit():
+        return int(s)
+    mapping = {"一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
+    if len(s) == 1 and s in mapping:
+        return mapping[s]
+    result = 0
+    current = 0
+    for ch in s:
+        if ch in mapping:
+            current = mapping[ch]
+        elif ch == "十":
+            result += current * 10 if current else 10
+            current = 0
+        elif ch == "百":
+            result += current * 100 if current else 100
+            current = 0
+        else:
+            return 0
+    return result + current
+
+
+def _infer_daily_target(raw_input: str) -> tuple[float, str]:
+    text = (raw_input or "").strip()
+    m = _DAILY_TARGET_RE.search(text)
+    if not m:
+        return 0.0, ""
+    num = _cn_to_int(m.group(1))
+    return float(num), m.group(2)
+
 
 def _infer_direction(title: str, description: str, category: str, parsed_dir: str) -> str:
     if parsed_dir in ("decrease", "increase"):
@@ -146,6 +182,13 @@ class AIService:
         parsed.setdefault("decompose_mode", "none")
         parsed.setdefault("slot_hours", 1)
         parsed.setdefault("slot_target_value", 0.0)
+        inferred_value, inferred_unit = _infer_daily_target(raw_input)
+        if inferred_value > 0:
+            llm_value = float(parsed.get("target_value", 0) or 0)
+            if llm_value <= 0 or (llm_value < inferred_value / 2):
+                parsed["target_value"] = float(inferred_value)
+            if not parsed.get("unit"):
+                parsed["unit"] = inferred_unit or str(parsed.get("unit", "次") or "次")
         return parsed
 
     async def estimate_diet_calories(self, description: str) -> dict[str, object]:
