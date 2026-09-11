@@ -16,7 +16,7 @@ from app.repositories.points_repository import ChallengeMetaRepository
 from app.schemas.challenge import ChallengeResponse
 from app.services.ai_service import AIService
 from app.services.ai_text_sanitizer import sanitize_coach_text
-from app.services.goal_rule_service import daily_target, is_ladder, is_settled, ladder_progress_pct, resolve_mode
+from app.services.goal_rule_service import daily_target, is_cap_mode, is_ladder, is_settled, ladder_progress_pct, resolve_mode
 from app.services.mercy_service import MercyService, load_valid_dates
 from app.services.period_service import period_fields, week_aggregates
 from app.services.streak_service import calc_streak, shift_date, streak_before, today_str
@@ -150,14 +150,14 @@ class ChallengeService:
     async def get_challenge_stats(
         self, session: AsyncSession, challenge: Challenge,
     ) -> dict[str, int]:
-        checkins = await self._checkin_repo.get_by_challenge(session, challenge.id)
         valid = await load_valid_dates(session, challenge.id)
-        last = max(valid) if valid else ""
+        completed = (sum(1 for d in valid if d < today_str()) if is_cap_mode(challenge)
+                     else await self._checkin_repo.count_active_days(session, challenge.id))
         return {
-            "completed_days": len(checkins),
+            "completed_days": completed,
             "total_days": challenge.duration_days,
             "streak": calc_streak(valid, today_str()),
-            "last_streak": streak_before(valid, shift_date(last, 1)) if last else 0,
+            "last_streak": streak_before(valid, shift_date(max(valid), 1)) if valid else 0,
         }
 
     async def build_list_item(

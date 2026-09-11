@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 from nexus.logging import get_logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,6 +10,7 @@ from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import StreakActionRepository
 from app.services.ai_service import AIService
+from app.services.goal_rule_service import daily_target, is_cap_mode
 from app.services.points_service import PointsService
 from app.services.shield_service import ACTION_SHIELD, ShieldService
 from app.services.streak_service import (
@@ -36,11 +39,43 @@ ACTION_REPAIR = "repair"
 async def load_valid_dates(session: AsyncSession, challenge_id: int) -> set[str]:
     checkins = await CheckInRepository().get_by_challenge(session, challenge_id)
     actions = await StreakActionRepository().get_by_challenge(session, challenge_id)
-    dates = {c.date for c in checkins}
-    for action in actions:
-        if action.action in (ACTION_FREEZE, ACTION_REPAIR, ACTION_SHIELD):
-            dates.add(action.action_date)
+    challenge = await ChallengeRepository().get_by_id(session, challenge_id)
+    action_dates = {
+        a.action_date for a in actions
+        if a.action in (ACTION_FREEZE, ACTION_REPAIR, ACTION_SHIELD)
+    }
+    dates = set(action_dates) | {c.date for c in checkins}
+    if challenge is not None and is_cap_mode(challenge):
+        dates = _cap_valid_dates(challenge, checkins, dates, action_dates)
     return dates
+
+
+def _cap_valid_dates(challenge: object, checkins: list, base_dates: set[str], action_dates: set[str]) -> set[str]:
+    start = str(getattr(challenge, "start_date", "") or "")
+    end = str(getattr(challenge, "end_date", "") or "")
+    today = today_str()
+    if not start:
+        return base_dates
+    totals: dict[str, float] = {}
+    for c in checkins:
+        totals[c.date] = totals.get(c.date, 0.0) + c.value
+    exceeded: set[str] = set()
+    for d, total in totals.items():
+        if d in action_dates:
+            continue
+        if total > daily_target(challenge, day_number_of(start, d)):
+            exceeded.add(d)
+            base_dates.discard(d)
+    base_dates.discard(today)
+    end_date = min(end, shift_date(today, -1)) if end else shift_date(today, -1)
+    cursor = datetime.strptime(start, "%Y-%m-%d")
+    last = datetime.strptime(end_date, "%Y-%m-%d")
+    while cursor <= last:
+        day = cursor.strftime("%Y-%m-%d")
+        if day not in base_dates and day not in exceeded:
+            base_dates.add(day)
+        cursor += timedelta(days=1)
+    return base_dates
 
 
 class MercyService:

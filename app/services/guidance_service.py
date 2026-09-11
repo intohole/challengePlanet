@@ -16,6 +16,7 @@ from app.repositories.points_repository import ChallengeMetaRepository
 from app.services.ai_service import AIService
 from app.services.challenge_service import ChallengeService
 from app.services.companion_service import assess_risk, companion_text
+from app.services.goal_rule_service import is_cap_mode
 from app.services.mercy_service import load_valid_dates
 from app.services.streak_service import calc_streak, today_str
 
@@ -109,8 +110,12 @@ class GuidanceService:
         if challenge is None or challenge.user_id != user_id:
             return None
         checkins = await self._checkin_repo.get_by_challenge(session, challenge_id)
-        completed = len(checkins)
         valid = await load_valid_dates(session, challenge_id)
+        if is_cap_mode(challenge):
+            today = today_str()
+            completed = sum(1 for d in valid if d < today)
+        else:
+            completed = await self._checkin_repo.count_active_days(session, challenge_id)
         streak = calc_streak(valid, today_str())
         phase_key = self._detect_phase(completed)
         phase = HABIT_PHASES[phase_key]

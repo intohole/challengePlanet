@@ -5,6 +5,13 @@ def is_ladder(challenge: object) -> bool:
     return str(getattr(challenge, "goal_rule", "") or "") == "ladder"
 
 
+def is_cap_mode(challenge: object) -> bool:
+    return (
+        str(getattr(challenge, "direction", "") or "") == "decrease"
+        and str(getattr(challenge, "task_type", "") or "") in ("counter", "timer")
+    )
+
+
 def is_adaptive(challenge: object) -> bool:
     return str(getattr(challenge, "goal_rule", "") or "") == "adaptive"
 
@@ -79,19 +86,30 @@ def judge_mode(challenge: object, task_type: str) -> str:
     return "target_met"
 
 
-def is_win_settled(mode: str, total: float, target: float, has_record: int) -> bool:
+def is_win_settled(
+    mode: str, total: float, target: float, has_record: int,
+    day_open: bool = True,
+) -> bool:
     if mode == "record_done":
         return has_record > 0
     if mode == "cap_kept":
-        return has_record > 0 and total <= target
+        if day_open:
+            return False
+        return total <= target
     return target > 0 and total >= target
 
 
 def is_settled(challenge: object, task_type: str, today_total: float, today_target: float, has_record: int) -> bool:
-    return is_win_settled(judge_mode(challenge, task_type), today_total, today_target, has_record)
+    return is_win_settled(
+        judge_mode(challenge, task_type), today_total, today_target, has_record,
+        day_open=True,
+    )
 
 
 def is_period_settled(challenge: object, task_type: str, period_total: float, period_target: float, has_record: int) -> bool:
     if period_target <= 0:
         return False
-    return is_win_settled(judge_mode(challenge, task_type), period_total, period_target, has_record)
+    return is_win_settled(
+        judge_mode(challenge, task_type), period_total, period_target, has_record,
+        day_open=False,
+    )

@@ -151,7 +151,7 @@ async function loadChallenges() {
   const prevId = state.current && state.current.id
   const active = state.challenges.find(c => c.status === 'active') || state.challenges[0] || null
   state.current = (prevId && state.challenges.find(c => c.id === prevId)) || active
-  state.pendingCount = state.challenges.filter(c => c.status === 'active' && !c.today_checked).length
+  state.pendingCount = state.challenges.filter(c => c.status === 'active' && !c.today_checked && !(c.direction === 'decrease' && (c.task_type === 'counter' || c.task_type === 'timer'))).length
   return state.challenges
 }
 window.cpLoadChallenges = loadChallenges

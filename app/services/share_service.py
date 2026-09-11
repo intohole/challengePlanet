@@ -12,6 +12,7 @@ from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import ChallengeMetaRepository
 from app.services.ai_service import AIService
+from app.services.goal_rule_service import is_cap_mode
 from app.services.mercy_service import load_valid_dates
 from app.services.streak_service import calc_streak, today_str
 
@@ -55,7 +56,10 @@ class ShareService:
         checkins = await self._checkin_repo.get_by_challenge(session, challenge.id)
         valid = await load_valid_dates(session, challenge.id)
         streak = calc_streak(valid, today_str())
-        completed_days = len(checkins)
+        if is_cap_mode(challenge):
+            completed_days = sum(1 for d in valid if d < today_str())
+        else:
+            completed_days = len({c.date for c in checkins})
         start_date = datetime.strptime(challenge.start_date, "%Y-%m-%d")
         current_day = min((now_china() - start_date).days + 1, challenge.duration_days)
         progress = _calc_progress(completed_days, challenge.duration_days)
