@@ -188,6 +188,7 @@ class TodayTaskResponse(BaseModel):
     period_days: int = 7
     period_target: float = 0.0
     period_unit: str = ""
+    period_total: float = 0.0
     week_total: float = 0.0
     week_target: float = 0.0
     week_settled: bool = False

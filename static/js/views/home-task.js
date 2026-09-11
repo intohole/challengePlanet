@@ -102,7 +102,7 @@
   }
 
   V._periodCard = function (t) {
-    const total = t.week_total || 0
+    const total = (t.period_total !== undefined ? t.period_total : t.week_total) || 0
     const target = t.period_target || 0
     const pct = Math.min(100, Math.round(total / target * 100))
     const unit = window.cpEsc(t.period_unit || '')

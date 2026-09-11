@@ -20,14 +20,17 @@ def period_fields(challenge: object, task_type: str, agg: dict[str, object]) -> 
     period_target = float(getattr(challenge, "period_target", 0.0) or 0.0)
     period_days = max(1, int(getattr(challenge, "period_days", 7) or 7))
     period_unit = str(getattr(challenge, "period_unit", "") or "") or str(getattr(challenge, "unit", "") or "")
+    is_kcal = period_unit in ("千卡", "kcal")
+    period_total = float(agg.get("calories_week", 0.0)) if is_kcal else float(agg.get("week_total", 0.0))
     return {
         "period_days": period_days,
         "period_target": period_target,
         "period_unit": period_unit,
+        "period_total": round(period_total, 1),
         "week_total": round(float(agg.get("week_total", 0.0)), 1),
         "week_target": period_target,
         "week_settled": is_period_settled(
-            challenge, task_type, float(agg.get("week_total", 0.0)),
+            challenge, task_type, period_total,
             period_target, 1 if agg.get("week_has_record") else 0,
         ),
         "calories_today": round(float(agg.get("calories_today", 0.0)), 1),
