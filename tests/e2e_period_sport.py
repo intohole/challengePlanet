@@ -116,7 +116,7 @@ def main() -> None:
         }""", run_cid)
         print("  计时器结束记录:", after_sw)
         check("计时结束自动入账分钟", after_sw["total"] > 0 and after_sw["checks"] >= 1, str(after_sw))
-        check("卡路里自动折算(跑步MET9.8×70kg)", after_sw["last_cal"] > 0, str(after_sw))
+        check("卡路里自动折算(跑步MET9.8×70kg)", after_sw["kcal"] > 0 and after_sw["last_cal"] is not None and after_sw["last_cal"] > 0, str(after_sw))
         check("3分钟未达日目标(30)", not after_sw["settled"], str(after_sw))
 
         page.evaluate("""async cid => { await window.api.post('/challenges/' + cid + '/checkin', {value: 28}); }""", run_cid)

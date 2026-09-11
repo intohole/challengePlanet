@@ -363,7 +363,8 @@ class ChallengeService:
             "today_checkins": [
                 {
                     "id": c.id, "timestamp": c.timestamp.isoformat(),
-                    "value": c.value, "sub_goal_id": c.sub_goal_id,
+                    "value": c.value, "unit": c.unit, "calories": float(getattr(c, "calories", 0.0) or 0.0),
+                    "sub_goal_id": c.sub_goal_id,
                     "mood": c.mood, "reflection": c.reflection,
                     "context_tag": c.context_tag, "ai_feedback": sanitize_coach_text(c.ai_feedback),
                 }
