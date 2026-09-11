@@ -27,6 +27,7 @@ class CheckIn(Base):
 
     value: Mapped[float] = mapped_column(Float, default=0.0)
     unit: Mapped[str] = mapped_column(String(16), default="次")
+    calories: Mapped[float] = mapped_column(Float, default=0.0)
 
     target_value: Mapped[float] = mapped_column(Float, default=0.0)
     goal_type: Mapped[str] = mapped_column(String(8), default="hard")

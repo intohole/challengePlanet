@@ -32,6 +32,7 @@ class CheckInResponse(BaseModel):
     date: str
     value: float = 0.0
     unit: str = "次"
+    calories: float = 0.0
     target_value: float = 0.0
     goal_type: str = "hard"
     direction: str = "increase"

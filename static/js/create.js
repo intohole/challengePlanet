@@ -29,6 +29,10 @@ window.cpCreate = (function () {
     c.ladderGoal = 0
     c.ladderInterval = 3
     c.ladderStep = 1
+    c.periodTarget = 0
+    c.periodUnit = '分钟'
+    c.sportMet = 0
+    c.sportLabel = ''
     c.gender = '男'
     c.age = 28
     c.heightCm = 170
@@ -131,57 +135,6 @@ window.cpCreate = (function () {
 
     setDays(n) { st().editDays = n },
     setCategory(k) { st().editCategory = k },
-
-    syncLadder(p) {
-      const c = st()
-      if (!p || typeof p !== 'object') return
-      const dir = String(p.direction || '')
-      c.goalRule = String(p.goal_rule || 'fixed')
-      c.ladderEn = c.goalRule === 'ladder' && !!p.ladder_start
-      if (c.ladderEn) {
-        c.ladderStart = Number(p.ladder_start) || 0
-        c.ladderGoal = Number(p.ladder_goal) || 1
-        c.ladderInterval = Math.max(1, Number(p.ladder_interval) || 1)
-        c.ladderStep = Number(p.ladder_step) || 1
-        if (dir === 'decrease' && !c.ladderGoal) c.ladderGoal = 0
-      }
-    },
-
-    ladderDir() {
-      const sc = window.cpSceneMap[st().sceneTemplate]
-      return String(st().parsed && st().parsed.direction || (sc && sc.task_type === 'quit' ? 'decrease' : 'increase'))
-    },
-
-    ladderUnit() {
-      const c = st()
-      const sc = c.sceneTemplate && window.cpSceneMap[c.sceneTemplate]
-      return String(c.parsed && c.parsed.unit || (sc && sc.unit) || '次')
-    },
-
-    ladderNodes() {
-      const c = st()
-      if (!c.ladderEn || c.ladderStart <= 0) return []
-      const days = Math.max(7, c.editDays || 66)
-      const interval = Math.max(1, c.ladderInterval || 1)
-      const step = Math.max(0.5, c.ladderStep || 1)
-      const isDesc = this.ladderDir() === 'decrease'
-      const nodes = []
-      for (let d = 1; d <= days; d += interval) {
-        const elapsed = Math.floor((d - 1) / interval)
-        let v = isDesc
-          ? Math.max(c.ladderGoal, c.ladderStart - elapsed * step)
-          : Math.min(c.ladderGoal, c.ladderStart + elapsed * step)
-        v = Math.round(v * 100) / 100
-        nodes.push({ day: d, value: v })
-        if (!isDesc && v >= c.ladderGoal) break
-        if (isDesc && v <= c.ladderGoal) break
-      }
-      return nodes
-    },
-
-    ladderInterval() {
-      return Math.max(1, st().ladderInterval || 1)
-    },
 
     playMode() {
       const c = st()
@@ -362,6 +315,10 @@ window.cpCreate = (function () {
           weight_kg: Number(c.weightKg) || 0,
           goal_weight: Number(c.goalWeight) || 0,
           activity_level: Number(c.activityLevel) || 2,
+          period_days: 7,
+          period_target: Number(c.periodTarget) || 0,
+          period_unit: String(c.periodUnit || '分钟'),
+          sport_met: Number(c.sportMet) || 0,
         })
         const ch = res.data || res
         c.show = false

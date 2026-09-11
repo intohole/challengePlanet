@@ -53,6 +53,8 @@
       if (hint) html += hint
     }
     if (t.sub_goals && t.sub_goals.length) html += this._subGoalProgress(t.sub_goals, ch)
+    if (t.period_target && t.period_target > 0) html += this._periodCard(t)
+    if ((t.calories_week || 0) > 0 || (t.calories_today || 0) > 0) html += this._calorieCard(t)
     html += '</div>'
     if (isDiet) {
       html += this._dietArea(t, ch, (d.today && d.today.checkins_date))
@@ -97,6 +99,24 @@
     }
     if ((t.remaining || 0) <= 0) return ''
     return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>还差 <b>' + t.remaining + '</b> ' + unit + ' 达标</div>'
+  }
+
+  V._periodCard = function (t) {
+    const total = t.week_total || 0
+    const target = t.period_target || 0
+    const pct = Math.min(100, Math.round(total / target * 100))
+    const unit = window.cpEsc(t.period_unit || '')
+    const done = !!t.week_settled
+    const color = done ? 'var(--emerald)' : 'var(--primary)'
+    let h = '<div class="cp-task-target"><i class="fas fa-calendar-week"></i> 本周目标 <b>' + target + '</b> ' + unit + (done ? ' <span style="color:var(--emerald)">✓ 已达成</span>' : '') + '</div>'
+    h += '<div class="cp-task-progress"><div class="cp-task-progress-bar"><div class="cp-task-progress-fill" style="width:' + pct + '%;background:' + color + '"></div></div>'
+    h += '<div class="cp-task-progress-info"><span style="color:' + color + '">' + total + '</span><span class="cp-task-progress-sep">/</span><span>' + target + ' ' + unit + '</span></div></div>'
+    if (!done) h += '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>还差 <b>' + Math.max(0, target - total) + '</b> ' + unit + ' 达成本周目标</div>'
+    return h
+  }
+
+  V._calorieCard = function (t) {
+    return '<div class="cp-task-target"><i class="fas fa-fire" style="color:var(--amber)"></i> 卡路里 <b>' + (t.calories_today || 0) + '</b> 今日 · <b>' + (t.calories_week || 0) + '</b> 本周 千卡</div>'
   }
 
   V._ladderBlock = function (t, ch) {

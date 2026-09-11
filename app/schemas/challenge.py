@@ -36,6 +36,10 @@ class NLCreateRequest(BaseModel):
     ladder_goal: float = Field(0.0, description="阶梯目标值")
     ladder_interval: int = Field(1, description="每隔N天变化一次")
     ladder_step: float = Field(1.0, description="每次变化量")
+    period_days: int = Field(7, description="周期天数(如周=7)")
+    period_target: float = Field(0.0, description="周期目标值(如每周目标)")
+    period_unit: str = Field("", description="周期目标单位(空=跟随unit)")
+    sport_met: float = Field(0.0, description="运动MET值(>0时打卡自动折算卡路里)")
 
 
 class ChallengeConfirmRequest(BaseModel):
@@ -71,6 +75,10 @@ class ChallengeConfirmRequest(BaseModel):
     weight_kg: float = Field(0.0, description="当前体重kg")
     goal_weight: float = Field(0.0, description="目标体重kg")
     activity_level: int = Field(2, description="活动量等级1-5")
+    period_days: int = Field(7, description="周期天数(如周=7)")
+    period_target: float = Field(0.0, description="周期目标值(如每周目标)")
+    period_unit: str = Field("", description="周期目标单位(空=跟随unit)")
+    sport_met: float = Field(0.0, description="运动MET值(>0时打卡自动折算卡路里)")
 
 
 class FromDecisionRequest(BaseModel):
@@ -122,6 +130,10 @@ class ChallengeResponse(BaseModel):
     ladder_goal: float = 0.0
     ladder_interval: int = 1
     ladder_step: float = 1.0
+    period_days: int = 7
+    period_target: float = 0.0
+    period_unit: str = ""
+    sport_met: float = 0.0
 
     gender: str = ""
     age: int = 0
@@ -172,6 +184,15 @@ class TodayTaskResponse(BaseModel):
     remaining: float = 0.0
     progress_pct: float = 0.0
     ladder_progress_pct: float = 0.0
+
+    period_days: int = 7
+    period_target: float = 0.0
+    period_unit: str = ""
+    week_total: float = 0.0
+    week_target: float = 0.0
+    week_settled: bool = False
+    calories_today: float = 0.0
+    calories_week: float = 0.0
 
     checked_in: bool = False
     settled: bool = False

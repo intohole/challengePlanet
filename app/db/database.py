@@ -103,6 +103,12 @@ async def run_migrations() -> None:
         await _ensure_column(conn, "challenges", "goal_weight", "goal_weight REAL DEFAULT 0.0")
         await _ensure_column(conn, "challenges", "activity_level", "activity_level INTEGER DEFAULT 2")
         await _ensure_column(conn, "challenges", "daily_calorie_target", "daily_calorie_target REAL DEFAULT 0.0")
+        await _ensure_column(conn, "challenges", "period_days", "period_days INTEGER DEFAULT 7")
+        await _ensure_column(conn, "challenges", "period_target", "period_target REAL DEFAULT 0.0")
+        await _ensure_column(conn, "challenges", "period_unit", "period_unit VARCHAR(16) DEFAULT ''")
+        await _ensure_column(conn, "challenges", "sport_met", "sport_met REAL DEFAULT 0.0")
+
+        await _ensure_column(conn, "checkins", "calories", "calories REAL DEFAULT 0.0")
 
         await _ensure_column(conn, "checkins", "sub_goal_id", "sub_goal_id INTEGER")
         await _ensure_column(conn, "checkins", "timestamp", "timestamp DATETIME")

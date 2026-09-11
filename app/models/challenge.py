@@ -28,6 +28,10 @@ class Challenge(Base):
     ladder_goal: Mapped[float] = mapped_column(Float, default=0.0)
     ladder_interval: Mapped[int] = mapped_column(Integer, default=1)
     ladder_step: Mapped[float] = mapped_column(Float, default=1.0)
+    period_days: Mapped[int] = mapped_column(Integer, default=7)
+    period_target: Mapped[float] = mapped_column(Float, default=0.0)
+    period_unit: Mapped[str] = mapped_column(String(16), default="")
+    sport_met: Mapped[float] = mapped_column(Float, default=0.0)
 
     decompose_mode: Mapped[str] = mapped_column(String(16), default="none")
     slot_hours: Mapped[int] = mapped_column(Integer, default=1)

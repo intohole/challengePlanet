@@ -226,6 +226,8 @@ async def confirm_challenge(
         gender=request.gender, age=request.age, height_cm=request.height_cm,
         weight_kg=request.weight_kg, goal_weight=request.goal_weight,
         activity_level=request.activity_level,
+        period_days=request.period_days, period_target=request.period_target,
+        period_unit=request.period_unit, sport_met=request.sport_met,
     )
     if bearer:
         try:

@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.10.88/css/nexus-all.css">
 <link rel="stylesheet" href="/static/style.css?v=20260825b">
 <link rel="stylesheet" href="/static/style-components.css?v=20260910a">
-<link rel="stylesheet" href="/static/style-checkin.css?v=20260910a">
+<link rel="stylesheet" href="/static/style-checkin.css?v=20260911f">
 <link rel="stylesheet" href="/static/style-multi.css?v=20260728">
 <script src="https://songguokr.com/nexus-ui/v2.10.88/vendor/vue.global.prod.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.10.88/js/nexus-all.js"></script>
@@ -85,6 +85,25 @@
           <button class="cp-pick-btn" :class="{active:state.create.startMode==='custom'}" @click="cr.setStartMode('custom')">自定义</button>
         </div>
         <input v-if="state.create.startMode==='custom'" v-model="state.create.customDate" type="date" class="cp-field" style="margin-top:8px" @change="cr.setCustomDate()">
+      </div>
+      <div v-if="cr.isPeriodScene()" class="cp-diet-body">
+        <div class="cp-form-row"><label class="cp-label"><i class="fas fa-calendar-week"></i> 每周目标（可选，系统按周自动判定）</label>
+          <div class="cp-ladder-grid">
+            <label class="cp-ladder-field"><span>每周{{ cr.isSportScene() ? '消耗' : '累计' }}</span><input type="number" min="0" step="0.5" v-model.number="state.create.periodTarget" placeholder="0=不设周目标"></label>
+            <label class="cp-ladder-field"><span>单位</span>
+              <select v-model="state.create.periodUnit" class="cp-field">
+                <option value="分钟">分钟</option>
+                <option v-if="cr.isSportScene()" value="千卡">千卡</option>
+              </select>
+            </label>
+          </div>
+          <p class="cp-ladder-tip muted" style="margin-top:6px"><i class="fas fa-bullseye"></i> 每日达标照常判定；周累计达标会在今日页打「周目标达成」</p>
+        </div>
+        <div v-if="cr.isSportScene()" class="cp-form-row"><label class="cp-label"><i class="fas fa-heart-pulse"></i> 运动类型（用于自动计算卡路里消耗）</label>
+          <div class="cp-pick-btns">
+            <button v-for="o in cr.sportOptions()" :key="o.met" class="cp-pick-btn" :class="{active:state.create.sportMet===o.met}" @click="cr.selectSport(o.met, o.label)">{{ o.label }}</button>
+          </div>
+        </div>
       </div>
       <div v-if="cr.isDiet()" class="cp-diet-body">
         <div class="cp-form-row"><label class="cp-label"><i class="fas fa-venus-mars"></i> 身体资料（用于计算每日卡路里目标）</label>
@@ -399,14 +418,15 @@
 </div>
 <script src="/static/js/galaxy.js?v=20260728"></script>
 <script src="/static/js/share-poster.js?v=20260728"></script>
-<script src="/static/js/create.js?v=20260909c"></script>
+<script src="/static/js/create.js?v=20260911f"></script>
 <script src="/static/js/create-direct.js?v=20260909c"></script>
-<script src="/static/js/views/home.js?v=20260911c"></script>
+<script src="/static/js/create-extra.js?v=20260911f"></script>
+<script src="/static/js/views/home.js?v=20260911f"></script>
 <script src="/static/js/views/home-diet.js?v=20260825"></script>
-<script src="/static/js/views/home-task.js?v=20260910c"></script>
-<script src="/static/js/views/home-checkin.js?v=20260911d"></script>
+<script src="/static/js/views/home-task.js?v=20260911f"></script>
+<script src="/static/js/views/home-checkin.js?v=20260911f"></script>
 <script src="/static/js/views/home-record.js?v=20260910a"></script>
-<script src="/static/js/views/learn-checkin.js?v=20260911c"></script>
+<script src="/static/js/views/learn-checkin.js?v=20260911f"></script>
 <script src="/static/js/views/home-progress.js?v=20260910c"></script>
 <script src="/static/js/views/home-insights.js?v=20260910c"></script>
 <script src="/static/js/views/home-lifecycle.js?v=20260910a"></script>

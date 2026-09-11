@@ -16,9 +16,9 @@ from app.repositories.points_repository import ChallengeMetaRepository
 from app.schemas.challenge import ChallengeResponse
 from app.services.ai_service import AIService
 from app.services.ai_text_sanitizer import sanitize_coach_text
-from app.services.goal_rule_service import daily_target, is_ladder, is_settled, ladder_progress_pct, resolve_mode
+from app.services.goal_rule_service import daily_target, is_ladder, is_period_settled, is_settled, ladder_progress_pct, resolve_mode
 from app.services.mercy_service import MercyService, load_valid_dates
-from app.services.streak_service import calc_streak, shift_date, streak_before, today_str
+from app.services.streak_service import calc_streak, shift_date, streak_before, today_str, week_dates_of
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +103,9 @@ class ChallengeService:
             "weight_kg": weight_kg, "goal_weight": goal_weight,
             "activity_level": activity_level,
             "daily_calorie_target": daily_calorie_target,
+            "period_days": max(1, period_days),
+            "period_target": period_target, "period_unit": period_unit,
+            "sport_met": sport_met,
             "share_token": secrets.token_hex(16),
         })
         await self._meta_repo.upsert(session, challenge.id, {
@@ -198,37 +201,24 @@ class ChallengeService:
             completed_days=stats["completed_days"],
             streak=stats["streak"],
             last_streak=stats["last_streak"],
-            start_date=c.start_date,
-            end_date=c.end_date,
-            status=c.status,
-            ai_plan=plan,
-            color=c.color,
-            icon=c.icon,
-            task_type=c.task_type,
-            scene_template=c.scene_template,
-            is_shared=c.is_shared,
-            share_token=c.share_token,
+            start_date=c.start_date, end_date=c.end_date, status=c.status,
+            ai_plan=plan, color=c.color, icon=c.icon,
+            task_type=c.task_type, scene_template=c.scene_template,
+            is_shared=c.is_shared, share_token=c.share_token,
             source=str(item.get("source", "manual")),
             today_checked=bool(item.get("today_checked", False)),
-            target_value=float(getattr(c, "target_value", 1.0) or 1.0),
-            unit=str(getattr(c, "unit", "次") or "次"),
-            direction=str(getattr(c, "direction", "increase") or "increase"),
-            goal_type=str(getattr(c, "goal_type", "hard") or "hard"),
+            target_value=float(getattr(c, "target_value", 1.0) or 1.0), unit=str(getattr(c, "unit", "次") or "次"),
+            direction=str(getattr(c, "direction", "increase") or "increase"), goal_type=str(getattr(c, "goal_type", "hard") or "hard"),
             decompose_mode=str(getattr(c, "decompose_mode", "none") or "none"),
-            slot_hours=int(getattr(c, "slot_hours", 1) or 1),
-            slot_target_value=float(getattr(c, "slot_target_value", 0.0) or 0.0),
-            goal_rule=str(getattr(c, "goal_rule", "fixed") or "fixed"),
-            goal_mode=str(getattr(c, "goal_mode", "auto") or "auto"),
-            ladder_start=float(getattr(c, "ladder_start", 0.0) or 0.0),
-            ladder_goal=float(getattr(c, "ladder_goal", 0.0) or 0.0),
-            ladder_interval=max(1, int(getattr(c, "ladder_interval", 1) or 1)),
-            ladder_step=float(getattr(c, "ladder_step", 1.0) or 1.0),
-            gender=str(getattr(c, "gender", "") or ""),
-            age=int(getattr(c, "age", 0) or 0),
-            height_cm=float(getattr(c, "height_cm", 0.0) or 0.0),
-            weight_kg=float(getattr(c, "weight_kg", 0.0) or 0.0),
-            goal_weight=float(getattr(c, "goal_weight", 0.0) or 0.0),
-            activity_level=int(getattr(c, "activity_level", 2) or 2),
+            slot_hours=int(getattr(c, "slot_hours", 1) or 1), slot_target_value=float(getattr(c, "slot_target_value", 0.0) or 0.0),
+            goal_rule=str(getattr(c, "goal_rule", "fixed") or "fixed"), goal_mode=str(getattr(c, "goal_mode", "auto") or "auto"),
+            ladder_start=float(getattr(c, "ladder_start", 0.0) or 0.0), ladder_goal=float(getattr(c, "ladder_goal", 0.0) or 0.0),
+            ladder_interval=max(1, int(getattr(c, "ladder_interval", 1) or 1)), ladder_step=float(getattr(c, "ladder_step", 1.0) or 1.0),
+            period_days=max(1, int(getattr(c, "period_days", 7) or 7)), period_target=float(getattr(c, "period_target", 0.0) or 0.0),
+            period_unit=str(getattr(c, "period_unit", "") or ""), sport_met=float(getattr(c, "sport_met", 0.0) or 0.0),
+            gender=str(getattr(c, "gender", "") or ""), age=int(getattr(c, "age", 0) or 0),
+            height_cm=float(getattr(c, "height_cm", 0.0) or 0.0), weight_kg=float(getattr(c, "weight_kg", 0.0) or 0.0),
+            goal_weight=float(getattr(c, "goal_weight", 0.0) or 0.0), activity_level=int(getattr(c, "activity_level", 2) or 2),
             daily_calorie_target=float(getattr(c, "daily_calorie_target", 0.0) or 0.0),
             mercy=item.get("mercy", {}),
             created_at=c.created_at,
@@ -259,13 +249,15 @@ class ChallengeService:
         today = today_str()
         today_checkins = await self._checkin_repo.list_by_date(session, challenge_id, today)
         today_total = await self._checkin_repo.sum_value_by_date(session, challenge_id, today)
+        aggregates = await week_aggregates(session, challenge_id, today_checkins)
         dynamic_baseline = await self._calc_dynamic_baseline(session, challenge)
         sub_goals_list = await self._build_sub_goals(session, challenge, today)
         stats = await self.get_challenge_stats(session, challenge)
         progress = _calc_progress(stats["completed_days"], challenge.duration_days)
         return self._build_today_response(
             challenge, challenge_id, day_number, today, task,
-            today_checkins, today_total, dynamic_baseline, sub_goals_list, stats, progress
+            today_checkins, today_total, dynamic_baseline, sub_goals_list, stats, progress,
+            aggregates,
         )
 
     def _parse_plan(self, ai_plan: str | None) -> list[dict[str, object]]:
@@ -316,6 +308,7 @@ class ChallengeService:
         self, challenge, challenge_id: int, day_number: int, today: str,
         task: dict[str, object], today_checkins, today_total: float,
         dynamic_baseline: float, sub_goals_list: list, stats: dict, progress: float,
+        aggregates: dict[str, object] | None = None,
     ) -> dict[str, object]:
         task_steps_raw = task.get("steps", task.get("task_steps", []))
         task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
@@ -330,6 +323,8 @@ class ChallengeService:
             or bool(sub_goals_list)
         )
         ladder_progress = ladder_progress_pct(challenge, day_number) if is_ladder(challenge) else 0.0
+        task_type = str(task.get("task_type", challenge.task_type))
+        pf = period_fields(challenge, task_type, aggregates or {})
         return {
             "challenge_id": challenge_id, "day_number": day_number, "date": today,
             "repeatable": repeatable, "task": task, "task_title": str(task.get("title", "")),
@@ -355,6 +350,7 @@ class ChallengeService:
             "ladder_progress_pct": round(ladder_progress, 1),
             "checked_in": len(today_checkins) > 0,
             "settled": is_settled(challenge, str(task.get("task_type", challenge.task_type)), today_total, today_target, len(today_checkins)),
+            **pf,
             "checkin_data": {
                 "mood": today_checkins[-1].mood if today_checkins else "",
                 "reflection": today_checkins[-1].reflection if today_checkins else "",

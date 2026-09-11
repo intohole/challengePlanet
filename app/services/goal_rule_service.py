@@ -71,14 +71,27 @@ def ladder_progress_pct(challenge: object, day_number: int) -> float:
     return max(0.0, min((cap - start) / (goal - start) * 100.0, 100.0))
 
 
+def judge_mode(challenge: object, task_type: str) -> str:
+    if task_type in ("diet", "text"):
+        return "record_done"
+    if str(getattr(challenge, "direction", "") or "increase") == "decrease":
+        return "record_done" if task_type == "binary" else "cap_kept"
+    return "target_met"
+
+
+def is_win_settled(mode: str, total: float, target: float, has_record: int) -> bool:
+    if mode == "record_done":
+        return has_record > 0
+    if mode == "cap_kept":
+        return has_record > 0 and total <= target
+    return target > 0 and total >= target
+
+
 def is_settled(challenge: object, task_type: str, today_total: float, today_target: float, has_record: int) -> bool:
-    if task_type == "diet":
-        return has_record > 0
-    direction = str(getattr(challenge, "direction", "") or "increase")
-    if direction == "decrease":
-        if task_type == "binary":
-            return has_record > 0
-        return has_record > 0 and today_total <= today_target
-    if task_type == "text":
-        return has_record > 0
-    return today_target > 0 and today_total >= today_target
+    return is_win_settled(judge_mode(challenge, task_type), today_total, today_target, has_record)
+
+
+def is_period_settled(challenge: object, task_type: str, period_total: float, period_target: float, has_record: int) -> bool:
+    if period_target <= 0:
+        return False
+    return is_win_settled(judge_mode(challenge, task_type), period_total, period_target, has_record)

@@ -258,6 +258,9 @@
     const dis = d.checking ? 'disabled' : ''
     const done = !!t.settled
     let html = '<div class="cp-checkin-box">' + this._mainCTA(tt, t, ch, dis, done)
+    if (tt === 'timer' && ch.scene_template !== 'pomodoro' && window.cpStopwatchRender) {
+      html += window.cpStopwatchRender(t, ch, dis, done)
+    }
     const extras = this._extras(tt, t, ch, dis, done)
     if (extras) html += extras
     html += '</div>'

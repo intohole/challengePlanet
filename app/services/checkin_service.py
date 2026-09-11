@@ -87,12 +87,18 @@ class CheckInService:
             completion_pct = 100.0 if assess["status"] == "ok" else min(90.0, max(30.0, float(assess["percent"])))
         is_soft_exceeded = self._is_soft_exceeded(value, target_snapshot, challenge)
         soft_exceeded_amount = max(0.0, value - target_snapshot["target_value"]) if is_soft_exceeded else 0.0
+        calories = 0.0
+        sport_met = float(getattr(challenge, "sport_met", 0.0) or 0.0)
+        if sport_met > 0 and float(getattr(challenge, "weight_kg", 0.0) or 0.0) > 0:
+            from app.services.sport_metrics import calc_calories
+            calories = calc_calories(sport_met, float(challenge.weight_kg), value)
 
         checkin = await self._repo.create(session, {
             "challenge_id": challenge_id, "user_id": user_id,
             "sub_goal_id": sub_goal_id, "day_number": day_number,
             "status": "completed", "timestamp": ts, "date": today,
             "value": value, "unit": challenge.unit,
+            "calories": calories,
             "target_value": target_snapshot["target_value"],
             "goal_type": target_snapshot["goal_type"],
             "direction": challenge.direction,
