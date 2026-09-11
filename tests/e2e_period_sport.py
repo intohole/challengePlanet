@@ -119,7 +119,11 @@ def main() -> None:
         check("卡路里自动折算(跑步MET9.8×70kg)", after_sw["kcal"] > 0 and after_sw["last_cal"] is not None and after_sw["last_cal"] > 0, str(after_sw))
         check("3分钟未达日目标(30)", not after_sw["settled"], str(after_sw))
 
-        page.evaluate("""async cid => { await window.api.post('/challenges/' + cid + '/checkin', {value: 28}); }""", run_cid)
+        page.evaluate("""async cid => {
+            const t = await window.api.get('/challenges/' + cid + '/today').then(r => r.data || r);
+            const rem = Math.max(0, Math.round((t.today_target - t.today_total) * 10) / 10);
+            if (rem > 0) await window.api.post('/challenges/' + cid + '/checkin', {value: rem});
+        }""", run_cid)
         page.wait_for_timeout(1800)
         done = page.evaluate("""async cid => {
             const t = await window.api.get('/challenges/' + cid + '/today').then(r => r.data || r);
@@ -132,6 +136,8 @@ def main() -> None:
         check("周目标按千卡口径未达标(≈343/2000)", not done["week_settled"] and abs(done["period_total"] - done["kcal_week"]) < 0.5, str(done))
 
         page.screenshot(path=os.path.join(OUT, "sport_weekcard.png"), full_page=False)
+        page.evaluate("() => window.cpViews.home.load()")
+        page.wait_for_timeout(2500)
         cta_done = page.evaluate("""() => ({
             done: !!document.querySelector('.cp-cta-done'),
             kcalText: !!(document.body.innerText || '').includes('千卡'),
