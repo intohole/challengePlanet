@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from nexus.middleware import LoadingSplashMiddleware, NoCacheMiddleware
-from nexus import close_uc_sdk, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, startup_ironman, register_health_detail
+from nexus import close_uc_sdk, create_auth_router, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, startup_ironman, register_health_detail
 from nexus.chat.engine import ChatEngine
 from nexus.chat.router import chat_router
 from nexus.logging import get_logger, setup_logging
@@ -15,7 +15,6 @@ from nexus.notify import async_init_notify_client, register_notify_proxy
 from nexus.scheduler import get_scheduler
 
 from app.api.adaptive import router as adaptive_router
-from app.api.auth import router as auth_router
 from app.api.challenge import router as challenge_router
 from app.api.checkin import router as checkin_router
 from app.api.diet import router as diet_router
@@ -85,7 +84,7 @@ app.add_middleware(LoadingSplashMiddleware, app_name="星轨挑战")
 app.add_middleware(NoCacheMiddleware, path_prefix="/static")
 
 API_PREFIX = settings.API_PREFIX
-app.include_router(auth_router, prefix=API_PREFIX)
+app.include_router(create_auth_router(prefix="/api/v1/auth", uc_sdk_provider=get_uc_sdk, tags=["认证"], endpoints={"config", "login", "register"}))
 app.include_router(challenge_router, prefix=API_PREFIX + "/challenges")
 app.include_router(checkin_router, prefix=API_PREFIX + "/challenges")
 app.include_router(diet_router, prefix=API_PREFIX + "/challenges")
@@ -100,7 +99,6 @@ app.include_router(chat_router(ChatEngine(db_engine).register("challengePlanet",
 
 register_notify_proxy(app)
 
-from nexus import create_auth_router, get_uc_sdk
 app.include_router(create_auth_router(prefix="/api/auth", uc_sdk_provider=get_uc_sdk, tags=["认证"], password_ops=True, endpoints={"config"}))
 
 
