@@ -323,7 +323,7 @@ const cpApp = createApp({
     }
   },
   mounted() {
-    if (!localStorage.getItem('uc_access_token')) {
+    if (!window.NexusUtils.createDualStorage().getItem('uc_access_token')) {
       window.location.href = window.cpPrefix + '/login'
       return
     }

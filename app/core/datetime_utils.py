@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime
-from zoneinfo import ZoneInfo
-
-CHINA_TZ = ZoneInfo("Asia/Shanghai")
+from nexus import TimeUtils
 
 
 def now_china() -> datetime:
-    return datetime.now(CHINA_TZ).replace(tzinfo=None)
+    return TimeUtils.now_naive()

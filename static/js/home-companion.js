@@ -4,7 +4,7 @@ window.cpCompanion = (function () {
   var chatRef = null
 
   function token() {
-    return localStorage.getItem('uc_access_token') || ''
+    return window.NexusUtils.createDualStorage().getItem('uc_access_token') || ''
   }
 
   function headers(extra) {
@@ -15,7 +15,8 @@ window.cpCompanion = (function () {
   }
 
   function handleUnauthorized() {
-    ;['uc_access_token', 'uc_refresh_token', 'cp_user_id', 'cp_nickname'].forEach(function (k) { localStorage.removeItem(k) })
+    var store = window.NexusUtils.createDualStorage()
+    ;['uc_access_token', 'uc_refresh_token', 'cp_user_id', 'cp_nickname'].forEach(function (k) { store.removeItem(k) })
     window.location.href = window.cpPrefix + '/login'
   }
 

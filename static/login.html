@@ -78,6 +78,7 @@
 })()
 
 const { createApp, ref, onMounted } = Vue
+const tokenStore = NexusUtils.createDualStorage('uc_access_token')
 window.api = new NexusApi({ baseUrl: (window.PATH_PREFIX || '') + '/api/v1', tokenKey: 'uc_access_token' })
 const LoginApp = createApp({
   setup() {
@@ -90,7 +91,7 @@ const LoginApp = createApp({
       { icon: '👥', title: '小队互相监督', desc: '邀请好友组队，全员打卡人人加分' },
       { icon: '🎁', title: '积分宝箱', desc: '连续打卡积分递增，随机掉落惊喜宝箱' }
     ]
-    onMounted(() => { if (localStorage.getItem('uc_access_token')) hasSession.value = true })
+    onMounted(() => { if (tokenStore.getItem('uc_access_token')) hasSession.value = true })
     async function handleLogin(form) {
       if (!form || !form.username || !form.password) { loginError.value = '请输入用户名和密码'; return }
       loginError.value = ''
@@ -99,11 +100,11 @@ const LoginApp = createApp({
         const res = await window.api.post('/auth/login', { username: form.username.trim(), password: form.password })
         const d = res.data || res
         if (!d.access_token) throw new Error('登录失败：未获取到令牌')
-        localStorage.setItem('uc_access_token', d.access_token)
-        if (d.refresh_token) localStorage.setItem('uc_refresh_token', d.refresh_token)
+        tokenStore.setItem('uc_access_token', d.access_token)
+        if (d.refresh_token) tokenStore.setItem('uc_refresh_token', d.refresh_token)
         const user = d.user || {}
-        localStorage.setItem('cp_user_id', String(user.id || user.user_id || user.username || form.username.trim()))
-        localStorage.setItem('cp_nickname', String(user.nickname || user.name || user.username || form.username.trim()))
+        tokenStore.setItem('cp_user_id', String(user.id || user.user_id || user.username || form.username.trim()))
+        tokenStore.setItem('cp_nickname', String(user.nickname || user.name || user.username || form.username.trim()))
         window.location.href = (window.PATH_PREFIX || '') + '/'
       } catch (e) {
         loginError.value = (window.mapHttpError && e.name === 'NexusApiError') ? window.mapHttpError(e) : (e.message || '登录失败，请检查用户名和密码')
@@ -119,11 +120,11 @@ const LoginApp = createApp({
         const res = await window.api.post('/auth/register', { username: form.username.trim(), password: form.password, email: (form.email || '').trim() })
         const d = res.data || res
         if (!d.access_token) throw new Error('注册失败：未获取到令牌')
-        localStorage.setItem('uc_access_token', d.access_token)
-        if (d.refresh_token) localStorage.setItem('uc_refresh_token', d.refresh_token)
+        tokenStore.setItem('uc_access_token', d.access_token)
+        if (d.refresh_token) tokenStore.setItem('uc_refresh_token', d.refresh_token)
         const user = d.user || {}
-        localStorage.setItem('cp_user_id', String(user.id || user.user_id || user.username || form.username.trim()))
-        localStorage.setItem('cp_nickname', String(user.nickname || user.name || user.username || form.username.trim()))
+        tokenStore.setItem('cp_user_id', String(user.id || user.user_id || user.username || form.username.trim()))
+        tokenStore.setItem('cp_nickname', String(user.nickname || user.name || user.username || form.username.trim()))
         window.location.href = (window.PATH_PREFIX || '') + '/'
       } catch (e) {
         loginError.value = (window.mapHttpError && e.name === 'NexusApiError') ? window.mapHttpError(e) : (e.message || '注册失败，请稍后重试')
