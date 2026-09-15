@@ -151,7 +151,7 @@ async def create_challenge_nl(
         title = str(parsed.get("title", request.raw_input[:10]))
         title = _normalize_title(title)
         category = str(parsed.get("category", "other"))
-        duration = int(parsed.get("duration_days", 30))
+        duration = max(7, int(parsed.get("duration_days") or 30))
         description = str(parsed.get("description") or request.raw_input.strip())
         parsed_out = {
             "title": title,
