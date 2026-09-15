@@ -91,8 +91,9 @@
 
 .cp-learn-loading { padding: 24px 0; text-align: center; color: var(--text-muted); font-size: 14px; }
 .cp-word-progress { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
-.cp-word-card { min-height: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px 14px; border-radius: var(--radius); background: linear-gradient(135deg, rgba(59,130,246,.08), rgba(99,102,241,.05)); border: 1px solid rgba(59,130,246,.2); cursor: pointer; transition: all .2s; }
+.cp-word-card { min-height: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px 14px; border-radius: var(--radius); background: linear-gradient(135deg, rgba(59,130,246,.08), rgba(99,102,241,.05)); border: 1px solid rgba(59,130,246,.2); cursor: pointer; transition: all .2s; position: relative; }
 .cp-word-card:active { transform: scale(.98); }
+.cp-word-review-tag { position: absolute; top: 8px; left: 10px; font-size: 10px; color: var(--amber); background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3); padding: 2px 8px; border-radius: 10px; }
 .cp-word-main { font-size: 30px; font-weight: 800; letter-spacing: 1px; color: var(--text-primary); }
 .cp-word-meaning { font-size: 16px; font-weight: 600; color: var(--primary); text-align: center; animation: fade-in-up .25s ease; }
 .cp-word-sample { font-size: 12px; color: var(--text-secondary); text-align: center; line-height: 1.6; animation: fade-in-up .25s ease; }

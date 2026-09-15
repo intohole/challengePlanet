@@ -68,6 +68,8 @@ async def do_checkin(
         remaining=float(result.get("remaining", 0)),
         is_soft_exceeded=bool(result.get("is_soft_exceeded", False)),
         soft_exceeded_amount=float(result.get("soft_exceeded_amount", 0)),
+        coach_nudge=str(result.get("coach_nudge", "")),
+        nudge_level=int(result.get("nudge_level", 0)),
     )
 
 

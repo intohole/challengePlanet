@@ -90,6 +90,7 @@
     try {
       await window.api.delete('/challenges/' + ch.id + '/checkins/' + last.id)
       window.cpToast('已撤销一笔')
+      this._clearNudgeStamp(ch.id, t && t.date)
       await this.load()
       await window.cpLoadChallenges()
     } catch (e) {
@@ -242,6 +243,7 @@
     if (d.declaration && dateStr) {
       try { localStorage.setItem('cp_decl_' + ch.id + '_' + dateStr, d.declaration) } catch (e) {}
     }
+    this._nudgeNotify(r, ch, dateStr)
     await this.load()
     await window.cpLoadChallenges()
     if (!r.ai_feedback && dateStr && window.cpPollTodayAi) window.cpPollTodayAi(ch.id, dateStr, 3)

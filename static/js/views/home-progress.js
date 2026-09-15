@@ -4,15 +4,71 @@
   V._tabProgress = function (s) {
     const ch = s.current
     const d = this.data
-    const tt = (d.today && d.today.task_type) || ch.task_type || 'binary'
-    const isMultiMode = !!(d.today && d.today.repeatable) || ch.decompose_mode === 'time_slot' || ch.task_type === 'counter' || ch.task_type === 'timer' || tt === 'counter' || tt === 'timer'
     const pct = window.NexusUseProgress ? window.NexusUseProgress.computeStats({ done: ch.completed_days || 0, total: ch.total_days || 0 }).percent : (ch.total_days ? Math.round((ch.completed_days || 0) / ch.total_days * 100) : 0)
     let html = '<div class="glass-card cp-hero cp-progress-card">'
     html += '<div class="cp-hero-progress"><div class="cp-hero-progress-bar"><div class="cp-hero-progress-fill" style="width:' + pct + '%"></div></div><span class="cp-hero-progress-text">' + pct + '% 完成</span></div>'
     html += '<div class="cp-galaxy-wrap"><div id="galaxy-box"></div></div></div>'
     html += '<div id="cp-nux-checkin"></div>'
     html += '<div class="glass-card cp-progress-stats">' + this._reportContent(s) + '</div>'
-    if (isMultiMode) html += '<div class="glass-card cp-today-viz"><div class="cp-section-title"><i class="fas fa-chart-column" style="color:var(--primary-light)"></i> 近 7 天节奏</div><div id="cp-mini-hourly-' + ch.id + '"></div></div>'
+    html += this._heatmapCard(s)
+    return html
+  }
+
+  V._heatmapCard = function (s) {
+    const ch = s.current
+    const d = this.data
+    const list = d.checkins || []
+    if (!list.length) return ''
+    const days = 7
+    const dayArr = []
+    const now = new Date()
+    for (let i = days - 1; i >= 0; i--) {
+      const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)
+      const mm = String(dt.getMonth() + 1).padStart(2, '0')
+      const dd = String(dt.getDate()).padStart(2, '0')
+      dayArr.push({ key: mm + '-' + dd, ymd: dt.getFullYear() + '-' + mm + '-' + dd, counts: new Array(24).fill(0) })
+    }
+    const byDay = {}
+    dayArr.forEach(day => { byDay[day.ymd] = day })
+    let total = 0
+    list.forEach(c => {
+      const ts = String(c.timestamp || '')
+      const day = byDay[ts.slice(0, 10)]
+      const hh = parseInt(ts.slice(11, 13), 10)
+      if (day && hh >= 0 && hh < 24) {
+        day.counts[hh]++
+        total++
+      }
+    })
+    if (!total) return ''
+    let peakDay = '', peakHour = -1, peakVal = 1
+    dayArr.forEach(day => day.counts.forEach((v, h) => {
+      if (v >= peakVal) { peakVal = v; peakHour = h; peakDay = day.ymd }
+    }))
+    const hourLabel = String(peakHour).padStart(2, '0') + ':00'
+    const isDecrease = ch.direction === 'decrease'
+    const titleClean = ch.title.replace(/(戒烟|戒掉|戒糖|戒断|戒)\s*/g, '')
+    const insight = isDecrease
+      ? '你在 ' + hourLabel + ' 前后记录最密，这可能是你最容易想「' + titleClean + '」的时段，提前安排一杯水或散步'
+      : '你在 ' + hourLabel + ' 前后最活跃，把重要动作放在这个时段，效率最高'
+    let html = '<div class="glass-card cp-heatmap-card"><div class="cp-section-title"><i class="fas fa-fire" style="color:var(--amber)"></i> 近 7 天打卡热度</div>'
+    html += '<div class="cp-heatmap">'
+    html += '<div class="cp-heatmap-row head"><span class="cp-heat-ym"></span>'
+    dayArr.forEach(day => { html += '<span class="cp-heat-d">' + day.key.slice(3) + '</span>' })
+    html += '</div>'
+    for (let h = 0; h < 24; h++) {
+      const yl = h % 3 === 0 ? String(h).padStart(2, '0') : ''
+      html += '<div class="cp-heatmap-row"><span class="cp-heat-ym">' + yl + '</span>'
+      dayArr.forEach(day => {
+        const v = day.counts[h]
+        const lv = v === 0 ? 0 : (v >= 4 ? 4 : v >= 3 ? 3 : v >= 2 ? 2 : 1)
+        html += '<span class="cp-heat-cell lv' + lv + '" title="' + day.ymd + ' ' + String(h).padStart(2, '0') + ':00 · ' + v + '次"' + (v > 0 ? (' data-v="' + v + '"') : '') + '>' + (v > 0 && h === peakHour && day.ymd === peakDay ? '·' : '') + '</span>'
+      })
+      html += '</div>'
+    }
+    html += '</div>'
+    html += '<div class="cp-heatmap-legend"><span class="cp-heat-lb">少</span><span class="cp-heat-cell lv1"></span><span class="cp-heat-cell lv2"></span><span class="cp-heat-cell lv3"></span><span class="cp-heat-cell lv4"></span><span class="cp-heat-lb">多</span></div>'
+    html += '<div class="cp-heatmap-insight"><i class="fas fa-lightbulb"></i> ' + window.cpEsc(insight) + '</div>'
     return html
   }
 
@@ -130,31 +186,5 @@
     if (sep) v += '<span class="cp-quick-stat-sep">' + sep + '</span><span class="cp-quick-stat-val2">' + val2 + '</span>'
     v += '</div><div class="cp-quick-stat-unit">' + window.cpEsc(unit || '') + '</div></div>'
     return v
-  }
-
-  V._renderMiniHourly = function () {
-    const ch = window.appState.current
-    if (!ch) return
-    const box = document.getElementById('cp-mini-hourly-' + ch.id)
-    if (!box) return
-    window.api.get('/challenges/' + ch.id + '/report/hourly?days=7').then(res => {
-      const r = (res && (res.data || res)) || {}
-      const items = r.items || []
-      if (!items.length) { box.innerHTML = '<div class="cp-mini-empty">暂无时段数据</div>'; return }
-      const max = Math.max.apply(null, items.map(i => i.total_value || 0)) || 1
-      let html = '<div class="cp-mini-bars">'
-      items.forEach(it => {
-        const h = it.hour
-        const v = it.total_value || 0
-        const ratio = v / max
-        const isPeak = h === r.peak_hour
-        const cls = isPeak ? ' peak' : (v > 0 ? ' active' : '')
-        html += '<div class="cp-mini-bar' + cls + '" title="' + h + ':00 ' + v + '"><div class="cp-mini-bar-fill" style="height:' + (ratio * 100) + '%"></div></div>'
-      })
-      html += '</div>'
-      html += '<div class="cp-mini-axis"><span>0</span><span>6</span><span>12</span><span>18</span><span>23</span></div>'
-      if (r.insight) html += '<div class="cp-mini-insight"><i class="fas fa-lightbulb"></i> ' + window.cpEsc(r.insight) + '</div>'
-      box.innerHTML = html
-    }).catch(() => { box.innerHTML = '<div class="cp-mini-empty">加载失败</div>' })
   }
 })()

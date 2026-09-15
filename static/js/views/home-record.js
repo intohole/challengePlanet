@@ -1,6 +1,23 @@
 ;(function () {
   const V = window.cpViews.home
 
+  V._nudgeNotify = function (r, ch, dateStr) {
+    const level = Number(r.nudge_level) || 0
+    const msg = r.coach_nudge || ''
+    if (!level || !msg || !dateStr) return
+    const key = 'cp_nudge_' + ch.id + '_' + dateStr
+    let prev = 0
+    try { prev = Number(localStorage.getItem(key)) || 0 } catch (e) {}
+    if (level <= prev) return
+    try { localStorage.setItem(key, String(level)) } catch (e) {}
+    setTimeout(() => window.cpToast(msg, 3600), 1200)
+  }
+
+  V._clearNudgeStamp = function (chId, dateStr) {
+    if (!chId || !dateStr) return
+    try { localStorage.removeItem('cp_nudge_' + chId + '_' + dateStr) } catch (e) {}
+  }
+
   V.openQuickForm = function (subGoalId) {
     const d = this.data
     d.showQuickForm = true
@@ -68,6 +85,7 @@
       d.lastFeedback = r.ai_feedback || d.lastFeedback
       d.chest = r.chest_points || 0
       d.shields = r.shields || 0
+      this._nudgeNotify(r, ch, t.date)
       await this.load()
       await window.cpLoadChallenges()
       if (r.is_soft_exceeded) {
@@ -207,6 +225,7 @@
     try {
       await window.api.delete('/challenges/' + ch.id + '/checkins/' + checkinId)
       window.cpToast('已撤销该条打卡')
+      this._clearNudgeStamp(ch.id, d.today && d.today.date)
       await this.load()
       await window.cpLoadChallenges()
       this.rerender()

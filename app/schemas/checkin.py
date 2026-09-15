@@ -66,6 +66,8 @@ class CheckInResultResponse(BaseModel):
     remaining: float = 0.0
     is_soft_exceeded: bool = False
     soft_exceeded_amount: float = 0.0
+    coach_nudge: str = ""
+    nudge_level: int = 0
 
 
 class DateActionRequest(BaseModel):

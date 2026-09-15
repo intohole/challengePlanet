@@ -21,6 +21,7 @@ from app.services.checkin_background import (
 )
 from app.services.goal_rule_service import daily_target, is_ladder
 from app.services.mercy_service import load_valid_dates
+from app.services.nudge_service import NudgeService
 from app.services.points_service import PointsService
 from app.services.shield_service import ShieldService
 from app.services.streak_service import calc_streak, today_str, week_dates_of
@@ -110,6 +111,10 @@ class CheckInService:
 
         today_total = await self._repo.sum_value_by_date(session, challenge_id, today)
         remaining = self._calc_remaining(today_total, target_snapshot["target_value"], challenge.direction)
+        nudge_level, coach_nudge = NudgeService().evaluate(
+            challenge, today_total, target_snapshot["target_value"], is_soft_exceeded,
+            hour=ts.hour,
+        )
         streak = await self._current_streak(session, challenge_id)
         base, chest = await self._points.award_checkin(
             session, user_id, challenge_id, streak,
@@ -138,6 +143,7 @@ class CheckInService:
             "dynamic_baseline": target_snapshot["target_value"],
             "remaining": remaining, "is_soft_exceeded": is_soft_exceeded,
             "soft_exceeded_amount": soft_exceeded_amount,
+            "coach_nudge": coach_nudge, "nudge_level": nudge_level,
         }
 
     async def _compute_target_snapshot(
