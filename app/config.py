@@ -11,8 +11,6 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     DATABASE_URL: str = f"sqlite+aiosqlite:///{Path(__file__).parent.parent / 'data' / 'challenge.db'}"
     API_PREFIX: str = "/api/v1"
-    LLM_MAX_TOKENS: int = 4096
-    PLANNING_TEMPERATURE: float = 0.7
     FEEDBACK_TEMPERATURE: float = 0.8
     BEEMEMORY_BASE_URL: str = os.environ.get("BEEMEMORY_BASE_URL", "http://edge-01:8700")
     NOTIFY_CENTER_URL: str = os.environ.get("NOTIFY_CENTER_URL", "http://edge-01:8910")

@@ -38,6 +38,9 @@ from app.services.ai_service import AIService
 from app.services.challenge_service import ChallengeService, _normalize_title
 from app.services.companion_service import companion_meta, load_challenge_state
 from app.services.guidance_service import GuidanceService
+from app.services.plan_adjust import apply_numeric_adjust
+from app.services.plan_builder import build_plan
+from app.services.scene_service import SceneService
 
 router = APIRouter()
 
@@ -149,7 +152,7 @@ async def create_challenge_nl(
         title = _normalize_title(title)
         category = str(parsed.get("category", "other"))
         duration = int(parsed.get("duration_days", 30))
-        description = request.raw_input.strip()
+        description = str(parsed.get("description") or request.raw_input.strip())
         parsed_out = {
             "title": title,
             "category": category,
@@ -167,37 +170,21 @@ async def create_challenge_nl(
             **ladder_out(request, parsed),
         }
         yield sse_event_dict("parsed", {"parsed": parsed_out})
-        yield sse_event_dict("planning")
-        collected: list[str] = []
-        last_day = 0
-        is_ladder = str(parsed.get("goal_rule", "")) == "ladder"
-        hard_target = 0.0 if is_ladder else float(parsed.get("target_value", 0.0) or 0.0)
-        hard_unit = "" if is_ladder else str(parsed.get("unit", ""))
-        try:
-            async for token in ai.generate_challenge_plan_stream(
-                title, description, category, duration, request.scene_template, request.adjust_hint,
-                target_value=hard_target,
-                unit=hard_unit,
-            ):
-                collected.append(token)
-                yield sse_event_dict("token", {"token": token})
-                streamed = "".join(collected)
-                day_hits = [int(m) for m in re.findall(r'"day"\s*:\s*(\d+)', streamed)]
-                if day_hits:
-                    cur = max(day_hits)
-                    if cur != last_day:
-                        last_day = cur
-                        yield sse_event_dict("day", {"day": cur, "total": duration})
-        except Exception:
-            collected = []
-        plan_data = ai.parse_plan_text(
-            "".join(collected), title, duration, request.adjust_hint,
-            target_value=hard_target, unit=hard_unit,
+        scene = SceneService().get_scene(request.scene_template)
+        steps = list(scene.steps) if scene and scene.steps else []
+        plan_data = build_plan(
+            title, duration, task_type=str(parsed_out["task_type"]),
+            target_value=float(parsed_out["target_value"]), unit=str(parsed_out["unit"]),
+            direction=str(parsed_out["direction"]), goal_rule=str(parsed_out["goal_rule"]),
+            ladder_start=float(parsed_out["ladder_start"]), ladder_goal=float(parsed_out["ladder_goal"]),
+            ladder_interval=int(parsed_out["ladder_interval"]), ladder_step=float(parsed_out["ladder_step"]),
+            steps=steps,
         )
+        fitted_plan = apply_numeric_adjust(plan_data["plan"], request.adjust_hint)
         yield sse_event_dict("preview", {
             "parsed": parsed_out,
-            "plan": plan_data.get("plan", []),
-            "suggestions": plan_data.get("suggestions", []),
+            "plan": fitted_plan,
+            "suggestions": plan_data["suggestions"],
         })
 
     return sse_response(stream())

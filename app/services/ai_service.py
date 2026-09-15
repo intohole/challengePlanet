@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from collections.abc import AsyncGenerator
 
 from nexus import get_llm_service, parse_llm_json
 from nexus.logging import get_logger
@@ -9,14 +8,13 @@ from nexus.logging import get_logger
 from app.config import settings
 from app.services.ai_analysis_service import AIAnalysisService
 from app.services.ai_text_sanitizer import sanitize_coach_text
-from app.services.plan_adjust import apply_numeric_adjust
+from app.services.plan_builder import build_plan
 from app.services.prompts import (
     COMPANION_SYSTEM,
     DECLARATION_SYSTEM,
     DIET_ESTIMATE_SYSTEM,
     FEEDBACK_SYSTEM,
     PARSE_SYSTEM,
-    PLAN_SYSTEM,
     QUOTE_SYSTEM,
     REPAIR_SYSTEM,
     get_mood_aware_prefix,
@@ -34,16 +32,6 @@ def _slice_title(raw: str) -> str:
             t = t[: -len(suffix)].rstrip("，,、 ")
             break
     return t[:10] or "我的挑战"
-
-
-def _build_plan_user_msg(
-    title: str, description: str, category: str, duration: int,
-    target_value: float = 0, unit: str = "",
-) -> str:
-    goal_line = ""
-    if target_value > 0:
-        goal_line = f"\n用户每日硬性目标：每日 {target_value:g} {unit or ''}，每日计划的 target_value 不得低于此目标。"
-    return f"挑战：{title}\n描述：{description or '无'}\n分类：{category}\n天数：{duration}{goal_line}"
 
 
 _DECREASE_HINTS: tuple[str, ...] = (
@@ -98,60 +86,6 @@ def _infer_direction(title: str, description: str, category: str, parsed_dir: st
     return "increase"
 
 
-_FILL_VARIANTS: tuple[str, str, str] = (
-    "挑战真正开始前的最后一轮热身，用小行动找回对目标的掌控感",
-    "换个角度推进目标，把今天的任务拆成更小的一个动作先做起来",
-    "给自己设置一个小小的奖励仪式，完成后记录这一刻的感受",
-)
-
-_MILESTONE_DAYS: set[int] = {7, 14, 21, 28}
-
-
-def _derive_fill_item(day: int, base: dict[str, object], title: str, duration: int) -> dict[str, object]:
-    item = dict(base)
-    item["day"] = day
-    var = _FILL_VARIANTS[(day - 1) % len(_FILL_VARIANTS)]
-    if day in _MILESTONE_DAYS or day == duration:
-        item["title"] = f"阶段小结：回看前{day}天"
-        item["description"] = f"回顾这{day}天的进展，写下做得最好的1件事和明天要突破的1个点"
-        item["tip"] = "里程碑不追求量，而在于看见自己的变化"
-        item["difficulty"] = 1
-        return item
-    diff = 1 + ((day - 1) * 4 + (duration - 1)) // max(duration, 2)
-    item["title"] = str(base.get("title") or f"第{day}天")
-    item["description"] = str(base.get("description") or f"坚持{title}") + f"。今日重心：{var}"
-    item["tip"] = str(base.get("tip") or "保持自己的节奏")
-    item["difficulty"] = max(1, min(5, diff))
-    return item
-
-
-def _fit_plan_length(
-    plan: list[dict[str, object]], title: str, duration: int,
-    target_value: float = 0, unit: str = "", default_kind: str = "binary",
-) -> list[dict[str, object]]:
-    if duration <= 0:
-        duration = len(plan)
-    fitted = plan[:duration]
-    last = fitted[-1] if fitted else {}
-    while len(fitted) < duration:
-        day = len(fitted) + 1
-        fitted.append(_derive_fill_item(day, last, title, duration))
-    for idx, item in enumerate(fitted):
-        item["day"] = idx + 1
-        item.setdefault("task_type", default_kind)
-        task_type = str(item.get("task_type") or default_kind)
-        filled_target: float = float(item.get("target_value", 0) or 0)
-        if target_value > 0:
-            item["target_value"] = float(target_value)
-            item["unit"] = unit or str(item.get("unit") or "")
-        else:
-            item.setdefault("target_value", float(filled_target) if filled_target > 0 else 0)
-            item.setdefault("unit", unit)
-        item.setdefault("difficulty", 1)
-        item.setdefault("steps", [])
-    return fitted
-
-
 class AIService:
     def __init__(self) -> None:
         self._scenes = SceneService()
@@ -181,6 +115,7 @@ class AIService:
         parsed.setdefault("decompose_mode", "none")
         parsed.setdefault("slot_hours", 1)
         parsed.setdefault("slot_target_value", 0.0)
+        parsed.setdefault("description", raw_input[:40])
         inferred_value, inferred_unit = _infer_daily_target(raw_input)
         if inferred_value > 0:
             parsed["target_value"] = float(inferred_value)
@@ -209,74 +144,24 @@ class AIService:
         parsed["items"] = items if isinstance(items, list) else []
         return parsed
 
-    def _build_plan_system(self, scene_template: str, duration: int) -> str:
-        base = f"{PLAN_SYSTEM}共{duration}天。"
-        if scene_template:
-            hint = self._scenes.build_plan_hint(scene_template, duration)
-            if hint:
-                base += hint
-        return base
-
     async def generate_challenge_plan(
         self, title: str, description: str, category: str, duration: int,
         scene_template: str = "", target_value: float = 0, unit: str = "",
     ) -> dict[str, object]:
-        user_msg = _build_plan_user_msg(title, description, category, duration, target_value, unit)
-        system = self._build_plan_system(scene_template, duration)
-        llm = get_llm_service()
-        raw = await llm.ask(
-            user_msg, system=system,
-            temperature=settings.PLANNING_TEMPERATURE,
-            max_tokens=settings.LLM_MAX_TOKENS, timeout=120.0,
-            task_type="extract",
+        inferred_value, inferred_unit = _infer_daily_target(description)
+        tval = float(target_value) if target_value > 0 else inferred_value
+        tunit = unit or inferred_unit
+        direction = _infer_direction(title, description, category, "")
+        task_type = "counter" if tval > 0 else "binary"
+        steps: list[str] = []
+        if scene_template:
+            scene = self._scenes.get_scene(scene_template)
+            if scene and scene.steps:
+                steps = list(scene.steps)
+        return build_plan(
+            title, duration, task_type=task_type,
+            target_value=tval, unit=tunit, direction=direction, steps=steps,
         )
-        return self.parse_plan_text(raw, title, duration, target_value=target_value, unit=unit)
-
-    async def generate_challenge_plan_stream(
-        self, title: str, description: str, category: str, duration: int,
-        scene_template: str = "", adjust_hint: str = "",
-        target_value: float = 0, unit: str = "",
-    ) -> AsyncGenerator[str, None]:
-        user_msg = _build_plan_user_msg(title, description, category, duration, target_value, unit)
-        if adjust_hint.strip():
-            user_msg += f"\n\n此前已生成过一版计划，现用户提出调整意见，请严格据此重新生成完整计划：{adjust_hint.strip()}"
-        system = self._build_plan_system(scene_template, duration)
-        llm = get_llm_service()
-        async for token in llm.stream_ask(
-            user_msg, system=system,
-            temperature=settings.PLANNING_TEMPERATURE,
-            max_tokens=settings.LLM_MAX_TOKENS,
-            task_type="extract",
-        ):
-            yield token
-
-    def parse_plan_text(
-        self, raw: str, title: str, duration: int, adjust_hint: str = "",
-        target_value: float = 0, unit: str = "",
-    ) -> dict[str, object]:
-        parsed = parse_llm_json(raw)
-        if "raw_response" not in parsed and isinstance(parsed.get("plan"), list):
-            plan = [dict(d) for d in parsed["plan"] if isinstance(d, dict)]
-            if plan:
-                fitted = _fit_plan_length(plan, title, duration, target_value, unit)
-                if adjust_hint.strip():
-                    fitted = apply_numeric_adjust(fitted, adjust_hint)
-                parsed["plan"] = fitted
-                return parsed
-        logger.error("Plan parse failed, generating fallback")
-        return {
-            "plan": [
-                {
-                    "day": i + 1, "title": f"第{i + 1}天",
-                    "description": f"坚持{title}", "tip": "保持动力！",
-                    "task_type": "binary", "target_value": float(target_value) if target_value > 0 else 0,
-                    "unit": unit if target_value > 0 else "",
-                    "difficulty": 1, "steps": [],
-                }
-                for i in range(duration)
-            ],
-            "suggestions": ["每天进步一点点", "记录你的感受", "找到你的节奏"],
-        }
 
     async def generate_daily_feedback(
         self, challenge_title: str, day_number: int, total_days: int,

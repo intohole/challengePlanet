@@ -31,30 +31,15 @@ PARSE_SYSTEM = (
     "  起点量或目标量无法从描述推导时，goal_rule=\"fixed\"（创建页再引导用户补梯度）\n"
     "decompose_mode: 用户提到'每小时/每时段/几点到几点'时=time_slot，否则=none\n"
     "slot_hours: decompose_mode=time_slot时，默认1小时\n"
-    "slot_target_value: decompose_mode=time_slot时，时段目标值，默认0表示继承日均分配\n\n"
+    "slot_target_value: decompose_mode=time_slot时，时段目标值，默认0表示继承日均分配\n"
+    "description: 面向用户的挑战描述文案，1句话≤30字，讲清楚'每天做什么、共多少天、怎么玩'，"
+    "如'每天跑3公里，用30天养成跑步习惯'；禁止提参数/技术词/系统提示，语气温暖有画面感\n\n"
     "输出JSON格式：{\"title\": \"...\", \"category\": \"...\", \"duration_days\": ..., "
+    "\"description\": \"...\", "
     "\"task_type\": \"...\", \"target_value\": ..., \"unit\": \"...\", \"direction\": \"...\", \"goal_type\": \"...\", "
     "\"goal_rule\": \"fixed|ladder\", \"ladder_start\": 数字可为0, \"ladder_goal\": 数字可为0, "
     "\"ladder_interval\": 1, \"ladder_step\": 1, "
     "\"decompose_mode\": \"...\", \"slot_hours\": ..., \"slot_target_value\": ...}"
-)
-
-PLAN_SYSTEM = (
-    "你是一个专业的习惯养成教练。根据用户的挑战目标，生成详细的每日计划。"
-    "只输出严格JSON，不要输出任何其他文字或markdown代码块标记：\n"
-    '{"plan": [{"day": 1, "title": "任务标题", "description": "具体任务", '
-    '"tip": "小贴士", "task_type": "binary", "target_value": 0, '
-    '"unit": "", "difficulty": 1, "steps": []}], '
-    '"suggestions": ["建议1", "建议2", "建议3"]}\n'
-    "task_type: binary(是否完成)|counter(计数,如俯卧撑个数)|timer(计时,如冥想分钟)|word(背英语单词)|recite(背诵古诗)\n"
-    "target_value: 计数/计时类型的目标值; difficulty: 1-5难度等级\n"
-    "渐进式难度设计原则：1)适应期(前20%):难度1-2，目标值50-70%；"
-    "2)巩固期(20%-80%):难度2-4，目标值70%→100%；3)维持期(最后20%):难度3-5，100%。\n"
-    "每天任务1-2个微行动，5分钟内可完成基础版本；每7天一个'回顾日'任务量减半。\n"
-    "【逐天差异化·强制】每一天的任务内容必须不同，禁止逐字重复：可围绕同一目标轮换执行场景、"
-    "正念提示、记录方式与微奖励；难度按天递增体现阶梯感，避免全程同一难度。\n"
-    "【里程碑日】第7/14/21/28天(或最后一天)设置为'阶段小结'：回看前N天进展、总结1个做得好的点、"
-    "预告下一阶段1个提升点，不要与其他天一样只写执行动作。"
 )
 
 FEEDBACK_SYSTEM = (
