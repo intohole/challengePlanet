@@ -17,7 +17,6 @@ from app.core.datetime_utils import now_china
 from app.services.adaptive_service import evaluate_after_bad_mood_task
 from app.services.checkin_background import (
     fill_ai_after_checkin,
-    generate_weekly_report_task,
     save_memory,
 )
 from app.services.goal_rule_service import daily_target, is_ladder
@@ -127,8 +126,6 @@ class CheckInService:
         _fire_and_forget(save_memory(user_id, challenge.title, day_number, mood, reflection, value))
         if mood == "bad":
             _fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
-        if day_number % 7 == 0 or day_number == challenge.duration_days:
-            _fire_and_forget(generate_weekly_report_task(challenge_id))
 
         return {
             "checkin": checkin, "ai_feedback": "",

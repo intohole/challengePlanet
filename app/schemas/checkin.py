@@ -22,6 +22,10 @@ class CheckInPatchRequest(BaseModel):
     reflection: str = Field("", description="心得体会")
 
 
+class InsightStreamRequest(BaseModel):
+    force: bool = Field(False, description="是否忽略本周缓存强制重新生成")
+
+
 class CheckInResponse(BaseModel):
     id: int
     challenge_id: int

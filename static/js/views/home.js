@@ -5,10 +5,10 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0 },
+    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, insightRunning: false, insightText: '', loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0 },
 
     _freshData(loading) {
-      return { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, loading: !!loading, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0 }
+      return { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, insightRunning: false, insightText: '', loading: !!loading, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0 }
     },
 
     render(el) {
@@ -77,11 +77,10 @@ window.cpViews.home = (function () {
       }
       const safe = p => p.catch(() => null)
       const isDiet = ch.task_type === 'diet'
-      const [today, checkins, mercy, weekly, points, adaptive, guidance, dietTarget, weightTrend] = await Promise.all([
+      const [today, checkins, mercy, points, adaptive, guidance, dietTarget, weightTrend] = await Promise.all([
         window.api.get('/challenges/' + ch.id + '/today').then(r => r.data || r).catch(e => { this._todayErr = e; return null }),
         safe(window.api.get('/challenges/' + ch.id + '/checkins')),
         safe(window.api.get('/challenges/' + ch.id + '/mercy')),
-        safe(window.api.get('/challenges/' + ch.id + '/weekly-report')),
         safe(window.api.get('/points/summary')),
         safe(window.api.get('/challenges/' + ch.id + '/adaptive/pending')),
         safe(window.api.get('/challenges/' + ch.id + '/guidance')),
@@ -93,7 +92,6 @@ window.cpViews.home = (function () {
       const cl = checkins && (checkins.data || checkins)
       d.checkins = Array.isArray(cl) ? cl : ((cl && cl.items) || [])
       d.mercy = mercy && (mercy.data || mercy)
-      d.weekly = weekly && (weekly.data || weekly)
       d.points = points && (points.data || points)
       const ad = adaptive && (adaptive.data || adaptive)
       d.adaptive = (ad && ad.suggestion) || null

@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from nexus import get_current_user_id_required
+from nexus.streaming import sse_event_dict, sse_response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
+from app.repositories.challenge_repository import ChallengeRepository
+from app.repositories.checkin_repository import CheckInRepository, InsightRepository
 from app.schemas.challenge import WeeklyReportResponse
 from app.schemas.checkin import (
     CheckInCreate,
@@ -14,12 +18,15 @@ from app.schemas.checkin import (
     DateActionRequest,
     DateActionResponse,
     InsightResponse,
+    InsightStreamRequest,
     MercyStatusResponse,
     RepairResponse,
 )
+from app.services.ai_analysis_service import AIAnalysisService
 from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.checkin_service import CheckInService
 from app.services.mercy_service import MercyService
+from app.services.streak_service import week_dates_of
 from app.api._common import bad_request
 
 router = APIRouter()
@@ -191,3 +198,59 @@ async def get_weekly_report(
     except ValueError as e:
         raise bad_request(e)
     return WeeklyReportResponse(**result)
+
+
+@router.post("/{challenge_id}/insight/stream")
+async def stream_insight(
+    challenge_id: int,
+    request: InsightStreamRequest,
+    user_id: str = Depends(get_current_user_id_required),
+    session: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    challenge = await ChallengeRepository().get_by_id(session, challenge_id)
+    if challenge is None or challenge.user_id != user_id:
+        raise bad_request("挑战不存在")
+    insight_repo = InsightRepository()
+    latest = await insight_repo.get_latest_weekly(session, challenge_id)
+    week_dates = set(week_dates_of())
+    fresh = bool(
+        latest and latest.created_at
+        and latest.created_at.date().strftime("%Y-%m-%d") in week_dates
+    )
+
+    async def gen():
+        if fresh and not request.force:
+            yield sse_event_dict("done", {"content": latest.content, "cached": True})
+            return
+        checkins = await CheckInRepository().get_by_challenge(session, challenge_id)
+        checkin_data = [
+            {
+                "day_number": c.day_number,
+                "mood": c.mood,
+                "reflection": c.reflection,
+                "value": c.value,
+                "timestamp": c.timestamp.isoformat(),
+                "date": c.date,
+            }
+            for c in checkins
+        ]
+        pieces: list[str] = []
+        ai = AIAnalysisService()
+        async for piece in ai.stream_weekly_report(
+            challenge.title, checkin_data, challenge.duration_days
+        ):
+            pieces.append(piece)
+            yield sse_event_dict("token", {"token": piece})
+        content = sanitize_coach_text("".join(pieces).strip(), max_len=512)
+        if not content:
+            content = "本周还没有足够记录，先打几天卡再来看看洞察吧"
+        await insight_repo.create(session, {
+            "challenge_id": challenge_id,
+            "user_id": challenge.user_id,
+            "insight_type": "weekly",
+            "content": content,
+        })
+        await session.commit()
+        yield sse_event_dict("done", {"content": content})
+
+    return sse_response(gen())

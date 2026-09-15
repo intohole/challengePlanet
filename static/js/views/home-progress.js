@@ -17,15 +17,74 @@
   }
 
   V._tabInsight = function (s) {
+    this.ensureInsight()
     const d = this.data
     let html = ''
     if (d.guidance) html += this._phaseSnap(d.guidance)
-    if (d.weekly && d.weekly.content) {
-      html += '<div class="glass-card" style="padding:14px"><div class="cp-section-title" style="margin-bottom:8px"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> 本周洞察</div><div class="cp-weekly-md nx-md" id="' + this._pushMd(d.weekly.content) + '"></div><div class="cp-weekly-meta">本周 ' + (d.weekly.week_checkins || 0) + '/' + (d.weekly.week_days || 7) + ' 天</div></div>'
-    }
+    html += this._weeklyCard()
     if (d.adaptive) html += this._adaptiveCard(d.adaptive)
     if (d.mercy && (d.mercy.missed_dates || []).length) html += this._diagEntry(d.mercy.missed_dates.length)
     return html
+  }
+
+  V._weeklyCard = function () {
+    const d = this.data
+    if (d.insightRunning) {
+      return '<div class="glass-card" style="padding:14px"><div class="cp-section-title" style="margin-bottom:8px"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> 本周洞察</div><div class="cp-weekly-stream nx-md"><span class="cp-typing-dots"><i></i><i></i><i></i></span>' + window.cpEsc(d.insightText || '') + '</div><div class="cp-weekly-meta">根据你的打卡记录实时生成中…</div></div>'
+    }
+    if (d.weekly && d.weekly.content) {
+      return '<div class="glass-card" style="padding:14px"><div class="cp-section-title" style="margin-bottom:8px"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> 本周洞察<button class="cp-btn-ghost" style="float:right;padding:3px 8px;font-size:12px;margin-left:8px" onclick="cpViews.home.refreshInsight()"><i class="fas fa-rotate"></i> 重新生成</button></div><div class="cp-weekly-md nx-md" id="' + this._pushMd(d.weekly.content) + '"></div><div class="cp-weekly-meta">洞察基于你的打卡记录生成，可随时重新生成</div></div>'
+    }
+    return '<div class="glass-card" style="padding:14px"><div class="cp-section-title" style="margin-bottom:8px"><i class="fas fa-lightbulb" style="color:var(--amber)"></i> 本周洞察</div><div class="cp-weekly-stream nx-md"><span class="cp-typing-dots"><i></i><i></i><i></i></span>正在分析你的打卡记录…</div></div>'
+  }
+
+  V.ensureInsight = function () {
+    const d = this.data
+    const ch = window.appState.current
+    if (!ch || d.insightRunning || d.weekly) return
+    this._streamInsight(false)
+  }
+
+  V.refreshInsight = function () {
+    const ch = window.appState.current
+    if (!ch || this.data.insightRunning) return
+    this._streamInsight(true)
+  }
+
+  V._streamInsight = async function (force) {
+    const ch = window.appState.current
+    const d = this.data
+    if (!ch || d.insightRunning) return
+    d.insightRunning = true
+    d.insightText = ''
+    d.weekly = null
+    this.rerender()
+    const handleError = msg => {
+      d.insightRunning = false
+      d.insightText = ''
+      this.rerender()
+      window.cpToast(window.cpErrMsg(msg, '洞察生成失败，请重试'))
+    }
+    try {
+      await window.api.streamPost('/challenges/' + ch.id + '/insight/stream', { force: !!force }, {
+        onEvent: (ev, data) => {
+          if (!data) return
+          if (data.type === 'token') {
+            d.insightText = (d.insightText || '') + (data.token || '')
+            this.rerender()
+          } else if (data.type === 'done') {
+            d.weekly = { content: String(data.content || d.insightText || '').trim() }
+            d.insightRunning = false
+            d.insightText = ''
+            this.rerender()
+          }
+        },
+        onError: msg => handleError(msg),
+        timeout: 60000,
+      })
+    } catch (e) {
+      handleError(e)
+    }
   }
 
   V._phaseSnap = function (g) {

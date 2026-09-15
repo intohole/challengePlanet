@@ -322,11 +322,6 @@ class AIService:
             "请用'慢慢来，我们一起想办法'的语气鼓励。"
         )
 
-    async def generate_weekly_report(
-        self, challenge_title: str, checkins: list[dict[str, object]], total_days: int,
-    ) -> str:
-        return await self._analysis.generate_weekly_report(challenge_title, checkins, total_days)
-
     async def generate_repair_message(self, challenge_title: str, missed_days: int) -> str:
         user_msg = f"挑战：{challenge_title}\n中断天数：{missed_days}天"
         llm = get_llm_service()

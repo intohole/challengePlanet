@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import AsyncGenerator
 
 from nexus import get_llm_service, parse_llm_json
 from nexus.logging import get_logger
@@ -19,8 +20,9 @@ logger = get_logger("challengePlanet.ai_analysis")
 
 
 class AIAnalysisService:
-    async def generate_weekly_report(
-        self, challenge_title: str, checkins: list[dict[str, object]], total_days: int,
+    @staticmethod
+    def build_weekly_prompt(
+        challenge_title: str, checkins: list[dict[str, object]], total_days: int,
     ) -> str:
         checkin_summary = "\n".join(
             f"第{c.get('day_number', 0)}天 心情:{c.get('mood', 'unknown')} "
@@ -28,17 +30,22 @@ class AIAnalysisService:
             for c in checkins[-7:]
         )
         done_rate = len({c.get('date') for c in checkins}) / total_days * 100 if total_days > 0 else 0
-        user_msg = (
+        return (
             f"挑战：{challenge_title} (共{total_days}天，累计记录率{done_rate:.0f}%)\n"
             f"最近打卡：\n{checkin_summary or '暂无记录'}"
         )
+
+    async def stream_weekly_report(
+        self, challenge_title: str, checkins: list[dict[str, object]], total_days: int,
+    ) -> AsyncGenerator[str, None]:
+        user_msg = self.build_weekly_prompt(challenge_title, checkins, total_days)
         llm = get_llm_service()
-        raw = await llm.ask(
+        async for piece in llm.stream_ask(
             user_msg, system=WEEKLY_SYSTEM,
-            temperature=0.6, max_tokens=512, timeout=30.0,
+            temperature=0.6, max_tokens=256,
             task_type="creative",
-        )
-        return sanitize_coach_text(raw.strip(), max_len=512)
+        ):
+            yield piece
 
     async def diagnose_break(
         self, challenge_title: str, missed_count: int, total_days: int,

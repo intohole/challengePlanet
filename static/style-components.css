@@ -70,6 +70,7 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-ai-head .cp-ai-badge { margin-left: auto; font-size: 10px; font-weight: 600; color: var(--primary-light); background: rgba(129,140,248,.12); border: 1px solid rgba(129,140,248,.2); padding: 2px 9px; border-radius: 10px; letter-spacing: .3px; }
 .cp-ai-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.7; white-space: pre-wrap; }
 .cp-md, .cp-weekly-md { font-size: 13.5px; color: var(--text-secondary); line-height: 1.75; word-break: break-word; }
+.cp-weekly-stream { font-size: 13.5px; color: var(--text-secondary); line-height: 1.75; word-break: break-word; white-space: pre-wrap; min-height: 22px; }
 .cp-md > *:first-child, .cp-weekly-md > *:first-child { margin-top: 0; }
 .cp-md > *:last-child, .cp-weekly-md > *:last-child { margin-bottom: 0; }
 .cp-md p, .cp-weekly-md p { margin: 6px 0; }

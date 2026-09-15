@@ -1,47 +1,13 @@
 from __future__ import annotations
 
 from nexus.logging import get_logger
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import async_session
 from app.infra.memory_client import add_memory, recall_memory
-from app.repositories.checkin_repository import CheckInRepository, InsightRepository
-from app.repositories.challenge_repository import ChallengeRepository
+from app.repositories.checkin_repository import CheckInRepository
 from app.services.ai_service import AIService
 
 logger = get_logger("challengePlanet.checkin_bg")
-
-
-async def generate_weekly_report_task(challenge_id: int) -> None:
-    try:
-        async with async_session() as session:
-            challenge_repo = ChallengeRepository()
-            challenge = await challenge_repo.get_by_id(session, challenge_id)
-            if challenge is None:
-                return
-            checkins = await CheckInRepository().get_by_challenge(session, challenge_id)
-            checkin_data = [
-                {
-                    "day_number": c.day_number,
-                    "mood": c.mood,
-                    "reflection": c.reflection,
-                    "value": c.value,
-                    "timestamp": c.timestamp.isoformat(),
-                }
-                for c in checkins
-            ]
-            report = await AIService().generate_weekly_report(
-                challenge.title, checkin_data, challenge.duration_days
-            )
-            await InsightRepository().create(session, {
-                "challenge_id": challenge_id,
-                "user_id": challenge.user_id,
-                "insight_type": "weekly",
-                "content": report,
-            })
-            await session.commit()
-    except Exception as e:
-        logger.warning("weekly report task failed: %s", e)
 
 
 async def recall_context(user_id: str, title: str) -> str:
