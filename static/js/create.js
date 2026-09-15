@@ -58,6 +58,7 @@ window.cpCreate = (function () {
         if (preset.source) c.source = preset.source
         if (preset.scene) c.sceneTemplate = preset.scene
       }
+      this.applySceneLadder()
     },
 
     selectScene(sceneId) {
@@ -146,7 +147,7 @@ window.cpCreate = (function () {
       const target = Number(p.target_value) || 0
       const unit = String(p.unit || (sc && sc.unit) || '')
       const goalText = target > 0 && unit ? '每日 ' + target + ' ' + unit : '完成即打卡'
-      const dir = String(p.direction || (sc && sc.task_type === 'quit' ? 'decrease' : 'increase'))
+      const dir = (sc && sc.id === 'quit') ? 'decrease' : String(p.direction || 'increase')
       const dirText = c.ladderEn ? (dir === 'decrease' ? '目标逐日递减' : '目标逐日递增') : (dir === 'decrease' ? '越做越少' : '越做越好')
       return { typeLabel, goalText, dirText, days: c.editDays || c.genTotal || 0 }
     },
@@ -285,6 +286,7 @@ window.cpCreate = (function () {
       c.error = ''
       try {
         const scene = window.cpSceneMap[c.sceneTemplate]
+        const isQuit = scene && scene.id === 'quit'
         const p = c.parsed || {}
         let taskType = this.deriveTaskType(p, scene)
         let unit = String(p.unit || (scene && scene.unit) || '次')
@@ -294,6 +296,22 @@ window.cpCreate = (function () {
           taskType = 'timer'
           unit = '分钟'
           plan.forEach(d => { d.unit = '分钟'; d.task_type = 'timer' })
+        }
+        let goalRule = String(p.goal_rule || 'fixed')
+        let goalMode = String(p.goal_mode || 'auto')
+        let ladderStart = c.ladderStart || Number(p.ladder_start) || 0
+        let ladderGoal = c.ladderGoal || Number(p.ladder_goal) || 0
+        let ladderInterval = c.ladderInterval || Number(p.ladder_interval) || 1
+        let ladderStep = c.ladderStep || Number(p.ladder_step) || 1
+        if (isQuit) {
+          if (!(ladderStart > 0)) { c.error = '戒断挑战需先填写「当前每天」的量，目标填 0 = 完全戒断'; return }
+          taskType = 'counter'
+          unit = String(['根', '支', '颗', '杯'].indexOf(p.unit) >= 0 ? p.unit : '根')
+          goalRule = 'ladder'
+          goalMode = 'ceiling'
+        } else {
+          goalRule = (c.ladderEn && ladderStart > 0) ? 'ladder' : goalRule
+          goalMode = (c.ladderEn && ladderStart > 0) ? 'ceiling' : goalMode
         }
         const res = await window.api.post('/challenges/confirm', {
           title: c.editTitle.trim(),
@@ -305,19 +323,19 @@ window.cpCreate = (function () {
           source: c.source || 'web',
           task_type: taskType,
           scene_template: c.sceneTemplate || '',
-          target_value: Number(p.target_value) || 1,
+          target_value: isQuit ? ladderStart : (Number(p.target_value) || 1),
           unit: unit,
-          direction: String(p.direction || (scene && scene.task_type === 'quit' ? 'decrease' : 'increase')),
-          goal_type: String(p.goal_type || 'hard'),
+          direction: String(isQuit ? 'decrease' : (p.direction || 'increase')),
+          goal_type: String(isQuit ? 'soft' : (p.goal_type || 'hard')),
           decompose_mode: String(p.decompose_mode || 'none'),
           slot_hours: Number(p.slot_hours) || 1,
           slot_target_value: Number(p.slot_target_value) || 0,
-          goal_rule: (c.ladderEn && c.ladderStart > 0) ? 'ladder' : (String(p.goal_rule || 'fixed')),
-          goal_mode: String(p.goal_mode || ((c.ladderEn && c.ladderStart > 0) ? 'ceiling' : 'auto')),
-          ladder_start: c.ladderStart || 0,
-          ladder_goal: (c.ladderEn && c.ladderStart > 0) ? (c.ladderGoal || 0) : 0,
-          ladder_interval: c.ladderEn ? (c.ladderInterval || 1) : 1,
-          ladder_step: c.ladderStep || 1,
+          goal_rule: goalRule,
+          goal_mode: goalMode,
+          ladder_start: goalRule === 'ladder' ? ladderStart : 0,
+          ladder_goal: goalRule === 'ladder' ? ladderGoal : 0,
+          ladder_interval: goalRule === 'ladder' ? Math.max(1, ladderInterval) : 1,
+          ladder_step: goalRule === 'ladder' ? Math.max(0.5, ladderStep) : 1,
           gender: c.gender || '',
           age: Number(c.age) || 0,
           height_cm: Number(c.heightCm) || 0,

@@ -39,7 +39,7 @@ const state = reactive({
 window.appState = state
 
 window.cpTemplates = [
-  { title: '戒烟挑战', category: 'quit', days: 42, icon: '🚭', desc: '告别香烟，找回健康呼吸', scene: 'quit' },
+  { title: '戒烟挑战', category: 'quit', days: 42, icon: '🚭', desc: '抽一根记一根，目标逐日递减到 0', scene: 'quit' },
   { title: '每天读书30分钟', category: 'learn', days: 66, icon: '📚', desc: '用66天养成终身阅读习惯', scene: 'reading' },
   { title: '坚持跑步', category: 'fitness', days: 21, icon: '🏃', desc: '从1公里到5公里，循序渐进', scene: 'running' },
   { title: '早睡早起', category: 'build', days: 21, icon: '🌙', desc: '21天重建作息节律', scene: 'morning' },
@@ -58,7 +58,7 @@ window.cpScenes = [
   { id: 'gratitude', name: '感恩', icon: '🙏', color: '#fbbf24', task_type: 'text', unit: '件', desc: '每天记3件感恩的小事', default_target: 3, samples: ['21天感恩日记', '每天记录3件感恩的事'], steps: ['回想今天的美好瞬间', '写下3件感恩的小事'] },
   { id: 'water', name: '饮水', icon: '💧', color: '#06b6d4', task_type: 'counter', unit: '杯', desc: '每天喝够8杯水，规律补水', default_target: 8, samples: ['30天每天喝够8杯水', '21天养成喝水习惯'], steps: ['准备一个水杯', '分时段喝完8杯水', '记录杯数'] },
   { id: 'diet', name: '减重', icon: '⚖️', color: '#0ea5e9', task_type: 'diet', unit: '千卡', desc: '控制每日摄入，科学减重', default_target: 300, samples: ['30天减重3公斤', '66天饮食控制科学减脂'], steps: ['记录三餐', '控制摄入在目标内', '记录体重变化'] },
-  { id: 'quit', name: '戒断', icon: '🚭', color: '#ef4444', task_type: 'binary', unit: '次', desc: '戒除坏习惯，目标逐日递减', default_target: 0, samples: ['我要戒烟30天', '戒掉熬夜66天'], steps: ['识别触发场景', '用替代动作应对', '完成今日零接触'] },
+  { id: 'quit', name: '戒断', icon: '🚭', color: '#ef4444', task_type: 'counter', unit: '根', desc: '每抽一根记一笔，目标是逐日递减到 0', default_target: 1, samples: ['戒烟：每天20根，每周减2根', '戒奶茶：从每天2杯减到0'], steps: ['想抽时，先点一下记录这一根', '对照今日上限控制节奏', '记录每一天的进步'] },
   { id: 'english', name: '英语', icon: '🔤', color: '#3b82f6', task_type: 'word', unit: '词', desc: '每日背单词，内置四级高频词库', default_target: 20, samples: ['30天每天背20个英语单词', '14天掌握高频核心词'], steps: ['看释义', '记例句', '自测默写'] },
   { id: 'poem', name: '古诗', icon: '📜', color: '#b45309', task_type: 'recite', unit: '首', desc: '每日背一首唐诗，朗读到默写', default_target: 1, samples: ['30天背30首唐诗', '每天背一首古诗词'], steps: ['朗读全诗', '理解大意', '背诵全诗'] },
   { id: 'pomodoro', name: '番茄', icon: '🍅', color: '#ef4444', task_type: 'timer', unit: '分钟', desc: '番茄工作法，25分钟专注打卡', default_target: 25, samples: ['每天4个番茄钟专注', '25分钟专注学习'], steps: ['设定任务', '专注25分钟', '休息5分钟'] },

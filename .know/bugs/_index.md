@@ -1,7 +1,8 @@
 # bugs Index
-> Total: 6 entries
+> Total: 7 entries
 
-- bug-count-tally-unify | counter/timer 统一记账台（去掉补齐式声明）、companion/诊断/周报天数收敛为distinct days、递减超限单笔恒100不扣积分 | 2026-09-11
+- bug-quit-create-binary | 戒断(戒烟)模板创建仍产出 binary「已完成」：quit 场景默认 binary + scene.task_type==='quit' 判定永不命中(direction 恒 increase) + 直接创建跳过梯度输入；修复=scene.id 判定、counter/根/soft/ladder、step1 数量面板 | 2026-09-15
+- bug-count-tally-unify | counter/timer 统一记账台（去掉补齐式声明）、companion/诊断/周报天数收敛为 distinct days、递减超限单笔恒100不扣积分 | 2026-09-11
 - bug-cap-mode-auto-judge | 戒断计数（戒烟一根一点）完成判定收敛：cap-mode（decrease+counter/timer）每日完成按「当日记录 vs 上限」自动判定，去掉守住今日声明；completed_days按天数；零记录日=守住 | 2026-09-11
 - bug-checkin-manual-vs-auto | text类型空reflection也可达标、step主按钮绕过勾选清单、doMultiCheckin用checked_in拦截致未达标无法追加，三处与「系统按记录判断」相悖，统一修复 | 2026-09-11
 - bug-cp-e2e-selectors | 根因: 登录页已迁移nexus-ui(nux-input/nux-login-submit), 旧.cp-login-input不存在; SPA站点reload禁用networkidle会永超时, 用domcontentloaded+等待appState.booted | 2026-08-27

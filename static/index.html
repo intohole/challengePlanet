@@ -6,22 +6,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
 <title>星轨挑战 · AI打卡教练</title>
 <script>window.PATH_PREFIX = window.PATH_PREFIX || ''</script>
-<link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.10.101/vendor/fontawesome/css/all.min.css">
-<link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.10.101/css/nexus-all.css">
+<link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.10.102/vendor/fontawesome/css/all.min.css">
+<link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.10.102/css/nexus-all.css">
 <link rel="stylesheet" href="/static/style.css?v=20260825b">
 <link rel="stylesheet" href="/static/style-components.css?v=20260910a">
 <link rel="stylesheet" href="/static/style-checkin.css?v=20260911f">
 <link rel="stylesheet" href="/static/style-multi.css?v=20260728">
-<script src="https://songguokr.com/nexus-ui/v2.10.101/vendor/vue.global.prod.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/nexus-all.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/composables/use-progress.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/vendor/qrcode.min.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/nexus-stream.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/vendor/vue.global.prod.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/nexus-all.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/composables/use-progress.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/vendor/qrcode.min.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/nexus-stream.js"></script>
 
 
 
 
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/components/nux-app-switcher.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/components/nux-app-switcher.js"></script>
 <style>:root{--app-accent:#8b5cf6;--app-accent-hover:#7c3aed}#app-loading{position:fixed;inset:0;z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--bg,#fff);transition:opacity .3s}#app-loading .app-loading-logo{font-size:44px;line-height:1;color:var(--app-accent,#8b5cf6);animation:ap-loading-pulse 1.5s ease-in-out infinite}#app-loading .app-loading-text{font-size:13px;color:var(--text-secondary,#888);letter-spacing:1px}#app-loading .app-loading-bar{width:150px;height:4px;border-radius:999px;overflow:hidden;background:var(--border,#e5e7eb)}#app-loading .app-loading-bar-inner{height:100%;width:40%;border-radius:999px;background:linear-gradient(90deg,var(--app-accent,#8b5cf6),var(--app-accent-hover,#7c3aed));animation:ap-loading-slide 1.2s ease-in-out infinite}@keyframes ap-loading-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.1);opacity:.8}}@keyframes ap-loading-slide{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}</style>
 </head>
 <body>
@@ -70,7 +70,7 @@
             <span class="cp-scene-type">{{ cpTaskTypeLabel(s.task_type) }}</span>
           </button>
         </div>
-        <div v-if="cr.sceneNote()" class="cp-scene-note"><span>{{ cr.sceneNote().icon }}</span><span><b>{{ cr.sceneNote().name }}</b> · {{ cr.sceneNote().desc }}</span><b class="cp-note-direct"><i class="fas fa-bolt"></i> 可一键直接创建</b></div>
+        <div v-if="cr.sceneNote()" class="cp-scene-note"><span>{{ cr.sceneNote().icon }}</span><span><b>{{ cr.sceneNote().name }}</b> · {{ cr.sceneNote().desc }}</span><b v-if="state.create.sceneTemplate==='quit' && !(state.create.ladderStart>0)" class="cp-note-direct"><i class="fas fa-info-circle"></i> 填上方「当前每天」即可直接创建</b><b v-else class="cp-note-direct"><i class="fas fa-bolt"></i> 可一键直接创建</b></div>
       </div>
       <div class="cp-form-row">
         <label class="cp-label">一句话说清你的目标</label>
@@ -85,6 +85,18 @@
           <button class="cp-pick-btn" :class="{active:state.create.startMode==='custom'}" @click="cr.setStartMode('custom')">自定义</button>
         </div>
         <input v-if="state.create.startMode==='custom'" v-model="state.create.customDate" type="date" class="cp-field" style="margin-top:8px" @change="cr.setCustomDate()">
+      </div>
+      <div v-if="state.create.sceneTemplate==='quit'" class="cp-diet-body">
+        <div class="cp-form-row"><label class="cp-label"><i class="fas fa-smoking-ban"></i> 现在每天抽多少？计划减到多少？</label>
+          <div class="cp-ladder-grid">
+            <label class="cp-ladder-field"><span>当前每天(根)</span><input type="number" min="1" step="1" v-model.number="state.create.ladderStart" placeholder="如 20"></label>
+            <label class="cp-ladder-field"><span>目标每天(根)</span><input type="number" min="0" step="1" v-model.number="state.create.ladderGoal" placeholder="0=完全戒断"></label>
+            <label class="cp-ladder-field"><span>每隔(天)</span><input type="number" min="1" step="1" v-model.number="state.create.ladderInterval"></label>
+            <label class="cp-ladder-field"><span>每次递减(根)</span><input type="number" min="1" step="1" v-model.number="state.create.ladderStep"></label>
+          </div>
+          <p class="cp-ladder-tip"><i class="fas fa-route"></i> 系统按梯度自动生成每天上限：<b>{{ state.create.ladderStart || '—' }}</b> → <b>{{ state.create.ladderGoal || '0' }}</b> 根；抽一根记一根，系统自动记账，忘了可撤销</p>
+          <p v-if="!state.create.ladderGoal" class="cp-ladder-tip muted"><i class="fas fa-flag-checkered"></i> 目标填 0 = 完全戒断；超限只温和提醒，不扣分、不判失败</p>
+        </div>
       </div>
       <div v-if="cr.isPeriodScene()" class="cp-diet-body">
         <div class="cp-form-row"><label class="cp-label"><i class="fas fa-calendar-week"></i> 每周目标（可选，系统按周自动判定）</label>
@@ -419,14 +431,14 @@
 </div>
 <script src="/static/js/galaxy.js?v=20260728"></script>
 <script src="/static/js/share-poster.js?v=20260728"></script>
-<script src="/static/js/create.js?v=20260912b"></script>
-<script src="/static/js/create-direct.js?v=20260909c"></script>
-<script src="/static/js/create-extra.js?v=20260912a"></script>
+<script src="/static/js/create.js?v=20260915a"></script>
+<script src="/static/js/create-direct.js?v=20260915a"></script>
+<script src="/static/js/create-extra.js?v=20260915a"></script>
 <script src="/static/js/views/home.js?v=20260912a"></script>
 <script src="/static/js/views/home-diet.js?v=20260825"></script>
 <script src="/static/js/views/home-task.js?v=20260912b"></script>
 <script src="/static/js/views/home-checkin.js?v=20260912b"></script>
-<script src="/static/js/views/home-record.js?v=20260910a"></script>
+<script src="/static/js/views/home-record.js?v=20260915a"></script>
 <script src="/static/js/views/learn-checkin.js?v=20260912b"></script>
 <script src="/static/js/views/home-progress.js?v=20260910c"></script>
 <script src="/static/js/views/home-insights.js?v=20260910c"></script>
@@ -434,20 +446,20 @@
 <script src="/static/js/views/squad.js?v=20260825"></script>
 <script src="/static/js/views/rank.js?v=20260911a"></script>
 <script src="/static/js/views/me.js?v=20260911a"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/components/nux-ai-chat-helpers.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/components/nux-ai-chat-template.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/components/nux-ai-widgets.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/components/nux-ai-chat.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/components/nux-conversation-list.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/components/nux-menu-about.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/components/nux-menu-user.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/components/nux-ai-chat-helpers.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/components/nux-ai-chat-template.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/components/nux-ai-widgets.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/components/nux-ai-chat.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/components/nux-conversation-list.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/components/nux-menu-about.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/components/nux-menu-user.js"></script>
 <script src="/static/js/home-companion.js?v=20260826c"></script>
-<script src="/static/js/app.js?v=20260910c"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/components/nux-checkin.js"></script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/components/nux-calendar.js"></script>
+<script src="/static/js/app.js?v=20260915a"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/components/nux-checkin.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/components/nux-calendar.js"></script>
 <script>window.UC_CONFIG_URL = (window.PATH_PREFIX || '') + '/api/v1/auth/config'</script>
 <script>(function(){var el=document.getElementById('app-loading');if(!el)return;var done=false;function hide(){if(done)return;done=true;el.style.opacity='0';setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},300)}var app=document.getElementById('app');if(app){function check(){if(app.getAttribute('data-v-app')!==null)hide()}check();var mo=new MutationObserver(check);mo.observe(app,{childList:true,attributes:true,subtree:true})}if(window.addEventListener)window.addEventListener('load',function(){setTimeout(function(){if(!done)hide()},100)});setTimeout(function(){if(!done)hide()},10000)})();</script>
-<script src="https://songguokr.com/nexus-ui/v2.10.101/js/components/nux-footer.js"></script>
+<script src="https://songguokr.com/nexus-ui/v2.10.102/js/components/nux-footer.js"></script>
 <nux-footer-placeholder app-name="星轨挑战"></nux-footer-placeholder>
 </body>
 </html>

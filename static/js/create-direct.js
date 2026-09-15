@@ -2,18 +2,26 @@
   window.cpCreateDirect = {
     canDirect() {
       const c = window.appState.create
+      if (!c.sceneTemplate) return false
+      if (c.sceneTemplate === 'quit') return (c.ladderStart || 0) > 0
       return !!c.sceneTemplate
     },
 
     buildPlan(scene) {
       const c = window.appState.create
       const raw = (c.rawInput && c.rawInput.trim()) || ''
+      const isQuit = scene && scene.id === 'quit'
       const title = raw ? String(raw).slice(0, 30) : (scene ? scene.name + '挑战' : '我的挑战')
       const dayMatch = raw.match(/(\d+)\s*天/)
       const days = Math.min(90, Math.max(7, dayMatch ? Number(dayMatch[1]) : (c.editDays || 30)))
-      const tt = scene && scene.task_type ? scene.task_type : ((c.parsed && c.parsed.task_type) || 'binary')
-      const unit = String(scene && scene.unit ? scene.unit : (c.parsed && c.parsed.unit) || '次')
-      const target = Number(scene && scene.default_target !== undefined ? scene.default_target : (c.parsed && c.parsed.target_value) || 1)
+      const tt = isQuit ? 'counter' : (scene && scene.task_type ? scene.task_type : ((c.parsed && c.parsed.task_type) || 'binary'))
+      const unit = isQuit ? '根' : String(scene && scene.unit ? scene.unit : (c.parsed && c.parsed.unit) || '次')
+      const target = isQuit
+        ? (c.ladderStart || scene.default_target || 1)
+        : Number(scene && scene.default_target !== undefined ? scene.default_target : (c.parsed && c.parsed.target_value) || 1)
+      const steps = isQuit
+        ? ['想抽时，先点一下记录这一根', '对照今日上限控制节奏', '记录每一天的进步']
+        : (scene && scene.steps ? scene.steps : [])
       const plan = []
       for (let day = 1; day <= days; day++) {
         plan.push({
@@ -25,7 +33,7 @@
           target_value: target,
           unit: unit,
           difficulty: Math.min(5, 1 + Math.floor((day - 1) / (days / 5))),
-          steps: scene && scene.steps ? scene.steps : [],
+          steps: steps,
         })
       }
       return { title, days, tt, unit, target, plan }
@@ -46,6 +54,7 @@
       c.error = ''
       try {
         const scene = c.sceneTemplate ? window.cpSceneMap[c.sceneTemplate] : null
+        const isQuit = scene && scene.id === 'quit'
         const built = this.buildPlan(scene)
         const body = {
           title: built.title,
@@ -59,10 +68,13 @@
           scene_template: c.sceneTemplate || '',
           target_value: built.target,
           unit: built.unit,
-          direction: String(scene && scene.task_type === 'quit' ? 'decrease' : 'increase'),
-          goal_type: 'hard', decompose_mode: 'none', slot_hours: 1, slot_target_value: 0,
-          goal_rule: 'fixed', goal_mode: 'auto',
-          ladder_start: 0, ladder_goal: 0, ladder_interval: 1, ladder_step: 1,
+          direction: String(isQuit ? 'decrease' : 'increase'),
+          goal_type: String(isQuit ? 'soft' : 'hard'), decompose_mode: 'none', slot_hours: 1, slot_target_value: 0,
+          goal_rule: String(isQuit ? 'ladder' : 'fixed'), goal_mode: String(isQuit ? 'ceiling' : 'auto'),
+          ladder_start: isQuit ? (c.ladderStart || 0) : 0,
+          ladder_goal: isQuit ? (c.ladderGoal || 0) : 0,
+          ladder_interval: isQuit ? (c.ladderInterval || 1) : 1,
+          ladder_step: isQuit ? (c.ladderStep || 1) : 1,
           gender: c.gender || '', age: Number(c.age) || 0, height_cm: Number(c.heightCm) || 0,
           weight_kg: Number(c.weightKg) || 0, goal_weight: Number(c.goalWeight) || 0,
           activity_level: Number(c.activityLevel) || 2,

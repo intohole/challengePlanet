@@ -31,6 +31,7 @@
       const c = window.appState.create
       if (!p || typeof p !== 'object') return
       const dir = String(p.direction || '')
+      const isQuit = c.sceneTemplate === 'quit' || String(p.category || '') === 'quit'
       c.goalRule = String(p.goal_rule || 'fixed')
       c.ladderEn = c.goalRule === 'ladder' && !!p.ladder_start
       if (c.ladderEn) {
@@ -39,12 +40,19 @@
         c.ladderInterval = Math.max(1, Number(p.ladder_interval) || 1)
         c.ladderStep = Number(p.ladder_step) || 1
         if (dir === 'decrease' && !c.ladderGoal) c.ladderGoal = 0
+      } else if (isQuit && c.ladderStart > 0) {
+        c.ladderEn = true
+        c.ladderInterval = Math.max(1, c.ladderInterval || 1)
+        c.ladderStep = c.ladderStep || 1
+        if (dir === 'decrease') c.ladderGoal = c.ladderGoal || 0
       }
     },
 
     ladderDir() {
-      const sc = window.cpSceneMap[window.appState.create.sceneTemplate]
-      return String(window.appState.create.parsed && window.appState.create.parsed.direction || (sc && sc.task_type === 'quit' ? 'decrease' : 'increase'))
+      const c = window.appState.create
+      const sc = c.sceneTemplate && window.cpSceneMap[c.sceneTemplate]
+      if (sc && sc.id === 'quit') return 'decrease'
+      return String(c.parsed && c.parsed.direction || 'increase')
     },
 
     ladderUnit() {

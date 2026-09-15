@@ -190,7 +190,8 @@
     const state = isDecrease
       ? (over ? '已超今日上限 ' + cap + unit + '，放慢一点，明天继续' : (total > 0 ? '已记 ' + total + ' / 上限 ' + cap + ' ' + unit + '，还可 ' + Math.max(0, cap - total) : '今日还未记录 · 上限 ' + cap + ' ' + unit))
       : (total > 0 ? '已记 ' + total + ' / 目标 ' + cap + ' ' + unit + '，还差 ' + Math.max(0, cap - total) : '今日还未记录 · 目标 ' + cap + ' ' + unit)
-    let html = '<div class="cp-cap-cta"><button class="cp-cta-main cp-cap-main" ' + dis + ' onclick="cpViews.home.doFastTap(1)"><i class="fas fa-plus"></i><span>记一笔</span><em>' + state + '</em></button><div class="cp-extra-btns">'
+    const ctaLabel = ch.scene_template === 'quit' ? '记一根' : '记一笔'
+    let html = '<div class="cp-cap-cta"><button class="cp-cta-main cp-cap-main" ' + dis + ' onclick="cpViews.home.doFastTap(1)"><i class="fas fa-plus"></i><span>' + ctaLabel + '</span><em>' + state + '</em></button><div class="cp-extra-btns">'
     presets.forEach(v => {
       const label = isTimer ? '+' + v + '分' : '+' + v
       html += '<button class="cp-tap-chip" ' + dis + ' onclick="cpViews.home.doFastTap(' + v + ')"><i class="fas fa-plus"></i>' + label + '</button>'
