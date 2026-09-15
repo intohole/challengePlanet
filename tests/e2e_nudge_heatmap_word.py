@@ -186,6 +186,16 @@ def main() -> None:
         errs = [e for e in console_errs if "favicon" not in e]
         check("无JS页面错误", not errs, "; ".join(errs[:3]))
 
+        ids = page.evaluate("() => (window.appState && window.appState.challenges || []).map(c => c.id)")
+        for cid in ids:
+            try:
+                req = urllib.request.Request(BASE + f"/api/v1/challenges/{cid}", method="DELETE",
+                                             headers={"Authorization": "Bearer " + TOKEN})
+                urllib.request.urlopen(req, timeout=20, context=ctx)
+            except Exception:
+                pass
+        print("    已清理测试挑战:", ids)
+
         page.screenshot(path="/tmp/cp_nudge_heatmap_word.png", full_page=False)
         print("\n=== 结果 ===")
         for f in failed:
