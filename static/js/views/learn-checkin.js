@@ -28,6 +28,7 @@
         d.wordForgot = saved.forgot || 0
         d.wordNewTotal = saved.newTotal || saved.cards.length
         d.wordReviewTotal = saved.reviewTotal || 0
+        d.wordReviewToday = saved.reviewToday || []
         d.wordSessionKey = sessKey
         d.wordRevealed = false
       } else {
@@ -82,10 +83,7 @@
     return html
   }
 
-  V.wordReveal = function () {
-    this.data.wordRevealed = true
-    this.rerender()
-  }
+  V.wordReveal = function () { this.data.wordRevealed = true; this.rerender() }
 
   V.wordGrade = function (g) {
     const d = this.data
@@ -115,9 +113,7 @@
     const d = this.data
     try {
       localStorage.setItem(key, JSON.stringify({
-        cards: d.wordCards, idx: d.wordIdx, seen: d.wordSeen,
-        known: d.wordKnown, blur: d.wordBlur, forgot: d.wordForgot,
-        newTotal: d.wordNewTotal, reviewTotal: d.wordReviewTotal,
+        cards: d.wordCards, idx: d.wordIdx, seen: d.wordSeen, known: d.wordKnown, blur: d.wordBlur, forgot: d.wordForgot, newTotal: d.wordNewTotal, reviewTotal: d.wordReviewTotal, reviewToday: d.wordReviewToday || [],
       }))
     } catch (e) {}
   }
@@ -251,10 +247,7 @@
     return html
   }
 
-  V.poemToggle = function () {
-    this.data.poemShow = !this.data.poemShow
-    this.rerender()
-  }
+  V.poemToggle = function () { this.data.poemShow = !this.data.poemShow; this.rerender() }
 
   V._loadPoem = async function (t) {
     const list = await this._loadJSON('/static/data/poems.json')
