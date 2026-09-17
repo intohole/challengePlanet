@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import httpx
 from nexus.logging import get_logger
+from nexus.service_client import get_service_token
 
 from app.config import settings
 
@@ -10,6 +11,11 @@ logger = get_logger("challengePlanet.memory")
 APP_NAME = "ChallengePlanet"
 _RECALL_TOP_K = 3
 _TIMEOUT = 8.0
+
+
+async def _auth_headers() -> dict[str, str]:
+    token = await get_service_token()
+    return {"X-Service-Token": token} if token else {}
 
 
 async def add_memory(user_id: str, content: str) -> bool:
@@ -22,7 +28,7 @@ async def add_memory(user_id: str, content: str) -> bool:
             resp = await client.post(
                 url,
                 json=payload,
-                headers={"X-Service-Token": settings.SERVICE_TOKEN},
+                headers=await _auth_headers(),
             )
         if resp.status_code >= 400:
             logger.warning("beeMemory add failed: status=%d", resp.status_code)
@@ -48,7 +54,7 @@ async def recall_memory(user_id: str, query: str) -> list[str]:
             resp = await client.post(
                 url,
                 json=payload,
-                headers={"X-Service-Token": settings.SERVICE_TOKEN},
+                headers=await _auth_headers(),
             )
         if resp.status_code >= 400:
             logger.warning("beeMemory recall failed: status=%d", resp.status_code)
