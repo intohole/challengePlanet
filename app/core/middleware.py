@@ -16,6 +16,7 @@ def register_middleware(app: FastAPI) -> None:
     register_service_auth(
         app,
         public_api_prefixes=["/api/v1/auth", "/api/v1/share", "/api/auth"],
+        allow_user_tokens=True,
     )
     app.add_middleware(RateLimitMiddleware)
     setup_cors(app)
