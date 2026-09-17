@@ -17,6 +17,7 @@ from app.schemas.checkin import (
     CheckInResultResponse,
     DateActionRequest,
     DateActionResponse,
+    ForecastResponse,
     InsightResponse,
     InsightStreamRequest,
     MercyStatusResponse,
@@ -70,6 +71,7 @@ async def do_checkin(
         soft_exceeded_amount=float(result.get("soft_exceeded_amount", 0)),
         coach_nudge=str(result.get("coach_nudge", "")),
         nudge_level=int(result.get("nudge_level", 0)),
+        forecast=ForecastResponse(**result.get("forecast", {})),
     )
 
 

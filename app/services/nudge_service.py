@@ -1,35 +1,105 @@
 from __future__ import annotations
 
 
+def _hour_weight(rows: list[dict[str, object]] | None, hour: int) -> float:
+    if not rows:
+        return 1.0
+    for row in rows:
+        if int(row.get("hour", -1)) == hour:
+            return max(0.1, float(row.get("total_value", 0) or 0))
+    return 0.1
+
+
+def _fmt_hour(hours_float: float) -> str:
+    h = int(hours_float)
+    m = int(round((hours_float - h) * 60))
+    if m >= 60:
+        h += 1
+        m = 0
+    return f"{h:02d}:{m:02d}"
+
+
 class NudgeService:
     def evaluate(
         self, challenge: object, today_total: float, today_target: float,
-        is_soft_exceeded: bool = False, hour: int = 0,
-    ) -> tuple[int, str]:
-        direction = str(getattr(challenge, "direction", "") or "increase")
-        unit = str(getattr(challenge, "unit", "") or "")
-        total = max(0.0, float(today_total))
-        target = max(0.0, float(today_target))
-        if target <= 0 or total <= 0:
-            return 0, ""
-        if direction == "decrease":
-            return self._decrease(challenge, total, target, unit, hour)
-        return self._increase(challenge, total, target, unit, hour, is_soft_exceeded)
+        hour: int, hour_dist: list[dict[str, object]] | None = None,
+        is_soft_exceeded: bool = False,
+    ) -> dict[str, object]:
+        if str(getattr(challenge, "direction", "") or "increase") == "decrease":
+            return self._decrease_forecast(challenge, today_total, today_target, hour, hour_dist)
+        return self._increase_forecast(challenge, today_total, today_target, hour, is_soft_exceeded)
 
-    def _decrease(self, challenge: object, total: float, target: float, unit: str, hour: int) -> tuple[int, str]:
-        if total > target:
-            if str(getattr(challenge, "goal_rule", "") or "") == "ladder":
-                return 2, f"今天已{total:.0f}{unit}，量到顶了。先歇一歇，明天配额会自动更低"
-            return 2, f"今天已{total:.0f}{unit}，超过目标了。先喝口水停一停，身体比目标重要"
-        remaining = target - total
-        if 0 < remaining <= 2:
-            return 1, f"今天还剩{remaining:.0f}{unit}的量，留到更需要的时刻"
-        if hour >= 10:
-            elapsed = max(1, hour - 6)
-            projected = total * 18 / elapsed
-            if projected > target + 0.5:
-                return 1, f"按现在的节奏，今天会到{projected:.0f}{unit}。让下一根的间隔再长一点"
-        return 0, ""
+    def _decrease_forecast(
+        self, challenge: object, today_total: float, today_target: float,
+        hour: int, hour_dist: list[dict[str, object]] | None,
+    ) -> dict[str, object]:
+        unit = str(getattr(challenge, "unit", "") or "")
+        if today_total <= 0 or today_target <= 0:
+            return self._empty()
+        w_elapsed = sum(_hour_weight(hour_dist, h) for h in range(6, hour))
+        w_total = sum(_hour_weight(hour_dist, h) for h in range(6, 24))
+        if w_elapsed <= 0:
+            w_elapsed = max(0.5, hour - 6)
+        if w_total <= 0:
+            w_total = 18.0
+        projected = today_total / w_elapsed * w_total
+        remaining_units = max(0.0, today_target - today_total)
+        touch_at = ""
+        remaining_hours = 0.0
+        if remaining_units > 0:
+            need_hours = remaining_units * w_elapsed / today_total
+            touch_float = hour + need_hours
+            if touch_float < 24:
+                touch_at = _fmt_hour(touch_float)
+                remaining_hours = max(0.0, round(touch_float - hour, 1))
+        if today_total >= today_target:
+            risk = 2
+        elif projected > today_target:
+            risk = 1
+        else:
+            risk = 0
+        coach = self._decrease_text(risk, today_total, today_target, projected, touch_at, unit)
+        return {
+            "enabled": True, "projected": round(projected, 1),
+            "touch_at": touch_at, "remaining_hours": remaining_hours,
+            "remaining_units": round(remaining_units, 1),
+            "risk_level": risk, "coach_nudge": coach, "nudge_level": risk,
+        }
+
+    def _increase_forecast(
+        self, challenge: object, today_total: float, today_target: float,
+        hour: int, is_soft_exceeded: bool,
+    ) -> dict[str, object]:
+        unit = str(getattr(challenge, "unit", "") or "")
+        if today_target <= 0:
+            return self._empty()
+        level, msg = self._increase(challenge, today_total, today_target, unit, hour, is_soft_exceeded)
+        return {
+            "enabled": True, "projected": 0.0, "touch_at": "", "remaining_hours": 0.0,
+            "remaining_units": max(0.0, today_target - today_total),
+            "risk_level": 0, "coach_nudge": msg, "nudge_level": level,
+        }
+
+    def _empty(self) -> dict[str, object]:
+        return {
+            "enabled": False, "projected": 0.0, "touch_at": "", "remaining_hours": 0.0,
+            "remaining_units": 0.0, "risk_level": 0, "coach_nudge": "", "nudge_level": 0,
+        }
+
+    def _decrease_text(
+        self, risk: int, total: float, target: float, projected: float,
+        touch_at: str, unit: str,
+    ) -> str:
+        if risk >= 2:
+            if total > target:
+                return f"今天已{total:.0f}{unit}，超过目标了。身体比目标重要，先喝口水停一停"
+            return f"今天已{total:.0f}/{target:.0f}{unit}，到顶了。先停一停，下一次留到更需要的时刻"
+        if risk == 1:
+            over = max(1.0, projected - target)
+            if touch_at:
+                return f"按现在的节奏，今天预计{projected:.0f}{unit}，会超{over:.0f}。下一次推迟到{touch_at}之后"
+            return f"按现在的节奏，今天预计{projected:.0f}{unit}，会超{over:.0f}。让间隔再拉长一点"
+        return ""
 
     def _increase(
         self, challenge: object, total: float, target: float, unit: str,

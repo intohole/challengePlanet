@@ -26,17 +26,47 @@ def chk(name, got, want):
         fails += 1
 
 
-chk("decrease 超限 ladder", svc.evaluate(FakeCh(goal_rule="ladder"), 6, 5, hour=15), (2, "今天已6根，量到顶了。先歇一歇，明天配额会自动更低"))
-chk("decrease 超限 fixed", svc.evaluate(FakeCh("decrease", "根", "fixed"), 4, 3, hour=15), (2, "今天已4根，超过目标了。先喝口水停一停，身体比目标重要"))
-chk("decrease 逼近 剩1根", svc.evaluate(FakeCh(), 4, 5, hour=11), (1, "今天还剩1根的量，留到更需要的时刻"))
-chk("decrease 逼近 剩2根", svc.evaluate(FakeCh(), 3, 5, hour=11), (1, "今天还剩2根的量，留到更需要的时刻"))
-chk("decrease 节奏外推超限", svc.evaluate(FakeCh(), 12, 15, hour=18), (1, "按现在的节奏，今天会到18根。让下一根的间隔再长一点"))
-chk("decrease 正常无提醒", svc.evaluate(FakeCh(), 2, 20, hour=14), (0, ""))
-chk("decrease 进度0不提醒", svc.evaluate(FakeCh(), 0, 8, hour=20), (0, ""))
-chk("increase 20点后未达标", svc.evaluate(FakeCh("increase", "组", "fixed"), 2, 5, hour=21), (1, "今天还差3组，现在补上，今晚睡得踏实"))
-chk("increase 17点未过半", svc.evaluate(FakeCh("increase", "组", "fixed"), 1, 5, hour=18), (1, "今天进度还没过半，还差4组，趁现在抓紧就达标了"))
-chk("increase 已达标不提醒", svc.evaluate(FakeCh("increase", "组", "fixed"), 5, 5, hour=21), (0, ""))
-chk("increase 白天正常不提醒", svc.evaluate(FakeCh("increase", "组", "fixed"), 2, 5, hour=14), (0, ""))
-chk("increase soft超限不提醒", svc.evaluate(FakeCh("increase", "组", "fixed"), 7, 5, hour=14, is_soft_exceeded=True), (0, ""))
+r = svc.evaluate(FakeCh(), 4, 5, hour=10)
+chk("decrease 10点已4根 enabled", r["enabled"], True)
+chk("decrease 10点已4根 projected", r["projected"], 18.0)
+chk("decrease 10点已4根 risk=1", r["risk_level"], 1)
+chk("decrease 10点已4根 触顶11:00", r["touch_at"], "11:00")
+chk("decrease 10点已4根 剩余弹性1h", r["remaining_hours"], 1.0)
+chk("decrease 10点已4根 剩余配额1", r["remaining_units"], 1.0)
+chk("decrease 10点已4根 nudge_level=1", r["nudge_level"], 1)
+
+r = svc.evaluate(FakeCh(), 6, 5, hour=15)
+chk("decrease 已超限 risk=2", r["risk_level"], 2)
+chk("decrease 已超限 话术", r["coach_nudge"], "今天已6根，超过目标了。身体比目标重要，先喝口水停一停")
+
+r = svc.evaluate(FakeCh(), 5, 5, hour=15)
+chk("decrease 到顶 risk=2", r["risk_level"], 2)
+chk("decrease 到顶 话术", r["coach_nudge"], "今天已5/5根，到顶了。先停一停，下一次留到更需要的时刻")
+
+r = svc.evaluate(FakeCh(), 2, 20, hour=14)
+chk("decrease 安全 risk=0", r["risk_level"], 0)
+chk("decrease 安全 无话术", r["coach_nudge"], "")
+
+r = svc.evaluate(FakeCh(), 0, 8, hour=20)
+chk("decrease 无记录 disabled", r["enabled"], False)
+
+rows = [{"hour": h, "total_value": 2.0 if h in (8, 9, 10) else 0.3} for h in range(6, 24)]
+r = svc.evaluate(FakeCh(), 4, 5, hour=11, hour_dist=rows)
+chk("decrease 时段加权 projected>5", r["projected"] > 5.0, True)
+chk("decrease 时段加权 risk=1", r["risk_level"], 1)
+
+r = svc.evaluate(FakeCh("increase", "组", "fixed"), 2, 5, hour=21)
+chk("increase 20点后未达标 level", r["nudge_level"], 1)
+chk("increase 20点后话术", r["coach_nudge"], "今天还差3组，现在补上，今晚睡得踏实")
+
+r = svc.evaluate(FakeCh("increase", "组", "fixed"), 1, 5, hour=18)
+chk("increase 17点未过半 level", r["nudge_level"], 1)
+chk("increase 17点未过半话术", r["coach_nudge"], "今天进度还没过半，还差4组，趁现在抓紧就达标了")
+
+r = svc.evaluate(FakeCh("increase", "组", "fixed"), 5, 5, hour=21)
+chk("increase 已达标不提醒", r["nudge_level"], 0)
+
+r = svc.evaluate(FakeCh("increase", "组", "fixed"), 7, 5, hour=14, is_soft_exceeded=True)
+chk("increase soft超限不提醒", r["nudge_level"], 0)
 
 raise SystemExit(1 if fails else 0)

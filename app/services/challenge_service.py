@@ -18,6 +18,7 @@ from app.services.ai_service import AIService
 from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.goal_rule_service import daily_target, is_cap_mode, is_ladder, is_settled, ladder_progress_pct, resolve_mode
 from app.services.mercy_service import MercyService, load_valid_dates
+from app.services.nudge_service import NudgeService
 from app.services.period_service import period_fields, week_aggregates
 from app.services.streak_service import calc_streak, shift_date, streak_before, today_str
 
@@ -246,22 +247,28 @@ class ChallengeService:
         if parsed_start is None:
             return None
         start_date: datetime = parsed_start
-        day_number = max(1, min((now_china() - start_date).days + 1, challenge.duration_days))
+        now_dt = now_china()
+        day_number = max(1, min((now_dt - start_date).days + 1, challenge.duration_days))
         plan_list = self._parse_plan(challenge.ai_plan)
         task = plan_list[day_number - 1] if plan_list and day_number <= len(plan_list) else {}
         today = today_str()
         today_checkins = await self._checkin_repo.list_by_date(session, challenge_id, today)
         today_total = await self._checkin_repo.sum_value_by_date(session, challenge_id, today)
+        hour_dist = await self._checkin_repo.get_hourly_distribution(session, challenge_id, (now_dt - timedelta(days=13)).strftime("%Y-%m-%d"), (now_dt - timedelta(days=1)).strftime("%Y-%m-%d"))
+        dynamic_baseline = await self._calc_dynamic_baseline(session, challenge)
+        today_target = daily_target(challenge, day_number, adaptive_baseline=dynamic_baseline)
+        if str(getattr(challenge, "task_type", "")) == "diet" and float(getattr(challenge, "daily_calorie_target", 0) or 0) > 0:
+            today_target = float(challenge.daily_calorie_target)
+        forecast = NudgeService().evaluate(challenge, today_total, today_target, now_dt.hour, hour_dist)
         period_days = max(1, int(getattr(challenge, "period_days", 7) or 7))
         aggregates = await week_aggregates(session, challenge_id, today_checkins, period_days)
-        dynamic_baseline = await self._calc_dynamic_baseline(session, challenge)
         sub_goals_list = await self._build_sub_goals(session, challenge, today)
         stats = await self.get_challenge_stats(session, challenge)
         progress = _calc_progress(stats["completed_days"], challenge.duration_days)
         return self._build_today_response(
             challenge, challenge_id, day_number, today, task,
-            today_checkins, today_total, dynamic_baseline, sub_goals_list, stats, progress,
-            aggregates,
+            today_checkins, today_total, today_target, dynamic_baseline,
+            sub_goals_list, stats, progress, aggregates, forecast,
         )
 
     def _parse_plan(self, ai_plan: str | None) -> list[dict[str, object]]:
@@ -311,14 +318,12 @@ class ChallengeService:
     def _build_today_response(
         self, challenge, challenge_id: int, day_number: int, today: str,
         task: dict[str, object], today_checkins, today_total: float,
-        dynamic_baseline: float, sub_goals_list: list, stats: dict, progress: float,
-        aggregates: dict[str, object] | None = None,
+        today_target: float, dynamic_baseline: float, sub_goals_list: list,
+        stats: dict, progress: float, aggregates: dict[str, object] | None = None,
+        forecast: dict[str, object] | None = None,
     ) -> dict[str, object]:
         task_steps_raw = task.get("steps", task.get("task_steps", []))
         task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
-        today_target = daily_target(challenge, day_number, adaptive_baseline=dynamic_baseline)
-        if str(getattr(challenge, "task_type", "")) == "diet" and float(getattr(challenge, "daily_calorie_target", 0) or 0) > 0:
-            today_target = float(challenge.daily_calorie_target)
         remaining = max(0.0, today_target - today_total)
         feedback = today_checkins[-1].ai_feedback if today_checkins else ""
         repeatable = (
@@ -339,21 +344,17 @@ class ChallengeService:
             "task_unit": str(task.get("unit", "")), "task_steps": task_steps,
             "target_value": float(challenge.target_value),
             "unit": str(challenge.unit), "direction": str(challenge.direction),
-            "goal_type": str(challenge.goal_type),
-            "decompose_mode": str(challenge.decompose_mode),
+            "goal_type": str(challenge.goal_type), "decompose_mode": str(challenge.decompose_mode),
             "goal_rule": str(challenge.goal_rule) or "fixed",
             "goal_mode": resolve_mode(challenge),
             "ladder_start": float(getattr(challenge, "ladder_start", 0.0) or 0.0),
             "ladder_goal": float(getattr(challenge, "ladder_goal", 0.0) or 0.0),
             "ladder_interval": max(1, int(getattr(challenge, "ladder_interval", 1) or 1)),
             "ladder_step": float(getattr(challenge, "ladder_step", 1.0) or 1.0),
-            "today_total": today_total, "today_target": today_target,
-            "today_cap": today_target, "dynamic_baseline": dynamic_baseline,
-            "remaining": round(remaining, 2),
-            "progress_pct": round(progress, 1),
-            "ladder_progress_pct": round(ladder_progress, 1),
-            "checked_in": len(today_checkins) > 0,
-            "settled": is_settled(challenge, str(task.get("task_type", challenge.task_type)), today_total, today_target, len(today_checkins)),
+            "today_total": today_total, "today_target": today_target, "today_cap": today_target,
+            "dynamic_baseline": dynamic_baseline, "remaining": round(remaining, 2), "forecast": forecast,
+            "progress_pct": round(progress, 1), "ladder_progress_pct": round(ladder_progress, 1),
+            "checked_in": len(today_checkins) > 0, "settled": is_settled(challenge, str(task.get("task_type", challenge.task_type)), today_total, today_target, len(today_checkins)),
             **pf,
             "checkin_data": {
                 "mood": today_checkins[-1].mood if today_checkins else "",

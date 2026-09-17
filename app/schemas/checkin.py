@@ -50,6 +50,17 @@ class CheckInResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ForecastResponse(BaseModel):
+    enabled: bool = False
+    projected: float = 0.0
+    touch_at: str = ""
+    remaining_hours: float = 0.0
+    remaining_units: float = 0.0
+    risk_level: int = 0
+    coach_nudge: str = ""
+    nudge_level: int = 0
+
+
 class CheckInResultResponse(BaseModel):
     checkin: CheckInResponse
     ai_feedback: str = ""
@@ -68,6 +79,7 @@ class CheckInResultResponse(BaseModel):
     soft_exceeded_amount: float = 0.0
     coach_nudge: str = ""
     nudge_level: int = 0
+    forecast: ForecastResponse = Field(default_factory=ForecastResponse)
 
 
 class DateActionRequest(BaseModel):

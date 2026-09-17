@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from nexus.logging import get_logger
 from sqlalchemy import select
@@ -111,9 +111,14 @@ class CheckInService:
 
         today_total = await self._repo.sum_value_by_date(session, challenge_id, today)
         remaining = self._calc_remaining(today_total, target_snapshot["target_value"], challenge.direction)
-        nudge_level, coach_nudge = NudgeService().evaluate(
-            challenge, today_total, target_snapshot["target_value"], is_soft_exceeded,
-            hour=ts.hour,
+        hour_dist = await self._repo.get_hourly_distribution(
+            session, challenge_id,
+            (ts.date() - timedelta(days=13)).strftime("%Y-%m-%d"),
+            (ts.date() - timedelta(days=1)).strftime("%Y-%m-%d"),
+        )
+        forecast = NudgeService().evaluate(
+            challenge, today_total, target_snapshot["target_value"],
+            ts.hour, hour_dist, is_soft_exceeded=is_soft_exceeded,
         )
         streak = await self._current_streak(session, challenge_id)
         base, chest = await self._points.award_checkin(
@@ -143,7 +148,9 @@ class CheckInService:
             "dynamic_baseline": target_snapshot["target_value"],
             "remaining": remaining, "is_soft_exceeded": is_soft_exceeded,
             "soft_exceeded_amount": soft_exceeded_amount,
-            "coach_nudge": coach_nudge, "nudge_level": nudge_level,
+            "coach_nudge": str(forecast.get("coach_nudge", "")),
+            "nudge_level": int(forecast.get("nudge_level", 0)),
+            "forecast": forecast,
         }
 
     async def _compute_target_snapshot(
