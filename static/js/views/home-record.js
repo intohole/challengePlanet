@@ -210,7 +210,6 @@
       : (total > 0 ? '已记 ' + total + ' / 目标 ' + cap + ' ' + unit + '，还差 ' + Math.max(0, cap - total) : '今日还未记录 · 目标 ' + cap + ' ' + unit)
     const ctaLabel = ch.scene_template === 'quit' ? '记一根' : '记一笔'
     let html = '<div class="cp-cap-cta"><button class="cp-cta-main cp-cap-main" ' + dis + ' onclick="cpViews.home.doFastTap(1)"><i class="fas fa-plus"></i><span>' + ctaLabel + '</span><em>' + state + '</em></button>'
-    html += this._forecastBar(t, ch, unit, isDecrease)
     html += '<div class="cp-extra-btns">'
     presets.forEach(v => {
       const label = isTimer ? '+' + v + '分' : '+' + v
@@ -218,22 +217,6 @@
     })
     if ((t.today_checkins || []).length) html += '<button class="cp-tap-chip ghost" ' + dis + ' onclick="cpViews.home.doUndoLast()"><i class="fas fa-rotate-left"></i>撤销上一笔</button>'
     return html + '</div></div>'
-  }
-
-  V._forecastBar = function (t, ch, unit, isDecrease) {
-    const fc = (t && t.forecast) || {}
-    if (!isDecrease || !fc.enabled) return ''
-    const esc = window.cpEsc
-    if (fc.risk_level === 2) {
-      return '<div class="cp-forecast cp-forecast-2"><i class="fas fa-hand-holding-heart"></i><span>' + esc(fc.coach_nudge || '今天已到上限，再记就超了') + '</span></div>'
-    }
-    if (fc.risk_level === 1) {
-      const bits = ['预计今天 ' + fc.projected + ' ' + unit + '，会超上限']
-      if (fc.touch_at) bits.push(fc.touch_at + ' 触顶')
-      if (fc.remaining_hours > 0) bits.push('还剩约 ' + fc.remaining_hours + ' 小时')
-      return '<div class="cp-forecast cp-forecast-1"><i class="fas fa-triangle-exclamation"></i><span>' + esc(bits.join(' · ')) + '</span></div>'
-    }
-    return '<div class="cp-forecast cp-forecast-0"><i class="fas fa-chart-line"></i><span>按当前节奏，今天预计 ' + fc.projected + ' ' + unit + '，在目标内</span></div>'
   }
 
   V.removeTodayRecord = async function (checkinId) {

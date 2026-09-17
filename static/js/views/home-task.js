@@ -95,7 +95,14 @@
     const target = (t.today_target || t.task_target || ch.target_value || 1)
     if (isDecrease) {
       const over = (t.today_total || 0) > (t.today_target || 0)
-      return '<div class="cp-remain-hint' + (over ? ' over' : '') + '"><i class="fas ' + (over ? 'fa-circle-exclamation' : 'fa-bullseye') + '"></i>' + (over ? '已超今日上限 ' + target + ' ' + unit + '，明天梯度会更低，稳住' : '守住 ' + target + ' ' + unit + ' 以内即为今日达标') + '</div>'
+      if (over) return '<div class="cp-remain-hint over"><i class="fas fa-circle-exclamation"></i>已超今日上限 ' + target + ' ' + unit + '，明天梯度会更低，稳住</div>'
+      const fc = (t.forecast) || {}
+      if (fc.enabled && fc.risk_level === 1) {
+        let txt = '按当前节奏预计 ' + fc.projected + ' ' + unit
+        if (fc.touch_at) txt += '，' + fc.touch_at + ' 触顶'
+        return '<div class="cp-remain-hint"><i class="fas fa-triangle-exclamation"></i>' + txt + '，省着点</div>'
+      }
+      return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>守住 ' + target + ' ' + unit + ' 以内即为今日达标</div>'
     }
     if ((t.remaining || 0) <= 0) return ''
     return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>还差 <b>' + t.remaining + '</b> ' + unit + ' 达标</div>'
