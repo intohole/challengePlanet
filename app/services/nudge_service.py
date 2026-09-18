@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 
-def _hour_weight(rows: list[dict[str, object]] | None, hour: int) -> float:
-    if not rows:
-        return 1.0
-    for row in rows:
-        if int(row.get("hour", -1)) == hour:
-            return max(0.1, float(row.get("total_value", 0) or 0))
-    return 0.1
+def _hour_profile(rows: list[dict[str, object]] | None) -> dict[int, float]:
+    raw: dict[int, float] = {}
+    for row in rows or []:
+        h = int(row.get("hour", -1))
+        v = float(row.get("total_value", 0) or 0)
+        if 6 <= h <= 23 and v > 0:
+            raw[h] = raw.get(h, 0.0) + v
+    total = sum(raw.values())
+    if total <= 0:
+        return {}
+    return {h: v / total for h, v in raw.items()}
 
 
 def _fmt_hour(hours_float: float) -> str:
@@ -36,18 +40,22 @@ class NudgeService:
         unit = str(getattr(challenge, "unit", "") or "")
         if today_total <= 0 or today_target <= 0:
             return self._empty()
-        w_elapsed = sum(_hour_weight(hour_dist, h) for h in range(6, hour))
-        w_total = sum(_hour_weight(hour_dist, h) for h in range(6, 24))
-        if w_elapsed <= 0:
-            w_elapsed = max(0.5, hour - 6)
-        if w_total <= 0:
-            w_total = 18.0
-        projected = today_total / w_elapsed * w_total
+        profile = _hour_profile(hour_dist)
+        time_frac = min(1.0, max(0.0, float(hour - 6) / 18.0))
+        if profile:
+            w_elapsed = sum(profile.get(h, 0.0) for h in range(6, hour))
+            w_total = sum(profile.get(h, 0.0) for h in range(6, 24))
+            denom = max(w_elapsed, time_frac)
+            projected = today_total / denom * w_total if denom > 0 else today_total
+        else:
+            gone = float(max(0.0, hour - 6))
+            projected = today_total * 18.0 / gone if gone > 0 else today_total
         remaining_units = max(0.0, today_target - today_total)
         touch_at = ""
         remaining_hours = 0.0
         if remaining_units > 0:
-            need_hours = remaining_units * w_elapsed / today_total
+            gone = float(max(1.0, hour - 6))
+            need_hours = remaining_units * gone / today_total
             touch_float = hour + need_hours
             if touch_float < 24:
                 touch_at = _fmt_hour(touch_float)

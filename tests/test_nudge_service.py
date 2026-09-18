@@ -55,6 +55,13 @@ r = svc.evaluate(FakeCh(), 4, 5, hour=11, hour_dist=rows)
 chk("decrease 时段加权 projected>5", r["projected"] > 5.0, True)
 chk("decrease 时段加权 risk=1", r["risk_level"], 1)
 
+rows_sparse = [{"hour": 20, "total_value": 60.0, "checkin_count": 10},
+               {"hour": 21, "total_value": 40.0, "checkin_count": 6},
+               {"hour": 22, "total_value": 30.0, "checkin_count": 5}]
+r = svc.evaluate(FakeCh(), 2, 5, hour=10, hour_dist=rows_sparse)
+chk("decrease 稀疏分布 不极端放大", r["projected"] <= 20, True)
+chk("decrease 稀疏分布 上午10点预计9根", round(r["projected"]), 9)
+
 r = svc.evaluate(FakeCh("increase", "组", "fixed"), 2, 5, hour=21)
 chk("increase 20点后未达标 level", r["nudge_level"], 1)
 chk("increase 20点后话术", r["coach_nudge"], "今天还差3组，现在补上，今晚睡得踏实")
