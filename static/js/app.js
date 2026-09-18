@@ -90,7 +90,7 @@ window.cpMd = s => {
 if (window.NexusMarkdown && window.NexusMarkdown.injectLibs) window.NexusMarkdown.injectLibs()
 
 window.cpTodayStr = () => window.NexusUtils.cnTodayStr()
-window.cpDateStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+window.cpDateStr = d => window.NexusUtils.formatDateShort(d).replace(/\//g, '-')
 window.cpAddDays = (ds, n) => {
   const d = new Date(ds + 'T00:00:00')
   d.setDate(d.getDate() + n)

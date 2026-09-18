@@ -3,53 +3,25 @@ window.cpCompanion = (function () {
   var currentChallengeId = null
   var chatRef = null
 
-  function token() {
-    return window.NexusUtils.createDualStorage().getItem('uc_access_token') || ''
-  }
-
-  function headers(extra) {
-    var h = Object.assign({ 'Content-Type': 'application/json' }, extra || {})
-    var t = token()
-    if (t) h['Authorization'] = 'Bearer ' + t
-    return h
-  }
-
   function handleUnauthorized() {
     var store = window.NexusUtils.createDualStorage()
     ;['uc_access_token', 'uc_refresh_token', 'cp_user_id', 'cp_nickname'].forEach(function (k) { store.removeItem(k) })
     window.location.href = window.cpPrefix + '/login'
   }
 
-  function check(resp) {
-    if (resp.status === 401) { handleUnauthorized(); throw new Error('Unauthorized') }
-    if (!resp.ok) {
-      var err = new Error('HTTP ' + resp.status)
-      err.status = resp.status
-      throw err
-    }
-    return resp
-  }
-
-  function getJSON(url) {
-    return fetch(window.cpPrefix + url, { headers: headers() }).then(check).then(function (r) { return r.json() }).then(function (d) { return d.data || d })
-  }
-
-  function sendJSON(method, url, data) {
-    return fetch(window.cpPrefix + url, { method: method, headers: headers(), body: JSON.stringify(data || {}) }).then(check).then(function (r) { return r.json() }).then(function (d) { return d.data || d })
-  }
-
-  function bindParams(url, params) {
-    if (!params) return url
-    var qs = Object.keys(params).filter(function (k) { return params[k] !== null && params[k] !== undefined && params[k] !== '' })
-      .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]) }).join('&')
-    return qs ? url + (url.indexOf('?') >= 0 ? '&' : '?') + qs : url
-  }
+  var chatApi = new NexusApi({
+    baseUrl: window.PATH_PREFIX || '',
+    tokenKey: 'uc_access_token',
+    dualStorage: true,
+    onUnauthorized: handleUnauthorized
+  })
+  var unwrap = function (res) { return (res && res.data) || res }
 
   var conversationApi = {
-    get: function (url, params) { return getJSON(bindParams(url, params)) },
-    post: function (url, data) { return sendJSON('POST', url, data) },
-    patch: function (url, data) { return sendJSON('PATCH', url, data) },
-    delete: function (url) { return sendJSON('DELETE', url) }
+    get: function (url, params) { return chatApi.get(url, params).then(unwrap) },
+    post: function (url, data) { return chatApi.post(url, data).then(unwrap) },
+    patch: function (url, data) { return chatApi.patch(url, data).then(unwrap) },
+    delete: function (url) { return chatApi.delete(url).then(unwrap) }
   }
 
   function sessionFilter(res) {
@@ -71,13 +43,47 @@ window.cpCompanion = (function () {
     if (!conv || !conv.id) return
     conversationId = conv.id
     window.appState.companion.sessions = false
-    sendJSON('PATCH', '/api/chat/conversations/' + conversationId, { meta: { challenge_id: currentChallengeId } })
+    conversationApi.patch('/api/chat/conversations/' + conversationId, { meta: { challenge_id: currentChallengeId } })
       .then(loadHistory)
       .catch(function () {})
   }
 
-  function readSSE(response, onData, onDone, onError) {
-    return window.NexusStream.read(response, { onChunk: onData, onDone: onDone, onError: onError })
+  function runStream(content, callbacks) {
+    var accumulated = ''
+    var finished = false
+    function finish(text) {
+      if (!finished) {
+        finished = true
+        callbacks.onDone(text || accumulated)
+      }
+    }
+    setQueue(0, 0)
+    chatApi.streamPost('/api/chat/conversations/' + conversationId + '/messages/stream', { content: content }, {
+      timeout: 120000,
+      onEvent: function (eventName, data) {
+        var type = (data && data.type) || ''
+        if (type === 'queue') { setQueue(data.position || 0, data.estimated_wait || 0); return }
+        if (type === 'queue_ready') { setQueue(0, 0); return }
+        if (type === 'delta') { accumulated += data.content || ''; callbacks.onChunk(data.content || '', accumulated); return }
+        if (type === 'meta') { applyMeta(data); return }
+        if (type === 'thinking' || type === 'tool' || type === 'tool_executed' || type === 'references' || type === 'widget' || type === 'widget_update') {
+          if (callbacks.routeRich) callbacks.routeRich(type, data)
+          return
+        }
+        if (type === 'done') { setQueue(0, 0); finish(accumulated) }
+      },
+      onError: function (msg) {
+        setQueue(0, 0)
+        if (!finished) {
+          finished = true
+          if (accumulated) callbacks.onDone(accumulated)
+          else callbacks.onError(new Error(msg || 'AI服务暂时不可用'))
+        }
+      }
+    }).then(function () {
+      setQueue(0, 0)
+      finish(accumulated)
+    })
   }
 
   var initChallengeId = null
@@ -87,16 +93,16 @@ window.cpCompanion = (function () {
     if (initPromise && initChallengeId === challengeId) return initPromise
     initChallengeId = challengeId
     currentChallengeId = challengeId
-    initPromise = getJSON('/api/chat/conversations?page_size=50').then(function (res) {
-      var items = (res && res.items) || []
+    initPromise = conversationApi.get('/api/chat/conversations', { page_size: 50 }).then(function (res) {
+      var items = Array.isArray(res) ? res : ((res && res.items) || [])
       var hit = null
       for (var i = 0; i < items.length; i++) {
         if (items[i].meta && String(items[i].meta.challenge_id) === String(challengeId)) { hit = items[i]; break }
       }
       if (hit) { conversationId = hit.id; return }
-      return sendJSON('POST', '/api/chat/conversations', { title: '挑战伴学' }).then(function (c) {
+      return conversationApi.post('/api/chat/conversations', { title: '挑战伴学' }).then(function (c) {
         conversationId = c.id
-        return sendJSON('PATCH', '/api/chat/conversations/' + conversationId, { meta: { challenge_id: challengeId } })
+        return conversationApi.patch('/api/chat/conversations/' + conversationId, { meta: { challenge_id: challengeId } })
       })
     }).catch(function (e) {
       conversationId = ''
@@ -110,8 +116,8 @@ window.cpCompanion = (function () {
 
   function loadHistory() {
     if (!conversationId) return Promise.resolve()
-    return getJSON('/api/chat/conversations/' + conversationId + '/messages?page_size=50').then(function (res) {
-      var items = (res && res.items) || []
+    return conversationApi.get('/api/chat/conversations/' + conversationId + '/messages', { page_size: 50 }).then(function (res) {
+      var items = Array.isArray(res) ? res : ((res && res.items) || [])
       var msgs = items.map(function (m) { return { id: m.id, role: m.role, content: m.content } })
       Vue.nextTick(function () {
         if (chatRef && chatRef.value) chatRef.value.setMessages(msgs)
@@ -151,40 +157,6 @@ window.cpCompanion = (function () {
     runStream(content, callbacks)
   }
 
-  function runStream(content, callbacks) {
-    var accumulated = ''
-    setQueue(0, 0)
-    fetch(window.cpPrefix + '/api/chat/conversations/' + conversationId + '/messages/stream', {
-      method: 'POST', headers: headers(), body: JSON.stringify({ content: content })
-    }).then(check).then(function (response) {
-      readSSE(response, function (data) {
-        var type = data.type || ''
-        if (type === 'queue') { setQueue(data.position || 0, data.estimated_wait || 0); return }
-        if (type === 'queue_ready') { setQueue(0, 0); return }
-        if (type === 'delta') { accumulated += data.content || ''; callbacks.onChunk(data.content || '', accumulated); return }
-        if (type === 'meta') { applyMeta(data); return }
-        if (type === 'thinking' || type === 'tool' || type === 'tool_executed' || type === 'references' || type === 'widget' || type === 'widget_update') {
-          if (callbacks.routeRich) callbacks.routeRich(type, data)
-          return
-        }
-        if (type === 'done') { setQueue(0, 0); callbacks.onDone(accumulated); return }
-        if (type === 'error') { setQueue(0, 0); callbacks.onError(new Error(data.message || 'AI服务暂时不可用')) }
-      }, function () {
-        setQueue(0, 0)
-        callbacks.onDone(accumulated)
-      }, function (err) {
-        setQueue(0, 0)
-        if (accumulated) callbacks.onDone(accumulated)
-        else callbacks.onError(err || new Error('AI服务暂时不可用'))
-      })
-    }).catch(function (err) {
-      setQueue(0, 0)
-      var msg = '网络出了点问题，稍后再试～'
-      if (err && err.status === 503) msg = 'AI服务繁忙，请稍后再试～'
-      callbacks.onError(new Error(msg))
-    })
-  }
-
   function toggleSessions() {
     var s = window.appState
     s.companion.sessions = !s.companion.sessions
@@ -200,8 +172,8 @@ window.cpCompanion = (function () {
     s.companion.show = true
     s.companion.sessions = false
     s.companionMeta = {}
-    getJSON('/api/v1/challenges/' + ch.id + '/companion-status').then(function (meta) {
-      applyMeta(meta)
+    window.api.get('/challenges/' + ch.id + '/companion-status').then(function (meta) {
+      applyMeta(meta.data || meta)
     }).catch(function () {})
     ensureConversation(ch.id).then(function () {
       loadHistory()
