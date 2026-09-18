@@ -5,10 +5,10 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, insightRunning: false, insightText: '', loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0 },
+    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, insightRunning: false, insightText: '', loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null },
 
     _freshData(loading) {
-      return { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, insightRunning: false, insightText: '', loading: !!loading, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0 }
+      return { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, insightRunning: false, insightText: '', loading: !!loading, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null }
     },
 
     render(el) {
@@ -76,30 +76,22 @@ window.cpViews.home = (function () {
       }
       const safe = p => p.catch(() => null)
       const isDiet = ch.task_type === 'diet'
-      const [today, checkins, mercy, points, adaptive, guidance, dietTarget, weightTrend] = await Promise.all([
+      const [today, guidance, dietTarget, weightTrend] = await Promise.all([
         window.api.get('/challenges/' + ch.id + '/today').then(r => r.data || r).catch(e => { this._todayErr = e; return null }),
-        safe(window.api.get('/challenges/' + ch.id + '/checkins')),
-        safe(window.api.get('/challenges/' + ch.id + '/mercy')),
-        safe(window.api.get('/points/summary')),
-        safe(window.api.get('/challenges/' + ch.id + '/adaptive/pending')),
         safe(window.api.get('/challenges/' + ch.id + '/guidance')),
         isDiet ? safe(window.api.get('/challenges/' + ch.id + '/diet/target')) : Promise.resolve(null),
         isDiet ? safe(window.api.get('/challenges/' + ch.id + '/weight/trend')) : Promise.resolve(null),
       ])
       const d = this.data
       d.today = today
-      const cl = checkins && (checkins.data || checkins)
-      d.checkins = Array.isArray(cl) ? cl : ((cl && cl.items) || [])
-      d.mercy = mercy && (mercy.data || mercy)
-      d.points = points && (points.data || points)
-      const ad = adaptive && (adaptive.data || adaptive)
-      d.adaptive = (ad && ad.suggestion) || null
       const gd = guidance && (guidance.data || guidance)
       d.guidance = gd || null
       const dt = dietTarget && (dietTarget.data || dietTarget)
       d.dietTarget = isDiet ? (dt || null) : null
       const wt = weightTrend && (weightTrend.data || weightTrend)
       d.weightTrend = isDiet ? (wt || null) : null
+      if (today && d.prevChecked !== null && d.prevChecked !== today.checked_in) d.progLoaded = false
+      if (today) d.prevChecked = today.checked_in
       if (!d.weightInput && wt && wt.latest) {
         try { d.weightInput = String(Number(wt.latest.weight_kg) || '') } catch (e) {}
       }
@@ -138,6 +130,28 @@ window.cpViews.home = (function () {
       if (d.activeTab === tab) return
       d.activeTab = tab
       this.rerender()
+      if (tab === 'progress' || tab === 'insight') this._ensureProgData()
+    },
+
+    _ensureProgData() {
+      const s = window.appState
+      const ch = s.current
+      const d = this.data
+      if (!ch || d.progLoaded) return Promise.resolve()
+      d.progLoaded = true
+      const safe = p => p.catch(() => null)
+      return Promise.all([
+        safe(window.api.get('/challenges/' + ch.id + '/checkins')),
+        safe(window.api.get('/challenges/' + ch.id + '/adaptive/pending')),
+        safe(window.api.get('/challenges/' + ch.id + '/mercy')),
+      ]).then(([checkins, adaptive, mercy]) => {
+        const cl = checkins && (checkins.data || checkins)
+        d.checkins = Array.isArray(cl) ? cl : ((cl && cl.items) || [])
+        const ad = adaptive && (adaptive.data || adaptive)
+        d.adaptive = (ad && ad.suggestion) || null
+        d.mercy = mercy && (mercy.data || mercy)
+        if (this.el) this.rerender()
+      })
     },
 
     _main(s) {
