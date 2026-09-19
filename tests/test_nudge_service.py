@@ -123,4 +123,23 @@ chk("bias 空 不变", fc3["projected"], fc["projected"])
 fc4 = svc.apply_bias(svc.evaluate(FakeCh(), 0, 5, hour=10), 2.0)
 chk("bias 未启用 不变", fc4["enabled"], False)
 
+rows_eve = [{"hour": h, "total_value": 5.0 if h in (20, 21) else 0.5} for h in range(6, 24)]
+r = svc.evaluate(FakeCh(), 3, 8, hour=16, hour_dist=rows_eve)
+chk("前瞻窗口 晚间高危", r["risk_window"], "20:00-21:00")
+chk("前瞻窗口 文案被理解感", "对你来说最难" in r["risk_window_msg"], True)
+
+r = svc.evaluate(FakeCh(), 0, 8, hour=16, hour_dist=rows_eve)
+chk("前瞻窗口 今日未记录仍给窗口", r["risk_window"], "20:00-21:00")
+chk("前瞻窗口 今日未记录 enabled仍False", r["enabled"], False)
+
+rows_morn = [{"hour": h, "total_value": 5.0 if h in (8, 9) else 0.5} for h in range(6, 24)]
+r = svc.evaluate(FakeCh(), 3, 8, hour=16, hour_dist=rows_morn)
+chk("前瞻窗口 已过时段 无窗口", r["risk_window"], "")
+
+r = svc.evaluate(FakeCh(), 3, 8, hour=16, hour_dist=[{"hour": 20, "total_value": 5.0}])
+chk("前瞻窗口 样本不足不给窗口", r["risk_window"], "")
+
+r = svc.evaluate(FakeCh("increase", "杯", "fixed"), 2, 8, hour=9, hour_dist=rows_eve)
+chk("前瞻窗口 increase 最佳时段", "状态最好" in r["risk_window_msg"], True)
+
 raise SystemExit(1 if fails else 0)

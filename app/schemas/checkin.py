@@ -68,6 +68,8 @@ class ForecastResponse(BaseModel):
     calibrated: bool = False
     bias: float = 0.0
     ladder_outlook: Optional[dict[str, object]] = None
+    risk_window: str = ""
+    risk_window_msg: str = ""
 
 
 class CheckInResultResponse(BaseModel):

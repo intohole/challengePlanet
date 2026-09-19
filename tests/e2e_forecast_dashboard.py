@@ -27,6 +27,8 @@ FORECAST = {
     "touch_at": "16:40", "remaining_hours": 2.5, "remaining_units": 2.0,
     "risk_level": 1, "coach_nudge": "", "nudge_level": 1,
     "reach_at": "", "calibrated": True, "bias": 1.5,
+    "risk_window": "20:00-22:00",
+    "risk_window_msg": "20:00-22:00 这段对你来说最难，提前安排点别的",
     "ladder_outlook": {
         "on_track": False, "projected_end": 9.0, "goal": 5.0,
         "remaining_days": 18, "message": "按现在的水平，结束时约 9.0 根，离目标还差 4.0 根",
@@ -48,6 +50,8 @@ FORECAST_INC = {
     "touch_at": "", "remaining_hours": 0.0, "remaining_units": 5.0,
     "risk_level": 0, "coach_nudge": "", "nudge_level": 0,
     "reach_at": "21:30", "calibrated": False, "bias": 0.0, "ladder_outlook": None,
+    "risk_window": "07:00-08:00",
+    "risk_window_msg": "07:00-08:00 你通常状态最好，趁那会儿推进",
 }
 
 
@@ -161,6 +165,7 @@ def main() -> None:
         check("展示依据文案", "同时段节奏" in body)
         check("展示回测校准", "已按昨天实际微调" in body)
         check("展示阶梯终点预测", "结束时约 9.0 根" in body)
+        check("展示前瞻风险窗口", "对你来说最难" in body)
 
         dash = page.locator(".cp-dash")
         check("仪表盘容器存在", dash.count() >= 1)
@@ -174,6 +179,7 @@ def main() -> None:
         check("展示已记 3 / 8", "3" in body2 and "8" in body2)
         check("展示预计达标 21:30", "21:30" in body2)
         check("展示依据文案 今日速度", "记录速度" in body2)
+        check("展示前瞻最佳时段", "状态最好" in body2)
 
         page.screenshot(path="/tmp/cp_forecast_dash.png", full_page=False)
         errs = [e for e in console_errs if "favicon" not in e and "net::ERR" not in e]

@@ -13,6 +13,8 @@
 .cp-dash-basis i { margin-right: 4px; }
 .cp-dash-cal { color: var(--emerald); opacity: 1; }
 .cp-dash-ladder { font-size: 11px; color: var(--amber); }
+.cp-dash-window { font-size: 11px; color: var(--primary-light); }
+.cp-dash-window i { margin-right: 4px; }
 
 .cp-subgoals { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 .cp-subgoal { padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--card-border); background: rgba(15,23,42,.02); transition: all .2s; }

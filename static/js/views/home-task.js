@@ -105,14 +105,19 @@
         const basis = fc.basis ? '<div class="cp-dash-basis">' + window.cpEsc(fc.basis) + (fc.confidence_label ? ' · ' + fc.confidence_label + '把握' : '') + '</div>' : ''
         const cal = fc.calibrated ? '<div class="cp-dash-basis cp-dash-cal"><i class="fas fa-scale-balanced"></i>已按昨天实际微调</div>' : ''
         const ladder = fc.ladder_outlook && fc.ladder_outlook.message ? '<div class="cp-dash-ladder">' + window.cpEsc(fc.ladder_outlook.message) + '</div>' : ''
-        return '<div class="cp-dash">' + cells + basis + ladder + cal + '</div>'
+        const windowLine = fc.risk_window_msg ? '<div class="cp-dash-window"><i class="fas fa-route"></i>' + window.cpEsc(fc.risk_window_msg) + '</div>' : ''
+        return '<div class="cp-dash">' + cells + basis + windowLine + ladder + cal + '</div>'
       }
       return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>守住 ' + target + ' ' + unit + ' 以内即为今日达标</div>'
     }
     if ((t.remaining || 0) <= 0) return ''
-    if (fc.enabled && fc.reach_at) {
+    const winInc = fc.risk_window_msg ? '<div class="cp-dash-window"><i class="fas fa-route"></i>' + window.cpEsc(fc.risk_window_msg) + '</div>' : ''
+    if (fc.enabled && (fc.reach_at || winInc)) {
       const basis = fc.basis ? '<div class="cp-dash-basis">' + window.cpEsc(fc.basis) + '</div>' : ''
-      return '<div class="cp-dash"><span class="cp-dash-cell">已记 <b>' + total + '</b> / ' + target + '</span><span class="cp-dash-cell">预计 <b>' + fc.reach_at + '</b> 达标</span>' + basis + '</div>'
+      const reachCell = fc.reach_at
+        ? '<span class="cp-dash-cell">预计 <b>' + fc.reach_at + '</b> 达标</span>'
+        : '<span class="cp-dash-cell">还差 <b>' + t.remaining + '</b> ' + unit + '</span>'
+      return '<div class="cp-dash"><span class="cp-dash-cell">已记 <b>' + total + '</b> / ' + target + '</span>' + reachCell + basis + winInc + '</div>'
     }
     return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>还差 <b>' + t.remaining + '</b> ' + unit + ' 达标</div>'
   }

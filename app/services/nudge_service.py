@@ -1,73 +1,17 @@
 from __future__ import annotations
 
+from app.services.forecast_math import (
+    DAY_END,
+    DAY_START,
+    basis_of,
+    blend_profile,
+    confidence_of,
+    fmt_hour,
+    forward_window,
+    interval_of,
+    window_text,
+)
 from app.services.goal_rule_service import is_ladder
-
-DAY_START = 6
-DAY_END = 24
-
-
-def _hour_profile(rows: list[dict[str, object]] | None) -> dict[int, float]:
-    raw: dict[int, float] = {}
-    for row in rows or []:
-        h = int(row.get("hour", -1))
-        v = float(row.get("total_value", 0) or 0)
-        if DAY_START <= h < DAY_END and v > 0:
-            raw[h] = raw.get(h, 0.0) + v
-    total = sum(raw.values())
-    if total <= 0:
-        return {}
-    return {h: v / total for h, v in raw.items()}
-
-
-def _fmt_hour(hours_float: float) -> str:
-    h = int(hours_float)
-    m = int(round((hours_float - h) * 60))
-    if m >= 60:
-        h += 1
-        m = 0
-    return f"{h:02d}:{m:02d}"
-
-
-def _blend_profile(
-    all_rows: list[dict[str, object]] | None,
-    wd_rows: list[dict[str, object]] | None,
-) -> dict[int, float]:
-    all_p = _hour_profile(all_rows)
-    wd_p = _hour_profile(wd_rows)
-    if not wd_p:
-        return all_p
-    wd_active = sum(1 for r in wd_rows or [] if float(r.get("total_value", 0) or 0) > 0)
-    w = 0.6 if wd_active >= 3 else 0.3
-    hours = set(all_p) | set(wd_p)
-    mixed = {h: wd_p.get(h, 0.0) * w + all_p.get(h, 0.0) * (1 - w) for h in hours}
-    total = sum(mixed.values())
-    if total <= 0:
-        return all_p
-    return {h: v / total for h, v in mixed.items()}
-
-
-def _confidence_of(hour_dist: list[dict[str, object]] | None) -> tuple[float, str]:
-    active = sum(1 for r in hour_dist or [] if float(r.get("total_value", 0) or 0) > 0)
-    if active >= 10:
-        return 0.85, "高"
-    if active >= 4:
-        return 0.6, "中"
-    return 0.35, "低"
-
-
-def _basis_of(conf_label: str, wd_rows: list[dict[str, object]] | None) -> str:
-    if wd_rows and any(float(r.get("total_value", 0) or 0) > 0 for r in wd_rows):
-        return "按你最近两周的同时段节奏"
-    if conf_label == "高":
-        return "按你最近两周的节奏"
-    if conf_label == "中":
-        return "按你最近几天的记录"
-    return "记录还少，今天先以实际进度为准"
-
-
-def _interval(projected: float, confidence: float) -> tuple[float, float]:
-    spread = 0.2 if confidence >= 0.7 else (0.3 if confidence >= 0.45 else 0.45)
-    return round(projected * (1 - spread), 1), round(projected * (1 + spread), 1)
 
 
 class NudgeService:
@@ -88,7 +32,10 @@ class NudgeService:
                 challenge, today_total, today_target, hour,
                 hour_dist, weekday_dist, day_number, recent_avg,
             )
-        return self._increase_forecast(challenge, today_total, today_target, hour, is_soft_exceeded)
+        return self._increase_forecast(
+            challenge, today_total, today_target, hour, is_soft_exceeded,
+            hour_dist, weekday_dist,
+        )
 
     def apply_bias(self, forecast: dict[str, object], bias: float | None) -> dict[str, object]:
         if bias is None or not forecast.get("enabled") or float(forecast.get("projected", 0) or 0) <= 0:
@@ -117,11 +64,16 @@ class NudgeService:
         recent_avg: float | None,
     ) -> dict[str, object]:
         unit = str(getattr(challenge, "unit", "") or "")
+        profile = blend_profile(hour_dist, weekday_dist)
+        confidence, conf_label = confidence_of(hour_dist)
+        lo_w, hi_w = forward_window(profile, hour)
+        risk_window, window_msg = window_text(lo_w, hi_w, "decrease", confidence)
         if today_total <= 0 or today_target <= 0:
-            return self._empty()
-        profile = _blend_profile(hour_dist, weekday_dist)
-        confidence, conf_label = _confidence_of(hour_dist)
-        basis = _basis_of(conf_label, weekday_dist)
+            result = self._empty()
+            result["risk_window"] = risk_window
+            result["risk_window_msg"] = window_msg
+            return result
+        basis = basis_of(conf_label, weekday_dist)
         time_frac = min(1.0, max(0.0, float(hour - DAY_START) / (DAY_END - DAY_START)))
         if profile:
             w_elapsed = sum(profile.get(h, 0.0) for h in range(DAY_START, hour))
@@ -131,7 +83,7 @@ class NudgeService:
         else:
             gone = float(max(0.0, hour - DAY_START))
             projected = today_total * (DAY_END - DAY_START) / gone if gone > 0 else today_total
-        low, high = _interval(projected, confidence)
+        low, high = interval_of(projected, confidence)
         remaining_units = max(0.0, today_target - today_total)
         touch_at = ""
         remaining_hours = 0.0
@@ -140,7 +92,7 @@ class NudgeService:
             need_hours = remaining_units * gone / today_total
             touch_float = hour + need_hours
             if touch_float < DAY_END:
-                touch_at = _fmt_hour(touch_float)
+                touch_at = fmt_hour(touch_float)
                 remaining_hours = max(0.0, round(touch_float - hour, 1))
         if today_total >= today_target:
             risk = 2
@@ -157,6 +109,7 @@ class NudgeService:
             "remaining_units": round(remaining_units, 1),
             "risk_level": risk, "coach_nudge": coach, "nudge_level": risk,
             "reach_at": "", "ladder_outlook": self._ladder_outlook(challenge, day_number, recent_avg),
+            "risk_window": risk_window, "risk_window_msg": window_msg,
         }
 
     def _increase_forecast(
@@ -166,6 +119,8 @@ class NudgeService:
         today_target: float,
         hour: int,
         is_soft_exceeded: bool,
+        hour_dist: list[dict[str, object]] | None = None,
+        weekday_dist: list[dict[str, object]] | None = None,
     ) -> dict[str, object]:
         unit = str(getattr(challenge, "unit", "") or "")
         if today_target <= 0:
@@ -180,14 +135,17 @@ class NudgeService:
             if remaining > 0:
                 reach_float = hour + remaining / pace
                 if reach_float < DAY_END:
-                    reach_at = _fmt_hour(reach_float)
+                    reach_at = fmt_hour(reach_float)
             confidence, conf_label = 0.6, "中"
             basis = "按你今天的记录速度"
         else:
             projected = 0.0
             confidence, conf_label = 0.35, "低"
             basis = "今天还没记录，先开始第一步"
-        low, high = _interval(projected, confidence) if projected > 0 else (0.0, 0.0)
+        low, high = interval_of(projected, confidence) if projected > 0 else (0.0, 0.0)
+        profile = blend_profile(hour_dist, weekday_dist)
+        lo_w, hi_w = forward_window(profile, hour)
+        risk_window, window_msg = window_text(lo_w, hi_w, "increase", confidence)
         return {
             "enabled": True, "projected": projected,
             "projected_low": low, "projected_high": high,
@@ -196,6 +154,7 @@ class NudgeService:
             "remaining_units": round(remaining, 1),
             "risk_level": 0, "coach_nudge": msg, "nudge_level": level,
             "reach_at": reach_at, "ladder_outlook": None,
+            "risk_window": risk_window, "risk_window_msg": window_msg,
         }
 
     def _empty(self) -> dict[str, object]:
@@ -205,6 +164,7 @@ class NudgeService:
             "touch_at": "", "remaining_hours": 0.0, "remaining_units": 0.0,
             "risk_level": 0, "coach_nudge": "", "nudge_level": 0,
             "reach_at": "", "ladder_outlook": None,
+            "risk_window": "", "risk_window_msg": "",
         }
 
     def _decrease_text(
