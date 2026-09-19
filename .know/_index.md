@@ -1,5 +1,5 @@
 # Knowledge Index
-> Project: challengePlanet | Updated: 2026-09-19 | Total: 24 entries
+> Project: challengePlanet | Updated: 2026-09-19 | Total: 25 entries
 
 ## architecture
 - adr-challenge-end-delete | 有打卡记录挑战 | 2026-08-25
@@ -10,6 +10,7 @@
 - bp-forecast-forward-looking | 多数预测其实是回溯外推(用已发生的数据推算今日终值), 仍在描述过去; 真正前瞻是回答接下来什么时候危险/状态最好。做法: 在小时分布中取当前时刻之后权重最高且连续的时段作为前瞻窗口, 文案走被理解感(这段对你来说最难)而非评判, 且样本不足(置信度<0.45)时不出窗口避免瞎猜 | 2026-09-19
 - bp-forecast-trust-calibration | 【2026-09-19 认知纠正】原以为给区间(±)才可信, 实际做错:预警不是报表, 用户要的是一眼看懂+立刻行动而非统计精度。正确做法=单个预计数字(整数)+一句依据+定性把握(高/中/低)。区间只在真正做分析的产品里才需要 | 2026-09-19
 - bp-minideploy-master-api | master=minideploy-cool@songguokr:8900, token取cluster_token.conf, 回环POST /api/cluster/apps/{name}/update-code+X-Service-Token; 应用实际运行节点用systemctl is-active判断, challengePlanet在edge-03 | 2026-08-27
+- bp-outlook-answer-user-question | 预测文案最大的坑不是措辞难懂, 而是回答了错的问题。我的阶梯预测按现在的水平,结束时约18根,离目标还差17根被用户说看不懂——根因是它把当前量直接外推为终值, 完全忽略了阶梯计划本身(系统每天在下调上限), 等于说你的习惯永远不会降; 又拿当前量比最终目标, 只给恐慌不给信息。正确做法: 先问用户此刻真正想知道什么, 再设计指标。阶梯用户想知道的是我有没有跟上计划, 所以应对比实际 vs 计划上限, 而不是实际 vs 最终目标 | 2026-09-19
 - bp-predictive-push-alert | 预测不只在页面上展示,还要主动送达: 扫描活跃对象→预测风险(risk_level≥1)→复用统一通知中间件推送; 关键三条: 预警时间设在行为高峰之前(如18:30预警20:00后的风险窗口)、按对象+日期去重防打扰、文案直接用预测里最可行动的那句(优先coach_nudge兜底risk_window_msg) | 2026-09-19
 - bp-single-focal-data-card | 数据密集卡片(仪表盘)打磨三步: ①先查重复渲染(同一指标被两个函数各画一遍,如进度条) ②立一个签名可视化承载核心判断(如节奏轨:已记填充+上限刻度+预计标记同轨,一眼看出是否会超) ③建立三层信息梯度(关键指标16px > 可行动提示12px主色 > 元信息12px muted+chip), 状态用色只在标记上而非卡片底 | 2026-09-19
 
