@@ -32,8 +32,8 @@ FORECAST = {
     "risk_window_context": "社交",
     "context_pattern": "「压力」时你平均每天 6 根，是「家」的 3 倍",
     "ladder_outlook": {
-        "on_track": False, "projected_end": 9.0, "goal": 5.0,
-        "remaining_days": 18, "message": "按现在的水平，结束时约 9 根，离目标还差 4 根",
+        "on_track": False, "recent_avg": 18.0, "plan_cap": 15.0,
+        "remaining_days": 18, "message": "最近7天平均 18 根，比阶梯计划高 3 根",
     },
 }
 
@@ -200,7 +200,8 @@ def main() -> None:
         check("展示还可 2", "还可" in body)
         check("展示依据文案", "同时段节奏" in body)
         check("展示回测校准", "已校准" in body)
-        check("展示阶梯终点预测", "结束时约 9 根" in body)
+        check("展示阶梯计划对比", "比阶梯计划高" in body)
+        check("不再出现看不懂的'离目标还差'", "离目标还差" not in body)
         check("展示前瞻风险窗口", "对你来说最难" in body)
         check("展示情境归因", "社交" in body)
         check("展示条件模式", "3 倍" in body)

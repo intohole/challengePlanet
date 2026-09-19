@@ -9,13 +9,16 @@ from app.services.nudge_service import NudgeService
 
 class FakeCh:
     def __init__(self, direction="decrease", unit="根", goal_rule="ladder",
-                 ladder_goal=0.0, ladder_start=0.0, duration_days=30):
+                 ladder_goal=0.0, ladder_start=0.0, duration_days=30,
+                 ladder_interval=3, ladder_step=1.0):
         self.direction = direction
         self.unit = unit
         self.goal_rule = goal_rule
         self.ladder_goal = ladder_goal
         self.ladder_start = ladder_start
         self.duration_days = duration_days
+        self.ladder_interval = ladder_interval
+        self.ladder_step = ladder_step
 
 
 svc = NudgeService()
@@ -102,18 +105,20 @@ r = svc.evaluate(FakeCh("increase", "组", "fixed"), 1, 20, hour=21)
 chk("increase 21点进度太慢 无达标时刻", r["reach_at"], "")
 chk("increase 21点进度太慢 nudge=1", r["nudge_level"], 1)
 
-ch = FakeCh(ladder_goal=5.0, duration_days=45)
-r = svc.evaluate(ch, 4, 8, hour=10, hour_dist=rows, day_number=15, recent_avg=6.0)
+ch = FakeCh(ladder_start=20.0, ladder_goal=5.0, duration_days=45)
+r = svc.evaluate(ch, 4, 18, hour=10, hour_dist=rows, day_number=15, recent_avg=20.0)
 lo = r["ladder_outlook"]
-chk("ladder 终点预测 未达目标", lo["on_track"], False)
-chk("ladder 终点预测 结束值", lo["projected_end"], 6.0)
-chk("ladder 终点预测 剩余天数", lo["remaining_days"], 30)
-chk("ladder 终点预测 话术含差距", "还差" in lo["message"], True)
-chk("ladder 终点预测 无多余小数", ".0" not in lo["message"], True)
+chk("ladder 跟上计划 未达标", lo["on_track"], False)
+chk("ladder 跟上计划 计划上限约17", round(lo["plan_cap"]), 17)
+chk("ladder 跟上计划 剩余天数", lo["remaining_days"], 30)
+chk("ladder 跟上计划 话术讲对比", "比阶梯计划高" in lo["message"], True)
+chk("ladder 跟上计划 无多余小数", ".0" not in lo["message"], True)
 
-ch2 = FakeCh(ladder_goal=8.0, duration_days=45)
-r = svc.evaluate(ch2, 4, 8, hour=10, hour_dist=rows, day_number=15, recent_avg=6.0)
-chk("ladder 终点预测 达标", r["ladder_outlook"]["on_track"], True)
+r = svc.evaluate(ch, 4, 18, hour=10, hour_dist=rows, day_number=15, recent_avg=6.0)
+lo = r["ladder_outlook"]
+chk("ladder 跟上计划 在计划内", lo["on_track"], True)
+chk("ladder 跟上计划 在计划内话术", "在阶梯计划内" in lo["message"], True)
+chk("ladder 跟上计划 不再出现'离目标还差'", "离目标还差" not in lo["message"], True)
 
 fc = svc.evaluate(FakeCh(), 4, 5, hour=10, hour_dist=rows)
 fc2 = svc.apply_bias(fc, 2.0)

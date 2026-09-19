@@ -12,7 +12,7 @@ from app.services.forecast_math import (
     forward_window,
     window_parts,
 )
-from app.services.goal_rule_service import is_ladder
+from app.services.goal_rule_service import is_ladder, ladder_cap
 
 
 class NudgeService:
@@ -210,17 +210,20 @@ class NudgeService:
     ) -> dict[str, object] | None:
         if not is_ladder(challenge) or recent_avg is None or recent_avg <= 0:
             return None
-        goal = float(getattr(challenge, "ladder_goal", 0) or 0)
         unit = str(getattr(challenge, "unit", "") or "")
         duration = max(0, int(getattr(challenge, "duration_days", 0) or 0))
-        remaining = max(0, duration - int(day_number or 0))
-        on_track = recent_avg <= goal
+        day = int(day_number or 0)
+        remaining = max(0, duration - day)
+        caps = [ladder_cap(challenge, d) for d in range(max(1, day - 6), day + 1)]
+        plan_cap = sum(caps) / len(caps) if caps else 0.0
+        if plan_cap <= 0:
+            return None
+        on_track = recent_avg <= plan_cap
         if on_track:
-            message = f"按现在的水平，结束时能到 {fmt_int(goal)}{unit} 以下"
+            message = f"最近7天平均 {fmt_int(recent_avg)}{unit}，在阶梯计划内"
         else:
-            gap = recent_avg - goal
-            message = f"按现在的水平，结束时约 {fmt_int(recent_avg)}{unit}，离目标还差 {fmt_int(gap)}{unit}"
+            message = f"最近7天平均 {fmt_int(recent_avg)}{unit}，比阶梯计划高 {fmt_int(recent_avg - plan_cap)}{unit}"
         return {
-            "on_track": on_track, "projected_end": round(recent_avg, 1),
-            "goal": goal, "remaining_days": remaining, "message": message,
+            "on_track": on_track, "recent_avg": round(recent_avg, 1),
+            "plan_cap": round(plan_cap, 1), "remaining_days": remaining, "message": message,
         }
