@@ -53,8 +53,6 @@ class CheckInResponse(BaseModel):
 class ForecastResponse(BaseModel):
     enabled: bool = False
     projected: float = 0.0
-    projected_low: float = 0.0
-    projected_high: float = 0.0
     confidence: float = 0.0
     confidence_label: str = ""
     basis: str = ""

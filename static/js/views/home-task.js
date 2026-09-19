@@ -100,10 +100,7 @@
     if (isDecrease) {
       if (total > (t.today_target || 0)) return '<div class="cp-remain-hint over"><i class="fas fa-circle-exclamation"></i>已超今日上限 ' + target + ' ' + unit + '，明天梯度会更低，稳住</div>'
       if (fc.enabled && fc.projected > 0) {
-        const proj = Number(fc.projected) || 0
-        const spread = (Number(fc.projected_high) || 0) - (Number(fc.projected_low) || 0)
-        const approx = spread >= 1.5 ? '左右' : ''
-        let cells = '<span class="cp-dash-cell"><b>' + window.cpFmtInt(total) + '</b> 已记</span><span class="cp-dash-cell">预计 <b>' + window.cpFmtInt(proj) + '</b> ' + unit + approx + '</span>'
+        let cells = '<span class="cp-dash-cell"><b>' + window.cpFmtInt(total) + '</b> 已记</span><span class="cp-dash-cell">预计 <b>' + window.cpFmtInt(fc.projected) + '</b> ' + unit + '</span>'
         if (fc.touch_at) cells += '<span class="cp-dash-cell">触顶 <b>' + fc.touch_at + '</b></span>'
         if (fc.remaining_units > 0) cells += '<span class="cp-dash-cell">还可 <b>' + window.cpFmtInt(fc.remaining_units) + '</b> ' + unit + '</span>'
         const cal = fc.calibrated ? '<span class="cp-dash-chip cal"><i class="fas fa-scale-balanced"></i>已校准</span>' : ''

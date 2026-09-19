@@ -92,7 +92,7 @@ async def main() -> None:
             session, challenge, today_total, today_target, hour, day_number=5,
         )
         check("预测启用", bool(fc["enabled"]), str(fc))
-        check("预测带区间", fc["projected_high"] > fc["projected"], str(fc))
+        check("预测单值(无区间)", "projected_low" not in fc and fc["projected"] > 0, str(fc))
         check("预测带置信度", fc["confidence"] > 0, str(fc))
         check("预测带依据", bool(fc["basis"]), str(fc))
 

@@ -87,12 +87,12 @@ rows_wd = [{"hour": 14, "total_value": 3.0, "checkin_count": 3},
 r = svc.evaluate(FakeCh(), 4, 5, hour=10, hour_dist=rows, weekday_dist=rows_wd)
 chk("decrease 星期加权 basis", r["basis"], "按你最近两周的同时段节奏")
 chk("decrease 星期加权 confidence>0", r["confidence"] > 0, True)
-chk("decrease 星期加权 有区间", r["projected_high"] > r["projected_low"], True)
+chk("decrease 星期加权 有预计值", r["projected"] > 0, True)
 
 r = svc.evaluate(FakeCh(), 4, 5, hour=10, hour_dist=rows)
 chk("decrease 全量分布 basis", r["basis"], "按你最近两周的节奏")
 chk("decrease 全量分布 高把握", r["confidence_label"], "高")
-chk("decrease 全量分布 预计区间包含", r["projected_low"] <= r["projected"] <= r["projected_high"], True)
+chk("decrease 全量分布 无区间字段", "projected_low" not in r, True)
 
 r = svc.evaluate(FakeCh("increase", "组", "fixed"), 3, 5, hour=12)
 chk("increase 12点已3组 达标时刻", r["reach_at"], "16:00")

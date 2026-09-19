@@ -22,7 +22,7 @@ CH = {
 }
 
 FORECAST = {
-    "enabled": True, "projected": 11.0, "projected_low": 8.8, "projected_high": 13.2,
+    "enabled": True, "projected": 11.0,
     "confidence": 0.6, "confidence_label": "中", "basis": "按你最近两周的同时段节奏",
     "touch_at": "16:40", "remaining_hours": 2.5, "remaining_units": 2.0,
     "risk_level": 1, "coach_nudge": "", "nudge_level": 1,
@@ -30,7 +30,7 @@ FORECAST = {
     "risk_window": "20:00-22:00",
     "risk_window_msg": "20:00-22:00 这段对你来说最难，多在「社交」场景，提前安排点别的",
     "risk_window_context": "社交",
-    "context_pattern": "「压力」时你平均每天 6.2 根，是「家」的 3.1 倍",
+    "context_pattern": "「压力」时你平均每天 6 根，是「家」的 3 倍",
     "ladder_outlook": {
         "on_track": False, "projected_end": 9.0, "goal": 5.0,
         "remaining_days": 18, "message": "按现在的水平，结束时约 9 根，离目标还差 4 根",
@@ -47,7 +47,7 @@ CH2 = {
 }
 
 FORECAST_INC = {
-    "enabled": True, "projected": 9.0, "projected_low": 7.2, "projected_high": 10.8,
+    "enabled": True, "projected": 9.0,
     "confidence": 0.6, "confidence_label": "中", "basis": "按你今天的记录速度",
     "touch_at": "", "remaining_hours": 0.0, "remaining_units": 5.0,
     "risk_level": 0, "coach_nudge": "", "nudge_level": 0,
@@ -67,7 +67,7 @@ CH3 = {
 }
 
 FORECAST_OVER = {
-    "enabled": True, "projected": 24.0, "projected_low": 20.0, "projected_high": 28.0,
+    "enabled": True, "projected": 24.0,
     "confidence": 0.85, "confidence_label": "高", "basis": "按你最近两周的节奏",
     "touch_at": "", "remaining_hours": 0.0, "remaining_units": 0.0,
     "risk_level": 2, "coach_nudge": "今天已20根，超过目标了", "nudge_level": 2,
@@ -194,7 +194,6 @@ def main() -> None:
         body = page.locator("body").inner_text()
         check("展示已记 4", "4" in body)
         check("展示预计 11", "11" in body)
-        check("区间宽时带'左右'", "左右" in body)
         check("无±工程记法", "±" not in body)
         check("无浮点垃圾小数", "000000" not in body)
         check("展示触顶 16:40", "16:40" in body)
@@ -204,7 +203,7 @@ def main() -> None:
         check("展示阶梯终点预测", "结束时约 9 根" in body)
         check("展示前瞻风险窗口", "对你来说最难" in body)
         check("展示情境归因", "社交" in body)
-        check("展示条件模式", "3.1 倍" in body)
+        check("展示条件模式", "3 倍" in body)
 
         rail = page.locator(".cp-rail")
         check("节奏轨存在(签名元素)", rail.count() >= 1)
@@ -228,7 +227,10 @@ def main() -> None:
 
         dash = page.locator(".cp-dash")
         check("仪表盘容器存在", dash.count() >= 1)
-        print("  [渲染文本] " + dash.first.inner_text().replace("\n", " | "))
+        dash_text = dash.first.inner_text().replace("\n", " | ")
+        print("  [渲染文本] " + dash_text)
+        check("预计为单个数字(无左右)", "左右" not in dash_text and "预计" in dash_text, dash_text)
+        check("无多余小数", ".0" not in dash_text and ".1" not in dash_text, dash_text)
         cell_text = page.locator(".cp-dash-cell").all_inner_texts()
         check("至少4个指标格", len(cell_text) >= 4, str(cell_text))
 

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.datetime_utils import now_china
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository, InsightRepository
+from app.services.forecast_math import fmt_int
 from app.services.report_calculator import ReportCalculator
 from app.services.streak_service import today_str
 
@@ -181,12 +182,12 @@ class ReportService:
         best_hour = int(stats["best_hour"])
         if challenge.direction == "decrease":
             if last_7d_avg < last_30d_avg:
-                return f"最近7天平均{last_7d_avg:.1f}{challenge.unit}，比30天均值更低，你正在进步"
+                return f"最近7天平均{fmt_int(last_7d_avg)}{challenge.unit}，比30天均值更低，你正在进步"
             if peak_hour >= 0:
                 return f"你在{peak_hour:02d}:00-{peak_hour + 1:02d}:00记录最多，这可能是你的高风险时段"
         else:
             if last_7d_avg > last_30d_avg:
-                return f"最近7天平均{last_7d_avg:.1f}{challenge.unit}，比30天均值更高，状态不错"
+                return f"最近7天平均{fmt_int(last_7d_avg)}{challenge.unit}，比30天均值更高，状态不错"
             if best_hour >= 0:
                 return f"你在{best_hour:02d}:00-{best_hour + 1:02d}:00表现最好"
         return ""

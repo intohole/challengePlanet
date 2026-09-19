@@ -65,11 +65,6 @@ def basis_of(conf_label: str, wd_rows: list[dict[str, object]] | None) -> str:
     return "记录还少，今天先以实际进度为准"
 
 
-def interval_of(projected: float, confidence: float) -> tuple[float, float]:
-    spread = 0.2 if confidence >= 0.7 else (0.3 if confidence >= 0.45 else 0.45)
-    return round(projected * (1 - spread), 1), round(projected * (1 + spread), 1)
-
-
 def forward_window(profile: dict[int, float], hour: int) -> tuple[int, int]:
     future = {h: w for h, w in profile.items() if h > hour and w >= WINDOW_MIN_WEIGHT}
     if not future:
@@ -109,11 +104,6 @@ def fmt_int(value: float) -> str:
     return str(int(round(value)))
 
 
-def fmt_dec(value: float) -> str:
-    rounded = round(value, 1)
-    return str(int(rounded)) if rounded == int(rounded) else str(rounded)
-
-
 CONTEXT_LABELS = {"home": "家", "work": "工作", "social": "社交", "stress": "压力"}
 _CONTEXT_MIN_CNT = 3
 _CONTEXT_MIN_DAYS = 2
@@ -143,4 +133,4 @@ def context_pattern(
     lo = min(valid, key=lambda v: v[1])
     if lo[1] <= 0 or hi[1] / lo[1] < _CONTEXT_RATIO:
         return ""
-    return f"「{hi[0]}」时你平均每天 {fmt_dec(hi[1])}{unit}，是「{lo[0]}」的 {fmt_dec(hi[1] / lo[1])} 倍"
+    return f"「{hi[0]}」时你平均每天 {fmt_int(hi[1])}{unit}，是「{lo[0]}」的 {fmt_int(hi[1] / lo[1])} 倍"

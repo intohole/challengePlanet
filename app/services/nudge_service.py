@@ -10,7 +10,6 @@ from app.services.forecast_math import (
     fmt_hour,
     fmt_int,
     forward_window,
-    interval_of,
     window_parts,
 )
 from app.services.goal_rule_service import is_ladder
@@ -43,13 +42,7 @@ class NudgeService:
         if bias is None or not forecast.get("enabled") or float(forecast.get("projected", 0) or 0) <= 0:
             return forecast
         base = float(forecast["projected"])
-        adjusted = max(base * 0.6, min(base * 1.4, base + bias))
-        forecast["projected"] = round(adjusted, 1)
-        lo = float(forecast.get("projected_low", 0) or 0)
-        hi = float(forecast.get("projected_high", 0) or 0)
-        spread = hi - lo
-        forecast["projected_low"] = round(adjusted - spread / 2, 1)
-        forecast["projected_high"] = round(adjusted + spread / 2, 1)
+        forecast["projected"] = round(max(base * 0.6, min(base * 1.4, base + bias)), 1)
         forecast["calibrated"] = True
         forecast["bias"] = round(bias, 1)
         return forecast
@@ -88,7 +81,6 @@ class NudgeService:
         else:
             gone = float(max(0.0, hour - DAY_START))
             projected = today_total * (DAY_END - DAY_START) / gone if gone > 0 else today_total
-        low, high = interval_of(projected, confidence)
         remaining_units = max(0.0, today_target - today_total)
         touch_at = ""
         remaining_hours = 0.0
@@ -108,7 +100,6 @@ class NudgeService:
         coach = self._decrease_text(risk, today_total, today_target, projected, touch_at, unit)
         return {
             "enabled": True, "projected": round(projected, 1),
-            "projected_low": low, "projected_high": high,
             "confidence": confidence, "confidence_label": conf_label, "basis": basis,
             "touch_at": touch_at, "remaining_hours": remaining_hours,
             "remaining_units": round(remaining_units, 1),
@@ -148,13 +139,11 @@ class NudgeService:
             projected = 0.0
             confidence, conf_label = 0.35, "低"
             basis = "今天还没记录，先开始第一步"
-        low, high = interval_of(projected, confidence) if projected > 0 else (0.0, 0.0)
         profile = blend_profile(hour_dist, weekday_dist)
         lo_w, hi_w = forward_window(profile, hour)
         span, base, action = window_parts(lo_w, hi_w, "increase", confidence)
         return {
             "enabled": True, "projected": projected,
-            "projected_low": low, "projected_high": high,
             "confidence": confidence, "confidence_label": conf_label, "basis": basis,
             "touch_at": "", "remaining_hours": 0.0,
             "remaining_units": round(remaining, 1),
@@ -166,7 +155,7 @@ class NudgeService:
 
     def _empty(self) -> dict[str, object]:
         return {
-            "enabled": False, "projected": 0.0, "projected_low": 0.0, "projected_high": 0.0,
+            "enabled": False, "projected": 0.0,
             "confidence": 0.0, "confidence_label": "", "basis": "",
             "touch_at": "", "remaining_hours": 0.0, "remaining_units": 0.0,
             "risk_level": 0, "coach_nudge": "", "nudge_level": 0,
