@@ -44,11 +44,11 @@ chk("decrease 10点已4根 nudge_level=1", r["nudge_level"], 1)
 
 r = svc.evaluate(FakeCh(), 6, 5, hour=15)
 chk("decrease 已超限 risk=2", r["risk_level"], 2)
-chk("decrease 已超限 话术", r["coach_nudge"], "今天已6根，超过目标了。身体比目标重要，先喝口水停一停")
+chk("decrease 已超限 话术严厉", r["coach_nudge"], "今天已超 1根。停下来，别再继续了")
 
 r = svc.evaluate(FakeCh(), 5, 5, hour=15)
 chk("decrease 到顶 risk=2", r["risk_level"], 2)
-chk("decrease 到顶 话术", r["coach_nudge"], "今天已5/5根，到顶了。先停一停，下一次留到更需要的时刻")
+chk("decrease 到顶 话术严厉", r["coach_nudge"], "今天已到上限 5根，就此打住")
 
 r = svc.evaluate(FakeCh(), 2, 20, hour=14)
 chk("decrease 安全 risk=0", r["risk_level"], 0)

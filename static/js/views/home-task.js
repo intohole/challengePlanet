@@ -98,17 +98,26 @@
     const total = (t.today_total || 0)
     const fc = (t.forecast) || {}
     if (isDecrease) {
-      if (total > (t.today_target || 0)) return '<div class="cp-remain-hint over"><i class="fas fa-circle-exclamation"></i>已超今日上限 ' + target + ' ' + unit + '，明天梯度会更低，稳住</div>'
       if (fc.enabled && fc.projected > 0) {
+        const cap = Number(t.today_target) || 0
+        const over = cap > 0 && total > cap
+        const willOver = cap > 0 && Number(fc.projected) > cap
+        const state = over ? 'over' : (willOver ? 'warn' : 'ok')
+        const overAmt = over ? (total - cap) : Math.max(0, Number(fc.projected) - cap)
+        const statusLabel = over ? '已超计划' : (willOver ? '预计会超' : '在计划内')
+        const alert = over
+          ? '<div class="cp-dash-alert over"><i class="fas fa-circle-exclamation"></i>已超 ' + window.cpFmtInt(overAmt) + ' ' + unit + '，停下来，别再继续了</div>'
+          : (willOver ? '<div class="cp-dash-alert warn"><i class="fas fa-triangle-exclamation"></i>按现在的节奏会超 ' + window.cpFmtInt(overAmt) + ' ' + unit + '，现在收住还来得及</div>' : '')
         let cells = '<span class="cp-dash-cell"><b>' + window.cpFmtInt(total) + '</b> 已记</span><span class="cp-dash-cell">预计 <b>' + window.cpFmtInt(fc.projected) + '</b> ' + unit + '</span>'
-        if (fc.touch_at) cells += '<span class="cp-dash-cell">触顶 <b>' + fc.touch_at + '</b></span>'
-        if (fc.remaining_units > 0) cells += '<span class="cp-dash-cell">还可 <b>' + window.cpFmtInt(fc.remaining_units) + '</b> ' + unit + '</span>'
+        if (!over && fc.touch_at) cells += '<span class="cp-dash-cell">触顶 <b>' + fc.touch_at + '</b></span>'
+        if (!over && fc.remaining_units > 0) cells += '<span class="cp-dash-cell">还可 <b>' + window.cpFmtInt(fc.remaining_units) + '</b> ' + unit + '</span>'
         const cal = fc.calibrated ? '<span class="cp-dash-chip cal"><i class="fas fa-scale-balanced"></i>已校准</span>' : ''
         const ladder = fc.ladder_outlook && fc.ladder_outlook.message ? '<div class="cp-dash-panel ladder"><i class="fas fa-stairs"></i><span>' + window.cpEsc(fc.ladder_outlook.message) + '</span></div>' : ''
         const pattern = fc.context_pattern ? '<div class="cp-dash-panel pattern"><i class="fas fa-chart-simple"></i><span>' + window.cpEsc(fc.context_pattern) + '</span></div>' : ''
-        const windowLine = fc.risk_window_msg ? '<div class="cp-dash-window"><i class="fas fa-route"></i>' + window.cpEsc(fc.risk_window_msg) + '</div>' : ''
+        const windowLine = (!over && fc.risk_window_msg) ? '<div class="cp-dash-window"><i class="fas fa-route"></i>' + window.cpEsc(fc.risk_window_msg) + '</div>' : ''
         const basis = fc.basis ? '<div class="cp-dash-meta">' + window.cpEsc(fc.basis) + (fc.confidence_label ? ' · ' + fc.confidence_label + '把握' : '') + cal + '</div>' : '<div class="cp-dash-meta">' + cal + '</div>'
-        return '<div class="cp-dash"><div class="cp-dash-metrics">' + cells + '</div>' + windowLine + basis + ladder + pattern + '</div>'
+        const status = '<div class="cp-dash-status ' + state + '">' + statusLabel + '</div>'
+        return '<div class="cp-dash">' + status + '<div class="cp-dash-metrics">' + cells + '</div>' + alert + windowLine + basis + ladder + pattern + '</div>'
       }
       return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>守住 ' + target + ' ' + unit + ' 以内即为今日达标</div>'
     }

@@ -24,7 +24,7 @@ CH = {
 FORECAST = {
     "enabled": True, "projected": 11.0,
     "confidence": 0.6, "confidence_label": "中", "basis": "按你最近两周的同时段节奏",
-    "touch_at": "16:40", "remaining_hours": 2.5, "remaining_units": 2.0,
+    "touch_at": "16:40", "remaining_hours": 2.5, "remaining_units": 4.0,
     "risk_level": 1, "coach_nudge": "", "nudge_level": 1,
     "reach_at": "", "calibrated": True, "bias": 1.5,
     "risk_window": "20:00-22:00",
@@ -119,9 +119,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/v1/challenges/60/today":
             send_json(self, 200, {"date": "2026-09-19", "day_number": 13, "task_type": "counter",
-                                  "task_title": "今日上限 18 根", "task_target": 18, "today_total": 4,
-                                  "today_target": 18, "today_cap": 18, "goal_rule": "ladder",
-                                  "direction": "decrease", "unit": "根", "remaining": 14,
+                                  "task_title": "今日上限 8 根", "task_target": 8, "today_total": 4,
+                                  "today_target": 8, "today_cap": 8, "goal_rule": "ladder",
+                                  "direction": "decrease", "unit": "根", "remaining": 4,
                                   "settled": False, "checked_in": False, "progress_pct": 40,
                                   "repeatable": True, "sub_goals": [], "forecast": FORECAST})
             return
@@ -138,7 +138,7 @@ class Handler(BaseHTTPRequestHandler):
                                   "task_title": "今日上限 18 根", "task_target": 18, "today_total": 20,
                                   "today_target": 18, "today_cap": 18, "goal_rule": "ladder",
                                   "direction": "decrease", "unit": "根", "remaining": 0,
-                                  "settled": True, "checked_in": True, "progress_pct": 100,
+                                  "settled": False, "checked_in": True, "progress_pct": 100,
                                   "repeatable": True, "sub_goals": [], "forecast": FORECAST_OVER})
             return
         if path in ("/api/v1/challenges/60/checkins", "/api/v1/challenges/61/checkins",
@@ -197,7 +197,9 @@ def main() -> None:
         check("无±工程记法", "±" not in body)
         check("无浮点垃圾小数", "000000" not in body)
         check("展示触顶 16:40", "16:40" in body)
-        check("展示还可 2", "还可" in body)
+        check("展示还可 4", "还可" in body)
+        check("展示黄灯状态(预计会超)", "预计会超" in body)
+        check("展示严厉提示(收住)", "现在收住还来得及" in body)
         check("展示依据文案", "同时段节奏" in body)
         check("展示回测校准", "已校准" in body)
         check("展示阶梯计划对比", "比阶梯计划高" in body)
@@ -226,6 +228,15 @@ def main() -> None:
         check("预计标记在轨内", bool(bounds) and bounds["inTrack"], str(bounds))
         check("已记填充宽度>0", bool(bounds) and bounds["fillW"] > 0, str(bounds))
 
+        status = page.locator(".cp-dash-status")
+        check("红黄绿状态徽章存在", status.count() >= 1)
+        check("状态徽章为黄灯", status.first.get_attribute("class").find("warn") >= 0, status.first.get_attribute("class"))
+        warn_color = page.evaluate("""() => {
+          const s = document.querySelector('.cp-dash-status')
+          return s ? getComputedStyle(s).color : ''
+        }""")
+        check("黄灯配色正确", "245, 158, 11" in warn_color, warn_color)
+
         dash = page.locator(".cp-dash")
         check("仪表盘容器存在", dash.count() >= 1)
         dash_text = dash.first.inner_text().replace("\n", " | ")
@@ -250,7 +261,14 @@ def main() -> None:
         page.locator(".cp-ch-chip", has_text="戒烟超限").click()
         page.wait_for_timeout(1200)
         body3 = page.locator("body").inner_text()
-        check("展示已超提示", "已超" in body3)
+        check("展示红灯状态(已超计划)", "已超计划" in body3)
+        check("展示严厉文案(停下来)", "停下来，别再继续了" in body3)
+        check("已超时隐藏前瞻窗口", "对你来说最难" not in body3)
+        over_status = page.evaluate("""() => {
+          const s = document.querySelector('.cp-dash-status')
+          return s ? getComputedStyle(s).color : ''
+        }""")
+        check("红灯配色正确", "239, 68, 68" in over_status, over_status)
         over_color = page.evaluate("""() => {
           const f = document.querySelector('.cp-rail-fill')
           return f ? getComputedStyle(f).backgroundColor : ''
