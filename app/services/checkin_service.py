@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from nexus.logging import get_logger
 from sqlalchemy import select
@@ -19,9 +19,9 @@ from app.services.checkin_background import (
     fill_ai_after_checkin,
     save_memory,
 )
+from app.services.forecast_service import ForecastService
 from app.services.goal_rule_service import daily_target, is_ladder
 from app.services.mercy_service import load_valid_dates
-from app.services.nudge_service import NudgeService
 from app.services.points_service import PointsService
 from app.services.shield_service import ShieldService
 from app.services.streak_service import calc_streak, today_str, week_dates_of
@@ -111,14 +111,9 @@ class CheckInService:
 
         today_total = await self._repo.sum_value_by_date(session, challenge_id, today)
         remaining = self._calc_remaining(today_total, target_snapshot["target_value"], challenge.direction)
-        hour_dist = await self._repo.get_hourly_distribution(
-            session, challenge_id,
-            (ts.date() - timedelta(days=13)).strftime("%Y-%m-%d"),
-            (ts.date() - timedelta(days=1)).strftime("%Y-%m-%d"),
-        )
-        forecast = NudgeService().evaluate(
-            challenge, today_total, target_snapshot["target_value"],
-            ts.hour, hour_dist, is_soft_exceeded=is_soft_exceeded,
+        forecast = await ForecastService().build(
+            session, challenge, today_total, target_snapshot["target_value"],
+            ts.hour, is_soft_exceeded=is_soft_exceeded, day_number=day_number,
         )
         streak = await self._current_streak(session, challenge_id)
         base, chest = await self._points.award_checkin(

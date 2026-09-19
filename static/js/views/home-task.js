@@ -93,18 +93,27 @@
     if (t.settled) return ''
     const unit = window.cpEsc(t.unit || ch.unit || '')
     const target = (t.today_target || t.task_target || ch.target_value || 1)
+    const total = (t.today_total || 0)
+    const fc = (t.forecast) || {}
     if (isDecrease) {
-      const over = (t.today_total || 0) > (t.today_target || 0)
-      if (over) return '<div class="cp-remain-hint over"><i class="fas fa-circle-exclamation"></i>已超今日上限 ' + target + ' ' + unit + '，明天梯度会更低，稳住</div>'
-      const fc = (t.forecast) || {}
-      if (fc.enabled && fc.risk_level === 1) {
-        let txt = '按当前节奏预计 ' + fc.projected + ' ' + unit
-        if (fc.touch_at) txt += '，' + fc.touch_at + ' 触顶'
-        return '<div class="cp-remain-hint"><i class="fas fa-triangle-exclamation"></i>' + txt + '，省着点</div>'
+      if (total > (t.today_target || 0)) return '<div class="cp-remain-hint over"><i class="fas fa-circle-exclamation"></i>已超今日上限 ' + target + ' ' + unit + '，明天梯度会更低，稳住</div>'
+      if (fc.enabled && fc.projected > 0) {
+        const range = fc.projected_high > fc.projected ? '±' + (fc.projected_high - fc.projected) : ''
+        let cells = '<span class="cp-dash-cell"><b>' + total + '</b> 已记</span><span class="cp-dash-cell">预计 <b>' + fc.projected + range + '</b> ' + unit + '</span>'
+        if (fc.touch_at) cells += '<span class="cp-dash-cell">触顶 <b>' + fc.touch_at + '</b></span>'
+        if (fc.remaining_units > 0) cells += '<span class="cp-dash-cell">还可 <b>' + fc.remaining_units + '</b> ' + unit + '</span>'
+        const basis = fc.basis ? '<div class="cp-dash-basis">' + window.cpEsc(fc.basis) + (fc.confidence_label ? ' · ' + fc.confidence_label + '把握' : '') + '</div>' : ''
+        const cal = fc.calibrated ? '<div class="cp-dash-basis cp-dash-cal"><i class="fas fa-scale-balanced"></i>已按昨天实际微调</div>' : ''
+        const ladder = fc.ladder_outlook && fc.ladder_outlook.message ? '<div class="cp-dash-ladder">' + window.cpEsc(fc.ladder_outlook.message) + '</div>' : ''
+        return '<div class="cp-dash">' + cells + basis + ladder + cal + '</div>'
       }
       return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>守住 ' + target + ' ' + unit + ' 以内即为今日达标</div>'
     }
     if ((t.remaining || 0) <= 0) return ''
+    if (fc.enabled && fc.reach_at) {
+      const basis = fc.basis ? '<div class="cp-dash-basis">' + window.cpEsc(fc.basis) + '</div>' : ''
+      return '<div class="cp-dash"><span class="cp-dash-cell">已记 <b>' + total + '</b> / ' + target + '</span><span class="cp-dash-cell">预计 <b>' + fc.reach_at + '</b> 达标</span>' + basis + '</div>'
+    }
     return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>还差 <b>' + t.remaining + '</b> ' + unit + ' 达标</div>'
   }
 

@@ -147,6 +147,36 @@ class CheckInRepository(StatelessRepository[CheckIn]):
         self, session: AsyncSession, challenge_id: int,
         start_date: str, end_date: str,
     ) -> list[dict[str, object]]:
+        return await self._hour_dist(session, challenge_id, start_date, end_date)
+
+    async def get_hourly_distribution_by_weekday(
+        self, session: AsyncSession, challenge_id: int,
+        weekday: int, start_date: str, end_date: str,
+    ) -> list[dict[str, object]]:
+        from sqlalchemy import extract
+        sqlite_wd = (weekday + 1) % 7
+        result = await session.execute(
+            select(
+                extract("hour", CheckIn.timestamp).label("hour"),
+                func.sum(CheckIn.value).label("total"),
+                func.count(CheckIn.id).label("cnt"),
+            ).where(
+                CheckIn.challenge_id == challenge_id,
+                CheckIn.date >= start_date,
+                CheckIn.date <= end_date,
+                func.strftime("%w", CheckIn.timestamp) == str(sqlite_wd),
+            ).group_by("hour").order_by("hour")
+        )
+        return [
+            {"hour": int(row.hour), "total_value": float(row.total or 0),
+             "checkin_count": int(row.cnt or 0)}
+            for row in result.fetchall()
+        ]
+
+    async def _hour_dist(
+        self, session: AsyncSession, challenge_id: int,
+        start_date: str, end_date: str,
+    ) -> list[dict[str, object]]:
         from sqlalchemy import extract
         result = await session.execute(
             select(
@@ -201,6 +231,17 @@ class InsightRepository(StatelessRepository[AIInsight]):
         result = await session.execute(
             select(AIInsight)
             .where(AIInsight.challenge_id == challenge_id, AIInsight.insight_type == "weekly")
+            .order_by(AIInsight.created_at.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_forecast(
+        self, session: AsyncSession, challenge_id: int
+    ) -> AIInsight | None:
+        result = await session.execute(
+            select(AIInsight)
+            .where(AIInsight.challenge_id == challenge_id, AIInsight.insight_type == "forecast")
             .order_by(AIInsight.created_at.desc())
             .limit(1)
         )

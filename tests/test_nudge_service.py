@@ -8,10 +8,14 @@ from app.services.nudge_service import NudgeService
 
 
 class FakeCh:
-    def __init__(self, direction="decrease", unit="根", goal_rule="ladder"):
+    def __init__(self, direction="decrease", unit="根", goal_rule="ladder",
+                 ladder_goal=0.0, ladder_start=0.0, duration_days=30):
         self.direction = direction
         self.unit = unit
         self.goal_rule = goal_rule
+        self.ladder_goal = ladder_goal
+        self.ladder_start = ladder_start
+        self.duration_days = duration_days
 
 
 svc = NudgeService()
@@ -75,5 +79,48 @@ chk("increase 已达标不提醒", r["nudge_level"], 0)
 
 r = svc.evaluate(FakeCh("increase", "组", "fixed"), 7, 5, hour=14, is_soft_exceeded=True)
 chk("increase soft超限不提醒", r["nudge_level"], 0)
+
+rows_wd = [{"hour": 14, "total_value": 3.0, "checkin_count": 3},
+           {"hour": 15, "total_value": 3.0, "checkin_count": 3},
+           {"hour": 16, "total_value": 2.0, "checkin_count": 2},
+           {"hour": 9, "total_value": 1.0, "checkin_count": 1}]
+r = svc.evaluate(FakeCh(), 4, 5, hour=10, hour_dist=rows, weekday_dist=rows_wd)
+chk("decrease 星期加权 basis", r["basis"], "按你最近两周的同时段节奏")
+chk("decrease 星期加权 confidence>0", r["confidence"] > 0, True)
+chk("decrease 星期加权 有区间", r["projected_high"] > r["projected_low"], True)
+
+r = svc.evaluate(FakeCh(), 4, 5, hour=10, hour_dist=rows)
+chk("decrease 全量分布 basis", r["basis"], "按你最近两周的节奏")
+chk("decrease 全量分布 高把握", r["confidence_label"], "高")
+chk("decrease 全量分布 预计区间包含", r["projected_low"] <= r["projected"] <= r["projected_high"], True)
+
+r = svc.evaluate(FakeCh("increase", "组", "fixed"), 3, 5, hour=12)
+chk("increase 12点已3组 达标时刻", r["reach_at"], "16:00")
+chk("increase 12点已3组 今日预计", r["projected"], 9.0)
+
+r = svc.evaluate(FakeCh("increase", "组", "fixed"), 1, 20, hour=21)
+chk("increase 21点进度太慢 无达标时刻", r["reach_at"], "")
+chk("increase 21点进度太慢 nudge=1", r["nudge_level"], 1)
+
+ch = FakeCh(ladder_goal=5.0, duration_days=45)
+r = svc.evaluate(ch, 4, 8, hour=10, hour_dist=rows, day_number=15, recent_avg=6.0)
+lo = r["ladder_outlook"]
+chk("ladder 终点预测 未达目标", lo["on_track"], False)
+chk("ladder 终点预测 结束值", lo["projected_end"], 6.0)
+chk("ladder 终点预测 剩余天数", lo["remaining_days"], 30)
+chk("ladder 终点预测 话术含差距", "还差" in lo["message"], True)
+
+ch2 = FakeCh(ladder_goal=8.0, duration_days=45)
+r = svc.evaluate(ch2, 4, 8, hour=10, hour_dist=rows, day_number=15, recent_avg=6.0)
+chk("ladder 终点预测 达标", r["ladder_outlook"]["on_track"], True)
+
+fc = svc.evaluate(FakeCh(), 4, 5, hour=10, hour_dist=rows)
+fc2 = svc.apply_bias(fc, 2.0)
+chk("bias 修正 预计上调", fc2["projected"], 11.1)
+chk("bias 修正 标记", fc2["calibrated"], True)
+fc3 = svc.apply_bias(fc, None)
+chk("bias 空 不变", fc3["projected"], fc["projected"])
+fc4 = svc.apply_bias(svc.evaluate(FakeCh(), 0, 5, hour=10), 2.0)
+chk("bias 未启用 不变", fc4["enabled"], False)
 
 raise SystemExit(1 if fails else 0)

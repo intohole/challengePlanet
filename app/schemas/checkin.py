@@ -53,12 +53,21 @@ class CheckInResponse(BaseModel):
 class ForecastResponse(BaseModel):
     enabled: bool = False
     projected: float = 0.0
+    projected_low: float = 0.0
+    projected_high: float = 0.0
+    confidence: float = 0.0
+    confidence_label: str = ""
+    basis: str = ""
     touch_at: str = ""
     remaining_hours: float = 0.0
     remaining_units: float = 0.0
     risk_level: int = 0
     coach_nudge: str = ""
     nudge_level: int = 0
+    reach_at: str = ""
+    calibrated: bool = False
+    bias: float = 0.0
+    ladder_outlook: Optional[dict[str, object]] = None
 
 
 class CheckInResultResponse(BaseModel):

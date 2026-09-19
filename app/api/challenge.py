@@ -294,6 +294,7 @@ async def get_today_task(
     result = await service.get_today_task(session, challenge_id, user_id)
     if result is None:
         raise HTTPException(status_code=404, detail="挑战不存在")
+    await session.commit()
     return TodayTaskResponse(**result)
 
 

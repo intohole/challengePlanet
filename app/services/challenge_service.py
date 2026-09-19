@@ -16,9 +16,9 @@ from app.repositories.points_repository import ChallengeMetaRepository
 from app.schemas.challenge import ChallengeResponse
 from app.services.ai_service import AIService
 from app.services.ai_text_sanitizer import sanitize_coach_text
+from app.services.forecast_service import ForecastService
 from app.services.goal_rule_service import daily_target, is_cap_mode, is_ladder, is_settled, ladder_progress_pct, resolve_mode
 from app.services.mercy_service import MercyService, load_valid_dates
-from app.services.nudge_service import NudgeService
 from app.services.period_service import period_fields, week_aggregates
 from app.services.streak_service import calc_streak, shift_date, streak_before, today_str
 
@@ -254,12 +254,11 @@ class ChallengeService:
         today = today_str()
         today_checkins = await self._checkin_repo.list_by_date(session, challenge_id, today)
         today_total = await self._checkin_repo.sum_value_by_date(session, challenge_id, today)
-        hour_dist = await self._checkin_repo.get_hourly_distribution(session, challenge_id, (now_dt - timedelta(days=13)).strftime("%Y-%m-%d"), (now_dt - timedelta(days=1)).strftime("%Y-%m-%d"))
         dynamic_baseline = await self._calc_dynamic_baseline(session, challenge)
         today_target = daily_target(challenge, day_number, adaptive_baseline=dynamic_baseline)
         if str(getattr(challenge, "task_type", "")) == "diet" and float(getattr(challenge, "daily_calorie_target", 0) or 0) > 0:
             today_target = float(challenge.daily_calorie_target)
-        forecast = NudgeService().evaluate(challenge, today_total, today_target, now_dt.hour, hour_dist)
+        forecast = await ForecastService().build(session, challenge, today_total, today_target, now_dt.hour, day_number=day_number)
         period_days = max(1, int(getattr(challenge, "period_days", 7) or 7))
         aggregates = await week_aggregates(session, challenge_id, today_checkins, period_days)
         sub_goals_list = await self._build_sub_goals(session, challenge, today)
