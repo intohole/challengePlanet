@@ -5,11 +5,12 @@ from app.services.forecast_math import (
     DAY_START,
     basis_of,
     blend_profile,
+    compose_window_msg,
     confidence_of,
     fmt_hour,
     forward_window,
     interval_of,
-    window_text,
+    window_parts,
 )
 from app.services.goal_rule_service import is_ladder
 
@@ -67,11 +68,14 @@ class NudgeService:
         profile = blend_profile(hour_dist, weekday_dist)
         confidence, conf_label = confidence_of(hour_dist)
         lo_w, hi_w = forward_window(profile, hour)
-        risk_window, window_msg = window_text(lo_w, hi_w, "decrease", confidence)
+        span, base, action = window_parts(lo_w, hi_w, "decrease", confidence)
+        risk_window = span
+        window_msg = compose_window_msg(span, base, action)
         if today_total <= 0 or today_target <= 0:
             result = self._empty()
             result["risk_window"] = risk_window
             result["risk_window_msg"] = window_msg
+            result["risk_window_hours"] = [lo_w, hi_w] if span else []
             return result
         basis = basis_of(conf_label, weekday_dist)
         time_frac = min(1.0, max(0.0, float(hour - DAY_START) / (DAY_END - DAY_START)))
@@ -110,6 +114,7 @@ class NudgeService:
             "risk_level": risk, "coach_nudge": coach, "nudge_level": risk,
             "reach_at": "", "ladder_outlook": self._ladder_outlook(challenge, day_number, recent_avg),
             "risk_window": risk_window, "risk_window_msg": window_msg,
+            "risk_window_hours": [lo_w, hi_w] if span else [],
         }
 
     def _increase_forecast(
@@ -145,7 +150,7 @@ class NudgeService:
         low, high = interval_of(projected, confidence) if projected > 0 else (0.0, 0.0)
         profile = blend_profile(hour_dist, weekday_dist)
         lo_w, hi_w = forward_window(profile, hour)
-        risk_window, window_msg = window_text(lo_w, hi_w, "increase", confidence)
+        span, base, action = window_parts(lo_w, hi_w, "increase", confidence)
         return {
             "enabled": True, "projected": projected,
             "projected_low": low, "projected_high": high,
@@ -154,7 +159,8 @@ class NudgeService:
             "remaining_units": round(remaining, 1),
             "risk_level": 0, "coach_nudge": msg, "nudge_level": level,
             "reach_at": reach_at, "ladder_outlook": None,
-            "risk_window": risk_window, "risk_window_msg": window_msg,
+            "risk_window": span, "risk_window_msg": compose_window_msg(span, base, action),
+            "risk_window_hours": [lo_w, hi_w] if span else [],
         }
 
     def _empty(self) -> dict[str, object]:
@@ -164,7 +170,7 @@ class NudgeService:
             "touch_at": "", "remaining_hours": 0.0, "remaining_units": 0.0,
             "risk_level": 0, "coach_nudge": "", "nudge_level": 0,
             "reach_at": "", "ladder_outlook": None,
-            "risk_window": "", "risk_window_msg": "",
+            "risk_window": "", "risk_window_msg": "", "risk_window_hours": [],
         }
 
     def _decrease_text(

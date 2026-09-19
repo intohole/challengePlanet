@@ -70,6 +70,8 @@ class ForecastResponse(BaseModel):
     ladder_outlook: Optional[dict[str, object]] = None
     risk_window: str = ""
     risk_window_msg: str = ""
+    risk_window_context: str = ""
+    context_pattern: str = ""
 
 
 class CheckInResultResponse(BaseModel):

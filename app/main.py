@@ -28,6 +28,7 @@ from app.config import settings
 from app.core.middleware import register_middleware
 from app.db.database import init_db, run_migrations, engine as db_engine
 from app.services.reminder_service import send_checkin_reminders
+from app.services.forecast_alert_service import send_forecast_alerts
 from app.services.challenge_chat_handler import challenge_chat_handler
 
 setup_logging()
@@ -57,6 +58,12 @@ async def lifespan(app: FastAPI):
         job_id="cp-checkin-reminder",
         hour=20,
         minute=0,
+    )
+    scheduler.add_cron_job(
+        send_forecast_alerts,
+        job_id="cp-forecast-alert",
+        hour=18,
+        minute=30,
     )
     scheduler.start()
     logger.info("Scheduler started: check-in reminders at 20:00 daily")

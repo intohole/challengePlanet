@@ -173,6 +173,39 @@ class CheckInRepository(StatelessRepository[CheckIn]):
             for row in result.fetchall()
         ]
 
+    async def get_context_totals(
+        self, session: AsyncSession, challenge_id: int,
+        start_date: str, end_date: str,
+        hour_range: tuple[int, int] | None = None,
+    ) -> list[dict[str, object]]:
+        from sqlalchemy import extract
+        stmt = select(
+            CheckIn.context_tag,
+            func.sum(CheckIn.value).label("total"),
+            func.count(CheckIn.id).label("cnt"),
+            func.count(func.distinct(CheckIn.date)).label("days"),
+        ).where(
+            CheckIn.challenge_id == challenge_id,
+            CheckIn.date >= start_date,
+            CheckIn.date <= end_date,
+            CheckIn.context_tag != "",
+        )
+        if hour_range is not None:
+            stmt = stmt.where(
+                extract("hour", CheckIn.timestamp) >= hour_range[0],
+                extract("hour", CheckIn.timestamp) <= hour_range[1],
+            )
+        result = await session.execute(stmt.group_by(CheckIn.context_tag))
+        return [
+            {
+                "context_tag": str(row.context_tag or ""),
+                "total_value": float(row.total or 0),
+                "checkin_count": int(row.cnt or 0),
+                "days": int(row.days or 0),
+            }
+            for row in result.fetchall()
+        ]
+
     async def _hour_dist(
         self, session: AsyncSession, challenge_id: int,
         start_date: str, end_date: str,
@@ -236,13 +269,18 @@ class InsightRepository(StatelessRepository[AIInsight]):
         )
         return result.scalar_one_or_none()
 
-    async def get_forecast(
-        self, session: AsyncSession, challenge_id: int
+    async def get_by_type(
+        self, session: AsyncSession, challenge_id: int, insight_type: str
     ) -> AIInsight | None:
         result = await session.execute(
             select(AIInsight)
-            .where(AIInsight.challenge_id == challenge_id, AIInsight.insight_type == "forecast")
+            .where(AIInsight.challenge_id == challenge_id, AIInsight.insight_type == insight_type)
             .order_by(AIInsight.created_at.desc())
             .limit(1)
         )
         return result.scalar_one_or_none()
+
+    async def get_forecast(
+        self, session: AsyncSession, challenge_id: int
+    ) -> AIInsight | None:
+        return await self.get_by_type(session, challenge_id, "forecast")

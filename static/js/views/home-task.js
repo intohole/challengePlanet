@@ -31,24 +31,26 @@
       html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> 今日目标 <b>' + t.task_target + '</b> ' + window.cpEsc(t.task_unit || '') + '</div>'
     }
     if ((isMultiMode || isDecrease) && t.today_total !== undefined) {
-      const staticTarget = t.today_target || 1
-      let pct, barColor
-      if (baseline > 0) {
-        if (isDecrease) {
-          const reached = t.today_total <= baseline
-          if (reached) { pct = 100; barColor = 'var(--emerald)' }
-          else { pct = baseline > 0 ? Math.min(100, Math.round((t.today_total / baseline) * 100)) : 100; barColor = 'var(--amber)' }
+      if (t.goal_rule !== 'ladder') {
+        const staticTarget = t.today_target || 1
+        let pct, barColor
+        if (baseline > 0) {
+          if (isDecrease) {
+            const reached = t.today_total <= baseline
+            if (reached) { pct = 100; barColor = 'var(--emerald)' }
+            else { pct = baseline > 0 ? Math.min(100, Math.round((t.today_total / baseline) * 100)) : 100; barColor = 'var(--amber)' }
+          } else {
+            const ratio = baseline > 0 ? t.today_total / baseline : 0
+            pct = Math.round(Math.min(100, ratio * 100))
+            barColor = ratio >= 1 ? 'var(--emerald)' : (ratio >= 0.8 ? 'var(--amber)' : 'var(--primary)')
+          }
         } else {
-          const ratio = baseline > 0 ? t.today_total / baseline : 0
-          pct = Math.round(Math.min(100, ratio * 100))
-          barColor = ratio >= 1 ? 'var(--emerald)' : (ratio >= 0.8 ? 'var(--amber)' : 'var(--primary)')
+          pct = staticTarget > 0 ? Math.min(100, Math.round(t.today_total / staticTarget * 100)) : 0
+          barColor = t.today_total >= staticTarget ? 'var(--emerald)' : 'var(--primary)'
         }
-      } else {
-        pct = staticTarget > 0 ? Math.min(100, Math.round(t.today_total / staticTarget * 100)) : 0
-        barColor = t.today_total >= staticTarget ? 'var(--emerald)' : 'var(--primary)'
+        html += '<div class="cp-task-progress"><div class="cp-task-progress-bar"><div class="cp-task-progress-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>'
+        html += '<div class="cp-task-progress-info"><span style="color:' + barColor + '">' + t.today_total + '</span><span class="cp-task-progress-sep">/</span><span>' + (t.today_target || t.task_target || staticTarget) + ' ' + window.cpEsc(t.unit || ch.unit || '') + '</span></div></div>'
       }
-      html += '<div class="cp-task-progress"><div class="cp-task-progress-bar"><div class="cp-task-progress-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>'
-      html += '<div class="cp-task-progress-info"><span style="color:' + barColor + '">' + t.today_total + '</span><span class="cp-task-progress-sep">/</span><span>' + (t.today_target || t.task_target || staticTarget) + ' ' + window.cpEsc(t.unit || ch.unit || '') + '</span></div></div>'
       const hint = this._remainHint(t, ch, isDecrease)
       if (hint) html += hint
     }
@@ -102,22 +104,25 @@
         let cells = '<span class="cp-dash-cell"><b>' + total + '</b> 已记</span><span class="cp-dash-cell">预计 <b>' + fc.projected + range + '</b> ' + unit + '</span>'
         if (fc.touch_at) cells += '<span class="cp-dash-cell">触顶 <b>' + fc.touch_at + '</b></span>'
         if (fc.remaining_units > 0) cells += '<span class="cp-dash-cell">还可 <b>' + fc.remaining_units + '</b> ' + unit + '</span>'
-        const basis = fc.basis ? '<div class="cp-dash-basis">' + window.cpEsc(fc.basis) + (fc.confidence_label ? ' · ' + fc.confidence_label + '把握' : '') + '</div>' : ''
-        const cal = fc.calibrated ? '<div class="cp-dash-basis cp-dash-cal"><i class="fas fa-scale-balanced"></i>已按昨天实际微调</div>' : ''
-        const ladder = fc.ladder_outlook && fc.ladder_outlook.message ? '<div class="cp-dash-ladder">' + window.cpEsc(fc.ladder_outlook.message) + '</div>' : ''
+        const cal = fc.calibrated ? '<span class="cp-dash-chip cal"><i class="fas fa-scale-balanced"></i>已校准</span>' : ''
+        const ladder = fc.ladder_outlook && fc.ladder_outlook.message ? '<div class="cp-dash-panel ladder"><i class="fas fa-stairs"></i><span>' + window.cpEsc(fc.ladder_outlook.message) + '</span></div>' : ''
+        const ctx = fc.risk_window_context ? '<span class="cp-dash-chip ctx"><i class="fas fa-location-dot"></i>' + window.cpEsc(fc.risk_window_context) + '</span>' : ''
+        const pattern = fc.context_pattern ? '<div class="cp-dash-panel pattern"><i class="fas fa-chart-simple"></i><span>' + window.cpEsc(fc.context_pattern) + '</span></div>' : ''
         const windowLine = fc.risk_window_msg ? '<div class="cp-dash-window"><i class="fas fa-route"></i>' + window.cpEsc(fc.risk_window_msg) + '</div>' : ''
-        return '<div class="cp-dash">' + cells + basis + windowLine + ladder + cal + '</div>'
+        const basis = fc.basis ? '<div class="cp-dash-meta">' + window.cpEsc(fc.basis) + (fc.confidence_label ? ' · ' + fc.confidence_label + '把握' : '') + cal + ctx + '</div>' : '<div class="cp-dash-meta">' + cal + ctx + '</div>'
+        return '<div class="cp-dash"><div class="cp-dash-metrics">' + cells + '</div>' + windowLine + basis + ladder + pattern + '</div>'
       }
       return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>守住 ' + target + ' ' + unit + ' 以内即为今日达标</div>'
     }
     if ((t.remaining || 0) <= 0) return ''
     const winInc = fc.risk_window_msg ? '<div class="cp-dash-window"><i class="fas fa-route"></i>' + window.cpEsc(fc.risk_window_msg) + '</div>' : ''
-    if (fc.enabled && (fc.reach_at || winInc)) {
-      const basis = fc.basis ? '<div class="cp-dash-basis">' + window.cpEsc(fc.basis) + '</div>' : ''
+    const patInc = fc.context_pattern ? '<div class="cp-dash-panel pattern"><i class="fas fa-chart-simple"></i><span>' + window.cpEsc(fc.context_pattern) + '</span></div>' : ''
+    if (fc.enabled && (fc.reach_at || winInc || patInc)) {
+      const basis = fc.basis ? '<div class="cp-dash-meta">' + window.cpEsc(fc.basis) + (fc.confidence_label ? ' · ' + fc.confidence_label + '把握' : '') + '</div>' : ''
       const reachCell = fc.reach_at
         ? '<span class="cp-dash-cell">预计 <b>' + fc.reach_at + '</b> 达标</span>'
         : '<span class="cp-dash-cell">还差 <b>' + t.remaining + '</b> ' + unit + '</span>'
-      return '<div class="cp-dash"><span class="cp-dash-cell">已记 <b>' + total + '</b> / ' + target + '</span>' + reachCell + basis + winInc + '</div>'
+      return '<div class="cp-dash"><div class="cp-dash-metrics"><span class="cp-dash-cell">已记 <b>' + total + '</b> / ' + target + '</span>' + reachCell + '</div>' + winInc + basis + patInc + '</div>'
     }
     return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>还差 <b>' + t.remaining + '</b> ' + unit + ' 达标</div>'
   }
@@ -142,31 +147,35 @@
     return '<div class="cp-task-target"><i class="fas fa-fire" style="color:var(--amber)"></i> 卡路里 <b>' + (t.calories_today || 0) + '</b> 今日 · <b>' + (t.calories_week || 0) + '</b> 本周 千卡</div>'
   }
 
+  V._paceRail = function (total, projected, cap, unit, state) {
+    const hasProj = projected > 0
+    const scale = Math.max(cap, total, hasProj ? projected : 0, 1) * 1.12
+    const fillPct = Math.min(100, total / scale * 100)
+    const capPct = Math.min(100, cap / scale * 100)
+    const projPct = hasProj ? Math.min(100, projected / scale * 100) : 0
+    const color = state === 'over' ? 'var(--red)' : (state === 'warn' ? 'var(--amber)' : 'var(--emerald)')
+    const label = '已记 ' + total + (hasProj ? '，预计 ' + projected : '') + '，目标 ' + cap + ' ' + unit
+    let h = '<div class="cp-rail" role="img" aria-label="' + window.cpEsc(label) + '"><div class="cp-rail-track">'
+    h += '<div class="cp-rail-fill" style="width:' + fillPct + '%;background:' + color + '"></div>'
+    h += '<div class="cp-rail-cap" style="left:' + capPct + '%"></div>'
+    if (hasProj) h += '<div class="cp-rail-proj" style="left:' + projPct + '%;background:' + color + '"></div>'
+    return h + '</div></div>'
+  }
+
   V._ladderBlock = function (t, ch) {
     const cap = Number(t.today_cap) || Number(t.today_target) || 0
     const total = Number(t.today_total) || 0
-    const remaining = Number(t.remaining)
     const unit = window.cpEsc(t.unit || ch.unit || '')
     const isDesc = ch.direction === 'decrease' || String(t.direction) === 'decrease'
-    const over = isDesc ? total > cap : total < cap
-    const ratio = cap > 0 ? Math.min(100, Math.round(total / cap * 100)) : 0
-    const barColor = over ? 'var(--red)' : 'var(--emerald)'
+    const fc = t.forecast || {}
+    const state = total > cap ? 'over' : (fc.enabled && fc.risk_level === 1 ? 'warn' : 'ok')
     const label = isDesc ? '今日上限' : '今日目标'
-    const remainTxt = remaining !== undefined && remaining >= 0 ? '还可 ' + remaining + ' ' + unit : ''
     let html = '<div class="cp-ladder-daily"><div class="cp-ladder-daily-head"><span>' + label + '</span>'
     if (t.ladder_goal && t.ladder_start) {
-      const cur = Number(t.ladder_start)
-      const end = Number(t.ladder_goal)
-      html += '<span class="cp-ladder-daily-path">' + cur + '→' + end + ' <i class="fas fa-stairs" style="font-size:11px"></i> 阶梯</span>'
+      html += '<span class="cp-ladder-daily-path">' + Number(t.ladder_start) + '→' + Number(t.ladder_goal) + ' <i class="fas fa-stairs" style="font-size:11px"></i> 阶梯</span>'
     }
     html += '</div>'
-    html += '<div class="cp-ladder-daily-bar"><div class="cp-ladder-daily-fill" style="width:' + ratio + '%;background:' + barColor + '"></div></div>'
-    html += '<div class="cp-ladder-daily-stats">'
-    html += '<div class="cp-ladder-daily-stat"><b style="color:' + barColor + '">' + total + '</b><span>已记 ' + unit + '</span></div>'
-    html += '<div class="cp-ladder-daily-stat"><b>' + cap + '</b><span>' + (isDesc ? '上限' : '目标') + ' ' + unit + '</span></div>'
-    if (remainTxt) html += '<div class="cp-ladder-daily-stat right"><b>' + remaining + '</b><span>' + unit + ' 余量</span></div>'
-    html += (over ? '<div class="cp-ladder-daily-tip warn">' + (isDesc ? '已超过今日上限，放慢一点，明天继续' : '还没到目标，再努一把') + '</div>' : '<div class="cp-ladder-daily-tip ok">' + (isDesc ? '控制在范围内，很好' : '今天达标，继续保持') + '</div>')
-    html += '</div></div>'
-    return html
+    html += this._paceRail(total, Number(fc.projected) || 0, cap, unit, state)
+    return html + '</div>'
   }
 })()

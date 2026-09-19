@@ -7,6 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.datetime_utils import now_china
 from app.repositories.checkin_repository import CheckInRepository, InsightRepository
+from app.services.forecast_math import (
+    WINDOW_WORDING,
+    compose_window_msg,
+    context_pattern,
+    dominant_context,
+)
 from app.services.nudge_service import NudgeService
 from app.services.streak_service import today_str
 
@@ -49,9 +55,32 @@ class ForecastService:
         )
         bias = await self._calibration_bias(session, challenge.id)
         forecast = self._nudge.apply_bias(forecast, bias)
+        await self._attach_context(session, challenge, forecast, start, end)
         if store:
             await self._upsert_forecast(session, challenge, forecast)
         return forecast
+
+    async def _attach_context(
+        self, session: AsyncSession, challenge: object,
+        forecast: dict[str, object], start: str, end: str,
+    ) -> None:
+        hours = forecast.get("risk_window_hours") or []
+        if len(hours) == 2:
+            rows = await self._repo.get_context_totals(
+                session, challenge.id, start, end,
+                hour_range=(int(hours[0]), int(hours[1])),
+            )
+            dom = dominant_context(rows)
+            if dom:
+                forecast["risk_window_context"] = dom
+                span = str(forecast.get("risk_window", ""))
+                direction = str(getattr(challenge, "direction", "") or "increase")
+                base, action = WINDOW_WORDING.get(direction, WINDOW_WORDING["increase"])
+                forecast["risk_window_msg"] = compose_window_msg(span, base, action, dom)
+        all_rows = await self._repo.get_context_totals(session, challenge.id, start, end)
+        pattern = context_pattern(all_rows, str(getattr(challenge, "unit", "") or ""))
+        if pattern:
+            forecast["context_pattern"] = pattern
 
     async def _recent_daily_avg(self, session: AsyncSession, challenge_id: int) -> float | None:
         now = now_china()

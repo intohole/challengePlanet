@@ -143,6 +143,39 @@ async def main() -> None:
         check("预测带校准标记", bool(fc["calibrated"]), str(fc))
         check("预测已下调", fc["projected"] < base["projected"], f"{fc['projected']} vs {base['projected']}")
 
+    print("== 情境维度纳入预测 ==")
+    async with async_session() as session:
+        from sqlalchemy import delete
+        await session.execute(delete(AIInsight))
+        await session.execute(delete(CheckIn).where(CheckIn.challenge_id == 1))
+        await session.commit()
+        base_day = shift_date(today_str(), -8)
+        filler_hours = (8, 12, 19, 22)
+        for i in range(7):
+            d = shift_date(base_day, i)
+            for hh in filler_hours:
+                session.add(CheckIn(challenge_id=1, user_id="u1", day_number=1, status="completed",
+                                    timestamp=datetime.strptime(f"{d} {hh:02d}:00", "%Y-%m-%d %H:%M"),
+                                    date=d, value=0.5, unit="根", target_value=8.0,
+                                    goal_type="soft", direction="decrease", completion_pct=100.0,
+                                    context_tag=""))
+        ctx_by_day = ["social"] * 3 + ["home"] * 2 + ["work"] * 2
+        ctx_val = {"social": 3.0, "home": 1.0, "work": 1.0}
+        for i, tag in enumerate(ctx_by_day):
+            d = shift_date(base_day, i)
+            for hh in (20, 21):
+                session.add(CheckIn(challenge_id=1, user_id="u1", day_number=1, status="completed",
+                                    timestamp=datetime.strptime(f"{d} {hh:02d}:00", "%Y-%m-%d %H:%M"),
+                                    date=d, value=ctx_val[tag], unit="根", target_value=8.0,
+                                    goal_type="soft", direction="decrease", completion_pct=100.0,
+                                    context_tag=tag))
+        await session.commit()
+        fc = await ForecastService().build(session, FakeCh(), 2.0, 8.0, 9, day_number=6)
+        check("情境: 风险窗口已识别", fc.get("risk_window") == "20:00-21:00", str(fc.get("risk_window")))
+        check("情境: 风险窗口主场景=社交", fc.get("risk_window_context") == "社交", str(fc.get("risk_window_context")))
+        check("情境: 窗口文案含场景", "社交" in str(fc.get("risk_window_msg", "")), str(fc.get("risk_window_msg")))
+        check("情境: 条件模式已生成", "倍" in str(fc.get("context_pattern", "")), str(fc.get("context_pattern")))
+
     print("\n=== 结果 ===")
     for f in failed:
         print("  FAILED:", f)
