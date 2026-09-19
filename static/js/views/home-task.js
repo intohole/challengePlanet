@@ -100,16 +100,17 @@
     if (isDecrease) {
       if (total > (t.today_target || 0)) return '<div class="cp-remain-hint over"><i class="fas fa-circle-exclamation"></i>已超今日上限 ' + target + ' ' + unit + '，明天梯度会更低，稳住</div>'
       if (fc.enabled && fc.projected > 0) {
-        const range = fc.projected_high > fc.projected ? '±' + (fc.projected_high - fc.projected) : ''
-        let cells = '<span class="cp-dash-cell"><b>' + total + '</b> 已记</span><span class="cp-dash-cell">预计 <b>' + fc.projected + range + '</b> ' + unit + '</span>'
+        const proj = Number(fc.projected) || 0
+        const spread = (Number(fc.projected_high) || 0) - (Number(fc.projected_low) || 0)
+        const approx = spread >= 1.5 ? '左右' : ''
+        let cells = '<span class="cp-dash-cell"><b>' + window.cpFmtInt(total) + '</b> 已记</span><span class="cp-dash-cell">预计 <b>' + window.cpFmtInt(proj) + '</b> ' + unit + approx + '</span>'
         if (fc.touch_at) cells += '<span class="cp-dash-cell">触顶 <b>' + fc.touch_at + '</b></span>'
-        if (fc.remaining_units > 0) cells += '<span class="cp-dash-cell">还可 <b>' + fc.remaining_units + '</b> ' + unit + '</span>'
+        if (fc.remaining_units > 0) cells += '<span class="cp-dash-cell">还可 <b>' + window.cpFmtInt(fc.remaining_units) + '</b> ' + unit + '</span>'
         const cal = fc.calibrated ? '<span class="cp-dash-chip cal"><i class="fas fa-scale-balanced"></i>已校准</span>' : ''
         const ladder = fc.ladder_outlook && fc.ladder_outlook.message ? '<div class="cp-dash-panel ladder"><i class="fas fa-stairs"></i><span>' + window.cpEsc(fc.ladder_outlook.message) + '</span></div>' : ''
-        const ctx = fc.risk_window_context ? '<span class="cp-dash-chip ctx"><i class="fas fa-location-dot"></i>' + window.cpEsc(fc.risk_window_context) + '</span>' : ''
         const pattern = fc.context_pattern ? '<div class="cp-dash-panel pattern"><i class="fas fa-chart-simple"></i><span>' + window.cpEsc(fc.context_pattern) + '</span></div>' : ''
         const windowLine = fc.risk_window_msg ? '<div class="cp-dash-window"><i class="fas fa-route"></i>' + window.cpEsc(fc.risk_window_msg) + '</div>' : ''
-        const basis = fc.basis ? '<div class="cp-dash-meta">' + window.cpEsc(fc.basis) + (fc.confidence_label ? ' · ' + fc.confidence_label + '把握' : '') + cal + ctx + '</div>' : '<div class="cp-dash-meta">' + cal + ctx + '</div>'
+        const basis = fc.basis ? '<div class="cp-dash-meta">' + window.cpEsc(fc.basis) + (fc.confidence_label ? ' · ' + fc.confidence_label + '把握' : '') + cal + '</div>' : '<div class="cp-dash-meta">' + cal + '</div>'
         return '<div class="cp-dash"><div class="cp-dash-metrics">' + cells + '</div>' + windowLine + basis + ladder + pattern + '</div>'
       }
       return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>守住 ' + target + ' ' + unit + ' 以内即为今日达标</div>'
@@ -121,8 +122,8 @@
       const basis = fc.basis ? '<div class="cp-dash-meta">' + window.cpEsc(fc.basis) + (fc.confidence_label ? ' · ' + fc.confidence_label + '把握' : '') + '</div>' : ''
       const reachCell = fc.reach_at
         ? '<span class="cp-dash-cell">预计 <b>' + fc.reach_at + '</b> 达标</span>'
-        : '<span class="cp-dash-cell">还差 <b>' + t.remaining + '</b> ' + unit + '</span>'
-      return '<div class="cp-dash"><div class="cp-dash-metrics"><span class="cp-dash-cell">已记 <b>' + total + '</b> / ' + target + '</span>' + reachCell + '</div>' + winInc + basis + patInc + '</div>'
+        : '<span class="cp-dash-cell">还差 <b>' + window.cpFmtInt(t.remaining) + '</b> ' + unit + '</span>'
+      return '<div class="cp-dash"><div class="cp-dash-metrics"><span class="cp-dash-cell">已记 <b>' + window.cpFmtInt(total) + '</b> / ' + window.cpFmtInt(target) + '</span>' + reachCell + '</div>' + winInc + basis + patInc + '</div>'
     }
     return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>还差 <b>' + t.remaining + '</b> ' + unit + ' 达标</div>'
   }
@@ -154,7 +155,7 @@
     const capPct = Math.min(100, cap / scale * 100)
     const projPct = hasProj ? Math.min(100, projected / scale * 100) : 0
     const color = state === 'over' ? 'var(--red)' : (state === 'warn' ? 'var(--amber)' : 'var(--emerald)')
-    const label = '已记 ' + total + (hasProj ? '，预计 ' + projected : '') + '，目标 ' + cap + ' ' + unit
+    const label = '已记 ' + window.cpFmtInt(total) + (hasProj ? '，预计 ' + window.cpFmtInt(projected) : '') + '，目标 ' + window.cpFmtInt(cap) + ' ' + unit
     let h = '<div class="cp-rail" role="img" aria-label="' + window.cpEsc(label) + '"><div class="cp-rail-track">'
     h += '<div class="cp-rail-fill" style="width:' + fillPct + '%;background:' + color + '"></div>'
     h += '<div class="cp-rail-cap" style="left:' + capPct + '%"></div>'

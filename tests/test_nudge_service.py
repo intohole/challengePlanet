@@ -109,6 +109,7 @@ chk("ladder 终点预测 未达目标", lo["on_track"], False)
 chk("ladder 终点预测 结束值", lo["projected_end"], 6.0)
 chk("ladder 终点预测 剩余天数", lo["remaining_days"], 30)
 chk("ladder 终点预测 话术含差距", "还差" in lo["message"], True)
+chk("ladder 终点预测 无多余小数", ".0" not in lo["message"], True)
 
 ch2 = FakeCh(ladder_goal=8.0, duration_days=45)
 r = svc.evaluate(ch2, 4, 8, hour=10, hour_dist=rows, day_number=15, recent_avg=6.0)

@@ -105,6 +105,15 @@ def compose_window_msg(span: str, base: str, action: str, context: str = "") -> 
     return f"{span} {base}{ctx}，{action}"
 
 
+def fmt_int(value: float) -> str:
+    return str(int(round(value)))
+
+
+def fmt_dec(value: float) -> str:
+    rounded = round(value, 1)
+    return str(int(rounded)) if rounded == int(rounded) else str(rounded)
+
+
 CONTEXT_LABELS = {"home": "家", "work": "工作", "social": "社交", "stress": "压力"}
 _CONTEXT_MIN_CNT = 3
 _CONTEXT_MIN_DAYS = 2
@@ -134,4 +143,4 @@ def context_pattern(
     lo = min(valid, key=lambda v: v[1])
     if lo[1] <= 0 or hi[1] / lo[1] < _CONTEXT_RATIO:
         return ""
-    return f"「{hi[0]}」时你平均每天 {hi[1]:.1f}{unit}，是「{lo[0]}」的 {hi[1] / lo[1]:.1f} 倍"
+    return f"「{hi[0]}」时你平均每天 {fmt_dec(hi[1])}{unit}，是「{lo[0]}」的 {fmt_dec(hi[1] / lo[1])} 倍"

@@ -33,7 +33,7 @@ FORECAST = {
     "context_pattern": "「压力」时你平均每天 6.2 根，是「家」的 3.1 倍",
     "ladder_outlook": {
         "on_track": False, "projected_end": 9.0, "goal": 5.0,
-        "remaining_days": 18, "message": "按现在的水平，结束时约 9.0 根，离目标还差 4.0 根",
+        "remaining_days": 18, "message": "按现在的水平，结束时约 9 根，离目标还差 4 根",
     },
 }
 
@@ -194,11 +194,14 @@ def main() -> None:
         body = page.locator("body").inner_text()
         check("展示已记 4", "4" in body)
         check("展示预计 11", "11" in body)
+        check("区间宽时带'左右'", "左右" in body)
+        check("无±工程记法", "±" not in body)
+        check("无浮点垃圾小数", "000000" not in body)
         check("展示触顶 16:40", "16:40" in body)
         check("展示还可 2", "还可" in body)
         check("展示依据文案", "同时段节奏" in body)
         check("展示回测校准", "已校准" in body)
-        check("展示阶梯终点预测", "结束时约 9.0 根" in body)
+        check("展示阶梯终点预测", "结束时约 9 根" in body)
         check("展示前瞻风险窗口", "对你来说最难" in body)
         check("展示情境归因", "社交" in body)
         check("展示条件模式", "3.1 倍" in body)
@@ -225,6 +228,7 @@ def main() -> None:
 
         dash = page.locator(".cp-dash")
         check("仪表盘容器存在", dash.count() >= 1)
+        print("  [渲染文本] " + dash.first.inner_text().replace("\n", " | "))
         cell_text = page.locator(".cp-dash-cell").all_inner_texts()
         check("至少4个指标格", len(cell_text) >= 4, str(cell_text))
 

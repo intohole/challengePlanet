@@ -8,6 +8,7 @@ from app.services.forecast_math import (
     compose_window_msg,
     confidence_of,
     fmt_hour,
+    fmt_int,
     forward_window,
     interval_of,
     window_parts,
@@ -226,10 +227,10 @@ class NudgeService:
         remaining = max(0, duration - int(day_number or 0))
         on_track = recent_avg <= goal
         if on_track:
-            message = f"按现在的水平，结束时能到 {goal:.0f}{unit} 以下"
+            message = f"按现在的水平，结束时能到 {fmt_int(goal)}{unit} 以下"
         else:
-            gap = round(recent_avg - goal, 1)
-            message = f"按现在的水平，结束时约 {recent_avg:.1f}{unit}，离目标还差 {gap}{unit}"
+            gap = recent_avg - goal
+            message = f"按现在的水平，结束时约 {fmt_int(recent_avg)}{unit}，离目标还差 {fmt_int(gap)}{unit}"
         return {
             "on_track": on_track, "projected_end": round(recent_avg, 1),
             "goal": goal, "remaining_days": remaining, "message": message,

@@ -16,7 +16,6 @@
 .cp-dash-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; padding: 1px 7px; border-radius: 9px; background: rgba(15,23,42,.05); color: var(--text-muted); }
 .cp-dash-chip i { font-size: 10px; }
 .cp-dash-chip.cal { color: var(--emerald); background: rgba(16,185,129,.1); }
-.cp-dash-chip.ctx { color: var(--primary-light); background: rgba(99,102,241,.1); }
 .cp-dash-panel { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; line-height: 1.55; padding-top: 8px; border-top: 1px dashed var(--card-border); }
 .cp-dash-panel i { margin-top: 3px; flex-shrink: 0; font-size: 11px; }
 .cp-dash-panel.ladder { color: var(--amber); }
