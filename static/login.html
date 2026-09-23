@@ -133,7 +133,7 @@ const LoginApp = createApp({
     return { isLoading, loginError, hasSession, loginFeatures, handleLogin, handleRegister, continueSession }
   }
 })
-LoginApp.component('nux-login-page', window.NuxLoginPage)
+NexusComponents.register(LoginApp)
 LoginApp.mount('#app')
 </script>
 <script src="https://songguokr.com/nexus-ui/v2.10.121/js/components/nux-footer.js"></script>
