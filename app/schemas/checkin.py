@@ -34,6 +34,7 @@ class CheckInResponse(BaseModel):
     day_number: int = 0
     timestamp: datetime
     date: str
+    status: str = "completed"
     value: float = 0.0
     unit: str = "次"
     calories: float = 0.0

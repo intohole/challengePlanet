@@ -11,6 +11,7 @@ from app.models.challenge import Challenge
 from app.models.checkin import CheckIn
 from app.repositories.checkin_repository import CheckInRepository
 from app.services.companion_service import assess_risk, companion_text
+from app.services.goal_rule_service import is_cap_mode
 from app.services.mercy_service import load_valid_dates
 from app.services.streak_service import calc_streak, today_str
 
@@ -35,6 +36,12 @@ async def _get_unchecked_challenges(session: AsyncSession) -> list[Challenge]:
     all_active: list[Challenge] = list(result.scalars().all())
     unchecked: list[Challenge] = []
     for challenge in all_active:
+        start = str(getattr(challenge, "start_date", "") or "")
+        end = str(getattr(challenge, "end_date", "") or "")
+        if (start and start > today) or (end and end < today):
+            continue
+        if is_cap_mode(challenge):
+            continue
         checkin_result = await session.execute(
             select(CheckIn).where(
                 CheckIn.challenge_id == challenge.id,

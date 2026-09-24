@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from app.services.forecast_math import (
     DAY_END,
-    DAY_START,
     basis_of,
     blend_profile,
     compose_window_msg,
@@ -10,6 +9,8 @@ from app.services.forecast_math import (
     fmt_hour,
     fmt_int,
     forward_window,
+    hour_when_reached,
+    project_day_total,
     window_parts,
 )
 from app.services.goal_rule_service import is_ladder, ladder_cap
@@ -35,7 +36,7 @@ class NudgeService:
             )
         return self._increase_forecast(
             challenge, today_total, today_target, hour, is_soft_exceeded,
-            hour_dist, weekday_dist,
+            hour_dist, weekday_dist, day_number, recent_avg,
         )
 
     def apply_bias(self, forecast: dict[str, object], bias: float | None) -> dict[str, object]:
@@ -72,25 +73,14 @@ class NudgeService:
             result["risk_window_hours"] = [lo_w, hi_w] if span else []
             return result
         basis = basis_of(conf_label, weekday_dist)
-        time_frac = min(1.0, max(0.0, float(hour - DAY_START) / (DAY_END - DAY_START)))
-        if profile:
-            w_elapsed = sum(profile.get(h, 0.0) for h in range(DAY_START, hour))
-            w_total = sum(profile.get(h, 0.0) for h in range(DAY_START, DAY_END))
-            denom = max(w_elapsed, time_frac)
-            projected = today_total / denom * w_total if denom > 0 else today_total
-        else:
-            gone = float(max(0.0, hour - DAY_START))
-            projected = today_total * (DAY_END - DAY_START) / gone if gone > 0 else today_total
+        projected = project_day_total(today_total, hour, profile)
         remaining_units = max(0.0, today_target - today_total)
         touch_at = ""
         remaining_hours = 0.0
-        if remaining_units > 0:
-            gone = float(max(1.0, hour - DAY_START))
-            need_hours = remaining_units * gone / today_total
-            touch_float = hour + need_hours
-            if touch_float < DAY_END:
-                touch_at = fmt_hour(touch_float)
-                remaining_hours = max(0.0, round(touch_float - hour, 1))
+        touch_float = hour_when_reached(profile, hour, today_total, remaining_units)
+        if touch_float is not None and touch_float < DAY_END:
+            touch_at = fmt_hour(touch_float)
+            remaining_hours = max(0.0, round(touch_float - hour, 1))
         if today_total >= today_target:
             risk = 2
         elif projected > today_target:
@@ -118,28 +108,27 @@ class NudgeService:
         is_soft_exceeded: bool,
         hour_dist: list[dict[str, object]] | None = None,
         weekday_dist: list[dict[str, object]] | None = None,
+        day_number: int | None = None,
+        recent_avg: float | None = None,
     ) -> dict[str, object]:
         unit = str(getattr(challenge, "unit", "") or "")
         if today_target <= 0:
             return self._empty()
         level, msg = self._increase(challenge, today_total, today_target, unit, hour, is_soft_exceeded)
-        elapsed = max(1.0, float(hour - DAY_START))
+        profile = blend_profile(hour_dist, weekday_dist)
+        confidence, conf_label = confidence_of(hour_dist)
         remaining = max(0.0, today_target - today_total)
         reach_at = ""
         if today_total > 0:
-            pace = today_total / elapsed
-            projected = round(pace * (DAY_END - DAY_START), 1)
-            if remaining > 0:
-                reach_float = hour + remaining / pace
-                if reach_float < DAY_END:
-                    reach_at = fmt_hour(reach_float)
-            confidence, conf_label = 0.6, "中"
-            basis = "按你今天的记录速度"
+            projected = round(project_day_total(today_total, hour, profile), 1)
+            basis = basis_of(conf_label, weekday_dist)
+            reach_float = hour_when_reached(profile, hour, today_total, remaining)
+            if reach_float is not None and reach_float < DAY_END:
+                reach_at = fmt_hour(reach_float)
         else:
             projected = 0.0
             confidence, conf_label = 0.35, "低"
             basis = "今天还没记录，先开始第一步"
-        profile = blend_profile(hour_dist, weekday_dist)
         lo_w, hi_w = forward_window(profile, hour)
         span, base, action = window_parts(lo_w, hi_w, "increase", confidence)
         return {
@@ -148,7 +137,7 @@ class NudgeService:
             "touch_at": "", "remaining_hours": 0.0,
             "remaining_units": round(remaining, 1),
             "risk_level": 0, "coach_nudge": msg, "nudge_level": level,
-            "reach_at": reach_at, "ladder_outlook": None,
+            "reach_at": reach_at, "ladder_outlook": self._ladder_outlook(challenge, day_number, recent_avg),
             "risk_window": span, "risk_window_msg": compose_window_msg(span, base, action),
             "risk_window_hours": [lo_w, hi_w] if span else [],
         }
@@ -218,11 +207,18 @@ class NudgeService:
         plan_cap = sum(caps) / len(caps) if caps else 0.0
         if plan_cap <= 0:
             return None
-        on_track = recent_avg <= plan_cap
-        if on_track:
-            message = f"最近7天平均 {fmt_int(recent_avg)}{unit}，在阶梯计划内"
+        if str(getattr(challenge, "direction", "") or "increase") == "decrease":
+            on_track = recent_avg <= plan_cap
+            if on_track:
+                message = f"最近7天平均 {fmt_int(recent_avg)}{unit}，在阶梯计划内"
+            else:
+                message = f"最近7天平均 {fmt_int(recent_avg)}{unit}，比阶梯计划高 {fmt_int(recent_avg - plan_cap)}{unit}"
         else:
-            message = f"最近7天平均 {fmt_int(recent_avg)}{unit}，比阶梯计划高 {fmt_int(recent_avg - plan_cap)}{unit}"
+            on_track = recent_avg >= plan_cap
+            if on_track:
+                message = f"最近7天平均 {fmt_int(recent_avg)}{unit}，在阶梯计划内"
+            else:
+                message = f"最近7天平均 {fmt_int(recent_avg)}{unit}，比阶梯计划低 {fmt_int(plan_cap - recent_avg)}{unit}"
         return {
             "on_track": on_track, "recent_avg": round(recent_avg, 1),
             "plan_cap": round(plan_cap, 1), "remaining_days": remaining, "message": message,

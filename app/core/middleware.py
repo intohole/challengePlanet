@@ -15,7 +15,7 @@ def register_middleware(app: FastAPI) -> None:
     app.add_middleware(RequestIdMiddleware)
     register_service_auth(
         app,
-        public_api_prefixes=["/api/v1/auth", "/api/v1/share", "/api/auth"],
+        public_api_prefixes=["/api/v1/auth", "/api/auth"],
         allow_user_tokens=True,
     )
     app.add_middleware(RateLimitMiddleware)

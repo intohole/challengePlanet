@@ -91,7 +91,7 @@ async def main() -> None:
     t1, c1 = fas._compose([(_Ch("戒烟30天"), {}, "预计会超3")])
     check("单挑战标题", t1 == "「戒烟30天」节奏提醒", t1)
     t2, c2 = fas._compose([(_Ch("戒烟"), {}, "a"), (_Ch("跑步"), {}, "b")])
-    check("多挑战标题", t2 == "2 个挑战节奏偏快", t2)
+    check("多挑战标题", t2 == "2 个挑战需要你留意", t2)
 
     print("== 高风险触发提醒 ==")
     async with async_session() as session:

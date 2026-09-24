@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.services.goal_rule_service import ladder_cap_of
+
 _FILL_VARIANTS: tuple[str, str, str] = (
     "挑战真正开始前的最后一轮热身，用小行动找回对目标的掌控感",
     "换个角度推进目标，把今天的任务拆成更小的一个动作先做起来",
@@ -7,18 +9,6 @@ _FILL_VARIANTS: tuple[str, str, str] = (
 )
 
 _MILESTONE_DAYS: set[int] = {7, 14, 21, 28}
-
-
-def _ladder_cap(
-    direction: str, start: float, goal: float,
-    interval: int, step: float, day: int,
-) -> float:
-    elapsed = (day - 1) // max(1, interval)
-    if direction == "decrease":
-        return max(goal, start - elapsed * step)
-    if goal <= 0:
-        return start + elapsed * step
-    return min(goal, start + elapsed * step)
 
 
 def _daily_target(
@@ -29,7 +19,10 @@ def _daily_target(
     if task_type in ("binary", "text", "diet"):
         return 0.0
     if goal_rule == "ladder" and ladder_start > 0:
-        return _ladder_cap(direction, ladder_start, ladder_goal, ladder_interval, ladder_step, day)
+        return ladder_cap_of(
+            direction, ladder_start, ladder_goal,
+            max(1, ladder_interval), ladder_step, day,
+        )
     return float(target_value) if target_value > 0 else 0.0
 
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import re
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -28,7 +27,6 @@ from app.db.database import get_db
 from app.schemas.challenge import (
     ChallengeConfirmRequest,
     ChallengeResponse,
-    FromDecisionRequest,
     NLCreateRequest,
     ShareDataResponse,
     TodayTaskResponse,
@@ -126,12 +124,10 @@ async def list_challenges(
 ) -> list[ChallengeResponse]:
     service = ChallengeService()
     challenges = await service.get_user_challenges(session, user_id)
-    if not challenges:
-        return []
-    responses = await asyncio.gather(
-        *(service.build_response(session, c, user_id) for c in challenges)
-    )
-    return list(responses)
+    responses: list[ChallengeResponse] = []
+    for challenge in challenges:
+        responses.append(await service.build_response(session, challenge, user_id))
+    return responses
 
 
 @router.post("/nl-create", response_class=StreamingResponse)
@@ -222,28 +218,6 @@ async def confirm_challenge(
             await dc.report(bearer, domain=DOMAIN_GROWTH, asset_type="challenge",
                             app="challengeplanet", ref_id=challenge.id, title=request.title,
                             summary=f"{request.category} · {request.duration_days}天")
-        except Exception:
-            pass
-    return await service.build_response(session, challenge, user_id)
-
-
-@router.post("/from-decision", response_model=ChallengeResponse)
-async def create_from_decision(
-    request: FromDecisionRequest,
-    user_id: str = Depends(get_current_user_id_required),
-    session: AsyncSession = Depends(get_db),
-    bearer: str = Depends(get_bearer_token),
-) -> ChallengeResponse:
-    service = ChallengeService()
-    challenge = await service.create_from_decision(
-        session, user_id, request.title, request.description, request.duration_days
-    )
-    if bearer:
-        try:
-            dc = await get_datacenter_client()
-            await dc.report(bearer, domain=DOMAIN_GROWTH, asset_type="challenge",
-                            app="challengeplanet", ref_id=str(challenge.id), title=request.title,
-                            summary=f"{request.duration_days}天挑战")
         except Exception:
             pass
     return await service.build_response(session, challenge, user_id)

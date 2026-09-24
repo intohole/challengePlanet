@@ -14,13 +14,13 @@ from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import ChallengeMetaRepository
 from app.schemas.challenge import ChallengeResponse
-from app.services.ai_service import AIService
 from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.forecast_service import ForecastService
-from app.services.goal_rule_service import daily_target, is_cap_mode, is_ladder, is_settled, ladder_progress_pct, resolve_mode
+from app.services.goal_rule_service import is_cap_mode, is_ladder, is_repeatable, is_settled, ladder_progress_pct, resolve_mode
 from app.services.mercy_service import MercyService, load_valid_dates
 from app.services.period_service import period_fields, week_aggregates
 from app.services.streak_service import calc_streak, shift_date, streak_before, today_str
+from app.services.target_service import TargetService
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,6 @@ CATEGORY_META: dict[str, dict[str, str]] = {
     "other": {"icon": "🎯", "color": "#8b5cf6", "label": "其他"},
 }
 
-SOURCE_LIFECOMPASS = "lifecompass"
 _STATUS_SUFFIXES: tuple[str, ...] = ("当前", "进行中", "打卡中", "现在", "目前")
 
 
@@ -58,7 +57,7 @@ class ChallengeService:
         self._repo = ChallengeRepository()
         self._checkin_repo = CheckInRepository()
         self._meta_repo = ChallengeMetaRepository()
-        self._ai = AIService()
+        self._targets = TargetService()
 
     async def create_with_plan(
         self, session: AsyncSession, user_id: str, title: str, description: str,
@@ -118,22 +117,20 @@ class ChallengeService:
         await session.commit()
         return challenge
 
-    async def create_from_decision(
-        self, session: AsyncSession, user_id: str, title: str,
-        description: str, duration_days: int,
-    ) -> Challenge:
-        plan_data = await self._ai.generate_challenge_plan(title, description, "other", duration_days)
-        plan = plan_data.get("plan", [])
-        if not isinstance(plan, list):
-            plan = []
-        return await self.create_with_plan(
-            session, user_id, title, description, "other", duration_days, "",
-            [dict(item) for item in plan if isinstance(item, dict)],
-            source=SOURCE_LIFECOMPASS,
-        )
-
     async def get_user_challenges(self, session: AsyncSession, user_id: str) -> list[Challenge]:
         return await self._repo.get_by_user_id(session, user_id)
+
+    async def close_finished(self, session: AsyncSession) -> int:
+        today = today_str()
+        closed = 0
+        for challenge in await self._repo.get_all_active(session):
+            if str(getattr(challenge, "end_date", "") or "") >= today:
+                continue
+            challenge.status = "completed"
+            closed += 1
+        if closed:
+            await session.commit()
+        return closed
 
     async def get_challenge(self, session: AsyncSession, challenge_id: int) -> Challenge | None:
         return await self._repo.get_by_id(session, challenge_id)
@@ -248,17 +245,23 @@ class ChallengeService:
             return None
         start_date: datetime = parsed_start
         now_dt = now_china()
-        day_number = max(1, min((now_dt - start_date).days + 1, challenge.duration_days))
-        plan_list = self._parse_plan(challenge.ai_plan)
-        task = plan_list[day_number - 1] if plan_list and day_number <= len(plan_list) else {}
         today = today_str()
+        day_number = max(1, min((now_dt - start_date).days + 1, challenge.duration_days))
+        if now_dt.date() < start_date.date():
+            day_number = 0
+        plan_list = self._parse_plan(challenge.ai_plan)
+        task = plan_list[day_number - 1] if plan_list and 0 < day_number <= len(plan_list) else {}
         today_checkins = await self._checkin_repo.list_by_date(session, challenge_id, today)
         today_total = await self._checkin_repo.sum_value_by_date(session, challenge_id, today)
-        dynamic_baseline = await self._calc_dynamic_baseline(session, challenge)
-        today_target = daily_target(challenge, day_number, adaptive_baseline=dynamic_baseline)
-        if str(getattr(challenge, "task_type", "")) == "diet" and float(getattr(challenge, "daily_calorie_target", 0) or 0) > 0:
-            today_target = float(challenge.daily_calorie_target)
-        forecast = await ForecastService().build(session, challenge, today_total, today_target, now_dt.hour, day_number=day_number)
+        dynamic_baseline = await self._targets.live_baseline(session, challenge)
+        snapshot = await self._targets.resolve(
+            session, challenge, max(1, day_number), adaptive_baseline=dynamic_baseline,
+        )
+        today_target = float(snapshot["target_value"])
+        forecast = await ForecastService().build(
+            session, challenge, today_total, today_target, now_dt.hour,
+            day_number=day_number or None, store=False,
+        )
         period_days = max(1, int(getattr(challenge, "period_days", 7) or 7))
         aggregates = await week_aggregates(session, challenge_id, today_checkins, period_days)
         sub_goals_list = await self._build_sub_goals(session, challenge, today)
@@ -278,18 +281,6 @@ class ChallengeService:
             return plan_list if isinstance(plan_list, list) else []
         except json.JSONDecodeError:
             return []
-
-    async def _calc_dynamic_baseline(self, session: AsyncSession, challenge) -> float:
-        recent = await self._checkin_repo.list_recent(session, challenge.id, days=7)
-        daily_totals: dict[str, float] = {}
-        for c in recent:
-            daily_totals[c.date] = daily_totals.get(c.date, 0.0) + c.value
-        if daily_totals:
-            avg = sum(daily_totals.values()) / len(daily_totals)
-            if challenge.direction == "decrease":
-                return round(max(avg * 0.9, max(challenge.target_value * 0.5, 1.0)), 2)
-            return round(max(avg * 1.1, 1.0), 2)
-        return max(challenge.target_value, 1.0)
 
     async def _build_sub_goals(
         self, session: AsyncSession, challenge, today: str,
@@ -325,16 +316,14 @@ class ChallengeService:
         task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
         remaining = max(0.0, today_target - today_total)
         feedback = today_checkins[-1].ai_feedback if today_checkins else ""
-        repeatable = (
-            challenge.decompose_mode == "time_slot"
-            or challenge.task_type in ("counter", "timer")
-            or bool(sub_goals_list)
-        )
+        not_started = day_number < 1
+        repeatable = is_repeatable(challenge, len(sub_goals_list))
         ladder_progress = ladder_progress_pct(challenge, day_number) if is_ladder(challenge) else 0.0
         task_type = str(task.get("task_type", challenge.task_type))
         pf = period_fields(challenge, task_type, aggregates or {})
         return {
             "challenge_id": challenge_id, "day_number": day_number, "date": today,
+            "not_started": not_started,
             "repeatable": repeatable, "task": task, "task_title": str(task.get("title", "")),
             "task_description": str(task.get("description", "")),
             "task_tip": str(task.get("tip", "")),
@@ -353,7 +342,10 @@ class ChallengeService:
             "today_total": today_total, "today_target": today_target, "today_cap": today_target,
             "dynamic_baseline": dynamic_baseline, "remaining": round(remaining, 2), "forecast": forecast,
             "progress_pct": round(progress, 1), "ladder_progress_pct": round(ladder_progress, 1),
-            "checked_in": len(today_checkins) > 0, "settled": is_settled(challenge, str(task.get("task_type", challenge.task_type)), today_total, today_target, len(today_checkins)),
+            "checked_in": len(today_checkins) > 0,
+            "settled": False if not_started else is_settled(
+                challenge, task_type, today_total, today_target, len(today_checkins),
+            ),
             **pf,
             "checkin_data": {
                 "mood": today_checkins[-1].mood if today_checkins else "",

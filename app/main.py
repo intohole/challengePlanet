@@ -21,20 +21,30 @@ from app.api.diet import router as diet_router
 from app.api.points import router as points_router
 from app.api.portal import router as portal_router
 from app.api.report import router as report_router
-from app.api.share import router as share_router
 from app.api.sub_goal import router as sub_goal_router
 from app.api.squad import router as squad_router
 from app.config import settings
 from app.core.middleware import register_middleware
-from app.db.database import init_db, run_migrations, engine as db_engine
+from app.db.database import init_db, run_migrations, engine as db_engine, async_session
 from app.services.reminder_service import send_checkin_reminders
 from app.services.forecast_alert_service import send_forecast_alerts
+from app.services.challenge_service import ChallengeService
 from app.services.challenge_chat_handler import challenge_chat_handler
 
 setup_logging()
 logger = get_logger("challengePlanet.main")
 
 _STATIC_DIR = Path(__file__).parent.parent / "static"
+
+
+async def close_finished_challenges() -> None:
+    try:
+        async with async_session() as session:
+            closed = await ChallengeService().close_finished(session)
+            if closed:
+                logger.info("已结束挑战自动归档 %d 个", closed)
+    except Exception as e:
+        logger.error("close finished challenges failed: %s", e)
 
 
 @asynccontextmanager
@@ -64,6 +74,12 @@ async def lifespan(app: FastAPI):
         job_id="cp-forecast-alert",
         hour=18,
         minute=30,
+    )
+    scheduler.add_cron_job(
+        close_finished_challenges,
+        job_id="cp-close-finished",
+        hour=0,
+        minute=10,
     )
     scheduler.start()
     logger.info("Scheduler started: check-in reminders at 20:00 daily")
@@ -101,7 +117,6 @@ app.include_router(adaptive_router, prefix=API_PREFIX + "/challenges")
 app.include_router(squad_router, prefix=API_PREFIX)
 app.include_router(points_router, prefix=API_PREFIX)
 app.include_router(portal_router, prefix=API_PREFIX)
-app.include_router(share_router, prefix=API_PREFIX)
 app.include_router(chat_router(ChatEngine(db_engine).register("challengePlanet", challenge_chat_handler), "challengePlanet"))
 
 register_notify_proxy(app)

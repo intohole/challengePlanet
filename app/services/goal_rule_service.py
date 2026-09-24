@@ -23,19 +23,46 @@ def resolve_mode(challenge: object) -> str:
     return mode
 
 
-def ladder_cap(challenge: object, day_number: int) -> float:
-    start = float(getattr(challenge, "ladder_start", 0) or 0)
-    goal = float(getattr(challenge, "ladder_goal", 0) or 0)
-    interval = max(1, int(getattr(challenge, "ladder_interval", 1) or 1))
-    step = float(getattr(challenge, "ladder_step", 1) or 1)
+def is_repeatable(challenge: object, sub_goals_count: int = 0) -> bool:
+    if sub_goals_count > 0:
+        return True
+    if str(getattr(challenge, "decompose_mode", "") or "") == "time_slot":
+        return True
+    return str(getattr(challenge, "task_type", "") or "") in ("counter", "timer")
+
+
+def ladder_cap_of(
+    direction: str, start: float, goal: float,
+    interval: int, step: float, day_number: int,
+) -> float:
     if step <= 0:
         step = 1.0
-    elapsed = (day_number - 1) // interval
-    if challenge.direction == "decrease":
+    elapsed = (day_number - 1) // max(1, interval)
+    if direction == "decrease":
         return max(goal, start - elapsed * step)
     if goal <= 0:
         return start + elapsed * step
     return min(goal, start + elapsed * step)
+
+
+def ladder_cap(challenge: object, day_number: int) -> float:
+    return ladder_cap_of(
+        str(getattr(challenge, "direction", "") or "increase"),
+        float(getattr(challenge, "ladder_start", 0) or 0),
+        float(getattr(challenge, "ladder_goal", 0) or 0),
+        max(1, int(getattr(challenge, "ladder_interval", 1) or 1)),
+        float(getattr(challenge, "ladder_step", 1) or 1),
+        day_number,
+    )
+
+
+def dynamic_baseline_from(avg: float | None, challenge: object) -> float:
+    target = float(getattr(challenge, "target_value", 1.0) or 1.0)
+    if avg is None or avg <= 0:
+        return max(target, 1.0)
+    if str(getattr(challenge, "direction", "") or "increase") == "decrease":
+        return round(max(avg * 0.9, max(target * 0.5, 1.0)), 2)
+    return round(max(avg * 1.1, 1.0), 2)
 
 
 def daily_target(

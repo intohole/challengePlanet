@@ -170,42 +170,24 @@ class AIService:
         direction: str = "increase", is_soft_exceeded: bool = False,
     ) -> str:
         phase = "适应期" if day_number <= 3 else ("巩固期" if day_number <= total_days * 0.6 else "维持期")
-        memory_part = f"\n用户过往记忆：{memory_context}" if memory_context else ""
-        soft_exceed_hint = self._build_soft_exceed_hint(value, target, direction, is_soft_exceeded, mood)
-        user_msg = (
-            f"挑战：{challenge_title}\n第{day_number}/{total_days}天 ({phase})\n"
-            f"心情：{mood or '未记录'}\n本次记录值：{value}\n目标值：{target}\n"
+        head = (
+            f"挑战：{challenge_title}\n挑战天数：共{total_days}天\n"
             f"方向：{direction}{'(越少越好)' if direction == 'decrease' else '(越多越好)'}\n"
-            f"心得：{reflection or '无'}{soft_exceed_hint}{memory_part}"
+            f"目标值：{target}"
         )
-        system = get_mood_aware_prefix(mood) + FEEDBACK_SYSTEM
+        tail = f"\n第{day_number}天（{phase}）\n本次记录值：{value}\n心情：{mood or '未记录'}\n心得：{reflection or '无'}"
+        if is_soft_exceeded and direction == "decrease":
+            tail += f"\n本次已超过软目标（软目标 {target}）"
+        if memory_context:
+            tail += f"\n用户过往记忆：{memory_context}"
+        system = FEEDBACK_SYSTEM + get_mood_aware_prefix(mood)
         llm = get_llm_service()
         raw = await llm.ask(
-            user_msg, system=system,
+            head + tail, system=system,
             temperature=settings.FEEDBACK_TEMPERATURE,
             max_tokens=256, timeout=30.0, task_type="assistant",
         )
         return sanitize_coach_text(raw.strip(), system=system)
-
-    def _build_soft_exceed_hint(
-        self, value: float, target: float, direction: str, is_soft_exceeded: bool, mood: str = "",
-    ) -> str:
-        if not is_soft_exceeded:
-            return ""
-        if mood == "bad":
-            return (
-                f"\n【场景】用户本次记录{value}，软目标是{target}，心情低落。"
-                "绝不使用'这个时段对你来说特别难'，改用'没关系，记录本身就是进步'。"
-            )
-        if direction == "decrease":
-            return (
-                f"\n【场景】用户本次记录{value}，软目标是{target}，超出了。"
-                "请用'这个时段对你来说特别难'的语气共情，绝不指责。"
-            )
-        return (
-            f"\n【场景】用户本次记录{value}，软目标是{target}，未达成。"
-            "请用'慢慢来，我们一起想办法'的语气鼓励。"
-        )
 
     async def generate_repair_message(self, challenge_title: str, missed_days: int) -> str:
         user_msg = f"挑战：{challenge_title}\n中断天数：{missed_days}天"

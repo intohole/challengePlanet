@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from nexus import get_current_user_id_required
 from nexus.streaming import sse_event_dict, sse_response
@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository, InsightRepository
-from app.schemas.challenge import WeeklyReportResponse
 from app.schemas.checkin import (
     CheckInCreate,
     CheckInPatchRequest,
@@ -18,7 +17,6 @@ from app.schemas.checkin import (
     DateActionRequest,
     DateActionResponse,
     ForecastResponse,
-    InsightResponse,
     InsightStreamRequest,
     MercyStatusResponse,
     RepairResponse,
@@ -188,20 +186,6 @@ def _sanitized_checkin(c) -> CheckInResponse:
     data = CheckInResponse.model_validate(c).model_dump()
     data["ai_feedback"] = sanitize_coach_text(c.ai_feedback)
     return CheckInResponse(**data)
-
-
-@router.get("/{challenge_id}/weekly-report", response_model=WeeklyReportResponse)
-async def get_weekly_report(
-    challenge_id: int,
-    user_id: str = Depends(get_current_user_id_required),
-    session: AsyncSession = Depends(get_db),
-) -> WeeklyReportResponse:
-    service = CheckInService()
-    try:
-        result = await service.get_weekly_report(session, challenge_id, user_id)
-    except ValueError as e:
-        raise bad_request(e)
-    return WeeklyReportResponse(**result)
 
 
 @router.post("/{challenge_id}/insight/stream")

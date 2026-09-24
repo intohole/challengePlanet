@@ -49,7 +49,7 @@ def alert_text(forecast: dict[str, object]) -> str:
 def _compose(alerts: list[tuple[Challenge, dict[str, object], str]]) -> tuple[str, str]:
     if len(alerts) > 1:
         titles = "、".join(f"「{ch.title}」" for ch, _, _ in alerts[:2])
-        return f"{len(alerts)} 个挑战节奏偏快", f"{titles} 按当前节奏今天会超目标，早点调整一下"
+        return f"{len(alerts)} 个挑战需要你留意", f"{titles} 今天的节奏需要调整一下，趁现在还来得及"
     challenge, _, text = alerts[0]
     return f"「{challenge.title}」节奏提醒", text
 
@@ -59,6 +59,10 @@ async def _collect(session: AsyncSession, today: str) -> dict[str, list]:
     service = ChallengeService()
     by_user: dict[str, list] = {}
     for challenge in challenges:
+        start = str(getattr(challenge, "start_date", "") or "")
+        end = str(getattr(challenge, "end_date", "") or "")
+        if start > today or end < today:
+            continue
         if await _already_alerted(session, challenge.id, today):
             continue
         try:
@@ -67,7 +71,7 @@ async def _collect(session: AsyncSession, today: str) -> dict[str, list]:
             logger.warning("forecast alert skip ch=%s: %s", challenge.id, e)
             continue
         forecast = (detail or {}).get("forecast") or {}
-        if not forecast.get("enabled") or int(forecast.get("risk_level", 0) or 0) < 1:
+        if not forecast.get("enabled") or int(forecast.get("nudge_level", 0) or 0) < 1:
             continue
         text = alert_text(forecast)
         if not text:

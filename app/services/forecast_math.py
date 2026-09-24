@@ -79,6 +79,42 @@ def forward_window(profile: dict[int, float], hour: int) -> tuple[int, int]:
     return lo, hi
 
 
+def weight_upto(profile: dict[int, float], hour: int) -> float:
+    return sum(profile.get(h, 0.0) for h in range(DAY_START, hour))
+
+
+def project_day_total(today_total: float, hour: int, profile: dict[int, float]) -> float:
+    if today_total <= 0:
+        return 0.0
+    time_frac = min(1.0, max(0.0, float(hour - DAY_START) / (DAY_END - DAY_START)))
+    elapsed = weight_upto(profile, hour) if profile else 0.0
+    denom = max(elapsed, time_frac)
+    if denom <= 0:
+        return today_total
+    total = sum(profile.get(h, 0.0) for h in range(DAY_START, DAY_END)) if profile else 1.0
+    return today_total / denom * (total or 1.0)
+
+
+def hour_when_reached(
+    profile: dict[int, float], hour: int, today_total: float, remaining_units: float,
+) -> float | None:
+    if remaining_units <= 0 or today_total <= 0:
+        return None
+    uniform = hour + remaining_units * float(max(1.0, hour - DAY_START)) / today_total
+    elapsed = weight_upto(profile, hour) if profile else 0.0
+    if elapsed <= 0:
+        return uniform
+    need = remaining_units / today_total * elapsed
+    for h in range(max(DAY_START, hour), DAY_END):
+        w = profile.get(h, 0.0)
+        if w <= 0:
+            continue
+        if need <= w:
+            return h + need / w
+        need -= w
+    return uniform
+
+
 WINDOW_WORDING = {
     "decrease": ("这段对你来说最难", "提前安排点别的"),
     "increase": ("你通常状态最好", "趁那会儿推进"),

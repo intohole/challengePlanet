@@ -110,6 +110,9 @@ class MercyService:
         existing = await self._checkin_repo.get_by_date(session, challenge_id, target_date)
         if existing is not None:
             raise ValueError("该日期已有打卡记录")
+        valid = await self._valid_dates(session, challenge_id)
+        if target_date in valid:
+            raise ValueError("该日期已计入有效天数，无需补签")
 
         month_prefix = month_prefix_of()
         used = await self._action_repo.count_user_actions_in_month(
@@ -127,8 +130,15 @@ class MercyService:
             "challenge_id": challenge_id,
             "user_id": user_id,
             "day_number": day_number,
-            "date": target_date,
             "status": "mended",
+            "timestamp": datetime.strptime(f"{target_date} 12:00", "%Y-%m-%d %H:%M"),
+            "date": target_date,
+            "value": 0.0,
+            "unit": str(getattr(challenge, "unit", "") or ""),
+            "target_value": daily_target(challenge, day_number),
+            "goal_type": str(getattr(challenge, "goal_type", "hard") or "hard"),
+            "direction": str(getattr(challenge, "direction", "increase") or "increase"),
+            "completion_pct": 100.0,
             "mood": "",
             "reflection": "",
             "ai_feedback": "",
@@ -140,7 +150,7 @@ class MercyService:
             "action_date": target_date,
             "cost": cost,
         })
-        valid = await self._valid_dates(session, challenge_id)
+        valid.add(target_date)
         return {"date": target_date, "cost": cost, "streak": calc_streak(valid, today)}
 
     async def freeze(

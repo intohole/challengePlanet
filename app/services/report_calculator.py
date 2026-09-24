@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.datetime_utils import now_china
 from app.repositories.checkin_repository import CheckInRepository
+from app.services.goal_rule_service import dynamic_baseline_from
 from app.services.mercy_service import load_valid_dates
 from app.services.streak_service import calc_streak, today_str
 
@@ -162,7 +163,7 @@ class ReportCalculator:
             hourly_rows, challenge.direction
         )
 
-        dynamic_baseline = self._calc_dynamic_baseline(last_7d_avg, challenge)
+        dynamic_baseline = dynamic_baseline_from(last_7d_avg, challenge)
         return {
             "today_total": today_total,
             "last_7d_avg": round(last_7d_avg, 2),
@@ -211,10 +212,6 @@ class ReportCalculator:
                     peak_hour = int(row["hour"])
         return peak_hour, peak_value, best_hour, worst_hour
 
-    def _calc_dynamic_baseline(self, last_7d_avg: float, challenge) -> float:
-        baseline = last_7d_avg * (0.9 if challenge.direction == "decrease" else 1.1)
-        return max(baseline, max(challenge.target_value * 0.5, 1.0))
-
     async def calc_baseline_at(
         self, session: AsyncSession, challenge, date_str: str,
     ) -> float:
@@ -225,12 +222,8 @@ class ReportCalculator:
             cutoff.strftime("%Y-%m-%d"),
             (target_dt - timedelta(days=1)).strftime("%Y-%m-%d"),
         )
-        if not recent:
-            return max(challenge.target_value, 1.0)
         daily = self._aggregate_daily(recent)
         if not daily:
-            return max(challenge.target_value, 1.0)
+            return dynamic_baseline_from(None, challenge)
         avg = sum(daily.values()) / len(daily)
-        if challenge.direction == "decrease":
-            return max(avg * 0.9, max(challenge.target_value * 0.5, 1.0))
-        return max(avg * 1.1, 1.0)
+        return dynamic_baseline_from(avg, challenge)

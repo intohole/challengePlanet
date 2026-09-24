@@ -81,12 +81,6 @@ class ChallengeConfirmRequest(BaseModel):
     sport_met: float = Field(0.0, description="运动MET值(>0时打卡自动折算卡路里)")
 
 
-class FromDecisionRequest(BaseModel):
-    title: str = Field(..., description="挑战标题")
-    description: str = Field("", description="挑战描述")
-    duration_days: int = Field(66, description="挑战天数")
-
-
 class MercySummary(BaseModel):
     mend_left_this_month: int = 0
     freeze_left_this_week: int = 0
@@ -156,6 +150,8 @@ class TodayTaskResponse(BaseModel):
     challenge_id: int
     day_number: int
     date: str
+    not_started: bool = False
+    repeatable: bool = False
     task: dict[str, object] = Field(default_factory=dict)
     task_title: str = ""
     task_description: str = ""
@@ -204,13 +200,6 @@ class TodayTaskResponse(BaseModel):
     total_checkins: int = 0
 
     diet: Optional[dict[str, object]] = None
-
-
-class WeeklyReportResponse(BaseModel):
-    report: str = ""
-    generated_at: Optional[datetime] = None
-    week_checkins: int = 0
-    week_days: int = 7
 
 
 class PortalTodayItem(BaseModel):

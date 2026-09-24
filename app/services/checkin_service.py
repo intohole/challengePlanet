@@ -7,9 +7,10 @@ from nexus.logging import get_logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.checkin import CheckIn, AIInsight
+from app.models.challenge import Challenge
+from app.models.checkin import CheckIn
 from app.repositories.challenge_repository import ChallengeRepository
-from app.repositories.checkin_repository import CheckInRepository, InsightRepository
+from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import ChallengeMetaRepository
 from app.repositories.squad_repository import SquadRepository
 from app.repositories.sub_goal_repository import SubGoalRepository
@@ -20,11 +21,12 @@ from app.services.checkin_background import (
     save_memory,
 )
 from app.services.forecast_service import ForecastService
-from app.services.goal_rule_service import daily_target, is_ladder
+from app.services.goal_rule_service import is_repeatable
 from app.services.mercy_service import load_valid_dates
 from app.services.points_service import PointsService
 from app.services.shield_service import ShieldService
-from app.services.streak_service import calc_streak, today_str, week_dates_of
+from app.services.streak_service import calc_streak, today_str
+from app.services.target_service import TargetService
 
 logger = get_logger("challengePlanet.checkin")
 
@@ -40,13 +42,28 @@ def _fire_and_forget(coro: object) -> None:
 class CheckInService:
     def __init__(self, points: PointsService | None = None) -> None:
         self._repo = CheckInRepository()
-        self._insight_repo = InsightRepository()
         self._challenge_repo = ChallengeRepository()
         self._sub_goal_repo = SubGoalRepository()
         self._meta_repo = ChallengeMetaRepository()
         self._squad_repo = SquadRepository()
+        self._targets = TargetService()
         self._points = points or PointsService()
         self._shields = ShieldService()
+
+    def _assert_open_day(self, challenge: Challenge, timestamp: datetime | None) -> str:
+        today = today_str()
+        if timestamp is not None and timestamp.strftime("%Y-%m-%d") != today:
+            raise ValueError("只能记录今天的打卡，过去的日子请用补签")
+        if today < str(getattr(challenge, "start_date", "") or ""):
+            raise ValueError(f"挑战将于 {challenge.start_date} 开始，到时再来记录吧")
+        if today > str(getattr(challenge, "end_date", "") or ""):
+            raise ValueError("挑战已结束，战绩已保留")
+        return today
+
+    def _day_number_of(self, challenge: Challenge, today: str) -> int:
+        start_dt = datetime.strptime(challenge.start_date, "%Y-%m-%d") if challenge.start_date else now_china()
+        day_number = (datetime.strptime(today, "%Y-%m-%d").date() - start_dt.date()).days + 1
+        return max(1, min(day_number, challenge.duration_days))
 
     async def do_checkin(
         self,
@@ -67,7 +84,7 @@ class CheckInService:
             raise ValueError("记得先写下今日记录内容")
 
         ts = timestamp or now_china()
-        today = ts.strftime("%Y-%m-%d")
+        today = self._assert_open_day(challenge, timestamp)
         hhmm = ts.strftime("%H:%M")
 
         if sub_goal_id is None and challenge.decompose_mode == "time_slot":
@@ -75,10 +92,17 @@ class CheckInService:
             if sub_goal is not None:
                 sub_goal_id = sub_goal.id
 
-        start_dt = datetime.strptime(challenge.start_date, "%Y-%m-%d") if challenge.start_date else ts
-        day_number = max(1, min((ts.date() - start_dt.date()).days + 1, challenge.duration_days))
-
-        target_snapshot = await self._compute_target_snapshot(session, challenge, sub_goal_id, day_number)
+        day_number = self._day_number_of(challenge, today)
+        baseline = await self._targets.live_baseline(session, challenge)
+        target_snapshot = await self._targets.resolve(
+            session, challenge, day_number,
+            sub_goal_id=sub_goal_id, adaptive_baseline=baseline,
+        )
+        today_checkins = await self._repo.list_by_date(session, challenge_id, today)
+        if today_checkins and not is_repeatable(challenge):
+            return await self._replay_checkin(
+                session, challenge, today_checkins[-1], target_snapshot, baseline, day_number,
+            )
 
         completion_pct = self._calc_completion_pct(value, target_snapshot["target_value"], challenge.direction)
         if str(getattr(challenge, "task_type", "")) == "diet" and target_snapshot["target_value"] > 0:
@@ -132,63 +156,56 @@ class CheckInService:
         if mood == "bad":
             _fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
 
+        return self._result_payload(
+            challenge, checkin, target_snapshot, baseline,
+            today_total, remaining, base, chest, streak, shields,
+            already_checked=False, is_soft_exceeded=is_soft_exceeded,
+            soft_exceeded_amount=soft_exceeded_amount, forecast=forecast,
+        )
+
+    async def _replay_checkin(
+        self, session: AsyncSession, challenge: Challenge, existing: CheckIn,
+        target_snapshot: dict[str, object], baseline: float, day_number: int,
+    ) -> dict[str, object]:
+        today_total = await self._repo.sum_value_by_date(session, challenge.id, existing.date)
+        target = float(target_snapshot["target_value"])
+        remaining = self._calc_remaining(today_total, target, challenge.direction)
+        forecast = await ForecastService().build(
+            session, challenge, today_total, target, now_china().hour,
+            day_number=day_number, store=False,
+        )
+        return self._result_payload(
+            challenge, existing, target_snapshot, baseline,
+            today_total, remaining, 0, 0,
+            await self._current_streak(session, challenge.id),
+            await self._shields.get_shields(session, challenge.id),
+            already_checked=True, is_soft_exceeded=False,
+            soft_exceeded_amount=0.0, forecast=forecast,
+        )
+
+    def _result_payload(
+        self, challenge: Challenge, checkin: CheckIn,
+        target_snapshot: dict[str, object], baseline: float, today_total: float,
+        remaining: float, points: int, chest: int, streak: int, shields: int,
+        already_checked: bool, is_soft_exceeded: bool,
+        soft_exceeded_amount: float, forecast: dict[str, object],
+    ) -> dict[str, object]:
+        target = float(target_snapshot["target_value"])
         return {
-            "checkin": checkin, "ai_feedback": "",
-            "points_earned": base, "chest_points": chest,
-            "streak": streak, "already_checked": False,
-            "declaration": "", "shields": shields,
-            "today_total": today_total, "today_target": target_snapshot["target_value"],
-            "today_cap": target_snapshot["target_value"],
+            "checkin": checkin, "ai_feedback": str(checkin.ai_feedback or ""),
+            "points_earned": points, "chest_points": chest,
+            "streak": streak, "already_checked": already_checked,
+            "declaration": str(checkin.declaration or ""), "shields": shields,
+            "today_total": today_total, "today_target": target,
+            "today_cap": target,
             "goal_rule": str(challenge.goal_rule) or "fixed",
-            "dynamic_baseline": target_snapshot["target_value"],
+            "dynamic_baseline": baseline,
             "remaining": remaining, "is_soft_exceeded": is_soft_exceeded,
             "soft_exceeded_amount": soft_exceeded_amount,
             "coach_nudge": str(forecast.get("coach_nudge", "")),
             "nudge_level": int(forecast.get("nudge_level", 0)),
             "forecast": forecast,
         }
-
-    async def _compute_target_snapshot(
-        self, session: AsyncSession, challenge, sub_goal_id: int | None,
-        day_number: int,
-    ) -> dict[str, object]:
-        if str(getattr(challenge, "task_type", "")) == "diet":
-            return {
-                "target_value": float(getattr(challenge, "daily_calorie_target", 0) or 0),
-                "goal_type": "soft",
-            }
-        if is_ladder(challenge):
-            return {
-                "target_value": daily_target(challenge, day_number),
-                "goal_type": challenge.goal_type,
-            }
-        if sub_goal_id is not None:
-            sub_goal = await self._sub_goal_repo.get_by_id(session, sub_goal_id)
-            if sub_goal is not None and sub_goal.challenge_id == challenge.id:
-                target = sub_goal.target_value if sub_goal.target_value > 0 else challenge.slot_target_value
-                goal_type = sub_goal.goal_type
-                if target <= 0:
-                    target = await self._dynamic_baseline(session, challenge)
-                    goal_type = challenge.goal_type
-                return {"target_value": target, "goal_type": goal_type}
-        if challenge.decompose_mode == "time_slot" and challenge.slot_target_value > 0:
-            return {"target_value": challenge.slot_target_value, "goal_type": challenge.goal_type}
-        baseline = await self._dynamic_baseline(session, challenge)
-        return {"target_value": baseline, "goal_type": challenge.goal_type}
-
-    async def _dynamic_baseline(self, session: AsyncSession, challenge) -> float:
-        recent = await self._repo.list_recent(session, challenge.id, days=7)
-        if not recent:
-            return max(challenge.target_value, 1.0)
-        daily_totals: dict[str, float] = {}
-        for c in recent:
-            daily_totals[c.date] = daily_totals.get(c.date, 0.0) + c.value
-        if not daily_totals:
-            return max(challenge.target_value, 1.0)
-        avg = sum(daily_totals.values()) / len(daily_totals)
-        if challenge.direction == "decrease":
-            return max(avg * 0.9, max(challenge.target_value * 0.5, 1.0))
-        return max(avg * 1.1, 1.0)
 
     def _calc_completion_pct(self, value: float, target: float, direction: str) -> float:
         if target <= 0:
@@ -273,19 +290,3 @@ class CheckInService:
         if challenge is None or challenge.user_id != user_id:
             raise ValueError("挑战不存在")
         return await self._repo.get_by_challenge(session, challenge_id)
-
-    async def get_weekly_report(
-        self, session: AsyncSession, challenge_id: int, user_id: str,
-    ) -> dict[str, object]:
-        challenge = await self._challenge_repo.get_by_id(session, challenge_id)
-        if challenge is None or challenge.user_id != user_id:
-            raise ValueError("挑战不存在")
-        insight = await self._insight_repo.get_latest_weekly(session, challenge_id)
-        checkins = await self._repo.get_by_challenge(session, challenge_id)
-        week_dates = set(week_dates_of())
-        week_count = sum(1 for c in checkins if c.date in week_dates)
-        return {
-            "report": insight.content if insight else "",
-            "generated_at": insight.created_at if insight else None,
-            "week_checkins": week_count, "week_days": 7,
-        }

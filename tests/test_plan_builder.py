@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import importlib.util
 import pathlib
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 src = pathlib.Path(__file__).resolve().parent.parent / "app" / "services" / "plan_builder.py"
 spec = importlib.util.spec_from_file_location("plan_builder", src)

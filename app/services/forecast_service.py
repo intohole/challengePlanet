@@ -15,6 +15,7 @@ from app.services.forecast_math import (
 )
 from app.services.nudge_service import NudgeService
 from app.services.streak_service import today_str
+from app.services.target_service import recent_daily_avg
 
 _WINDOW_DAYS = 14
 _CALIBRATION_DAMPEN = 0.5
@@ -83,19 +84,10 @@ class ForecastService:
             forecast["context_pattern"] = pattern
 
     async def _recent_daily_avg(self, session: AsyncSession, challenge_id: int) -> float | None:
-        now = now_china()
-        rows = await self._repo.get_daily_totals(
-            session, challenge_id,
-            (now - timedelta(days=7)).strftime("%Y-%m-%d"),
-            (now - timedelta(days=1)).strftime("%Y-%m-%d"),
-        )
-        values = [float(r["value"]) for r in rows if float(r["value"]) > 0]
-        if not values:
-            return None
-        return round(sum(values) / len(values), 1)
+        return await recent_daily_avg(session, challenge_id, days=7)
 
     async def _calibration_bias(self, session: AsyncSession, challenge_id: int) -> float | None:
-        today = today_str()
+        yesterday = (now_china() - timedelta(days=1)).strftime("%Y-%m-%d")
         last = await self._insight_repo.get_forecast(session, challenge_id)
         if last is None:
             return None
@@ -103,15 +95,12 @@ class ForecastService:
             payload = json.loads(last.content)
         except (json.JSONDecodeError, TypeError):
             return None
-        if str(payload.get("date", "")) != (now_china() - timedelta(days=1)).strftime("%Y-%m-%d"):
+        if str(payload.get("date", "")) != yesterday:
             return None
         projected = float(payload.get("projected", 0) or 0)
         if projected <= 0 or not payload.get("enabled"):
             return None
-        actual = await self._repo.sum_value_by_date(
-            session, challenge_id,
-            (now_china() - timedelta(days=1)).strftime("%Y-%m-%d"),
-        )
+        actual = await self._repo.sum_value_by_date(session, challenge_id, yesterday)
         return round((actual - projected) * _CALIBRATION_DAMPEN, 1)
 
     async def _upsert_forecast(
@@ -119,27 +108,24 @@ class ForecastService:
     ) -> None:
         today = today_str()
         last = await self._insight_repo.get_forecast(session, challenge.id)
-        payload = {
-            "date": today,
-            "enabled": bool(forecast.get("enabled")),
-            "projected": forecast.get("projected", 0),
-            "basis": forecast.get("basis", ""),
-            "confidence": forecast.get("confidence", 0),
-        }
-        content = json.dumps(payload, ensure_ascii=False)
         if last is not None:
             try:
                 existed = json.loads(last.content)
             except (json.JSONDecodeError, TypeError):
                 existed = {}
             if str(existed.get("date", "")) == today:
-                last.content = content
-                await session.flush()
                 return
         await self._insight_repo.create(session, {
             "challenge_id": challenge.id,
             "user_id": getattr(challenge, "user_id", ""),
             "insight_type": "forecast",
-            "content": content,
+            "content": json.dumps({
+                "date": today,
+                "hour": now_china().hour,
+                "enabled": bool(forecast.get("enabled")),
+                "projected": forecast.get("projected", 0),
+                "basis": forecast.get("basis", ""),
+                "confidence": forecast.get("confidence", 0),
+            }, ensure_ascii=False),
         })
         await session.flush()
