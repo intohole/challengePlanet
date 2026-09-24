@@ -10,16 +10,15 @@ window.cpCreate = (function () {
     c.editDays = 66
     c.editCategory = 'build'
     c.editDesc = ''
-    c.planText = ''
     c.plan = []
     c.suggestions = []
     c.error = ''
     c.saving = false
     c.source = 'web'
     c.sceneTemplate = ''
-    c.genDay = 0
     c.genTotal = 0
     c.genTitle = ''
+    c.startedAt = 0
     c.expandPlan = false
     c.adjustHint = ''
     c.adjusting = false
@@ -214,7 +213,7 @@ window.cpCreate = (function () {
       c.step = 2
       c.phase = 'parsing'
       c.error = ''
-      c.planText = ''
+      c.startedAt = Date.now()
       c.plan = []
       c.suggestions = []
       await window.api.streamPost('/challenges/nl-create', { raw_input: raw, start_date: c.startDate, scene_template: c.sceneTemplate || '', adjust_hint: (c.adjustHint || '').trim() }, {
@@ -228,19 +227,8 @@ window.cpCreate = (function () {
             c.editDays = c.parsed.duration_days || c.editDays || 66
             c.editDesc = data.parsed.description || ''
             c.genTotal = data.parsed.duration_days || c.editDays || 0
+            c.genTitle = c.parsed.title || ''
             this.syncLadder(data.parsed)
-            c.phase = 'planning'
-          } else if (data.type === 'token') {
-            c.phase = 'planning'
-            c.planText += data.token || ''
-            const titles = c.planText.match(/"title"\s*:\s*"([^"]+)"/g)
-            if (titles && titles.length) {
-              const m = titles[titles.length - 1].match(/"title"\s*:\s*"([^"]+)"/)
-              if (m && m[1] && m[1] !== c.genTitle) c.genTitle = m[1]
-            }
-          } else if (data.type === 'day') {
-            c.genDay = data.day || 0
-            c.genTotal = data.total || c.genTotal
             c.phase = 'planning'
           } else if (data.type === 'preview') {
             if (data.parsed) {
@@ -253,9 +241,6 @@ window.cpCreate = (function () {
             c.plan = data.plan || []
             c.suggestions = data.suggestions || []
             c.phase = 'preview'
-          } else if (data.type === 'error') {
-            c.error = data.message || '生成失败，请换个描述试试'
-            c.phase = 'idle'
           }
         },
         onError: msg => {
@@ -272,7 +257,7 @@ window.cpCreate = (function () {
       const c = st()
       if (!(c.adjustHint || '').trim() || c.phase === 'parsing' || c.phase === 'planning') return
       c.adjusting = true
-      c.genDay = 0
+      c.startedAt = Date.now()
       c.genTotal = c.editDays || c.genTotal || 0
       await this.startGenerate()
       c.adjusting = false
@@ -313,7 +298,7 @@ window.cpCreate = (function () {
           goalRule = (c.ladderEn && ladderStart > 0) ? 'ladder' : goalRule
           goalMode = (c.ladderEn && ladderStart > 0) ? 'ceiling' : goalMode
         }
-        const res = await window.api.post('/challenges/confirm', {
+        const ch = await window.cpApi.post('/challenges/confirm', {
           title: c.editTitle.trim(),
           category: c.editCategory,
           duration_days: c.editDays,
@@ -347,7 +332,6 @@ window.cpCreate = (function () {
           period_unit: String(c.periodUnit || (sportMet > 0 ? '千卡' : '分钟')),
           sport_met: sportMet,
         })
-        const ch = res.data || res
         c.show = false
         const first = (c.plan && c.plan[0]) || {}
         window.cpToast('挑战已开启！第1天「' + (first.title || c.editTitle) + '」')

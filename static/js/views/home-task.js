@@ -11,19 +11,24 @@
       if (ch.start_date && ch.start_date > window.cpTodayStr()) return '<div class="glass-card cp-task-card"><p class="cp-task-title">挑战尚未开始</p><p class="cp-task-desc">将于 ' + ch.start_date + ' 正式开始，先去准备一下吧。</p></div>'
       return ''
     }
+    if (t.not_started) {
+      return '<div class="glass-card cp-task-card"><p class="cp-task-title">挑战尚未开始</p><p class="cp-task-desc">将于 ' + (ch.start_date || '') + ' 正式开始，先去准备一下吧。</p></div>'
+    }
     const tt = t.task_type || ch.task_type || 'binary'
     const ttLabel = window.cpTaskTypeLabel(tt) || '打卡'
     const isDiet = tt === 'diet' || ch.task_type === 'diet'
     const isMultiMode = !!t.repeatable || ch.decompose_mode === 'time_slot' || ch.task_type === 'counter' || ch.task_type === 'timer' || tt === 'counter' || tt === 'timer'
     const baseline = t.dynamic_baseline || 0
+    const isAdaptive = t.goal_rule === 'adaptive'
     const isDecrease = ch.direction === 'decrease'
+    const goalTarget = Number(t.today_target) || Number(t.task_target) || Number(ch.target_value) || 1
     html += '<div class="glass-card cp-task-card"><div class="cp-task-head"><span class="cp-task-day"><i class="fas fa-flag"></i>已打卡 ' + (ch.completed_days || 0) + '/' + (ch.total_days || 0) + ' 天</span><div class="cp-task-head-right"><span class="cp-task-type-badge">' + ttLabel + '</span><span class="cp-task-pct">' + (t.progress_pct || 0) + '% 完成</span></div></div><p class="cp-task-title">' + window.cpEsc(t.task_title || '完成今日打卡') + '</p>'
     if (t.task_description) html += '<p class="cp-task-desc">' + window.cpEsc(t.task_description) + '</p>'
     if (isDiet) {
       html += this._dietTargetPanel(t, ch)
     } else if (t.goal_rule === 'ladder' && t.today_total !== undefined) {
       html += this._ladderBlock(t, ch)
-    } else if (baseline > 0 && ((t.day_number || 1) > 1 || (ch.completed_days || 0) > 0)) {
+    } else if (isAdaptive && baseline > 0) {
       const unit = window.cpEsc(t.task_unit || '')
       const mainText = isDecrease ? '比昨天少 <b>' + baseline.toFixed(1) + '</b> ' + unit : '比昨天多 <b>' + baseline.toFixed(1) + '</b> ' + unit
       html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> ' + mainText + '</div>'
@@ -32,24 +37,19 @@
     }
     if ((isMultiMode || isDecrease) && t.today_total !== undefined) {
       if (t.goal_rule !== 'ladder') {
-        const staticTarget = t.today_target || 1
+        const target = isAdaptive && baseline > 0 ? baseline : goalTarget
+        const total = Number(t.today_total) || 0
+        const ratio = target > 0 ? total / target : 0
         let pct, barColor
-        if (baseline > 0) {
-          if (isDecrease) {
-            const reached = t.today_total <= baseline
-            if (reached) { pct = 100; barColor = 'var(--emerald)' }
-            else { pct = baseline > 0 ? Math.min(100, Math.round((t.today_total / baseline) * 100)) : 100; barColor = 'var(--amber)' }
-          } else {
-            const ratio = baseline > 0 ? t.today_total / baseline : 0
-            pct = Math.round(Math.min(100, ratio * 100))
-            barColor = ratio >= 1 ? 'var(--emerald)' : (ratio >= 0.8 ? 'var(--amber)' : 'var(--primary)')
-          }
+        if (isDecrease) {
+          pct = target > 0 ? Math.min(100, Math.round(ratio * 100)) : 0
+          barColor = total <= target ? 'var(--emerald)' : 'var(--amber)'
         } else {
-          pct = staticTarget > 0 ? Math.min(100, Math.round(t.today_total / staticTarget * 100)) : 0
-          barColor = t.today_total >= staticTarget ? 'var(--emerald)' : 'var(--primary)'
+          pct = Math.round(Math.min(100, ratio * 100))
+          barColor = ratio >= 1 ? 'var(--emerald)' : (ratio >= 0.8 ? 'var(--amber)' : 'var(--primary)')
         }
         html += '<div class="cp-task-progress"><div class="cp-task-progress-bar"><div class="cp-task-progress-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>'
-        html += '<div class="cp-task-progress-info"><span style="color:' + barColor + '">' + t.today_total + '</span><span class="cp-task-progress-sep">/</span><span>' + (t.today_target || t.task_target || staticTarget) + ' ' + window.cpEsc(t.unit || ch.unit || '') + '</span></div></div>'
+        html += '<div class="cp-task-progress-info"><span style="color:' + barColor + '">' + total + '</span><span class="cp-task-progress-sep">/</span><span>' + target + ' ' + window.cpEsc(t.unit || ch.unit || '') + '</span></div></div>'
       }
       const hint = this._remainHint(t, ch, isDecrease)
       if (hint) html += hint

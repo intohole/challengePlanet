@@ -75,8 +75,7 @@
         context_tag: d.quickMood,
         reflection: d.quickReflection || '',
       }
-      const res = await window.api.post('/challenges/' + ch.id + '/checkin', payload)
-      const r = res.data || res
+      const r = await window.cpApi.checkin(ch.id, payload)
       window.cpCelebrate('记录成功 +' + (r.points_earned || 0) + ' 分')
       d.showQuickForm = false
       d.quickValue = 1
@@ -224,9 +223,9 @@
     if (!ch) return
     if (!window.confirm('撤销这条打卡记录？撤销后不可恢复。')) return
     try {
-      await window.api.delete('/challenges/' + ch.id + '/checkins/' + checkinId)
+      await window.cpApi.deleteCheckin(ch.id, checkinId)
       window.cpToast('已撤销该条打卡')
-      this._clearNudgeStamp(ch.id, d.today && d.today.date)
+      this._clearNudgeStamp(ch.id, this.data.today && this.data.today.date)
       await this.load()
       await window.cpLoadChallenges()
       this.rerender()
@@ -272,8 +271,7 @@
     dg.report = null
     dg.applying = false
     try {
-      const res = await window.api.post('/challenges/' + ch.id + '/diagnose', {})
-      dg.report = res.data || res
+      dg.report = await window.cpApi.post('/challenges/' + ch.id + '/diagnose', {})
     } catch (e) {
       dg.show = false
       window.cpToast(window.cpErrMsg(e, '诊断失败，请稍后再试'))
@@ -286,8 +284,7 @@
     if (!ch || dg.applying) return
     dg.applying = true
     try {
-      const res = await window.api.post('/challenges/' + ch.id + '/diagnose/apply', { action: action || 'keep' })
-      const r = res.data || res
+      const r = await window.cpApi.post('/challenges/' + ch.id + '/diagnose/apply', { action: action || 'keep' })
       window.cpToast(r.message || '已应用方案')
       dg.show = false
       await this.load()

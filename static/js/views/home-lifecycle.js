@@ -5,8 +5,7 @@
     const ch = window.appState.current
     if (!ch) return
     try {
-      const res = await window.api.post('/challenges/' + ch.id + '/repair', {})
-      const r = res.data || res
+      const r = await window.cpApi.post('/challenges/' + ch.id + '/repair', {})
       window.cpToast(r.message || '已修复！偶尔断签没关系，重要的是继续前进')
       await this.load()
       await window.cpLoadChallenges()
@@ -50,7 +49,7 @@
     if (!ch || md.busy) return
     md.busy = true
     try {
-      await window.api.post('/challenges/' + ch.id + '/mend', { date: ds })
+      await window.cpApi.post('/challenges/' + ch.id + '/mend', { date: ds })
       window.cpToast('补签成功！又补上了一块拼图')
       md.show = false
       await this.load()
@@ -80,7 +79,7 @@
     if (!ch || fz.busy) return
     fz.busy = true
     try {
-      await window.api.post('/challenges/' + ch.id + '/freeze', { date: ds })
+      await window.cpApi.post('/challenges/' + ch.id + '/freeze', { date: ds })
       window.cpToast('已冻结 ' + ds + '，该日不计断签')
       fz.show = false
       await this.load()
@@ -101,8 +100,7 @@
     rf.busy = true
     const prev = this.data.lastFeedback || ''
     try {
-      const res = await window.api.patch('/challenges/' + ch.id + '/checkin/today', { mood: rf.mood, reflection: rf.content })
-      const r = res.data || res
+      await window.cpApi.patch('/challenges/' + ch.id + '/checkin/today', { mood: rf.mood, reflection: rf.content })
       if (window.cpPollTodayAi && this.data.today) window.cpPollTodayAi(ch.id, this.data.today.date, 8, prev)
       window.cpToast('心得已保存')
       rf.show = false

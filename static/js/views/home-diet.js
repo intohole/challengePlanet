@@ -126,8 +126,7 @@
     d.dietResult = null
     this.rerender()
     try {
-      const res = await window.api.post('/challenges/' + ch.id + '/diet/estimate', { description: d.dietDesc.trim() })
-      const r = res.data || res
+      const r = await window.cpApi.post('/challenges/' + ch.id + '/diet/estimate', { description: d.dietDesc.trim() })
       if (!r.total_kcal) { window.cpToast('没识别到食物，请描述得更具体些'); return }
       d.dietResult = r
       this.rerender()
@@ -145,8 +144,7 @@
     d.dietChecking = true
     this.rerender()
     try {
-      const r2 = await window.api.post('/challenges/' + ch.id + '/checkin', { value: Number(res.total_kcal) || 0, unit: '千卡', reflection: d.dietDesc.trim(), mood: this._dietMood(res) })
-      const rr = r2.data || r2
+      const rr = await window.cpApi.checkin(ch.id, { value: Number(res.total_kcal) || 0, reflection: d.dietDesc.trim(), mood: this._dietMood(res) })
       window.cpCelebrate('饮食已打卡 +' + (rr.points_earned || 0) + ' 分')
       d.dietResult = null
       d.dietDesc = ''

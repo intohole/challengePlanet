@@ -77,23 +77,20 @@ window.cpViews.home = (function () {
       const safe = p => p.catch(() => null)
       const isDiet = ch.task_type === 'diet'
       const [today, guidance, dietTarget, weightTrend] = await Promise.all([
-        window.api.get('/challenges/' + ch.id + '/today').then(r => r.data || r).catch(e => { this._todayErr = e; return null }),
-        safe(window.api.get('/challenges/' + ch.id + '/guidance')),
-        isDiet ? safe(window.api.get('/challenges/' + ch.id + '/diet/target')) : Promise.resolve(null),
-        isDiet ? safe(window.api.get('/challenges/' + ch.id + '/weight/trend')) : Promise.resolve(null),
+        window.cpApi.today(ch.id).catch(e => { this._todayErr = e; return null }),
+        safe(window.cpApi.get('/challenges/' + ch.id + '/guidance')),
+        isDiet ? safe(window.cpApi.get('/challenges/' + ch.id + '/diet/target')) : Promise.resolve(null),
+        isDiet ? safe(window.cpApi.get('/challenges/' + ch.id + '/weight/trend')) : Promise.resolve(null),
       ])
       const d = this.data
       d.today = today
-      const gd = guidance && (guidance.data || guidance)
-      d.guidance = gd || null
-      const dt = dietTarget && (dietTarget.data || dietTarget)
-      d.dietTarget = isDiet ? (dt || null) : null
-      const wt = weightTrend && (weightTrend.data || weightTrend)
-      d.weightTrend = isDiet ? (wt || null) : null
+      d.guidance = guidance || null
+      d.dietTarget = isDiet ? (dietTarget || null) : null
+      d.weightTrend = isDiet ? (weightTrend || null) : null
       if (today && d.prevChecked !== null && d.prevChecked !== today.checked_in) d.progLoaded = false
       if (today) d.prevChecked = today.checked_in
-      if (!d.weightInput && wt && wt.latest) {
-        try { d.weightInput = String(Number(wt.latest.weight_kg) || '') } catch (e) {}
+      if (!d.weightInput && d.weightTrend && d.weightTrend.latest) {
+        try { d.weightInput = String(Number(d.weightTrend.latest.weight_kg) || '') } catch (e) {}
       }
       if (!d.declaration && today && today.checked_in) {
         try { d.declaration = localStorage.getItem('cp_decl_' + ch.id + '_' + today.date) || '' } catch (e) {}
@@ -141,15 +138,13 @@ window.cpViews.home = (function () {
       d.progLoaded = true
       const safe = p => p.catch(() => null)
       return Promise.all([
-        safe(window.api.get('/challenges/' + ch.id + '/checkins')),
-        safe(window.api.get('/challenges/' + ch.id + '/adaptive/pending')),
-        safe(window.api.get('/challenges/' + ch.id + '/mercy')),
+        safe(window.cpApi.checkins(ch.id)),
+        safe(window.cpApi.get('/challenges/' + ch.id + '/adaptive/pending')),
+        safe(window.cpApi.get('/challenges/' + ch.id + '/mercy')),
       ]).then(([checkins, adaptive, mercy]) => {
-        const cl = checkins && (checkins.data || checkins)
-        d.checkins = Array.isArray(cl) ? cl : ((cl && cl.items) || [])
-        const ad = adaptive && (adaptive.data || adaptive)
-        d.adaptive = (ad && ad.suggestion) || null
-        d.mercy = mercy && (mercy.data || mercy)
+        d.checkins = checkins || []
+        d.adaptive = (adaptive && adaptive.suggestion) || null
+        d.mercy = mercy || null
         if (this.el) this.rerender()
       })
     },
@@ -204,7 +199,7 @@ window.cpViews.home = (function () {
           : '删除「' + (window.cpTitleClean(ch.title) || '') + '」？删除后不可恢复。')
       if (!window.confirm(msg)) return
       try {
-        await window.api.delete('/challenges/' + ch.id)
+        await window.cpApi.deleteChallenge(ch.id)
         window.cpToast('已删除挑战')
         this.loadedFor = null
         this.data = this._freshData(false)
@@ -228,7 +223,7 @@ window.cpViews.home = (function () {
   V._pollTodayAi = async function (chId, dateStr, maxTry, changedFrom) {
     for (let i = 0; i < maxTry; i++) {
       await new Promise(r => setTimeout(r, 3500))
-      const t = await window.api.get('/challenges/' + chId + '/today').then(x => x.data || x).catch(() => null)
+      const t = await window.cpApi.today(chId).catch(() => null)
       const cd = t && t.checkin_data
       if (!t) break
       const d = this.data

@@ -40,7 +40,7 @@ window.cpViews.me = (function () {
 
     onShow() {
       window.cpLoadChallenges().then(() => this.rerender()).catch(() => {})
-      window.api.get('/points/summary').then(r => { this.data.points = r.data || r; this.rerender() }).catch(() => { this.data.points = null })
+      window.cpApi.get('/points/summary').then(d => { this.data.points = d; this.rerender() }).catch(() => { this.data.points = null })
     },
 
     rerender() { if (this.el) this.render(this.el) },
@@ -54,7 +54,7 @@ window.cpViews.me = (function () {
         ? '删除「' + (this.titleClean(c.title) || '') + '」？已有 ' + (c.completed_days || 0) + ' 天打卡战绩，删除后不可恢复。'
         : '删除「' + (this.titleClean(c.title) || '') + '」？删除后不可恢复。'
       if (!window.confirm(msg)) return
-      window.api.delete('/challenges/' + id)
+      window.cpApi.deleteChallenge(id)
         .then(() => {
           window.cpToast('已删除挑战')
           return window.cpLoadChallenges()

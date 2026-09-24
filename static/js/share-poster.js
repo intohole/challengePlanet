@@ -47,17 +47,14 @@ window.cpSharePoster = (function () {
   async function generate(ch) {
     let quote = ''
     try {
-      const res = await window.api.get('/challenges/' + ch.id + '/share-data')
-      const d = res.data || res
+      const d = await window.cpApi.get('/challenges/' + ch.id + '/share-data')
       quote = d.share_quote || ''
     } catch (e) {}
     if (!quote) quote = QUOTES[Math.floor(Math.random() * QUOTES.length)]
 
     let checkedDates = {}
     try {
-      const res = await window.api.get('/challenges/' + ch.id + '/checkins')
-      const d = res.data || res
-      const list = Array.isArray(d) ? d : (d.items || [])
+      const list = await window.cpApi.checkins(ch.id)
       list.forEach(c => { checkedDates[c.date] = c.status || 'checked' })
     } catch (e) {}
 
@@ -174,9 +171,7 @@ window.cpSharePoster = (function () {
   async function generateFlop(ch) {
     let checkedDates = {}
     try {
-      const res = await window.api.get('/challenges/' + ch.id + '/checkins')
-      const d = res.data || res
-      const list = Array.isArray(d) ? d : (d.items || [])
+      const list = await window.cpApi.checkins(ch.id)
       list.forEach(c => { checkedDates[c.date] = c.status || 'checked' })
     } catch (e) {}
 

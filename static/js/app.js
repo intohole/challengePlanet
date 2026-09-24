@@ -10,6 +10,18 @@ window.api = new NexusApi({
 
 const { createApp, reactive } = Vue
 
+window.cpApi = {
+  unwrap: p => p.then(r => (r && r.data !== undefined ? r.data : r)),
+  get: url => window.cpApi.unwrap(window.api.get(url)),
+  post: (url, payload) => window.cpApi.unwrap(window.api.post(url, payload || {})),
+  patch: (url, payload) => window.cpApi.unwrap(window.api.patch(url, payload || {})),
+  today: id => window.cpApi.get('/challenges/' + id + '/today'),
+  checkins: id => window.cpApi.get('/challenges/' + id + '/checkins').then(d => Array.isArray(d) ? d : ((d && d.items) || [])),
+  checkin: (id, payload) => window.cpApi.post('/challenges/' + id + '/checkin', payload),
+  deleteCheckin: (id, checkinId) => window.cpApi.unwrap(window.api.delete('/challenges/' + id + '/checkins/' + checkinId)),
+  deleteChallenge: id => window.cpApi.unwrap(window.api.delete('/challenges/' + id)),
+}
+
 const state = reactive({
   view: 'home',
   booted: false,
@@ -23,7 +35,7 @@ const state = reactive({
   celebrate: false,
   celebrateText: '',
   stars: [],
-  create: { show: false, step: 1, rawInput: '', startMode: 'today', customDate: '', startDate: '', sceneTemplate: '', phase: 'idle', parsed: null, editTitle: '', editDays: 66, editCategory: 'build', editDesc: '', planText: '', plan: [], suggestions: [], error: '', saving: false, source: 'web', genDay: 0, genTotal: 0, startedAt: 0, adjustHint: '', adjusting: false },
+  create: { show: false, step: 1, rawInput: '', startMode: 'today', customDate: '', startDate: '', sceneTemplate: '', phase: 'idle', parsed: null, editTitle: '', editDays: 66, editCategory: 'build', editDesc: '', plan: [], suggestions: [], error: '', saving: false, source: 'web', genTotal: 0, genTitle: '', startedAt: 0, genTick: 0, adjustHint: '', adjusting: false },
   dayDetail: null,
   mend: { show: false, dates: [], left: 0, busy: false },
   freeze: { show: false, dates: [], left: 0, busy: false },
@@ -275,7 +287,16 @@ const cpApp = createApp({
     ]
     const riskLabel = l => ({ high: '高风险', medium: '需留意', low: '节奏稳定' }[l] || '节奏稳定')
     const titleClean = t => window.cpTitleClean(t)
-    return {
+    const genRatio = () => {
+        const c = state.create
+        const elapsed = (Date.now() - (c.startedAt || Date.now())) / 1000
+        return Math.min(0.92, Math.max(0.05, elapsed / 6))
+      }
+      setInterval(() => {
+        const c = state.create
+        if (c.show && (c.phase === 'parsing' || c.phase === 'planning')) c.genTick += 1
+      }, 400)
+      return {
       state,
       cpScenes: window.cpScenes,
       cpTaskTypeLabel: window.cpTaskTypeLabel,
@@ -293,20 +314,13 @@ const cpApp = createApp({
       importShared,
       logout,
       openCreate: () => window.cpCreate.open(),
-      genRatio: () => {
-        const c = state.create
-        if (c.genTotal > 0) return Math.max(0.05, Math.min(1, (c.genDay || 0) / c.genTotal))
-        return 0.05
-      },
+      genRatio,
       genStatus: () => {
-        const c = state.create
-        const total = c.genTotal || 0
-        const day = c.genDay || 0
-        if (!total || !day) return '正在理解你的目标，设计专属计划…'
-        const r = day / total
-        if (r < 0.2) return '正在设计适应期的小目标'
-        if (r < 0.6) return '正在铺开逐天进阶曲线'
-        if (r < 0.85) return '正在安排稳扎稳打的巩固期'
+        const total = state.create.genTotal || 0
+        const r = genRatio()
+        if (r < 0.3) return '正在理解你的目标，设计专属计划…'
+        if (r < 0.7) return '正在编排' + (total ? ' ' + total + ' 天' : '') + '的逐日节奏…'
+        if (r < 0.9) return '正在安排稳扎稳打的巩固期…'
         return '正在收尾，准备出发'
       },
       milestoneNodes: () => {

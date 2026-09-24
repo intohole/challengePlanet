@@ -19,13 +19,13 @@
     const id = ch.id
     const safe = p => p.catch(() => null)
     if (tab === 'hourly' && !rv.hourly) {
-      safe(window.api.get('/challenges/' + id + '/report/hourly?days=7')).then(r => { rv.hourly = (r && (r.data || r)) || null; this.rerender() })
+      safe(window.cpApi.get('/challenges/' + id + '/report/hourly?days=7')).then(d => { rv.hourly = d || null; this.rerender() })
     } else if (tab === 'trend' && !rv.trend) {
-      safe(window.api.get('/challenges/' + id + '/report/trend?days=30')).then(r => { rv.trend = (r && (r.data || r)) || null; this.rerender() })
+      safe(window.cpApi.get('/challenges/' + id + '/report/trend?days=30')).then(d => { rv.trend = d || null; this.rerender() })
     } else if (tab === 'heatmap' && !rv.heatmap) {
-      safe(window.api.get('/challenges/' + id + '/report/heatmap')).then(r => { rv.heatmap = (r && (r.data || r)) || null; this.rerender() })
+      safe(window.cpApi.get('/challenges/' + id + '/report/heatmap')).then(d => { rv.heatmap = d || null; this.rerender() })
     } else if (tab === 'completion' && !rv.completion) {
-      safe(window.api.get('/challenges/' + id + '/report/completion?period=month')).then(r => { rv.completion = (r && (r.data || r)) || null; this.rerender() })
+      safe(window.cpApi.get('/challenges/' + id + '/report/completion?period=month')).then(d => { rv.completion = d || null; this.rerender() })
     }
   }
 
@@ -36,11 +36,11 @@
     const id = ch.id
     const safe = p => p.catch(() => null)
     const [overview, hourly] = await Promise.all([
-      safe(window.api.get('/challenges/' + id + '/report/overview')),
-      safe(window.api.get('/challenges/' + id + '/report/hourly?days=7')),
+      safe(window.cpApi.get('/challenges/' + id + '/report/overview')),
+      safe(window.cpApi.get('/challenges/' + id + '/report/hourly?days=7')),
     ])
-    rv.overview = (overview && (overview.data || overview)) || null
-    rv.hourly = (hourly && (hourly.data || hourly)) || null
+    rv.overview = overview || null
+    rv.hourly = hourly || null
     rv.loading = false
     this.rerender()
   }

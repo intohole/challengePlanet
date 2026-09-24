@@ -29,8 +29,7 @@
     d.checking = true
     this.rerender()
     try {
-      const res = await window.api.post('/challenges/' + ch.id + '/checkin', payload)
-      const r = res.data || res
+      const r = await window.cpApi.checkin(ch.id, payload)
       window.cpCelebrate('今日达标 +' + (r.points_earned || 0) + ' 分')
       this._panel = ''
       d.textValue = ''
@@ -63,9 +62,7 @@
     d.checking = true
     this.rerender()
     try {
-      const payload = { value: checkinType === 'mini' ? 0.5 : 1.0 }
-      const res = await window.api.post('/challenges/' + ch.id + '/checkin', payload)
-      const r = res.data || res
+      const r = await window.cpApi.checkin(ch.id, { value: checkinType === 'mini' ? 0.5 : 1.0 })
       window.cpCelebrate((checkinType === 'mini' ? '微打卡 · 节奏守住 +' : '打卡成功 +') + (r.points_earned || 0) + ' 分')
       await this._finishCheckin(r, ch, d, d.today && d.today.date)
     } catch (e) {
@@ -88,7 +85,7 @@
     d.checking = true
     this.rerender()
     try {
-      await window.api.delete('/challenges/' + ch.id + '/checkins/' + last.id)
+      await window.cpApi.deleteCheckin(ch.id, last.id)
       window.cpToast('已撤销一笔')
       this._clearNudgeStamp(ch.id, t && t.date)
       await this.load()
@@ -110,13 +107,12 @@
     d.checking = true
     this.rerender()
     try {
-      const res = await window.api.post('/challenges/' + ch.id + '/checkin', { value: v })
-      const r = res.data || res
+      const r = await window.cpApi.checkin(ch.id, { value: v })
       const total = r.today_total || 0
       const target = (t.today_target || ch.target_value || 1)
       if (ch.direction === 'decrease') {
-        const tot = (r.today_total !== undefined ? r.today_total : total)
-        const tgt = (r.today_target !== undefined ? r.today_target : target)
+        const tot = r.today_total || total
+        const tgt = r.today_target || target
         if (tot > tgt) window.cpCelebrate(t.goal_rule === 'ladder' ? '已记录 +' + v + ' · 已超今日上限，明天梯度更低' : '已记录 +' + v + ' · 已超今日上限，今天辛苦了')
         else if (tot >= tgt) window.cpCelebrate('已记录 +' + v + ' · 已达今日上限 ' + tgt + (ch.unit || '') + '，今日守住！')
         else window.cpCelebrate('已记录 +' + v + ' ' + (ch.unit || '') + ' · 还可 ' + Math.max(0, tgt - tot) + (ch.unit || ''))
@@ -172,8 +168,7 @@
       d.checking = true
       this.rerender()
       try {
-        const res = await window.api.post('/challenges/' + ch.id + '/checkin', payload)
-        const r = res.data || res
+        const r = await window.cpApi.checkin(ch.id, payload)
         window.cpCelebrate('打卡成功 +' + (r.points_earned || 0) + ' 分')
         d.taskSteps = []
         await this._finishCheckin(r, ch, d, t.date)
@@ -198,8 +193,7 @@
     d.checking = true
     this.rerender()
     try {
-      const res = await window.api.post('/challenges/' + ch.id + '/checkin', payload)
-      const r = res.data || res
+      const r = await window.cpApi.checkin(ch.id, payload)
       window.cpCelebrate('打卡成功 +' + (r.points_earned || 0) + ' 分')
       d.taskValue = 0
       d.textValue = ''
@@ -223,8 +217,7 @@
     d.checking = true
     this.rerender()
     try {
-      const res = await window.api.post('/challenges/' + ch.id + '/checkin', data)
-      const r = res.data || res
+      const r = await window.cpApi.checkin(ch.id, data)
       window.cpCelebrate('打卡成功 +' + (r.points_earned || 0) + ' 分')
       await this._finishCheckin(r, ch, d, t.date)
     } catch (e) {

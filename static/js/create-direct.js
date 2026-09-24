@@ -79,8 +79,7 @@
           weight_kg: Number(c.weightKg) || 0, goal_weight: Number(c.goalWeight) || 0,
           activity_level: Number(c.activityLevel) || 2,
         }
-        const res = await window.api.post('/challenges/confirm', body)
-        const ch = res.data || res
+        const ch = await window.cpApi.post('/challenges/confirm', body)
         c.show = false
         window.cpToast('挑战已开启！「' + built.title + '」')
         await window.cpLoadChallenges()

@@ -174,8 +174,7 @@
     this.rerender()
     try {
       const newTotal = d.wordNewTotal || Math.max(5, Math.round(t.task_target || (ch && ch.target_value) || 20)) || d.wordCards.length
-      const res = await window.api.post('/challenges/' + ch.id + '/checkin', { value: newTotal })
-      const r = res.data || res
+      const r = await window.cpApi.checkin(ch.id, { value: newTotal })
       const needReview = (d.wordBlur || 0) + (d.wordForgot || 0)
       window.cpToast('今日 ' + newTotal + ' 新词刷完' + (d.wordReviewTotal ? ' + ' + d.wordReviewTotal + ' 复习' : '') + (needReview ? ' · 明天复习 ' + needReview : ''))
       if (d.wordReviewToday && d.wordReviewToday.length) {
