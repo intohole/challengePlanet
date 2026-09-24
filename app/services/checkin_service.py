@@ -13,7 +13,6 @@ from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import ChallengeMetaRepository
 from app.repositories.squad_repository import SquadRepository
-from app.repositories.sub_goal_repository import SubGoalRepository
 from app.core.datetime_utils import now_china
 from app.services.adaptive_service import evaluate_after_bad_mood_task
 from app.services.checkin_background import (
@@ -43,7 +42,6 @@ class CheckInService:
     def __init__(self, points: PointsService | None = None) -> None:
         self._repo = CheckInRepository()
         self._challenge_repo = ChallengeRepository()
-        self._sub_goal_repo = SubGoalRepository()
         self._meta_repo = ChallengeMetaRepository()
         self._squad_repo = SquadRepository()
         self._targets = TargetService()
@@ -73,7 +71,6 @@ class CheckInService:
         value: float = 1.0,
         mood: str = "",
         reflection: str = "",
-        sub_goal_id: int | None = None,
         context_tag: str = "",
         timestamp: datetime | None = None,
     ) -> dict[str, object]:
@@ -85,18 +82,11 @@ class CheckInService:
 
         ts = timestamp or now_china()
         today = self._assert_open_day(challenge, timestamp)
-        hhmm = ts.strftime("%H:%M")
-
-        if sub_goal_id is None and challenge.decompose_mode == "time_slot":
-            sub_goal = await self._sub_goal_repo.get_by_time_window(session, challenge_id, hhmm)
-            if sub_goal is not None:
-                sub_goal_id = sub_goal.id
 
         day_number = self._day_number_of(challenge, today)
         baseline = await self._targets.live_baseline(session, challenge)
         target_snapshot = await self._targets.resolve(
-            session, challenge, day_number,
-            sub_goal_id=sub_goal_id, adaptive_baseline=baseline,
+            session, challenge, day_number, adaptive_baseline=baseline,
         )
         today_checkins = await self._repo.list_by_date(session, challenge_id, today)
         if today_checkins and not is_repeatable(challenge):
@@ -121,7 +111,7 @@ class CheckInService:
 
         checkin = await self._repo.create(session, {
             "challenge_id": challenge_id, "user_id": user_id,
-            "sub_goal_id": sub_goal_id, "day_number": day_number,
+            "day_number": day_number,
             "status": "completed", "timestamp": ts, "date": today,
             "value": value, "unit": challenge.unit,
             "calories": calories,

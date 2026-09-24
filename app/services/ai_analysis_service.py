@@ -10,7 +10,6 @@ from app.config import settings
 from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.prompts import (
     ADJUST_TASKS_SYSTEM,
-    DECOMPOSE_SYSTEM,
     DIAGNOSIS_SYSTEM,
     INSIGHT_SYSTEM,
     WEEKLY_SYSTEM,
@@ -76,38 +75,6 @@ class AIAnalysisService:
         if "raw_response" in parsed or not isinstance(parsed.get("tasks"), list):
             return None
         return [t for t in parsed["tasks"] if isinstance(t, dict) and t.get("title")]
-
-    async def suggest_decompose(
-        self, title: str, description: str, category: str,
-        target_value: float, unit: str, direction: str, goal_type: str,
-        duration_days: int,
-    ) -> dict[str, object]:
-        user_msg = (
-            f"挑战：{title}\n描述：{description or '无'}\n分类：{category}\n"
-            f"每日目标：{target_value}{unit}\n方向：{direction}\n目标类型：{goal_type}\n"
-            f"挑战天数：{duration_days}"
-        )
-        llm = get_llm_service()
-        raw = await llm.ask(
-            user_msg, system=DECOMPOSE_SYSTEM,
-            temperature=0.3, max_tokens=512, timeout=30.0,
-            task_type="extract",
-        )
-        parsed = parse_llm_json(raw)
-        if "raw_response" in parsed:
-            return {
-                "decompose_mode": "none", "slot_hours": 1,
-                "slot_target_value": 0.0, "sub_goals": [],
-                "rationale": "暂不拆解，先观察用户打卡模式",
-            }
-        if not isinstance(parsed.get("sub_goals"), list):
-            parsed["sub_goals"] = []
-        parsed["decompose_mode"] = parsed.get("decompose_mode", "none")
-        parsed["slot_hours"] = int(parsed.get("slot_hours", 1))
-        parsed["slot_target_value"] = float(parsed.get("slot_target_value", 0.0))
-        parsed["rationale"] = str(parsed.get("rationale", ""))
-        parsed["sub_goals"] = parsed["sub_goals"][:4]
-        return parsed
 
     async def generate_deep_insight(
         self, challenge_title: str, direction: str, unit: str,

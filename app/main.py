@@ -21,7 +21,6 @@ from app.api.diet import router as diet_router
 from app.api.points import router as points_router
 from app.api.portal import router as portal_router
 from app.api.report import router as report_router
-from app.api.sub_goal import router as sub_goal_router
 from app.api.squad import router as squad_router
 from app.config import settings
 from app.core.middleware import register_middleware
@@ -111,7 +110,6 @@ app.include_router(create_auth_router(prefix="/api/v1/auth", uc_sdk_provider=get
 app.include_router(challenge_router, prefix=API_PREFIX + "/challenges")
 app.include_router(checkin_router, prefix=API_PREFIX + "/challenges")
 app.include_router(diet_router, prefix=API_PREFIX + "/challenges")
-app.include_router(sub_goal_router, prefix=API_PREFIX + "/challenges")
 app.include_router(report_router, prefix=API_PREFIX + "/challenges")
 app.include_router(adaptive_router, prefix=API_PREFIX + "/challenges")
 app.include_router(squad_router, prefix=API_PREFIX)

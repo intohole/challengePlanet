@@ -7,7 +7,6 @@ from app.models.challenge import Challenge
 from app.models.adaptive import AdaptiveSuggestion
 from app.models.checkin import AIInsight, CheckIn, WeightRecord
 from app.models.points import ChallengeMeta, StreakAction
-from app.models.sub_goal import SubGoal
 
 
 class ChallengeRepository:
@@ -43,7 +42,7 @@ class ChallengeRepository:
         await session.flush()
 
     async def delete_with_children(self, session: AsyncSession, challenge_id: int) -> None:
-        for model in (CheckIn, SubGoal, AIInsight, StreakAction, ChallengeMeta, AdaptiveSuggestion, WeightRecord):
+        for model in (CheckIn, AIInsight, StreakAction, ChallengeMeta, AdaptiveSuggestion, WeightRecord):
             await session.execute(delete(model).where(model.challenge_id == challenge_id))
         await session.execute(delete(Challenge).where(Challenge.id == challenge_id))
         await session.flush()

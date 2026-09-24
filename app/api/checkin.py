@@ -45,7 +45,6 @@ async def do_checkin(
             value=request.value,
             mood=request.mood,
             reflection=request.reflection,
-            sub_goal_id=request.sub_goal_id,
             context_tag=request.context_tag,
             timestamp=request.timestamp,
         )

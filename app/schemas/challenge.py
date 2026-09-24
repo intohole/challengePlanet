@@ -59,8 +59,6 @@ class ChallengeConfirmRequest(BaseModel):
     direction: str = Field("increase", description="increase | decrease")
     goal_type: str = Field("hard", description="soft | hard")
     decompose_mode: str = Field("none", description="none | time_slot")
-    slot_hours: int = Field(1, description="时段小时数")
-    slot_target_value: float = Field(0.0, description="时段目标值")
 
     goal_rule: str = Field("fixed", description="fixed | adaptive | ladder")
     goal_mode: str = Field("auto", description="ceiling | floor | range | auto")
@@ -195,7 +193,6 @@ class TodayTaskResponse(BaseModel):
     forecast: Optional[dict[str, object]] = None
     checkin_data: Optional[dict[str, object]] = None
     today_checkins: list[dict[str, object]] = Field(default_factory=list)
-    sub_goals: list[dict[str, object]] = Field(default_factory=list)
     streak: int = 0
     total_checkins: int = 0
 

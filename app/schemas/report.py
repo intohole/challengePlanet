@@ -10,8 +10,6 @@ class HourlyDistributionItem(BaseModel):
     hour: int = Field(..., description="小时 0-23")
     total_value: float = 0.0
     checkin_count: int = 0
-    target_value: float = 0.0
-    exceed_pct: float = 0.0
 
 
 class HourlyDistributionResponse(BaseModel):

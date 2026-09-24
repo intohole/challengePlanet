@@ -23,9 +23,7 @@ def resolve_mode(challenge: object) -> str:
     return mode
 
 
-def is_repeatable(challenge: object, sub_goals_count: int = 0) -> bool:
-    if sub_goals_count > 0:
-        return True
+def is_repeatable(challenge: object) -> bool:
     if str(getattr(challenge, "decompose_mode", "") or "") == "time_slot":
         return True
     return str(getattr(challenge, "task_type", "") or "") in ("counter", "timer")

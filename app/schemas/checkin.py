@@ -10,7 +10,6 @@ class CheckInCreate(BaseModel):
     value: float = Field(1.0, description="本次打卡值(如本次抽1根)")
     mood: str = Field("", description="心情: good/normal/bad")
     reflection: str = Field("", description="心得")
-    sub_goal_id: Optional[int] = Field(None, description="所属时段子目标ID")
     context_tag: str = Field("", description="情境标签: home/work/social/stress")
     timestamp: Optional[datetime] = Field(None, description="打卡时间(默认当前时间)")
 
@@ -30,7 +29,6 @@ class CheckInResponse(BaseModel):
     id: int
     challenge_id: int
     user_id: str
-    sub_goal_id: Optional[int] = None
     day_number: int = 0
     timestamp: datetime
     date: str

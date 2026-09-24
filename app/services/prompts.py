@@ -30,9 +30,7 @@ PARSE_SYSTEM = (
     "goal_rule: 梯度减量玩法。戒断类（戒烟/戒酒/戒糖等）且描述给出起点量与目标量的关系（'从每天20根戒到0'、'目前一天2杯减到半杯'、'每天最多5根'但用户已说明当下习惯量）→ \"ladder\"，同时给出：\n"
     "  ladder_start=当前每天量（如20），ladder_goal=目标每天量（完全戒断填0），ladder_interval=每隔几天降一档（默认1=每天降），ladder_step=每档降多少（默认1，若一次性降幅大则适配）\n"
     "  起点量或目标量无法从描述推导时，goal_rule=\"fixed\"（创建页再引导用户补梯度）\n"
-    "decompose_mode: 用户提到'每小时/每时段/几点到几点'时=time_slot，否则=none\n"
-    "slot_hours: decompose_mode=time_slot时，默认1小时\n"
-    "slot_target_value: decompose_mode=time_slot时，时段目标值，默认0表示继承日均分配\n"
+    "decompose_mode: 用户提到'每小时/每时段/几点到几点'时=time_slot（一天多次记录），否则=none\n"
     "description: 面向用户的挑战描述文案，1句话≤30字，讲清楚'每天做什么、共多少天、怎么玩'，"
     "如'每天跑3公里，用30天养成跑步习惯'；禁止提参数/技术词/系统提示，语气温暖有画面感\n\n"
     "输出JSON格式：{\"title\": \"...\", \"category\": \"...\", \"duration_days\": ..., "
@@ -40,7 +38,7 @@ PARSE_SYSTEM = (
     "\"task_type\": \"...\", \"target_value\": ..., \"unit\": \"...\", \"direction\": \"...\", \"goal_type\": \"...\", "
     "\"goal_rule\": \"fixed|ladder\", \"ladder_start\": 数字可为0, \"ladder_goal\": 数字可为0, "
     "\"ladder_interval\": 1, \"ladder_step\": 1, "
-    "\"decompose_mode\": \"...\", \"slot_hours\": ..., \"slot_target_value\": ...}"
+    "\"decompose_mode\": \"...\"}"
 )
 
 FEEDBACK_SYSTEM = (
@@ -151,24 +149,6 @@ ADJUST_TASKS_SYSTEM = (
     "{\"tasks\": [{\"day\": 1, \"title\": \"任务标题\", \"description\": \"具体任务\", \"tip\": \"小贴士\"}]}\n"
     "要求：lighten模式下任务量降到原来的三分之一；micro模式下每天只需5分钟以内的最小行动；"
     "day编号必须与原任务一致，任务数量一致。"
-)
-
-DECOMPOSE_SYSTEM = (
-    "你是目标拆解专家。根据用户的挑战目标，建议如何把每日目标拆解到时段。"
-    "只输出严格JSON，不要markdown标记：\n"
-    "{\"decompose_mode\": \"none|time_slot\", \"slot_hours\": 1, \"slot_target_value\": 0.0, "
-    "\"sub_goals\": [{\"title\": \"上午时段(8-12)\", \"time_window_start\": \"08:00\", "
-    "\"time_window_end\": \"12:00\", \"target_value\": 1.0, \"goal_type\": \"soft\", "
-    "\"weight\": 1.0, \"order\": 1}], \"rationale\": \"一句话拆解理由\"}\n\n"
-    "【25分钟硬规则】如果用户的任务整体可在25分钟内完成，则decompose_mode=none，不再拆解。\n"
-    "【最多4个时段】MVP限制最多4个时段，避免用户窒息感。常用拆解：\n"
-    "- 戒烟/戒糖：上午(8-12)/下午(12-18)/晚高峰(18-22)/深夜(22-8)，目标递减\n"
-    "- 喝水：上午/下午/晚高峰/深夜，目标均匀\n"
-    "- 专注工作：上午/下午/晚高峰/深夜，目标集中白天\n"
-    "【减少型方向】decrease类(戒烟)，sub_goal默认goal_type=soft(督促)\n"
-    "【增加型方向】increase类(喝水)，sub_goal默认goal_type=hard(底线)\n"
-    "【slot_target_value】0表示继承日均分配；非0表示该时段具体目标值\n"
-    "rationale用'被理解感'语言：'我注意到你早上容易想抽烟，所以上午时段目标设得宽松些'"
 )
 
 DIET_ESTIMATE_SYSTEM = (

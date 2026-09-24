@@ -66,8 +66,7 @@ class ChallengeService:
         squad_id: int | None = None, task_type: str = "binary",
         scene_template: str = "", target_value: float = 1.0, unit: str = "次",
         direction: str = "increase", goal_type: str = "hard",
-        decompose_mode: str = "none", slot_hours: int = 1,
-        slot_target_value: float = 0.0, goal_rule: str = "fixed",
+        decompose_mode: str = "none", goal_rule: str = "fixed",
         goal_mode: str = "auto", ladder_start: float = 0.0,
         ladder_goal: float = 0.0, ladder_interval: int = 1,
         ladder_step: float = 1.0, gender: str = "", age: int = 0,
@@ -101,7 +100,6 @@ class ChallengeService:
             "ladder_start": ladder_start, "ladder_goal": ladder_goal,
             "ladder_interval": ladder_interval, "ladder_step": ladder_step,
             "decompose_mode": decompose_mode,
-            "slot_hours": slot_hours, "slot_target_value": slot_target_value,
             "gender": gender, "age": age, "height_cm": height_cm,
             "weight_kg": weight_kg, "goal_weight": goal_weight,
             "activity_level": activity_level,
@@ -211,7 +209,6 @@ class ChallengeService:
             target_value=float(getattr(c, "target_value", 1.0) or 1.0), unit=str(getattr(c, "unit", "次") or "次"),
             direction=str(getattr(c, "direction", "increase") or "increase"), goal_type=str(getattr(c, "goal_type", "hard") or "hard"),
             decompose_mode=str(getattr(c, "decompose_mode", "none") or "none"),
-            slot_hours=int(getattr(c, "slot_hours", 1) or 1), slot_target_value=float(getattr(c, "slot_target_value", 0.0) or 0.0),
             goal_rule=str(getattr(c, "goal_rule", "fixed") or "fixed"), goal_mode=str(getattr(c, "goal_mode", "auto") or "auto"),
             ladder_start=float(getattr(c, "ladder_start", 0.0) or 0.0), ladder_goal=float(getattr(c, "ladder_goal", 0.0) or 0.0),
             ladder_interval=max(1, int(getattr(c, "ladder_interval", 1) or 1)), ladder_step=float(getattr(c, "ladder_step", 1.0) or 1.0),
@@ -264,13 +261,12 @@ class ChallengeService:
         )
         period_days = max(1, int(getattr(challenge, "period_days", 7) or 7))
         aggregates = await week_aggregates(session, challenge_id, today_checkins, period_days)
-        sub_goals_list = await self._build_sub_goals(session, challenge, today)
         stats = await self.get_challenge_stats(session, challenge)
         progress = _calc_progress(stats["completed_days"], challenge.duration_days)
         return self._build_today_response(
             challenge, challenge_id, day_number, today, task,
             today_checkins, today_total, today_target, dynamic_baseline,
-            sub_goals_list, stats, progress, aggregates, forecast,
+            stats, progress, aggregates, forecast,
         )
 
     def _parse_plan(self, ai_plan: str | None) -> list[dict[str, object]]:
@@ -282,33 +278,10 @@ class ChallengeService:
         except json.JSONDecodeError:
             return []
 
-    async def _build_sub_goals(
-        self, session: AsyncSession, challenge, today: str,
-    ) -> list[dict[str, object]]:
-        from app.repositories.sub_goal_repository import SubGoalRepository
-        sub_goal_repo = SubGoalRepository()
-        sub_goals_db = await sub_goal_repo.get_by_challenge(session, challenge.id)
-        sub_goals_list: list[dict[str, object]] = []
-        for sg in sub_goals_db:
-            sg_today_value = await self._checkin_repo.sum_value_by_sub_goal(session, sg.id, today)
-            sg_today_list = await self._checkin_repo.list_by_sub_goal(session, sg.id, today)
-            sg_target = sg.target_value if sg.target_value > 0 else challenge.slot_target_value
-            sg_pct = (sg_today_value / sg_target * 100) if sg_target > 0 else 0.0
-            sub_goals_list.append({
-                "id": sg.id, "title": sg.title,
-                "time_window_start": sg.time_window_start,
-                "time_window_end": sg.time_window_end,
-                "target_value": sg_target, "goal_type": sg.goal_type,
-                "today_value": sg_today_value,
-                "today_checkin_count": len(sg_today_list),
-                "progress_pct": round(min(sg_pct, 100.0), 1),
-            })
-        return sub_goals_list
-
     def _build_today_response(
         self, challenge, challenge_id: int, day_number: int, today: str,
         task: dict[str, object], today_checkins, today_total: float,
-        today_target: float, dynamic_baseline: float, sub_goals_list: list,
+        today_target: float, dynamic_baseline: float,
         stats: dict, progress: float, aggregates: dict[str, object] | None = None,
         forecast: dict[str, object] | None = None,
     ) -> dict[str, object]:
@@ -317,7 +290,7 @@ class ChallengeService:
         remaining = max(0.0, today_target - today_total)
         feedback = today_checkins[-1].ai_feedback if today_checkins else ""
         not_started = day_number < 1
-        repeatable = is_repeatable(challenge, len(sub_goals_list))
+        repeatable = is_repeatable(challenge)
         ladder_progress = ladder_progress_pct(challenge, day_number) if is_ladder(challenge) else 0.0
         task_type = str(task.get("task_type", challenge.task_type))
         pf = period_fields(challenge, task_type, aggregates or {})
@@ -357,13 +330,12 @@ class ChallengeService:
                 {
                     "id": c.id, "timestamp": c.timestamp.isoformat(),
                     "value": c.value, "unit": c.unit, "calories": float(getattr(c, "calories", 0.0) or 0.0),
-                    "sub_goal_id": c.sub_goal_id,
                     "mood": c.mood, "reflection": c.reflection,
                     "context_tag": c.context_tag, "ai_feedback": sanitize_coach_text(c.ai_feedback),
                 }
                 for c in today_checkins
             ],
-            "sub_goals": sub_goals_list, "streak": stats["streak"],
+            "streak": stats["streak"],
             "total_checkins": stats["completed_days"],
         }
 

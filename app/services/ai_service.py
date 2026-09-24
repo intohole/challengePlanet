@@ -100,7 +100,7 @@ class AIService:
                 "title": _slice_title(raw_input), "category": "other", "duration_days": 30,
                 "task_type": "binary", "target_value": 1.0,
                 "unit": "次", "direction": "increase", "goal_type": "hard",
-                "decompose_mode": "none", "slot_hours": 1, "slot_target_value": 0.0,
+                "decompose_mode": "none",
             }
         parsed.setdefault("task_type", "binary")
         parsed.setdefault("target_value", 1.0)
@@ -113,8 +113,6 @@ class AIService:
         )
         parsed.setdefault("goal_type", "hard")
         parsed.setdefault("decompose_mode", "none")
-        parsed.setdefault("slot_hours", 1)
-        parsed.setdefault("slot_target_value", 0.0)
         parsed.setdefault("description", raw_input[:40])
         inferred_value, inferred_unit = _infer_daily_target(raw_input)
         if inferred_value > 0:
@@ -236,15 +234,6 @@ class AIService:
         self, challenge_title: str, tasks: list[dict[str, object]], mode: str,
     ) -> list[dict[str, object]] | None:
         return await self._analysis.generate_adjusted_tasks(challenge_title, tasks, mode)
-
-    async def suggest_decompose(
-        self, title: str, description: str, category: str,
-        target_value: float, unit: str, direction: str, goal_type: str,
-        duration_days: int,
-    ) -> dict[str, object]:
-        return await self._analysis.suggest_decompose(
-            title, description, category, target_value, unit, direction, goal_type, duration_days
-        )
 
     async def generate_deep_insight(
         self, challenge_title: str, direction: str, unit: str,

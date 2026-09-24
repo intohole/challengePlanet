@@ -36,8 +36,7 @@ class ReportService:
         rows = await self._checkin_repo.get_hourly_distribution(
             session, challenge_id, start_dt.strftime("%Y-%m-%d"), today_str()
         )
-        slot_target = challenge.slot_target_value if challenge.decompose_mode == "time_slot" else 0.0
-        items, peak_hour, peak_value = self._calc.calc_hourly_items(rows, slot_target)
+        items, peak_hour, peak_value = self._calc.calc_hourly_items(rows)
         insight = self._hourly_insight(peak_hour, peak_value, challenge)
         return {
             "challenge_id": challenge_id, "date_range": f"{days}d",

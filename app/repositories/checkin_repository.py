@@ -83,26 +83,6 @@ class CheckInRepository(StatelessRepository[CheckIn]):
         )
         return list(result.scalars().all())
 
-    async def list_by_sub_goal(
-        self, session: AsyncSession, sub_goal_id: int, date: str | None = None
-    ) -> list[CheckIn]:
-        stmt = select(CheckIn).where(CheckIn.sub_goal_id == sub_goal_id)
-        if date:
-            stmt = stmt.where(CheckIn.date == date)
-        result = await session.execute(stmt.order_by(CheckIn.timestamp.asc()))
-        return list(result.scalars().all())
-
-    async def sum_value_by_sub_goal(
-        self, session: AsyncSession, sub_goal_id: int, date: str
-    ) -> float:
-        result = await session.execute(
-            select(func.coalesce(func.sum(CheckIn.value), 0.0)).where(
-                CheckIn.sub_goal_id == sub_goal_id,
-                CheckIn.date == date,
-            )
-        )
-        return float(result.scalar_one() or 0.0)
-
     async def create(self, session: AsyncSession, data: dict[str, object]) -> CheckIn:
         return await super().create(session, data)
 

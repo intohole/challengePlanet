@@ -16,7 +16,7 @@ class ReportCalculator:
         self._checkin_repo = CheckInRepository()
 
     def calc_hourly_items(
-        self, rows: list[dict[str, object]], slot_target: float,
+        self, rows: list[dict[str, object]],
     ) -> tuple[list[dict[str, object]], int, float]:
         items: list[dict[str, object]] = []
         peak_hour = -1
@@ -25,11 +25,7 @@ class ReportCalculator:
             row = next((r for r in rows if r["hour"] == h), None)
             total = float(row["total_value"]) if row else 0.0
             cnt = int(row["checkin_count"]) if row else 0
-            exceed_pct = (total / slot_target * 100) if slot_target > 0 else 0.0
-            items.append({
-                "hour": h, "total_value": total, "checkin_count": cnt,
-                "target_value": slot_target, "exceed_pct": round(exceed_pct, 1),
-            })
+            items.append({"hour": h, "total_value": total, "checkin_count": cnt})
             if total > peak_value:
                 peak_value = total
                 peak_hour = h

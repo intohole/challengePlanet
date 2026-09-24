@@ -161,8 +161,6 @@ async def create_challenge_nl(
             "goal_type": str(parsed.get("goal_type", "hard")),
             "ladder_applied": str(parsed.get("goal_rule", "")) == "ladder",
             "decompose_mode": str(parsed.get("decompose_mode", "none")),
-            "slot_hours": int(parsed.get("slot_hours", 1)),
-            "slot_target_value": float(parsed.get("slot_target_value", 0.0)),
             **ladder_out(request, parsed),
         }
         yield sse_event_dict("parsed", {"parsed": parsed_out})
@@ -201,8 +199,7 @@ async def confirm_challenge(
         task_type=request.task_type, scene_template=request.scene_template,
         target_value=request.target_value, unit=request.unit,
         direction=request.direction, goal_type=request.goal_type,
-        decompose_mode=request.decompose_mode, slot_hours=request.slot_hours,
-        slot_target_value=request.slot_target_value,
+        decompose_mode=request.decompose_mode,
         goal_rule=request.goal_rule, goal_mode=request.goal_mode,
         ladder_start=request.ladder_start, ladder_goal=request.ladder_goal,
         ladder_interval=request.ladder_interval, ladder_step=request.ladder_step,
