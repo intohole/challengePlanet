@@ -58,12 +58,12 @@ def main() -> None:
 
         def toast_now() -> str:
             page.wait_for_timeout(300)
-            t = page.locator(".cp-toast")
+            t = page.locator(".nux-toast-msg")
             return t.inner_text() if t.count() else ""
 
         def wait_toast_gone():
             try:
-                page.wait_for_selector(".cp-toast", state="detached", timeout=6000)
+                page.wait_for_selector(".nux-toast-item", state="detached", timeout=6000)
             except Exception:
                 pass
             page.wait_for_timeout(400)
@@ -91,14 +91,14 @@ def main() -> None:
         page.locator("button", has_text="记一根").first.click()
         page.wait_for_timeout(2000)
         page.wait_for_timeout(600)
-        t2 = page.locator(".cp-toast")
+        t2 = page.locator(".nux-toast-item")
         check("第2根仍逼近但同级不重复提醒", t2.count() == 0, toast_now())
         page.wait_for_timeout(1000)
 
         page.locator("button", has_text="记一根").first.click()
         page.wait_for_timeout(2000)
         page.wait_for_timeout(600)
-        t3 = page.locator(".cp-toast")
+        t3 = page.locator(".nux-toast-item")
         check("第3根达到上限不提醒", t3.count() == 0, toast_now())
         page.wait_for_timeout(1000)
 

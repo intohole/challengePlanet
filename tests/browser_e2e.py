@@ -157,11 +157,11 @@ def main() -> None:
         print("== 7. 确认开启挑战 ==")
         page.click("button:has-text('开启挑战')")
         try:
-            page.wait_for_selector(".cp-toast", timeout=30000)
+            page.wait_for_selector(".nux-toast-msg", timeout=30000)
         except Exception:
             pass
         page.wait_for_timeout(2500)
-        toast = page.query_selector(".cp-toast")
+        toast = page.query_selector(".nux-toast-msg")
         toast_text = toast.inner_text() if toast else ""
         shot(page, "7_challenge_created.png")
         check("创建成功提示", "挑战已开启" in toast_text or "挑战" in toast_text, toast_text[:80])

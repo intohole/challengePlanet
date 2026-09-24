@@ -31,7 +31,6 @@ const state = reactive({
   current: null,
   pendingCount: 0,
   loadError: '',
-  toast: '',
   celebrate: false,
   celebrateText: '',
   stars: [],
@@ -114,11 +113,8 @@ window.cpAddDays = (ds, n) => {
   return window.cpDateStr(d)
 }
 
-let toastTimer = null
 window.cpToast = (msg, ms = 2600) => {
-  state.toast = msg
-  clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => { state.toast = '' }, ms)
+  if (typeof window.showToast === 'function') window.showToast(msg, 'info', ms)
 }
 window.cpCelebrate = text => {
   state.celebrateText = text || '打卡成功！'
@@ -139,20 +135,7 @@ window.cpErrMsg = (e, fallback) => {
   return (e && e.message) || fallback || '操作失败，请稍后重试'
 }
 window.cpCopy = text => {
-  const done = () => window.cpToast('已复制，发给好友组队打卡')
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(done).catch(() => { window.cpCopyFallback(text); done() })
-  } else { window.cpCopyFallback(text); done() }
-}
-window.cpCopyFallback = text => {
-  const ta = document.createElement('textarea')
-  ta.value = text
-  ta.style.position = 'fixed'
-  ta.style.opacity = '0'
-  document.body.appendChild(ta)
-  ta.select()
-  try { document.execCommand('copy') } catch (e) {}
-  document.body.removeChild(ta)
+  NexusUtils.copyText(text, { success: '已复制，发给好友组队打卡' })
 }
 
 async function loadChallenges() {

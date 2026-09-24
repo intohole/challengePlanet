@@ -58,7 +58,7 @@ with sync_playwright() as p:
         check("打卡payload value=1", json.loads(checkin_post[0]).get("value") == 1, checkin_post[0])
     if checkin_resp:
         check("checkin接口200", checkin_resp[0][0] == 200, str(checkin_resp))
-    after = page.evaluate("() => { const V = window.cpViews.home; const t = V.data.today; return JSON.stringify({checked_in: !!(t && t.checked_in), toast:(document.querySelector('.cp-toast')||{}).innerText||''}) }")
+    after = page.evaluate("() => { const V = window.cpViews.home; const t = V.data.today; return JSON.stringify({checked_in: !!(t && t.checked_in), toast:(document.querySelector('.nux-toast-msg')||{}).innerText||''}) }")
     print("  点击后:", after)
     check("打卡状态变为已打卡", '"checked_in":true' in after, after)
     check("页面无JS错误", len(errs) == 0, str(errs[:3]))

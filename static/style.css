@@ -113,10 +113,6 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 .cp-modal-close { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 4px 8px; }
 .cp-modal-body { padding: 20px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 
-.cp-toast { position: fixed; top: calc(var(--header-h) + 14px); left: 50%; transform: translateX(-50%); z-index: 300; padding: 11px 20px; max-width: 88%; font-size: 13px; line-height: 1.6; border-radius: var(--radius); text-align: center; background: rgba(255,255,255,.94); backdrop-filter: blur(12px); border: 1px solid var(--card-border); color: var(--text-primary); box-shadow: 0 4px 24px rgba(30,64,175,.14); }
-.toast-enter-active, .toast-leave-active { transition: all .35s ease; }
-.toast-enter-from, .toast-leave-to { transform: translate(-50%, -16px); opacity: 0; }
-
 .cp-skeleton-card { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
 .cp-skel-row { display: flex; align-items: center; gap: 16px; }
 .cp-skel-circle { width: 84px; height: 84px; border-radius: 50%; background: rgba(148,163,184,.08); animation: shimmer 1.5s ease-in-out infinite; flex-shrink: 0; }

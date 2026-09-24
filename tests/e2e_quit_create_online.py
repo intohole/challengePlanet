@@ -66,7 +66,7 @@ def main() -> None:
         check("直接创建按钮可用", not page.locator(".cp-btn-direct").is_disabled())
         page.click(".cp-btn-direct")
         page.wait_for_timeout(1500)
-        toast = page.locator(".cp-toast")
+        toast = page.locator(".nux-toast-msg")
         if toast.count():
             check("toast 挑战已开启", "挑战已开启" in toast.inner_text(), toast.inner_text())
         else:

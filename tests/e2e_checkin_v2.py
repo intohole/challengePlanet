@@ -96,7 +96,7 @@ def main() -> None:
         if page.query_selector(".cp-cta-main"):
             page.click(".cp-cta-main")
             page.wait_for_timeout(4000)
-            after = page.evaluate("() => ({done: !!document.querySelector('.cp-cta-done'), err: !!document.querySelector('.cp-toast')})")
+            after = page.evaluate("() => ({done: !!document.querySelector('.cp-cta-done'), err: !!document.querySelector('.nux-toast-item')})")
             check("binary 主按钮点击打卡成功", after["done"], str(after))
         else:
             done = page.evaluate("() => !!document.querySelector('.cp-cta-done')")

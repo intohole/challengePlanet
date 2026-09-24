@@ -169,10 +169,10 @@ def main() -> None:
         page.on("dialog", lambda d: (dialogs.append(d.message or "") or d.accept()))
         end_btns[0].click()
         page.wait_for_timeout(800)
-        toast = page.query_selector(".cp-toast")
+        toast = page.query_selector(".nux-toast-msg")
         check("点击后弹出确认框", len(dialogs) == 1, str(dialogs))
         check("确认框文案明确", "结束该挑战" in dialogs[0], dialogs[0])
-        page.wait_for_selector(".cp-toast", timeout=5000)
+        page.wait_for_selector(".nux-toast-msg", timeout=5000)
         check("操作成功toast", toast is not None and "已结束挑战" in (toast.inner_text() or ""), "")
 
         browser.close()

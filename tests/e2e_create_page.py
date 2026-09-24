@@ -250,8 +250,8 @@ def main() -> None:
 
         print("== 6. 创建后toast引导 ==")
         page.locator("button", has_text="开启挑战").click()
-        page.wait_for_selector(".cp-toast", timeout=10000)
-        toast = page.locator(".cp-toast").inner_text()
+        page.wait_for_selector(".nux-toast-msg", timeout=10000)
+        toast = page.locator(".nux-toast-msg").inner_text()
         check("toast显示第1天任务", "第1天" in toast, toast)
         print("   toast:", toast)
 
