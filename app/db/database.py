@@ -66,6 +66,15 @@ async def _drop_legacy_column_compat(conn: object) -> None:
             logger.info("migration: legacy column checkins.%s kept (sqlite drop limited)", col)
 
 
+async def _drop_dropped_model_columns(conn: object) -> None:
+    rows = await conn.execute(text("PRAGMA table_info(challenges)"))
+    cols = {row[1] for row in rows.fetchall()}
+    for col in ("slot_hours", "slot_target_value"):
+        if col in cols:
+            logger.info("migration: dropping challenges.%s", col)
+            await conn.execute(text(f"ALTER TABLE challenges DROP COLUMN {col}"))
+
+
 async def init_db() -> None:
     _import_models()
     async with engine.begin() as conn:
@@ -124,6 +133,7 @@ async def run_migrations() -> None:
         ))
 
         await _drop_legacy_column_compat(conn)
+        await _drop_dropped_model_columns(conn)
 
         await conn.execute(text(
             "UPDATE adaptive_suggestions SET status='expired' WHERE status='pending' AND id NOT IN ("
