@@ -15,9 +15,6 @@ class CheckIn(Base):
     challenge_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("challenges.id"), index=True, nullable=False
     )
-    sub_goal_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("sub_goals.id"), nullable=True, index=True
-    )
     user_id: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
 
     day_number: Mapped[int] = mapped_column(Integer, default=0)

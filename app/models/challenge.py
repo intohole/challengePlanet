@@ -34,8 +34,6 @@ class Challenge(Base):
     sport_met: Mapped[float] = mapped_column(Float, default=0.0)
 
     decompose_mode: Mapped[str] = mapped_column(String(16), default="none")
-    slot_hours: Mapped[int] = mapped_column(Integer, default=1)
-    slot_target_value: Mapped[float] = mapped_column(Float, default=0.0)
 
     gender: Mapped[str] = mapped_column(String(8), default="")
     age: Mapped[int] = mapped_column(Integer, default=0)

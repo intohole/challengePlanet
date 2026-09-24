@@ -24,7 +24,6 @@ async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit
 
 _EXPECTED_TABLES = (
     "challenges",
-    "sub_goals",
     "checkins",
     "ai_insights",
     "squads",
