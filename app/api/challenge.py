@@ -213,7 +213,7 @@ async def confirm_challenge(
         try:
             dc = await get_datacenter_client()
             await dc.report(bearer, domain=DOMAIN_GROWTH, asset_type="challenge",
-                            app="challengeplanet", ref_id=challenge.id, title=request.title,
+                            app="challengeplanet", ref_id=str(challenge.id), title=request.title,
                             summary=f"{request.category} · {request.duration_days}天")
         except Exception:
             pass
