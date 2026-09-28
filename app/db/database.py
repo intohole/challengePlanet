@@ -1,26 +1,48 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import AsyncGenerator
 
+from nexus import Base, DatabaseManager
+from nexus.config import DatabaseConfig, NexusConfig
 from nexus.logging import get_logger
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 
 logger = get_logger("challengePlanet.db")
 
-
-class Base(DeclarativeBase):
-    pass
-
+__all__ = ["Base", "get_db", "init_db", "run_migrations", "engine", "async_session"]
 
 _db_path = Path(settings.DATABASE_URL.replace("sqlite+aiosqlite:///", ""))
 _db_path.parent.mkdir(parents=True, exist_ok=True)
 
-engine = create_async_engine(settings.DATABASE_URL, echo=False)
-async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+db_manager = DatabaseManager(
+    NexusConfig(
+        database=DatabaseConfig(
+            url=settings.DATABASE_URL,
+            echo=False,
+            sqlite_pragma=False,
+        )
+    )
+)
+
+
+class _EngineProxy:
+    def __getattr__(self, name: str) -> object:
+        return getattr(db_manager.engine, name)
+
+
+engine = _EngineProxy()
+
+
+class _SessionFactoryProxy:
+    def __call__(self) -> AsyncSession:
+        return db_manager.session_factory()
+
+
+async_session = _SessionFactoryProxy()
 
 _EXPECTED_TABLES = (
     "challenges",
@@ -37,8 +59,8 @@ _EXPECTED_TABLES = (
 )
 
 
-async def get_db() -> AsyncSession:
-    async with async_session() as session:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with db_manager.session_factory() as session:
         yield session
 
 
@@ -77,13 +99,14 @@ async def _drop_dropped_model_columns(conn: object) -> None:
 
 async def init_db() -> None:
     _import_models()
-    async with engine.begin() as conn:
+    await db_manager.init()
+    async with db_manager.engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
 
 async def run_migrations() -> None:
     _import_models()
-    async with engine.begin() as conn:
+    async with db_manager.engine.begin() as conn:
         rows = await conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'"))
         existing = {row[0] for row in rows.fetchall()}
         for table in _EXPECTED_TABLES:
