@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api._common import bad_request
 from app.db.database import get_db
 from app.repositories.challenge_repository import ChallengeRepository
+from app.repositories.checkin_repository import CheckInRepository
 from app.schemas.diet import (
     DietEstimateRequest,
     DietEstimateResponse,
@@ -16,6 +17,7 @@ from app.schemas.diet import (
 )
 from app.services.challenge_service import ChallengeService
 from app.services.diet_service import DietService, calc_daily_target
+from app.services.streak_service import today_str
 
 router = APIRouter()
 
@@ -43,8 +45,18 @@ async def estimate_calories(
     _get_challenge_or_404(challenge, challenge_id)
     _check_owner(challenge, user_id)
     if str(getattr(challenge, "task_type", "")) != "diet":
-        raise bad_request("该挑战非饮食控制类型")
-    result = await DietService().estimate_calories(request.description, challenge)
+        raise bad_request(ValueError("该挑战非饮食控制类型"))
+    description = (request.description or "").strip()
+    image = (request.image or "").strip()
+    if not description and not image:
+        raise bad_request(ValueError("先拍一张照片，或描述这一餐吃了什么"))
+    today_intake = await CheckInRepository().sum_value_by_date(session, challenge_id, today_str())
+    try:
+        result = await DietService().estimate_calories(
+            challenge, description=description, image=image, today_intake=today_intake,
+        )
+    except ValueError as e:
+        raise bad_request(e)
     return DietEstimateResponse(**result)
 
 

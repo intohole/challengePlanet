@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class DietEstimateRequest(BaseModel):
-    description: str = Field(..., description="当日饮食描述")
+    description: str = Field("", description="这一餐的文字描述")
+    image: str = Field("", description="餐食照片 data URL(base64)")
 
 
 class DietEstimateResponse(BaseModel):
@@ -18,6 +19,8 @@ class DietEstimateResponse(BaseModel):
     deficit_kcal: float = 0.0
     tdee_kcal: float = 0.0
     bmr_kcal: float = 0.0
+    meal_kcal: float = 0.0
+    today_intake: float = 0.0
 
 
 class DietTargetResponse(BaseModel):

@@ -78,14 +78,15 @@ def main() -> None:
 
         page.evaluate("window.cpSelectChallenge(%d)" % cid)
         page.evaluate("window.cpViews.home.switchTab('today')")
-        for _ in range(10):
-            ready = page.evaluate("""cid => {
+        try:
+            page.wait_for_function("""cid => {
                 const h = window.cpViews.home;
-                return h.loadedFor === cid && h.data && h.data.today && !h.data.loading && (document.querySelector('.cp-cta-done, .cp-cta-main') !== null);
-            }""", cid)
-            if ready:
-                break
-            page.wait_for_timeout(2000)
+                return h.loadedFor === cid && h.data && h.data.today && !h.data.loading
+                    && h.data.today.today_total === 3;
+            }""", arg=cid, timeout=20000)
+            page.wait_for_selector(".cp-cta-done", timeout=10000)
+        except Exception:
+            pass
         page.wait_for_timeout(500)
 
         main_done = page.evaluate("() => ({done: !!document.querySelector('.cp-cta-done'), main: !!document.querySelector('.cp-cta-main'), hint: (document.querySelector('.cp-remain-hint')||{}).innerText || ''})")

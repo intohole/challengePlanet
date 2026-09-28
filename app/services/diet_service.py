@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from nexus.logging import get_logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.datetime_utils import now_china
 from app.repositories.weight_repository import WeightRepository
 from app.services.ai_service import AIService
+
+logger = get_logger("challengePlanet.diet")
 
 ACTIVITY_FACTORS: dict[int, float] = {
     1: 1.2, 2: 1.375, 3: 1.55, 4: 1.725, 5: 1.9,
@@ -55,18 +58,43 @@ def assess_calorie(value: float, target: float) -> dict[str, object]:
     return {"status": "over", "label": "摄入偏多", "percent": pct}
 
 
+MAX_IMAGE_CHARS = 6_000_000
+
+
+def normalize_image(image: str) -> str:
+    image = (image or "").strip()
+    if not image:
+        raise ValueError("先拍一张照片，或描述这一餐吃了什么")
+    if len(image) > MAX_IMAGE_CHARS:
+        raise ValueError("照片太大了，请压缩后重试")
+    return image if image.startswith("data:image/") else f"data:image/jpeg;base64,{image}"
+
+
 class DietService:
     def __init__(self) -> None:
         self._weights = WeightRepository()
         self._ai = AIService()
 
     async def estimate_calories(
-        self, description: str, challenge: object,
+        self, challenge: object, description: str = "", image: str = "",
+        today_intake: float = 0.0,
     ) -> dict[str, object]:
-        result = await self._ai.estimate_diet_calories(description)
+        if image:
+            try:
+                result = await self._ai.estimate_diet_calories_from_photo(normalize_image(image))
+            except ValueError:
+                raise
+            except Exception as e:
+                logger.warning("diet photo estimate failed: %s", e)
+                raise ValueError("照片识别失败了，请重试或直接描述这一餐")
+        else:
+            result = await self._ai.estimate_diet_calories(description)
         target = float(getattr(challenge, "daily_calorie_target", 0) or 0)
         total = float(result.get("total_kcal", 0) or 0)
-        result["assessment"] = assess_calorie(total, target) if target > 0 and total > 0 else {
+        cumulative = max(0.0, float(today_intake or 0)) + total
+        result["today_intake"] = round(max(0.0, float(today_intake or 0)), 1)
+        result["meal_kcal"] = round(total, 1)
+        result["assessment"] = assess_calorie(cumulative, target) if target > 0 and total > 0 else {
             "status": "unknown", "label": "暂无目标", "percent": 100.0,
         }
         cal = calc_daily_target(

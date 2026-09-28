@@ -185,3 +185,39 @@
 .cp-phase-snap-risk { display: flex; align-items: flex-start; gap: 7px; padding: 9px 11px; border-radius: var(--radius-sm); background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2); font-size: 12px; color: var(--amber); line-height: 1.6; }
 .cp-phase-snap-risk i { margin-top: 2px; }
 .cp-phase-snap-risk.hot { background: rgba(239,83,80,.07); border-color: rgba(239,83,80,.25); color: var(--red); }
+
+/* 饮食场景: 拍照识别热量 + 每餐一笔 */
+.cp-diet-area { padding: 14px; }
+.cp-diet-photo-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: var(--radius-sm); border: 1px dashed rgba(99,102,241,.45); background: rgba(99,102,241,.06); color: var(--primary); font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.cp-diet-photo-btn:active { background: rgba(99,102,241,.12); }
+.cp-diet-photo-btn:disabled { opacity: .6; }
+.cp-diet-photo-input { display: none; }
+.cp-diet-preview { width: 100%; max-height: 180px; object-fit: cover; border-radius: var(--radius-sm); margin-top: 10px; border: 1px solid var(--card-border); }
+.cp-diet-or { text-align: center; font-size: 12px; color: var(--text-muted); margin: 10px 0 8px; }
+.cp-diet-input-row { display: flex; flex-direction: column; gap: 8px; }
+.cp-diet-est-btn { width: 100%; }
+.cp-diet-result { margin-top: 12px; padding: 12px; border-radius: var(--radius-sm); background: rgba(15,23,42,.03); border: 1px solid var(--card-border); }
+.cp-diet-result-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cp-diet-result-title { font-size: 14px; font-weight: 700; color: var(--text-primary); display: inline-flex; align-items: center; gap: 6px; }
+.cp-diet-conf { font-size: 11px; color: var(--text-muted); }
+.cp-diet-assess { font-size: 12px; color: var(--text-secondary); margin-top: 6px; line-height: 1.6; }
+.cp-diet-items { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.cp-diet-item { font-size: 12px; color: var(--text-primary); background: rgba(99,102,241,.08); border-radius: 999px; padding: 3px 10px; }
+.cp-diet-item i { font-style: normal; color: var(--text-muted); margin-left: 3px; }
+.cp-diet-target { margin-top: 6px; }
+.cp-diet-target-head { display: flex; align-items: center; justify-content: space-between; }
+.cp-diet-target-title { font-size: 13px; font-weight: 700; color: var(--text-primary); display: inline-flex; align-items: center; gap: 6px; }
+.cp-diet-target-deficit { font-size: 11px; color: var(--emerald); font-weight: 600; }
+.cp-diet-target-stats { display: flex; gap: 10px; margin: 10px 0; }
+.cp-diet-target-stat { flex: 1; text-align: center; background: rgba(15,23,42,.03); border-radius: var(--radius-sm); padding: 8px 4px; }
+.cp-diet-target-stat b { display: block; font-size: 17px; font-weight: 800; color: var(--text-primary); }
+.cp-diet-target-stat span { font-size: 11px; color: var(--text-muted); }
+.cp-diet-target-stat.over b { color: var(--amber); }
+.cp-diet-meta { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+.cp-diet-meals { display: flex; flex-direction: column; gap: 8px; }
+.cp-diet-meal { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-radius: var(--radius-sm); background: rgba(15,23,42,.03); }
+.cp-diet-meal-time { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+.cp-diet-meal-txt { flex: 1; font-size: 13px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-diet-meal-kcal { font-size: 13px; font-weight: 700; color: var(--primary); flex-shrink: 0; }
+.cp-diet-meal-del { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 12px; padding: 4px 2px; flex-shrink: 0; }
+.cp-diet-meal-del:active { color: var(--red); }

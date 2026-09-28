@@ -3,8 +3,10 @@
 # 复用仓库既有 browser-mock 结构，仅验证 diet 视图在真实静态页上的 DOM 渲染与绑定。
 from __future__ import annotations
 
+import base64
 import json
 import os
+import tempfile
 import threading
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -15,6 +17,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC = os.path.join(ROOT, "static")
 TODAY = "2026-08-25"
 TARGET = 1905
+TINY_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+)
 
 passed: list[str] = []
 failed: list[tuple[str, str]] = []
@@ -68,10 +73,10 @@ MOCK = {
         "day_number": 2, "date": TODAY, "task_title": "控制每日卡路里摄入",
         "task_description": "把今天吃进肚的食物记录下来。", "task_type": "diet",
         "task_target": TARGET, "task_unit": "千卡", "unit": "千卡", "progress_pct": 0,
-        "repeatable": False, "today_total": 0, "today_target": TARGET, "checked_in": False,
+        "repeatable": True, "today_total": 0, "today_target": TARGET, "checked_in": False,
         "checkin_data": None, "sub_goals": [], "goal_rule": "fixed", "today_cap": TARGET,
         "remaining": TARGET, "task_tip": "", "task_steps": [], "dynamic_baseline": 0,
-        "today_checkins": []}},
+        "today_checkins": [], "forecast": {"enabled": False, "quiet": True, "projected": 0}}},
     "/api/v1/challenges/1/checkins": {"data": []},
     "/api/v1/challenges/1/mercy": {"data": {"missed_dates": []}},
     "/api/v1/challenges/1/weekly-report": {"data": None},
@@ -130,13 +135,14 @@ def main() -> None:
         check("显示目标摄入", str(TARGET) in t, t)
         check("显示减热量缺口", "减 500 千卡/天" in t, t)
 
-        print("== 2. 饮食记录区(一句话记餐 + AI估算 + 复制昨日) ==")
+        print("== 2. 饮食记录区(拍照识别 + 一句话记餐 + AI估算) ==")
         page.wait_for_selector(".cp-diet-area", timeout=10000)
         area = page.query_selector(".cp-diet-area")
         at = area.inner_text()
-        check("记录今天吃了什么", "记录今天吃了什么" in at, at[:60])
+        check("记录这一餐", "记录这一餐" in at, at[:60])
+        check("拍照识别入口", "拍照识别" in at, at[:80])
+        check("拍照 file input 存在", page.query_selector("#cp-diet-photo") is not None, "")
         check("AI 估算按钮", page.query_selector(".cp-diet-est-btn") is not None, "")
-        check("复制昨日按钮(无昨日记录时隐藏)", page.query_selector(".cp-diet-copy") is None, "")
 
         print("== 3. 体重记录与趋势 ==")
         trend_text = page.query_selector(".cp-weight-trend").inner_text()
@@ -149,26 +155,53 @@ def main() -> None:
         check("目标线(72kg)渲染", plan_svg.query_selector(".cp-weight-goalline") is not None, "")
         check("图例包含计划和目标", ("计划" in page.query_selector(".cp-weight-legend").inner_text()) and ("目标 72kg" in page.query_selector(".cp-weight-legend").inner_text()), "")
 
-        print("== 4. 输入描述后点AI估算,出现结果与打卡 ==")
-        desc = "早餐鸡蛋牛奶，午餐盒饭，晚餐一碗面"
-        page.fill(".cp-diet-input", desc)
-        page.route("**/api/v1/challenges/1/diet/estimate", lambda route, req: route.fulfill(
-            status=200, content_type="application/json",
-            body=json.dumps({"data": {"total_kcal": 1650.0, "confidence": 0.7,
-                                      "target_kcal": TARGET, "deficit_kcal": 500,
-                                      "assessment": {"status": "under", "label": "摄入偏少", "percent": 86.6},
-                                      "items": [{"name": "鸡蛋", "kcal": 120}, {"name": "盒饭", "kcal": 780}],
-                                      "min_kcal": 1400, "max_kcal": 1900, "bmr_kcal": 1749, "tdee_kcal": 2405}})))
+        print("== 4. 输入描述后点AI估算,出现结果与记账 ==")
+        captured: dict = {}
+
+        def estimate_route(route, req) -> None:
+            body = req.post_data or ""
+            captured["body"] = body
+            if '"image"' in body:
+                payload = {"total_kcal": 520.0, "meal_kcal": 520.0, "today_intake": 0.0,
+                           "confidence": 0.6, "target_kcal": TARGET, "deficit_kcal": 500,
+                           "assessment": {"status": "under", "label": "摄入偏少", "percent": 27.3},
+                           "items": [{"name": "米饭一小碗", "kcal": 180}, {"name": "宫保鸡丁", "kcal": 260}],
+                           "min_kcal": 460, "max_kcal": 600, "bmr_kcal": 1749, "tdee_kcal": 2405}
+            else:
+                payload = {"total_kcal": 1650.0, "meal_kcal": 1650.0, "today_intake": 0.0,
+                           "confidence": 0.7, "target_kcal": TARGET, "deficit_kcal": 500,
+                           "assessment": {"status": "under", "label": "摄入偏少", "percent": 86.6},
+                           "items": [{"name": "鸡蛋", "kcal": 120}, {"name": "盒饭", "kcal": 780}],
+                           "min_kcal": 1400, "max_kcal": 1900, "bmr_kcal": 1749, "tdee_kcal": 2405}
+            route.fulfill(status=200, content_type="application/json",
+                          body=json.dumps({"data": payload}))
+
+        page.route("**/api/v1/challenges/1/diet/estimate", estimate_route)
+        page.fill(".cp-diet-input", "早餐鸡蛋牛奶，午餐盒饭")
         page.click(".cp-diet-est-btn")
         page.wait_for_selector(".cp-diet-result", timeout=10000)
-        result = page.query_selector(".cp-diet-result")
-        rt = result.inner_text()
+        rt = page.query_selector(".cp-diet-result").inner_text()
         check("估算结果展示总计", "1650" in rt, rt[:80])
+        check("展示今日累计与还可吃", "今日累计" in rt and "还可吃" in rt, rt)
         check("达标判定展示", "摄入偏少" in rt, rt)
-        check("以此打卡按钮", "以此打卡" in rt, "")
-        check("重新描述按钮", "重新描述" in rt, "")
+        check("记下这一餐按钮", "记下这一餐" in rt, "")
+        check("重新拍/重描述按钮", "重新拍/重描述" in rt, "")
 
-        print("== 5. 创建弹窗可打开(overlay渲染) ==")
+        print("== 5. 拍照识别: 选照片走视觉链路 ==")
+        photo = os.path.join(tempfile.gettempdir(), "cp_meal_e2e.png")
+        with open(photo, "wb") as fh:
+            fh.write(TINY_PNG)
+        page.fill(".cp-diet-input", "")
+        page.evaluate("cpViews.home.clearDiet()")
+        page.set_input_files("#cp-diet-photo", photo)
+        page.wait_for_selector(".cp-diet-result", timeout=15000)
+        pt = page.query_selector(".cp-diet-result").inner_text()
+        check("拍照结果展示这一餐热量", "520" in pt, pt[:80])
+        check("拍照识别结果含食物明细", "宫保鸡丁" in pt, pt)
+        check("照片以dataURL随请求发送", '"image":"data:image/jpeg;base64' in (captured.get("body") or ""), str(captured.get("body"))[:120])
+        page.screenshot(path="/tmp/cp_diet_photo.png", full_page=False)
+
+        print("== 6. 创建弹窗可打开(overlay渲染) ==")
         page.evaluate("window.cpCreate.open()")
         page.wait_for_timeout(800)
         ov = page.query_selector(".cp-modal-overlay")

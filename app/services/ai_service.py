@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from nexus import get_llm_service, parse_llm_json
+from nexus import get_llm_service, get_vision_service, parse_llm_json
 from nexus.logging import get_logger
 
 from app.config import settings
@@ -13,6 +13,7 @@ from app.services.prompts import (
     COMPANION_SYSTEM,
     DECLARATION_SYSTEM,
     DIET_ESTIMATE_SYSTEM,
+    DIET_VISION_SYSTEM,
     FEEDBACK_SYSTEM,
     PARSE_SYSTEM,
     QUOTE_SYSTEM,
@@ -135,7 +136,16 @@ class AIService:
             description, system=DIET_ESTIMATE_SYSTEM,
             temperature=0.3, max_tokens=256, timeout=30.0, task_type="extract",
         )
-        parsed = parse_llm_json(raw)
+        return self._normalize_diet_result(parse_llm_json(raw))
+
+    async def estimate_diet_calories_from_photo(self, image: str) -> dict[str, object]:
+        raw = await get_vision_service().review(
+            DIET_VISION_SYSTEM, "认出这张照片里的食物和份量，估算这一餐的热量", image,
+        )
+        return self._normalize_diet_result(parse_llm_json(raw))
+
+    @staticmethod
+    def _normalize_diet_result(parsed: dict[str, object]) -> dict[str, object]:
         if "raw_response" in parsed or not float(parsed.get("total_kcal", 0) or 0):
             return {"total_kcal": 0, "min_kcal": 0, "max_kcal": 0, "confidence": 0, "items": []}
         items = parsed.get("items")

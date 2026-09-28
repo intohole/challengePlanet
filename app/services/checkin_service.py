@@ -94,13 +94,17 @@ class CheckInService:
                 session, challenge, today_checkins[-1], target_snapshot, baseline, day_number,
             )
 
+        is_diet = str(getattr(challenge, "task_type", "")) == "diet"
+        prior_total = await self._repo.sum_value_by_date(session, challenge_id, today) if is_diet else 0.0
+        intake_total = prior_total + value
         completion_pct = self._calc_completion_pct(value, target_snapshot["target_value"], challenge.direction)
-        if str(getattr(challenge, "task_type", "")) == "diet" and target_snapshot["target_value"] > 0:
+        if is_diet and target_snapshot["target_value"] > 0:
             from app.services.diet_service import assess_calorie
-            assess = assess_calorie(value, target_snapshot["target_value"])
+            assess = assess_calorie(intake_total, target_snapshot["target_value"])
             completion_pct = 100.0 if assess["status"] == "ok" else min(90.0, max(30.0, float(assess["percent"])))
-        is_soft_exceeded = self._is_soft_exceeded(value, target_snapshot, challenge)
-        soft_exceeded_amount = max(0.0, value - target_snapshot["target_value"]) if is_soft_exceeded else 0.0
+        gauge_value = intake_total if is_diet else value
+        is_soft_exceeded = self._is_soft_exceeded(gauge_value, target_snapshot, challenge)
+        soft_exceeded_amount = max(0.0, gauge_value - target_snapshot["target_value"]) if is_soft_exceeded else 0.0
         calories = 0.0
         sport_met = float(getattr(challenge, "sport_met", 0.0) or 0.0)
         unit = str(getattr(challenge, "unit", "") or "")
@@ -162,7 +166,7 @@ class CheckInService:
         remaining = self._calc_remaining(today_total, target, challenge.direction)
         forecast = await ForecastService().build(
             session, challenge, today_total, target, now_china().hour,
-            day_number=day_number, store=False,
+            day_number=day_number,
         )
         return self._result_payload(
             challenge, existing, target_snapshot, baseline,
