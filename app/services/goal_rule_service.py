@@ -26,7 +26,7 @@ def resolve_mode(challenge: object) -> str:
 def is_repeatable(challenge: object) -> bool:
     if str(getattr(challenge, "decompose_mode", "") or "") == "time_slot":
         return True
-    return str(getattr(challenge, "task_type", "") or "") in ("counter", "timer", "diet")
+    return str(getattr(challenge, "task_type", "") or "") in ("counter", "timer", "diet", "step")
 
 
 def ladder_cap_of(

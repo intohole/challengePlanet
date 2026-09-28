@@ -130,8 +130,8 @@ def main() -> None:
         page.wait_for_selector(".cp-step-item", timeout=10000)
         page.evaluate("() => { const items = document.querySelectorAll('.cp-step-item'); items[items.length - 1].click(); }")
         page.wait_for_timeout(300)
-        btn2 = page.query_selector("button.cp-btn-checkin")
-        btn2.click()
+        page.wait_for_selector("button.cp-btn-checkin:not([disabled])", timeout=10000)
+        page.click("button.cp-btn-checkin")
         page.wait_for_timeout(2500)
         full = page.evaluate("""async cid => {
             const t = await window.api.get('/challenges/' + cid + '/today').then(r => r.data || r);
