@@ -1,9 +1,10 @@
 # bestpractice Index
-> Total: 10 entries
+> Total: 11 entries
 
 - bp-api-response-model-alignment | FastAPI response_model 会静默丢弃 schema 未声明的返回字段，服务端一直返回但前端永远 undefined；对齐审查要三方比对 路由路径/schema 字段/前端读取字段 | 2026-09-24
 - bp-context-gated-prediction | 把用户填写的可选情境(context_tag)用于预测时, 数据必然稀疏; 必须用样本量门槛保护: 主导情境需≥3次才展示, 条件模式需≥2天且差异≥1.5倍才输出, 否则静默省略。原则是宁可不说, 不可瞎猜——预测一旦被用户发现不准, 信任崩塌 | 2026-09-19
 - bp-forecast-forward-looking | 多数预测其实是回溯外推(用已发生的数据推算今日终值), 仍在描述过去; 真正前瞻是回答接下来什么时候危险/状态最好。做法: 在小时分布中取当前时刻之后权重最高且连续的时段作为前瞻窗口, 文案走被理解感(这段对你来说最难)而非评判, 且样本不足(置信度<0.45)时不出窗口避免瞎猜 | 2026-09-19
+- bp-forecast-scope-and-quiet | 打卡类产品做节奏预测必须先回答两个边界问题: ①哪些场景需要预测(只有一天内多笔、有速率语义的 counter/时长类 timer 才预测, binary/text/word/recite/diet/step/时段拆分别预测) ②什么时候不许断言(0-6点与今日样本不足时只给已记/还可+前瞻窗口, 不出预计数字与触顶时刻)。教训: 睡眠跨零点用户的凌晨记录必须进入作息画像, 否则只计入总量却被模型无视会造成预测翻倍失准 | 2026-09-28
 - bp-forecast-trust-calibration | 【2026-09-19 认知纠正】原以为给区间(±)才可信, 实际做错:预警不是报表, 用户要的是一眼看懂+立刻行动而非统计精度。正确做法=单个预计数字(整数)+一句依据+定性把握(高/中/低)。区间只在真正做分析的产品里才需要 | 2026-09-19
 - bp-minideploy-master-api | master=minideploy-cool@songguokr:8900, token取cluster_token.conf, 回环POST /api/cluster/apps/{name}/update-code+X-Service-Token; 应用实际运行节点用systemctl is-active判断, challengePlanet在edge-03 | 2026-08-27
 - bp-outlook-answer-user-question | 预测文案最大的坑不是措辞难懂, 而是回答了错的问题。我的阶梯预测按现在的水平,结束时约18根,离目标还差17根被用户说看不懂——根因是它把当前量直接外推为终值, 完全忽略了阶梯计划本身(系统每天在下调上限), 等于说你的习惯永远不会降; 又拿当前量比最终目标, 只给恐慌不给信息。正确做法: 先问用户此刻真正想知道什么, 再设计指标。阶梯用户想知道的是我有没有跟上计划, 所以应对比实际 vs 计划上限, 而不是实际 vs 最终目标 | 2026-09-19

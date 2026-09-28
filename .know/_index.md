@@ -1,5 +1,5 @@
 # Knowledge Index
-> Project: challengePlanet | Updated: 2026-09-28 | Total: 31 entries
+> Project: challengePlanet | Updated: 2026-09-28 | Total: 33 entries
 
 ## architecture
 - adr-challenge-end-delete | 有打卡记录挑战 | 2026-08-25
@@ -8,8 +8,8 @@
 ## bestpractice
 - bp-api-response-model-alignment | FastAPI response_model 会静默丢弃 schema 未声明的返回字段，服务端一直返回但前端永远 undefined；对齐审查要三方比对 路由路径/schema 字段/前端读取字段 | 2026-09-24
 - bp-context-gated-prediction | 把用户填写的可选情境(context_tag)用于预测时, 数据必然稀疏; 必须用样本量门槛保护: 主导情境需≥3次才展示, 条件模式需≥2天且差异≥1.5倍才输出, 否则静默省略。原则是宁可不说, 不可瞎猜——预测一旦被用户发现不准, 信任崩塌 | 2026-09-19
-- bp-forecast-scope-and-quiet | 预测先定边界: 只对"有节奏的行为(多笔/速率类)"预测(binary/text/word/recite/diet/step/时段拆分别预测), 且0-6点与今日样本不足时静默(只给已记/还可+前瞻窗口); 计数口径与画像口径必须同源——记录按自然日累计, 画像就必须覆盖0-24时, 否则凌晨记录"计入总量却被模型无视"会让预测翻倍失准 | 2026-09-28
 - bp-forecast-forward-looking | 多数预测其实是回溯外推(用已发生的数据推算今日终值), 仍在描述过去; 真正前瞻是回答接下来什么时候危险/状态最好。做法: 在小时分布中取当前时刻之后权重最高且连续的时段作为前瞻窗口, 文案走被理解感(这段对你来说最难)而非评判, 且样本不足(置信度<0.45)时不出窗口避免瞎猜 | 2026-09-19
+- bp-forecast-scope-and-quiet | 打卡类产品做节奏预测必须先回答两个边界问题: ①哪些场景需要预测(只有一天内多笔、有速率语义的 counter/时长类 timer 才预测, binary/text/word/recite/diet/step/时段拆分别预测) ②什么时候不许断言(0-6点与今日样本不足时只给已记/还可+前瞻窗口, 不出预计数字与触顶时刻)。教训: 睡眠跨零点用户的凌晨记录必须进入作息画像, 否则只计入总量却被模型无视会造成预测翻倍失准 | 2026-09-28
 - bp-forecast-trust-calibration | 【2026-09-19 认知纠正】原以为给区间(±)才可信, 实际做错:预警不是报表, 用户要的是一眼看懂+立刻行动而非统计精度。正确做法=单个预计数字(整数)+一句依据+定性把握(高/中/低)。区间只在真正做分析的产品里才需要 | 2026-09-19
 - bp-minideploy-master-api | master=minideploy-cool@songguokr:8900, token取cluster_token.conf, 回环POST /api/cluster/apps/{name}/update-code+X-Service-Token; 应用实际运行节点用systemctl is-active判断, challengePlanet在edge-03 | 2026-08-27
 - bp-outlook-answer-user-question | 预测文案最大的坑不是措辞难懂, 而是回答了错的问题。我的阶梯预测按现在的水平,结束时约18根,离目标还差17根被用户说看不懂——根因是它把当前量直接外推为终值, 完全忽略了阶梯计划本身(系统每天在下调上限), 等于说你的习惯永远不会降; 又拿当前量比最终目标, 只给恐慌不给信息。正确做法: 先问用户此刻真正想知道什么, 再设计指标。阶梯用户想知道的是我有没有跟上计划, 所以应对比实际 vs 计划上限, 而不是实际 vs 最终目标 | 2026-09-19
@@ -25,13 +25,15 @@
 - bug-cp-e2e-selectors | 根因: 登录页已迁移nexus-ui(nux-input/nux-login-submit), 旧.cp-login-input不存在; SPA站点reload禁用networkidle会永超时, 用domcontentloaded+等待appState.booted | 2026-08-27
 - bug-pydantic-default-overrides | 根因: NLCreateRequest.goal_rule=Field(fixed), 路由用 request.goal_rule or parsed.goal_rule, 客户端未传时默认值永远优先, 把 LLM/正则推导的 ladder 覆盖成 fixed; 修复: 用 model_fields_set 判断显式传入, 仅显式优先, 推导兜底 | 2026-09-09
 - bug-quit-create-binary | 前端创建管线三处 bug 叠合导致戒烟挑战变每日打卡：quit 场景默认 task_type=binary；create-direct.js/create.js/playMode/ladderDir 用 scene.task_type===quit 判定永不命中（应为 scene.id）致 direction 恒 increase；直接创建跳过「当前每天/目标每天」梯度输入且 ladder 全 0。修复=quit 场景改 counter/根、scene.id 判定、step1 增加数量面板、confirmCreate/confirmDirect 强制 counter+decrease+soft+ladder | 2026-09-15
-- bug-step-append-replay | 分步(step)挑战 UI 支持一天内多次补齐, 但 is_repeatable 未含 step, 第二次提交走进"当日已有记录→重放上一条"分支, 补齐项被静默丢弃(累计停在2、永不达标); 修复=step 纳入可重复记录, 与 judge_mode 一起对照, 防"点了没反应"的静默黑洞 | 2026-09-28
+- bug-request-schema-silent-drop | 前端字段传了但后端不生效且无报错, 优先怀疑 Pydantic 请求 schema extra=ignore 静默吞掉未声明字段; 排查先对照 request.model_dump 与 schema 声明, 防范靠新增字段必查 schema声明/API透传/service消费三点链路检查 | 2026-09-28
+- bug-step-append-replay | 分步(step)挑战 UI 允许一天内多次打开清单补齐未勾选项, 但后端 is_repeatable 只认 counter/timer, 第二次提交走进当日已有记录→重放上一条分支, 用户补齐的第3项被静默丢弃(total 停在2); step 属于可多笔记录的分步清单玩法, 纳入 is_repeatable 后追加生效 | 2026-09-28
 - bug-word-checkin-settlement | 刷词模式手动提交value=1而word目标=20致is_settled永不达标，根因是打卡值与目标脱钩；改为刷完词卡按当日词量自动打卡结算，词卡会话内Fisher-Yates打乱 | 2026-09-11
 
 ## features
 - feat-detect-plan-deterministic | 原 nl-create 让 LLM 流式生成66天完整计划JSON(PLAN_SYSTEM 数千token/数十秒)；改为一次结构化解析(参数+description≤30字产品文案)→plan_builder纯函数合成逐日计划(ladder递减目标/难度梯度/里程碑日/场景steps)→apply_numeric_adjust正则处理调整。LLM调用从2次降到1次short JSON，token/耗时大幅下降，数值完全可控 | 2026-09-15
-- feat-diet-photo-meal | 减重场景升级为"每餐记一笔": 拍照经视觉网关(nexus.vision)认出食物与份量估算这一餐热量(canvas压缩dataURL直传, 零存储), 今日摄入=各餐之和按累计量评估; 补齐此前缺失的 cp-diet-* 样式 | 2026-09-28
-- feat-forecast-prediction | 预测三层收归: NudgeService(纯函数确定性预测, 0-24时作息画像/星期权重/置信度/依据文案/increase达标时刻/ladder终点展望) + ForecastService(编排+情境归因) + 前端节奏仪表盘; 零LLM; 2026-09-28重构: 画像纳入凌晨、夜间与低样本静默、场景门禁、移除失效回测校准 | 2026-09-28
+- feat-diet-photo-meal | 饮食记录从一句话描述全天升级为每餐记一笔: 拍照经视觉网关(nexus.vision, GLM-4.6V)认出食物与份量并估算这一餐热量, 前端canvas压缩为dataURL直传, 记账后今日摄入=各餐之和并按累计量评估是否在目标区间; 视觉与文字两条入口共用同一响应结构 | 2026-09-28
+- feat-diet-sport-burn | 运动独立打卡记录(value=0,calories=MET折算)不加DB字段, 净热量=摄入-运动参与assess_calorie判定, 前端按value==0&&calories>0识别, estimate同步改净摄入口径 | 2026-09-28
+- feat-forecast-prediction | 预测三层收归: NudgeService(纯函数确定性预测, 0-24 时作息画像/星期权重/区间置信度/依据文案/increase达标时刻/ladder终点展望) + ForecastService(编排+情境归因) + 前端节奏仪表盘; 零LLM; 2026-09-28 重构: 画像纳入凌晨时段(修正睡眠跨零点用户翻倍失准)、夜间与低样本静默、场景门禁、移除失效回测校准 | 2026-09-28
 - feat-insight-on-demand-stream | 周报洞察原先打卡后每7天后台生成+页面每次load预拉weekly-report(无效LLM+请求)。改为：页面加载零洞察请求；切到洞察tab才POST /challenges/{id}/insight/stream(SSE逐字渲染)；本周内已有缓存直接done(cached)，可force重新生成；生成max_tokens 512→256更简洁；移除打卡自动周报后台任务 | 2026-09-15
 - feat-period-sport-dual-goal | 打卡域抽象收归：Judge窗口化+Metric派生+Target周排程，运动/阅读计时自动记录、周目标独立判定、MET自动折算千卡 | 2026-09-11
 - feat-quit-gradient-tally | 产品范式: 用户设定 当前每天量→目标每天量, 系统按天数自动生成每日递减配额曲线; 用户只点我抽了一根(+1), 系统自动累计当日用量对比配额, 超限温和提醒不惩罚, 误点可撤销; 数值参数用确定性正则提取, LLM 仅承担语义理解 | 2026-09-09
