@@ -1,5 +1,5 @@
 # Knowledge Index
-> Project: challengePlanet | Updated: 2026-09-28 | Total: 30 entries
+> Project: challengePlanet | Updated: 2026-09-28 | Total: 31 entries
 
 ## architecture
 - adr-challenge-end-delete | 有打卡记录挑战 | 2026-08-25
@@ -25,6 +25,7 @@
 - bug-cp-e2e-selectors | 根因: 登录页已迁移nexus-ui(nux-input/nux-login-submit), 旧.cp-login-input不存在; SPA站点reload禁用networkidle会永超时, 用domcontentloaded+等待appState.booted | 2026-08-27
 - bug-pydantic-default-overrides | 根因: NLCreateRequest.goal_rule=Field(fixed), 路由用 request.goal_rule or parsed.goal_rule, 客户端未传时默认值永远优先, 把 LLM/正则推导的 ladder 覆盖成 fixed; 修复: 用 model_fields_set 判断显式传入, 仅显式优先, 推导兜底 | 2026-09-09
 - bug-quit-create-binary | 前端创建管线三处 bug 叠合导致戒烟挑战变每日打卡：quit 场景默认 task_type=binary；create-direct.js/create.js/playMode/ladderDir 用 scene.task_type===quit 判定永不命中（应为 scene.id）致 direction 恒 increase；直接创建跳过「当前每天/目标每天」梯度输入且 ladder 全 0。修复=quit 场景改 counter/根、scene.id 判定、step1 增加数量面板、confirmCreate/confirmDirect 强制 counter+decrease+soft+ladder | 2026-09-15
+- bug-step-append-replay | 分步(step)挑战 UI 支持一天内多次补齐, 但 is_repeatable 未含 step, 第二次提交走进"当日已有记录→重放上一条"分支, 补齐项被静默丢弃(累计停在2、永不达标); 修复=step 纳入可重复记录, 与 judge_mode 一起对照, 防"点了没反应"的静默黑洞 | 2026-09-28
 - bug-word-checkin-settlement | 刷词模式手动提交value=1而word目标=20致is_settled永不达标，根因是打卡值与目标脱钩；改为刷完词卡按当日词量自动打卡结算，词卡会话内Fisher-Yates打乱 | 2026-09-11
 
 ## features
