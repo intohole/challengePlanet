@@ -28,7 +28,10 @@
     html += '<div class="cp-section-title"><i class="fas fa-utensils" style="color:var(--primary-light)"></i> 记录这一餐</div>'
     html += '<button class="cp-diet-photo-btn" ' + dis + ' onclick="cpViews.home.pickDietPhoto()"><i class="fas fa-camera"></i> ' + (d.dietChecking && d.dietImage ? '识别中…' : '拍照识别热量') + '</button>'
     html += '<input type="file" id="cp-diet-photo" class="cp-diet-photo-input" accept="image/*" capture="environment" onchange="cpViews.home.onDietPhoto(this)">'
-    if (d.dietImage && d.dietChecking) html += '<img class="cp-diet-preview" src="' + d.dietImage + '" alt="餐食照片">'
+    if (d.dietImage && d.dietChecking) {
+      html += '<img class="cp-diet-preview" src="' + d.dietImage + '" alt="餐食照片">'
+      html += '<div class="cp-diet-waiting"><i class="fas fa-spinner fa-spin"></i> AI 正在识别这张照片，约需 10-25 秒</div>'
+    }
     html += '<div class="cp-diet-or">或直接描述这一餐</div>'
     html += '<div class="cp-diet-input-row"><textarea class="cp-text-input cp-diet-input" ' + dis + ' placeholder="如：米饭一碗、红烧肉三块、清炒青菜一份、可乐一罐" oninput="cpViews.home.setDietDesc(this.value)" style="resize:none;font-size:15px;line-height:1.6;min-height:72px">' + window.cpEsc(d.dietDesc || '') + '</textarea>'
     html += '<button class="cp-btn-primary cp-diet-est-btn" ' + dis + ' onclick="cpViews.home.doDietEstimate()"><i class="fas fa-calculator"></i> ' + (d.dietChecking ? '估算中…' : 'AI 估算') + '</button></div>'
@@ -185,7 +188,7 @@
     d.dietResult = null
     this.rerender()
     try {
-      const r = await window.cpApi.post('/challenges/' + ch.id + '/diet/estimate', image ? { image: image } : { description: desc })
+      const r = await window.cpApi.post('/challenges/' + ch.id + '/diet/estimate', image ? { image: image } : { description: desc }, image ? { timeout: 90000 } : {})
       if (!r.total_kcal) { window.cpToast('没识别到食物，换个角度重拍或直接描述'); return }
       d.dietResult = r
     } catch (e) {
