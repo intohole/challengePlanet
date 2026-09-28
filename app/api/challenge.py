@@ -4,24 +4,14 @@ import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from nexus import get_current_user_id_required
 from nexus import get_datacenter_client, DOMAIN_GROWTH, report_core
 from nexus.logging import get_logger
 from nexus.streaming import sse_event_dict, sse_response
+from nexus.user_auth import get_bearer_token
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger("challengePlanet.api")
-
-_security = HTTPBearer(auto_error=False)
-
-
-async def get_bearer_token(
-    creds: HTTPAuthorizationCredentials | None = Depends(_security),
-) -> str:
-    if creds is None:
-        return ""
-    return creds.credentials
 
 from app.db.database import get_db
 from app.schemas.challenge import (
