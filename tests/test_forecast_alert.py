@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""集成测试: 预测驱动主动提醒(风险触发/去重/多渠道)"""
+"""集成测试: 预测驱动主动提醒(风险触发/去重/多渠道/夜间不打扰)"""
 from __future__ import annotations
 
 import os
@@ -11,8 +11,10 @@ os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{tmpdir}/test.db"
 sys.path.insert(0, "/Users/intoblack/remoteWork/challengePlanet")
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 
+import app.services.challenge_service as challenge_service
+import app.services.forecast_service as forecast_service
 from app.db.database import async_session, init_db
 from app.models.checkin import CheckIn
 from app.repositories.challenge_repository import ChallengeRepository
@@ -30,6 +32,15 @@ class FakeClient:
 
 fas.get_notify_client = lambda: FakeClient()
 
+FIXED_HOUR = 20
+
+
+def _fix_clock(hour: int) -> None:
+    fixed = datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0)
+    challenge_service.now_china = lambda: fixed
+    forecast_service.now_china = lambda: fixed
+
+
 passed: list[str] = []
 failed: list[tuple[str, str]] = []
 
@@ -43,7 +54,7 @@ def check(name: str, cond: bool, detail: str = "") -> None:
         print(f"  FAIL {name} :: {detail}")
 
 
-async def _seed(session, challenge_id: int, risk: bool) -> None:
+async def _seed(session, challenge_id: int, today_values: list[float]) -> None:
     today = today_str()
     for i in range(1, 8):
         d = shift_date(today, -i)
@@ -51,19 +62,21 @@ async def _seed(session, challenge_id: int, risk: bool) -> None:
             session.add(CheckIn(
                 challenge_id=challenge_id, user_id="u1", day_number=1, status="completed",
                 timestamp=datetime.strptime(f"{d} {hh:02d}:00", "%Y-%m-%d %H:%M"),
-                date=d, value=3.0 if risk else 0.5, unit="根", target_value=8.0,
+                date=d, value=3.0, unit="根", target_value=8.0,
                 goal_type="soft", direction="decrease", completion_pct=100.0,
             ))
-    session.add(CheckIn(
-        challenge_id=challenge_id, user_id="u1", day_number=1, status="completed",
-        timestamp=datetime.strptime(f"{today} 18:00", "%Y-%m-%d %H:%M"),
-        date=today, value=6.0 if risk else 0.5, unit="根", target_value=8.0,
-        goal_type="soft", direction="decrease", completion_pct=100.0,
-    ))
+    for i, value in enumerate(today_values):
+        session.add(CheckIn(
+            challenge_id=challenge_id, user_id="u1", day_number=1, status="completed",
+            timestamp=datetime.strptime(f"{today} {17 + i:02d}:00", "%Y-%m-%d %H:%M"),
+            date=today, value=value, unit="根", target_value=8.0,
+            goal_type="soft", direction="decrease", completion_pct=100.0,
+        ))
     await session.commit()
 
 
 async def main() -> None:
+    _fix_clock(FIXED_HOUR)
     await init_db()
     repo = ChallengeRepository()
     async with async_session() as setup:
@@ -95,7 +108,7 @@ async def main() -> None:
 
     print("== 高风险触发提醒 ==")
     async with async_session() as session:
-        await _seed(session, 1, risk=True)
+        await _seed(session, 1, [5.0, 4.0])
     sent.clear()
     await fas.send_forecast_alerts()
     check("触发1条提醒", len(sent) == 1, str(len(sent)))
@@ -118,10 +131,27 @@ async def main() -> None:
         await session.execute(delete(CheckIn).where(CheckIn.challenge_id == 1))
         await session.execute(delete(AIInsight))
         await session.commit()
-        await _seed(session, 1, risk=False)
+        await _seed(session, 1, [0.5])
     sent.clear()
     await fas.send_forecast_alerts()
     check("低风险不提醒", len(sent) == 0, str(len(sent)))
+
+    print("== 夜间不打扰 ==")
+    _fix_clock(2)
+    async with async_session() as session:
+        from sqlalchemy import delete
+        from app.models.checkin import AIInsight
+        await session.execute(delete(CheckIn).where(CheckIn.challenge_id == 1))
+        await session.execute(delete(AIInsight))
+        await session.commit()
+        await _seed(session, 1, [4.0, 3.0])
+    sent.clear()
+    await fas.send_forecast_alerts()
+    check("凌晨不推送预测预警", len(sent) == 0, str(len(sent)))
+    _fix_clock(FIXED_HOUR)
+    sent.clear()
+    await fas.send_forecast_alerts()
+    check("同一批数据白天有风险会推送", len(sent) == 1, str(len(sent)))
 
     print("\n=== 结果 ===")
     for f in failed:

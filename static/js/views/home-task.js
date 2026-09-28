@@ -98,7 +98,7 @@
     const total = (t.today_total || 0)
     const fc = (t.forecast) || {}
     if (isDecrease) {
-      if (fc.enabled && fc.projected > 0) {
+      if (fc.enabled) {
         const cap = Number(t.today_target) || 0
         const over = cap > 0 && total > cap
         const willOver = cap > 0 && Number(fc.projected) > cap
@@ -108,14 +108,14 @@
         const alert = over
           ? '<div class="cp-dash-alert over"><i class="fas fa-circle-exclamation"></i>已超 ' + window.cpFmtInt(overAmt) + ' ' + unit + '，停下来，别再继续了</div>'
           : (willOver ? '<div class="cp-dash-alert warn"><i class="fas fa-triangle-exclamation"></i>按现在的节奏会超 ' + window.cpFmtInt(overAmt) + ' ' + unit + '，现在收住还来得及</div>' : '')
-        let cells = '<span class="cp-dash-cell"><b>' + window.cpFmtInt(total) + '</b> 已记</span><span class="cp-dash-cell">预计 <b>' + window.cpFmtInt(fc.projected) + '</b> ' + unit + '</span>'
+        let cells = '<span class="cp-dash-cell"><b>' + window.cpFmtInt(total) + '</b> 已记</span>'
+        if (!fc.quiet && Number(fc.projected) > 0) cells += '<span class="cp-dash-cell">预计 <b>' + window.cpFmtInt(fc.projected) + '</b> ' + unit + '</span>'
         if (!over && fc.touch_at) cells += '<span class="cp-dash-cell">触顶 <b>' + fc.touch_at + '</b></span>'
         if (!over && fc.remaining_units > 0) cells += '<span class="cp-dash-cell">还可 <b>' + window.cpFmtInt(fc.remaining_units) + '</b> ' + unit + '</span>'
-        const cal = fc.calibrated ? '<span class="cp-dash-chip cal"><i class="fas fa-scale-balanced"></i>已校准</span>' : ''
         const ladder = fc.ladder_outlook && fc.ladder_outlook.message ? '<div class="cp-dash-panel ladder"><i class="fas fa-stairs"></i><span>' + window.cpEsc(fc.ladder_outlook.message) + '</span></div>' : ''
         const pattern = fc.context_pattern ? '<div class="cp-dash-panel pattern"><i class="fas fa-chart-simple"></i><span>' + window.cpEsc(fc.context_pattern) + '</span></div>' : ''
         const windowLine = (!over && fc.risk_window_msg) ? '<div class="cp-dash-window"><i class="fas fa-route"></i>' + window.cpEsc(fc.risk_window_msg) + '</div>' : ''
-        const basis = fc.basis ? '<div class="cp-dash-meta">' + window.cpEsc(fc.basis) + (fc.confidence_label ? ' · ' + fc.confidence_label + '把握' : '') + cal + '</div>' : '<div class="cp-dash-meta">' + cal + '</div>'
+        const basis = fc.basis ? '<div class="cp-dash-meta">' + window.cpEsc(fc.basis) + (fc.confidence_label ? ' · ' + fc.confidence_label + '把握' : '') + '</div>' : ''
         const status = '<div class="cp-dash-status ' + state + '">' + statusLabel + '</div>'
         return '<div class="cp-dash">' + status + '<div class="cp-dash-metrics">' + cells + '</div>' + alert + windowLine + basis + ladder + pattern + '</div>'
       }

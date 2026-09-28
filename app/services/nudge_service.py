@@ -6,6 +6,7 @@ from app.services.forecast_math import (
     blend_profile,
     compose_window_msg,
     confidence_of,
+    display_ready,
     fmt_hour,
     fmt_int,
     forward_window,
@@ -28,25 +29,17 @@ class NudgeService:
         weekday_dist: list[dict[str, object]] | None = None,
         day_number: int | None = None,
         recent_avg: float | None = None,
+        today_count: int = 0,
     ) -> dict[str, object]:
         if str(getattr(challenge, "direction", "") or "increase") == "decrease":
             return self._decrease_forecast(
                 challenge, today_total, today_target, hour,
-                hour_dist, weekday_dist, day_number, recent_avg,
+                hour_dist, weekday_dist, day_number, recent_avg, today_count,
             )
         return self._increase_forecast(
             challenge, today_total, today_target, hour, is_soft_exceeded,
-            hour_dist, weekday_dist, day_number, recent_avg,
+            hour_dist, weekday_dist, day_number, recent_avg, today_count,
         )
-
-    def apply_bias(self, forecast: dict[str, object], bias: float | None) -> dict[str, object]:
-        if bias is None or not forecast.get("enabled") or float(forecast.get("projected", 0) or 0) <= 0:
-            return forecast
-        base = float(forecast["projected"])
-        forecast["projected"] = round(max(base * 0.6, min(base * 1.4, base + bias)), 1)
-        forecast["calibrated"] = True
-        forecast["bias"] = round(bias, 1)
-        return forecast
 
     def _decrease_forecast(
         self,
@@ -58,6 +51,7 @@ class NudgeService:
         weekday_dist: list[dict[str, object]] | None,
         day_number: int | None,
         recent_avg: float | None,
+        today_count: int,
     ) -> dict[str, object]:
         unit = str(getattr(challenge, "unit", "") or "")
         profile = blend_profile(hour_dist, weekday_dist)
@@ -67,33 +61,45 @@ class NudgeService:
         risk_window = span
         window_msg = compose_window_msg(span, base, action)
         if today_total <= 0 or today_target <= 0:
-            result = self._empty()
+            result = self.empty()
             result["risk_window"] = risk_window
             result["risk_window_msg"] = window_msg
             result["risk_window_hours"] = [lo_w, hi_w] if span else []
             return result
+        ready = display_ready(hour, today_count, profile)
         basis = basis_of(conf_label, weekday_dist)
-        projected = project_day_total(today_total, hour, profile)
+        projected = project_day_total(today_total, hour, profile) if ready else 0.0
+        proj_int = int(projected + 0.5)
         remaining_units = max(0.0, today_target - today_total)
         touch_at = ""
         remaining_hours = 0.0
-        touch_float = hour_when_reached(profile, hour, today_total, remaining_units)
-        if touch_float is not None and touch_float < DAY_END:
-            touch_at = fmt_hour(touch_float)
-            remaining_hours = max(0.0, round(touch_float - hour, 1))
         if today_total >= today_target:
             risk = 2
-        elif projected > today_target:
+        elif ready and proj_int > today_target:
             risk = 1
         else:
             risk = 0
-        coach = self._decrease_text(risk, today_total, today_target, projected, touch_at, unit)
+        if today_total > today_target:
+            nudge = 2
+        elif risk >= 1:
+            nudge = 1
+        else:
+            nudge = 0
+        if risk == 1:
+            touch_float = hour_when_reached(profile, hour, today_total, remaining_units)
+            if touch_float is not None and touch_float < DAY_END:
+                touch_at = fmt_hour(touch_float)
+                remaining_hours = max(0.0, round(touch_float - hour, 1))
+        coach = self._decrease_text(risk, today_total, today_target, proj_int, touch_at, unit)
+        if not ready:
+            projected, basis, conf_label, touch_at, remaining_hours = 0.0, "", "", "", 0.0
         return {
             "enabled": True, "projected": round(projected, 1),
             "confidence": confidence, "confidence_label": conf_label, "basis": basis,
+            "quiet": not ready,
             "touch_at": touch_at, "remaining_hours": remaining_hours,
             "remaining_units": round(remaining_units, 1),
-            "risk_level": risk, "coach_nudge": coach, "nudge_level": risk,
+            "risk_level": risk, "coach_nudge": coach, "nudge_level": nudge,
             "reach_at": "", "ladder_outlook": self._ladder_outlook(challenge, day_number, recent_avg),
             "risk_window": risk_window, "risk_window_msg": window_msg,
             "risk_window_hours": [lo_w, hi_w] if span else [],
@@ -110,30 +116,35 @@ class NudgeService:
         weekday_dist: list[dict[str, object]] | None = None,
         day_number: int | None = None,
         recent_avg: float | None = None,
+        today_count: int = 0,
     ) -> dict[str, object]:
         unit = str(getattr(challenge, "unit", "") or "")
         if today_target <= 0:
-            return self._empty()
+            return self.empty()
         level, msg = self._increase(challenge, today_total, today_target, unit, hour, is_soft_exceeded)
         profile = blend_profile(hour_dist, weekday_dist)
         confidence, conf_label = confidence_of(hour_dist)
         remaining = max(0.0, today_target - today_total)
+        projected = 0.0
         reach_at = ""
-        if today_total > 0:
+        if today_total <= 0:
+            confidence, conf_label = 0.35, "低"
+            basis = "今天还没记录，先开始第一步"
+        elif not display_ready(hour, today_count, profile):
+            conf_label = ""
+            basis = ""
+        else:
             projected = round(project_day_total(today_total, hour, profile), 1)
             basis = basis_of(conf_label, weekday_dist)
             reach_float = hour_when_reached(profile, hour, today_total, remaining)
             if reach_float is not None and reach_float < DAY_END:
                 reach_at = fmt_hour(reach_float)
-        else:
-            projected = 0.0
-            confidence, conf_label = 0.35, "低"
-            basis = "今天还没记录，先开始第一步"
         lo_w, hi_w = forward_window(profile, hour)
         span, base, action = window_parts(lo_w, hi_w, "increase", confidence)
         return {
             "enabled": True, "projected": projected,
             "confidence": confidence, "confidence_label": conf_label, "basis": basis,
+            "quiet": not display_ready(hour, today_count, profile),
             "touch_at": "", "remaining_hours": 0.0,
             "remaining_units": round(remaining, 1),
             "risk_level": 0, "coach_nudge": msg, "nudge_level": level,
@@ -142,10 +153,11 @@ class NudgeService:
             "risk_window_hours": [lo_w, hi_w] if span else [],
         }
 
-    def _empty(self) -> dict[str, object]:
+    def empty(self) -> dict[str, object]:
         return {
             "enabled": False, "projected": 0.0,
             "confidence": 0.0, "confidence_label": "", "basis": "",
+            "quiet": True,
             "touch_at": "", "remaining_hours": 0.0, "remaining_units": 0.0,
             "risk_level": 0, "coach_nudge": "", "nudge_level": 0,
             "reach_at": "", "ladder_outlook": None,
@@ -157,7 +169,7 @@ class NudgeService:
         risk: int,
         total: float,
         target: float,
-        projected: float,
+        projected: int,
         touch_at: str,
         unit: str,
     ) -> str:
@@ -166,10 +178,10 @@ class NudgeService:
                 return f"今天已超 {fmt_int(total - target)}{unit}。停下来，别再继续了"
             return f"今天已到上限 {fmt_int(target)}{unit}，就此打住"
         if risk == 1:
-            over = max(1.0, projected - target)
+            over = max(1, projected - int(round(target)))
             if touch_at:
-                return f"按现在的节奏，今天预计{projected:.0f}{unit}，会超{over:.0f}。下一次推迟到{touch_at}之后"
-            return f"按现在的节奏，今天预计{projected:.0f}{unit}，会超{over:.0f}。让间隔再拉长一点"
+                return f"按现在的节奏，今天预计{projected}{unit}，会超{over}。下一次推迟到{touch_at}之后"
+            return f"按现在的节奏，今天预计{projected}{unit}，会超{over}。让间隔再拉长一点"
         return ""
 
     def _increase(

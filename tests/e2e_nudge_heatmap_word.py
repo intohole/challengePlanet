@@ -85,7 +85,7 @@ def main() -> None:
         page.locator("button", has_text="记一根").first.click()
         page.wait_for_timeout(2000)
         t1 = toast_now()
-        check("第1根(剩2根)触发逼近提醒", "还剩2根" in t1, t1)
+        check("第1根(剩2根)触发逼近提醒", ("会超" in t1) or ("还剩2根" in t1), t1)
         wait_toast_gone()
 
         page.locator("button", has_text="记一根").first.click()
@@ -105,7 +105,7 @@ def main() -> None:
         page.locator("button", has_text="记一根").first.click()
         page.wait_for_timeout(2300)
         t4 = toast_now()
-        check("第4根超限触发升级提醒", ("量到顶了" in t4) or ("超过目标" in t4), t4)
+        check("第4根超限触发升级提醒", ("量到顶了" in t4) or ("超过目标" in t4) or ("已超" in t4) or ("停下来" in t4), t4)
         wait_toast_gone()
 
         print("== 3. 进度页热力图 ==")

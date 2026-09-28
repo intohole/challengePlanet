@@ -2,8 +2,12 @@ from __future__ import annotations
 
 DAY_START = 6
 DAY_END = 24
+NIGHT_WRAP_FROM = 20
 WINDOW_MIN_WEIGHT = 0.06
 WINDOW_SPREAD = 0.6
+MIN_ELAPSED = 0.15
+MIN_SAMPLE = 2
+MIN_PROGRESS = 0.25
 
 
 def hour_profile(rows: list[dict[str, object]] | None) -> dict[int, float]:
@@ -11,12 +15,18 @@ def hour_profile(rows: list[dict[str, object]] | None) -> dict[int, float]:
     for row in rows or []:
         h = int(row.get("hour", -1))
         v = float(row.get("total_value", 0) or 0)
-        if DAY_START <= h < DAY_END and v > 0:
+        if 0 <= h < DAY_END and v > 0:
             raw[h] = raw.get(h, 0.0) + v
     total = sum(raw.values())
     if total <= 0:
         return {}
     return {h: v / total for h, v in raw.items()}
+
+
+def display_ready(hour: int, today_count: int, profile: dict[int, float] | None = None) -> bool:
+    if hour < DAY_START:
+        return False
+    return today_count >= MIN_SAMPLE or day_progress(profile, hour) >= MIN_PROGRESS
 
 
 def fmt_hour(hours_float: float) -> str:
@@ -66,32 +76,38 @@ def basis_of(conf_label: str, wd_rows: list[dict[str, object]] | None) -> str:
 
 
 def forward_window(profile: dict[int, float], hour: int) -> tuple[int, int]:
-    future = {h: w for h, w in profile.items() if h > hour and w >= WINDOW_MIN_WEIGHT}
-    if not future:
+    order = list(range(hour + 1, DAY_END))
+    if hour >= NIGHT_WRAP_FROM:
+        order += list(range(0, DAY_START))
+    weights = {h: profile.get(h, 0.0) for h in order}
+    candidates = [i for i, h in enumerate(order) if weights[h] >= WINDOW_MIN_WEIGHT]
+    if not candidates:
         return -1, -1
-    peak = max(future, key=lambda h: future[h])
-    peak_w = future[peak]
-    lo = hi = peak
-    while (lo - 1) in future and future[lo - 1] >= peak_w * WINDOW_SPREAD:
-        lo -= 1
-    while (hi + 1) in future and future[hi + 1] >= peak_w * WINDOW_SPREAD:
-        hi += 1
-    return lo, hi
+    peak_i = max(candidates, key=lambda i: weights[order[i]])
+    peak_w = weights[order[peak_i]]
+    lo_i = hi_i = peak_i
+    while lo_i - 1 >= 0 and weights[order[lo_i - 1]] >= peak_w * WINDOW_SPREAD:
+        lo_i -= 1
+    while hi_i + 1 < len(order) and weights[order[hi_i + 1]] >= peak_w * WINDOW_SPREAD:
+        hi_i += 1
+    return order[lo_i], order[hi_i]
 
 
 def weight_upto(profile: dict[int, float], hour: int) -> float:
-    return sum(profile.get(h, 0.0) for h in range(DAY_START, hour))
+    return sum(profile.get(h, 0.0) for h in range(0, hour))
+
+
+def day_progress(profile: dict[int, float] | None, hour: int) -> float:
+    time_frac = min(1.0, max(0.0, float(hour - DAY_START) / (DAY_END - DAY_START)))
+    elapsed = weight_upto(profile, hour) if profile else 0.0
+    return max(elapsed, time_frac, MIN_ELAPSED)
 
 
 def project_day_total(today_total: float, hour: int, profile: dict[int, float]) -> float:
     if today_total <= 0:
         return 0.0
-    time_frac = min(1.0, max(0.0, float(hour - DAY_START) / (DAY_END - DAY_START)))
-    elapsed = weight_upto(profile, hour) if profile else 0.0
-    denom = max(elapsed, time_frac)
-    if denom <= 0:
-        return today_total
-    total = sum(profile.get(h, 0.0) for h in range(DAY_START, DAY_END)) if profile else 1.0
+    denom = day_progress(profile, hour)
+    total = sum(profile.values()) if profile else 1.0
     return today_total / denom * (total or 1.0)
 
 
@@ -115,6 +131,23 @@ def hour_when_reached(
     return uniform
 
 
+def merge_context_totals(
+    first: list[dict[str, object]] | None,
+    second: list[dict[str, object]] | None,
+) -> list[dict[str, object]]:
+    merged: dict[str, dict[str, object]] = {}
+    for row in list(first or []) + list(second or []):
+        tag = str(row.get("context_tag", "") or "")
+        item = merged.setdefault(
+            tag,
+            {"context_tag": tag, "total_value": 0.0, "checkin_count": 0, "days": 0},
+        )
+        item["total_value"] = float(item["total_value"]) + float(row.get("total_value", 0) or 0)
+        item["checkin_count"] = int(item["checkin_count"]) + int(row.get("checkin_count", 0) or 0)
+        item["days"] = int(item["days"]) + int(row.get("days", 0) or 0)
+    return list(merged.values())
+
+
 WINDOW_WORDING = {
     "decrease": ("这段对你来说最难", "提前安排点别的"),
     "increase": ("你通常状态最好", "趁那会儿推进"),
@@ -124,7 +157,7 @@ WINDOW_WORDING = {
 def window_parts(lo: int, hi: int, direction: str, confidence: float) -> tuple[str, str, str]:
     if lo < 0 or confidence < 0.45:
         return "", "", ""
-    span = f"{lo:02d}:00-{hi:02d}:00"
+    span = f"{lo:02d}:00" if lo == hi else f"{lo:02d}:00-{hi:02d}:00"
     base, action = WINDOW_WORDING.get(direction, WINDOW_WORDING["increase"])
     return span, base, action
 

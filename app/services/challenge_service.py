@@ -257,7 +257,7 @@ class ChallengeService:
         today_target = float(snapshot["target_value"])
         forecast = await ForecastService().build(
             session, challenge, today_total, today_target, now_dt.hour,
-            day_number=day_number or None, store=False,
+            day_number=day_number or None,
         )
         period_days = max(1, int(getattr(challenge, "period_days", 7) or 7))
         aggregates = await week_aggregates(session, challenge_id, today_checkins, period_days)

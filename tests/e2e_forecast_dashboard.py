@@ -26,7 +26,7 @@ FORECAST = {
     "confidence": 0.6, "confidence_label": "中", "basis": "按你最近两周的同时段节奏",
     "touch_at": "16:40", "remaining_hours": 2.5, "remaining_units": 4.0,
     "risk_level": 1, "coach_nudge": "", "nudge_level": 1,
-    "reach_at": "", "calibrated": True, "bias": 1.5,
+    "reach_at": "", "quiet": False,
     "risk_window": "20:00-22:00",
     "risk_window_msg": "20:00-22:00 这段对你来说最难，多在「社交」场景，提前安排点别的",
     "risk_window_context": "社交",
@@ -51,7 +51,7 @@ FORECAST_INC = {
     "confidence": 0.6, "confidence_label": "中", "basis": "按你今天的记录速度",
     "touch_at": "", "remaining_hours": 0.0, "remaining_units": 5.0,
     "risk_level": 0, "coach_nudge": "", "nudge_level": 0,
-    "reach_at": "21:30", "calibrated": False, "bias": 0.0, "ladder_outlook": None,
+    "reach_at": "21:30", "quiet": False, "ladder_outlook": None,
     "risk_window": "07:00-08:00",
     "risk_window_msg": "07:00-08:00 你通常状态最好，趁那会儿推进",
 }
@@ -71,8 +71,29 @@ FORECAST_OVER = {
     "confidence": 0.85, "confidence_label": "高", "basis": "按你最近两周的节奏",
     "touch_at": "", "remaining_hours": 0.0, "remaining_units": 0.0,
     "risk_level": 2, "coach_nudge": "今天已20根，超过目标了", "nudge_level": 2,
-    "reach_at": "", "calibrated": False, "bias": 0.0, "ladder_outlook": None,
+    "reach_at": "", "quiet": False, "ladder_outlook": None,
     "risk_window": "", "risk_window_msg": "", "risk_window_context": "", "context_pattern": "",
+}
+
+
+CH4 = {
+    "id": 63, "title": "凌晨戒烟", "category": "quit", "status": "active",
+    "task_type": "counter", "scene_template": "quit", "unit": "根",
+    "direction": "decrease", "goal_rule": "ladder", "target_value": 12.0,
+    "ladder_start": 20.0, "ladder_goal": 5.0,
+    "total_days": 42, "completed_days": 5, "streak": 5, "icon": "🚭",
+    "today_checked": False, "decompose_mode": "none",
+}
+
+FORECAST_QUIET = {
+    "enabled": True, "projected": 0.0,
+    "confidence": 0.85, "confidence_label": "", "basis": "",
+    "touch_at": "", "remaining_hours": 0.0, "remaining_units": 11.0,
+    "risk_level": 0, "coach_nudge": "", "nudge_level": 0,
+    "reach_at": "", "quiet": True, "ladder_outlook": None,
+    "risk_window": "01:00-02:00",
+    "risk_window_msg": "01:00-02:00 这段对你来说最难，提前安排点别的",
+    "risk_window_context": "", "context_pattern": "",
 }
 
 
@@ -115,7 +136,15 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
             return
         if path == "/api/v1/challenges":
-            send_json(self, 200, [CH, CH2, CH3])
+            send_json(self, 200, [CH, CH2, CH3, CH4])
+            return
+        if path == "/api/v1/challenges/63/today":
+            send_json(self, 200, {"date": "2026-09-28", "day_number": 5, "task_type": "counter",
+                                  "task_title": "今日上限 12 根", "task_target": 12, "today_total": 1,
+                                  "today_target": 12, "today_cap": 12, "goal_rule": "ladder",
+                                  "direction": "decrease", "unit": "根", "remaining": 11,
+                                  "settled": False, "checked_in": True, "progress_pct": 8,
+                                  "repeatable": True, "sub_goals": [], "forecast": FORECAST_QUIET})
             return
         if path == "/api/v1/challenges/60/today":
             send_json(self, 200, {"date": "2026-09-19", "day_number": 13, "task_type": "counter",
@@ -141,16 +170,11 @@ class Handler(BaseHTTPRequestHandler):
                                   "settled": False, "checked_in": True, "progress_pct": 100,
                                   "repeatable": True, "sub_goals": [], "forecast": FORECAST_OVER})
             return
-        if path in ("/api/v1/challenges/60/checkins", "/api/v1/challenges/61/checkins",
-                    "/api/v1/challenges/62/checkins",
-                    "/api/v1/challenges/60/mercy", "/api/v1/challenges/61/mercy",
-                    "/api/v1/challenges/62/mercy",
-                    "/api/v1/challenges/60/adaptive/pending", "/api/v1/challenges/61/adaptive/pending",
-                    "/api/v1/challenges/62/adaptive/pending",
-                    "/api/v1/challenges/60/guidance", "/api/v1/challenges/61/guidance",
-                    "/api/v1/challenges/62/guidance",
-                    "/api/v1/challenges/60/weekly-report", "/api/v1/challenges/61/weekly-report",
-                    "/api/v1/challenges/62/weekly-report"):
+        if path.startswith(("/api/v1/challenges/60/", "/api/v1/challenges/61/",
+                            "/api/v1/challenges/62/", "/api/v1/challenges/63/")):
+            if path.endswith("/today"):
+                send_json(self, 200, {})
+                return
             send_json(self, 200, [])
             return
         if path in ("/api/v1/points/summary", "/api/v1/squads/my", "/api/portal/apps", "/api/v1/client/config"):
@@ -201,7 +225,7 @@ def main() -> None:
         check("展示黄灯状态(预计会超)", "预计会超" in body)
         check("展示严厉提示(收住)", "现在收住还来得及" in body)
         check("展示依据文案", "同时段节奏" in body)
-        check("展示回测校准", "已校准" in body)
+        check("不再展示已校准标记", "已校准" not in body)
         check("展示阶梯计划对比", "比阶梯计划高" in body)
         check("不再出现看不懂的'离目标还差'", "离目标还差" not in body)
         check("展示前瞻风险窗口", "对你来说最难" in body)
@@ -274,6 +298,17 @@ def main() -> None:
           return f ? getComputedStyle(f).backgroundColor : ''
         }""")
         check("节奏轨填充为红色", "rgb(239, 68, 68)" in over_color, over_color)
+
+        print("== 4. 凌晨静默: 只给额度与前瞻窗口, 不出预测数字 ==")
+        page.locator(".cp-ch-chip", has_text="凌晨戒烟").click()
+        page.wait_for_timeout(1200)
+        qdash = page.locator(".cp-dash").first.inner_text().replace("\n", " | ")
+        body4 = page.locator("body").inner_text()
+        check("静默态仍展示还可额度", "还可" in qdash, qdash)
+        check("静默态不出预计数字", "预计" not in qdash, qdash)
+        check("静默态不出触顶时刻", "触顶" not in qdash, qdash)
+        check("静默态保留凌晨高风险窗口", "01:00-02:00" in body4, body4[:200])
+        check("静默态不显示依据条", "把握" not in qdash, qdash)
 
         errs = [e for e in console_errs if "favicon" not in e and "net::ERR" not in e]
         check("无JS控制台错误", not errs, "; ".join(errs[:3]))

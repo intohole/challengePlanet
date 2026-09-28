@@ -62,8 +62,7 @@ class ForecastResponse(BaseModel):
     coach_nudge: str = ""
     nudge_level: int = 0
     reach_at: str = ""
-    calibrated: bool = False
-    bias: float = 0.0
+    quiet: bool = False
     ladder_outlook: Optional[dict[str, object]] = None
     risk_window: str = ""
     risk_window_msg: str = ""

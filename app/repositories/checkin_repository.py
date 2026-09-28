@@ -58,6 +58,17 @@ class CheckInRepository(StatelessRepository[CheckIn]):
         )
         return float(result.scalar_one() or 0.0)
 
+    async def count_by_date(
+        self, session: AsyncSession, challenge_id: int, date: str
+    ) -> int:
+        result = await session.execute(
+            select(func.count(CheckIn.id)).where(
+                CheckIn.challenge_id == challenge_id,
+                CheckIn.date == date,
+            )
+        )
+        return int(result.scalar_one() or 0)
+
     async def list_by_date_range(
         self, session: AsyncSession, challenge_id: int,
         start_date: str, end_date: str,
