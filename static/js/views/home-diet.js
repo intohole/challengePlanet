@@ -8,17 +8,26 @@
     const total = Number(t.today_total) || 0
     const goal = Number(dt.target_kcal) || 0
     const deficit = Number(dt.deficit_kcal) || 0
-    const left = goal - total
+    const burn = this._todayBurn(t)
+    const left = goal - total + burn
     let html = '<div class="cp-diet-target"><div class="cp-diet-target-head"><span class="cp-diet-target-title"><i class="fas fa-bullseye"></i> 每日卡路里</span>'
     if (deficit > 0) html += '<span class="cp-diet-target-deficit">减 ' + deficit + ' 千卡/天</span>'
     html += '</div>'
     html += '<div class="cp-diet-target-stats"><div class="cp-diet-target-stat"><b>' + goal + '</b><span>目标摄入</span></div>'
     html += '<div class="cp-diet-target-stat"><b>' + window.cpFmtInt(total) + '</b><span>已摄入</span></div>'
     html += '<div class="cp-diet-target-stat ' + (left < 0 ? 'over' : '') + '"><b>' + window.cpFmtInt(Math.abs(left)) + '</b><span>' + (left < 0 ? '已超出' : '还可吃') + '</span></div></div>'
-    const pct = goal > 0 ? Math.min(100, Math.round(total / goal * 100)) : 0
+    const pct = goal > 0 ? Math.min(100, Math.round((total - burn) / goal * 100)) : 0
     html += '<div class="cp-task-progress"><div class="cp-task-progress-bar"><div class="cp-task-progress-fill" style="width:' + pct + '%;background:' + (left < 0 ? 'var(--amber)' : 'var(--primary)') + '"></div></div></div>'
-    html += '<div class="cp-diet-meta">BMR ' + (dt.bmr_kcal || 0) + ' · 消耗 ' + (dt.tdee_kcal || 0) + ' 千卡/天</div></div>'
+    html += '<div class="cp-diet-meta">BMR ' + (dt.bmr_kcal || 0) + ' · 消耗 ' + (dt.tdee_kcal || 0) + ' 千卡/天'
+    if (burn > 0) html += ' · <span style="color:var(--emerald);font-weight:600">运动 -' + window.cpFmtInt(burn) + ' 千卡</span>'
+    html += '</div></div>'
     return html
+  }
+
+  V._todayBurn = function (t) {
+    return ((t && t.today_checkins) || [])
+      .filter(c => !(Number(c.value) || 0) && (Number(c.calories) || 0) > 0)
+      .reduce((s, c) => s + (Number(c.calories) || 0), 0)
   }
 
   V._dietArea = function (t, ch) {
@@ -38,6 +47,7 @@
     if (d.dietResult) html += this._dietResult(t, ch, dis)
     html += '</div>'
     html += this._dietMeals(t, ch, dis)
+    html += this._sportArea(t, ch, dis)
     html += '<div class="glass-card cp-diet-area">'
     html += '<div class="cp-section-title"><i class="fas fa-weight-scale" style="color:var(--primary-light)"></i> 记录体重</div>'
     if (!(d.weightTrend && d.weightTrend.records && d.weightTrend.records.length)) html += '<div class="cp-weight-hint">选填 · 每天记一次更清晰，不测不影响打卡</div>'
@@ -71,7 +81,7 @@
   }
 
   V._dietMeals = function (t, ch, dis) {
-    const list = (t.today_checkins || []).slice().reverse()
+    const list = (t.today_checkins || []).slice().reverse().filter(c => (Number(c.value) || 0) > 0)
     if (!list.length) return ''
     let h = '<div class="glass-card cp-diet-area"><div class="cp-section-title"><i class="fas fa-clock-rotate-left" style="color:var(--primary-light)"></i> 今日饮食记录</div>'
     h += '<div class="cp-diet-meals">'
@@ -79,6 +89,34 @@
       h += '<div class="cp-diet-meal"><span class="cp-diet-meal-time">' + String(c.timestamp || '').slice(11, 16) + '</span><span class="cp-diet-meal-txt">' + window.cpEsc(String(c.reflection || '') || '饮食记录') + '</span><span class="cp-diet-meal-kcal">' + window.cpFmtInt(c.value) + ' 千卡</span><button class="cp-diet-meal-del" ' + dis + ' onclick="cpViews.home.deleteDietMeal(' + c.id + ')"><i class="fas fa-trash-can"></i></button></div>'
     })
     h += '</div></div>'
+    return h
+  }
+
+  V._sportArea = function (t, ch, dis) {
+    const d = this.data
+    const w = Number(ch && ch.weight_kg) || 0
+    if (w <= 0) return ''
+    const labelMap = { walking: '快走', running: '跑步', cycling: '骑行', jump_rope: '跳绳', swimming: '游泳', strength: '力量训练', fitness: '综合健身', yoga: '瑜伽' }
+    const metMap = { walking: 4.3, running: 9.8, cycling: 7.5, jump_rope: 11.8, swimming: 8.0, strength: 5.0, fitness: 6.0, yoga: 3.0 }
+    let h = '<div class="glass-card cp-diet-area">'
+    h += '<div class="cp-section-title"><i class="fas fa-person-running" style="color:var(--primary-light)"></i> 记录运动</div>'
+    h += '<div class="cp-weight-hint">选填 · 运动消耗可抵扣今日可吃额度</div>'
+    h += '<div class="cp-sport-row"><select class="cp-field cp-sport-select" ' + dis + ' onchange="cpViews.home.setSportType(this.value)"><option value="">选择运动</option>'
+    Object.keys(labelMap).forEach(k => { h += '<option value="' + k + '"' + (d.sportType === k ? ' selected' : '') + '>' + labelMap[k] + '</option>' })
+    h += '</select><input type="number" min="1" max="600" class="cp-field cp-sport-min" ' + dis + ' placeholder="分钟" value="' + window.cpEsc(d.sportMinutes || '') + '" oninput="cpViews.home.setSportMinutes(this.value)" onchange="cpViews.home.setSportMinutes(this.value)"></div>'
+    const mins = Number(d.sportMinutes) || 0
+    const kcal = d.sportType && mins > 0 ? Math.round(metMap[d.sportType] * w * mins / 60) : 0
+    if (kcal > 0) h += '<div class="cp-sport-est">约消耗 <b>' + kcal + '</b> 千卡</div>'
+    h += '<button class="cp-btn-primary cp-sport-btn" ' + dis + ' onclick="cpViews.home.doSportCheckin()"><i class="fas fa-check"></i> ' + (d.dietChecking ? '提交中…' : '记下这次运动') + '</button>'
+    const sports = ((t && t.today_checkins) || []).filter(c => !(Number(c.value) || 0) && (Number(c.calories) || 0) > 0).reverse()
+    if (sports.length) {
+      h += '<div class="cp-diet-meals" style="margin-top:10px">'
+      sports.forEach(c => {
+        h += '<div class="cp-diet-meal"><span class="cp-diet-meal-time">' + String(c.timestamp || '').slice(11, 16) + '</span><span class="cp-diet-meal-txt">' + window.cpEsc(String(c.reflection || '') || '运动记录') + '</span><span class="cp-diet-meal-kcal sport">-' + window.cpFmtInt(c.calories) + ' 千卡</span><button class="cp-diet-meal-del" ' + dis + ' onclick="cpViews.home.deleteDietMeal(' + c.id + ')"><i class="fas fa-trash-can"></i></button></div>'
+      })
+      h += '</div>'
+    }
+    h += '</div>'
     return h
   }
 
@@ -122,6 +160,8 @@
 
   V.setDietDesc = function (val) { this.data.dietDesc = val || '' }
   V.setWeight = function (val) { this.data.weightInput = val || '' }
+  V.setSportType = function (val) { this.data.sportType = val || ''; this.rerender() }
+  V.setSportMinutes = function (val) { this.data.sportMinutes = val || '' }
   V.clearDiet = function () { this.data.dietDesc = ''; this.data.dietImage = ''; this.data.dietResult = null; this.rerender() }
 
   V.pickDietPhoto = function () {
@@ -215,6 +255,29 @@
       d.dietResult = null
       d.dietDesc = ''
       d.dietImage = ''
+      await this._finishCheckin(rr, ch, d, d.today && d.today.date)
+    } catch (e) {
+      window.cpToast(window.cpErrMsg(e, '提交失败，请重试'))
+    } finally {
+      d.dietChecking = false
+      this.rerender()
+    }
+  }
+
+  V.doSportCheckin = async function () {
+    const ch = window.appState.current
+    const d = this.data
+    if (!ch || d.dietChecking) return
+    const minutes = Number(d.sportMinutes) || 0
+    if (!d.sportType) { window.cpToast('先选择运动类型'); return }
+    if (minutes <= 0 || minutes > 600) { window.cpToast('请填写 1-600 分钟的运动时长'); return }
+    d.dietChecking = true
+    this.rerender()
+    try {
+      const rr = await window.cpApi.checkin(ch.id, { value: 0, sport_type: d.sportType, sport_minutes: minutes })
+      window.cpCelebrate('已记录运动 +' + (rr.points_earned || 0) + ' 分')
+      d.sportType = ''
+      d.sportMinutes = ''
       await this._finishCheckin(rr, ch, d, d.today && d.today.date)
     } catch (e) {
       window.cpToast(window.cpErrMsg(e, '提交失败，请重试'))

@@ -12,6 +12,8 @@ class CheckInCreate(BaseModel):
     reflection: str = Field("", description="心得")
     context_tag: str = Field("", description="情境标签: home/work/social/stress")
     timestamp: Optional[datetime] = Field(None, description="打卡时间(默认当前时间)")
+    sport_type: str = Field("", description="运动类型: running/walking 等, 减肥目标记运动用")
+    sport_minutes: float = Field(0.0, description="运动时长(分钟), 减肥目标记运动用")
 
     model_config = {"extra": "ignore"}
 

@@ -73,6 +73,8 @@ class CheckInService:
         reflection: str = "",
         context_tag: str = "",
         timestamp: datetime | None = None,
+        sport_type: str = "",
+        sport_minutes: float = 0.0,
     ) -> dict[str, object]:
         challenge = await self._challenge_repo.get_by_id(session, challenge_id)
         if challenge is None or challenge.user_id != user_id:
@@ -97,21 +99,34 @@ class CheckInService:
         is_diet = str(getattr(challenge, "task_type", "")) == "diet"
         prior_total = await self._repo.sum_value_by_date(session, challenge_id, today) if is_diet else 0.0
         intake_total = prior_total + value
+        sport_minutes_v = float(sport_minutes or 0.0)
+        sport_calories = 0.0
+        if is_diet and sport_minutes_v > 0:
+            sport_calories = self._calc_sport_calories(challenge, sport_type, sport_minutes_v)
+        if is_diet and value <= 0 and sport_minutes_v <= 0:
+            raise ValueError("记录内容不能为空")
+        burn_total = await self._repo.sum_calories_by_date(session, challenge_id, today) if is_diet else 0.0
         completion_pct = self._calc_completion_pct(value, target_snapshot["target_value"], challenge.direction)
         if is_diet and target_snapshot["target_value"] > 0:
             from app.services.diet_service import assess_calorie
-            assess = assess_calorie(intake_total, target_snapshot["target_value"])
+            assess = assess_calorie(
+                intake_total - burn_total - sport_calories, target_snapshot["target_value"],
+            )
             completion_pct = 100.0 if assess["status"] == "ok" else min(90.0, max(30.0, float(assess["percent"])))
         gauge_value = intake_total if is_diet else value
         is_soft_exceeded = self._is_soft_exceeded(gauge_value, target_snapshot, challenge)
         soft_exceeded_amount = max(0.0, gauge_value - target_snapshot["target_value"]) if is_soft_exceeded else 0.0
-        calories = 0.0
-        sport_met = float(getattr(challenge, "sport_met", 0.0) or 0.0)
-        unit = str(getattr(challenge, "unit", "") or "")
-        is_time_based = str(getattr(challenge, "task_type", "")) == "timer" or unit in ("分钟", "小时", "分钟数", "min", "minute")
-        if sport_met > 0 and float(getattr(challenge, "weight_kg", 0.0) or 0.0) > 0 and is_time_based:
-            from app.services.sport_metrics import calc_calories
-            calories = calc_calories(sport_met, float(challenge.weight_kg), value)
+        if is_diet and sport_calories > 0 and not (reflection or "").strip():
+            from app.services.sport_metrics import SPORT_LABEL
+            reflection = f"运动：{SPORT_LABEL.get(sport_type, sport_type)} {sport_minutes_v:g} 分钟"
+        calories = sport_calories
+        if not is_diet:
+            sport_met = float(getattr(challenge, "sport_met", 0.0) or 0.0)
+            unit = str(getattr(challenge, "unit", "") or "")
+            is_time_based = str(getattr(challenge, "task_type", "")) == "timer" or unit in ("分钟", "小时", "分钟数", "min", "minute")
+            if sport_met > 0 and float(getattr(challenge, "weight_kg", 0.0) or 0.0) > 0 and is_time_based:
+                from app.services.sport_metrics import calc_calories
+                calories = calc_calories(sport_met, float(challenge.weight_kg), value)
 
         checkin = await self._repo.create(session, {
             "challenge_id": challenge_id, "user_id": user_id,
@@ -200,6 +215,16 @@ class CheckInService:
             "nudge_level": int(forecast.get("nudge_level", 0)),
             "forecast": forecast,
         }
+
+    def _calc_sport_calories(self, challenge: Challenge, sport_type: str, minutes: float) -> float:
+        from app.services.sport_metrics import SPORT_MET, calc_calories
+        met = SPORT_MET.get(sport_type, 0.0)
+        if met <= 0:
+            raise ValueError("请选择有效的运动类型")
+        weight_kg = float(getattr(challenge, "weight_kg", 0.0) or 0.0)
+        if weight_kg <= 0:
+            raise ValueError("缺少体重信息，无法折算运动消耗")
+        return calc_calories(met, weight_kg, minutes)
 
     def _calc_completion_pct(self, value: float, target: float, direction: str) -> float:
         if target <= 0:

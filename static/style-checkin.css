@@ -222,3 +222,10 @@
 .cp-diet-meal-del { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 12px; padding: 4px 2px; flex-shrink: 0; }
 .cp-diet-meal-del:active { color: var(--red); }
 .cp-diet-waiting { display: flex; align-items: center; gap: 7px; margin-top: 8px; font-size: 12px; color: var(--primary); }
+.cp-sport-row { display: flex; gap: 8px; margin-top: 10px; }
+.cp-sport-select { flex: 2; }
+.cp-sport-min { flex: 1; min-width: 0; }
+.cp-sport-est { font-size: 12px; color: var(--text-secondary); margin-top: 8px; }
+.cp-sport-est b { color: var(--emerald); font-size: 14px; }
+.cp-sport-btn { width: 100%; margin-top: 10px; }
+.cp-diet-meal-kcal.sport { color: var(--emerald); }

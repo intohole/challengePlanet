@@ -47,6 +47,8 @@ async def do_checkin(
             reflection=request.reflection,
             context_tag=request.context_tag,
             timestamp=request.timestamp,
+            sport_type=request.sport_type,
+            sport_minutes=request.sport_minutes,
         )
     except ValueError as e:
         raise bad_request(e)

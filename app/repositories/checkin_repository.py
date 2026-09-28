@@ -58,6 +58,17 @@ class CheckInRepository(StatelessRepository[CheckIn]):
         )
         return float(result.scalar_one() or 0.0)
 
+    async def sum_calories_by_date(
+        self, session: AsyncSession, challenge_id: int, date: str
+    ) -> float:
+        result = await session.execute(
+            select(func.coalesce(func.sum(CheckIn.calories), 0.0)).where(
+                CheckIn.challenge_id == challenge_id,
+                CheckIn.date == date,
+            )
+        )
+        return float(result.scalar_one() or 0.0)
+
     async def count_by_date(
         self, session: AsyncSession, challenge_id: int, date: str
     ) -> int:

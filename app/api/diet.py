@@ -50,7 +50,10 @@ async def estimate_calories(
     image = (request.image or "").strip()
     if not description and not image:
         raise bad_request(ValueError("先拍一张照片，或描述这一餐吃了什么"))
-    today_intake = await CheckInRepository().sum_value_by_date(session, challenge_id, today_str())
+    checkin_repo = CheckInRepository()
+    today = today_str()
+    today_intake = await checkin_repo.sum_value_by_date(session, challenge_id, today)
+    today_intake -= await checkin_repo.sum_calories_by_date(session, challenge_id, today)
     try:
         result = await DietService().estimate_calories(
             challenge, description=description, image=image, today_intake=today_intake,
