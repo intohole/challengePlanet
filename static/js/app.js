@@ -90,12 +90,9 @@ window.cpCategoryMap = {
 }
 window.cpCat = cat => window.cpCategoryMap[cat] || window.cpCategoryMap.other
 
-window.cpEsc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+window.cpEsc = s => window.NexusUtils.escapeHtml(s)
 
-window.cpFmtInt = v => {
-  const n = Number(v)
-  return isFinite(n) ? String(Math.round(n)) : '0'
-}
+window.cpFmtInt = v => window.NexusUtils.formatNumber(v, 0)
 
 window.cpTitleClean = s => String(s == null ? '' : s).replace(/[，,、]\s*(当前|进行中|打卡中|现在|目前)\s*$/, '').trim()
 

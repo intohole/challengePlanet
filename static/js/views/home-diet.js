@@ -35,12 +35,8 @@
     const dis = d.dietChecking ? 'disabled' : ''
     let html = '<div class="glass-card cp-diet-area">'
     html += '<div class="cp-section-title"><i class="fas fa-utensils" style="color:var(--primary-light)"></i> 记录这一餐</div>'
-    html += '<button class="cp-diet-photo-btn" ' + dis + ' onclick="cpViews.home.pickDietPhoto()"><i class="fas fa-camera"></i> ' + (d.dietChecking && d.dietImage ? '识别中…' : '拍照识别热量') + '</button>'
-    html += '<input type="file" id="cp-diet-photo" class="cp-diet-photo-input" accept="image/*" capture="environment" onchange="cpViews.home.onDietPhoto(this)">'
-    if (d.dietImage && d.dietChecking) {
-      html += '<img class="cp-diet-preview" src="' + d.dietImage + '" alt="餐食照片">'
-      html += '<div class="cp-diet-waiting"><i class="fas fa-spinner fa-spin"></i> AI 正在识别这张照片，约需 10-25 秒</div>'
-    }
+    html += '<div id="cp-nux-diet-cam"></div>'
+    setTimeout(() => { V._mountDietCam() }, 50)
     html += '<div class="cp-diet-or">或直接描述这一餐</div>'
     html += '<div class="cp-diet-input-row"><textarea class="cp-text-input cp-diet-input" ' + dis + ' placeholder="如：米饭一碗、红烧肉三块、清炒青菜一份、可乐一罐" oninput="cpViews.home.setDietDesc(this.value)" style="resize:none;font-size:15px;line-height:1.6;min-height:72px">' + window.cpEsc(d.dietDesc || '') + '</textarea>'
     html += '<button class="cp-btn-primary cp-diet-est-btn" ' + dis + ' onclick="cpViews.home.doDietEstimate()"><i class="fas fa-calculator"></i> ' + (d.dietChecking ? '估算中…' : 'AI 估算') + '</button></div>'
@@ -164,54 +160,38 @@
   V.setSportMinutes = function (val) { this.data.sportMinutes = val || '' }
   V.clearDiet = function () { this.data.dietDesc = ''; this.data.dietImage = ''; this.data.dietResult = null; this.rerender() }
 
-  V.pickDietPhoto = function () {
-    const el = document.getElementById('cp-diet-photo')
-    if (el) el.click()
-  }
-
-  V._compressImage = function (file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onerror = () => reject(new Error('read'))
-      reader.onload = () => {
-        const img = new Image()
-        img.onerror = () => reject(new Error('decode'))
-        img.onload = () => {
-          const max = 1280
-          const scale = Math.min(1, max / Math.max(img.width || 1, img.height || 1))
-          const cv = document.createElement('canvas')
-          cv.width = Math.round((img.width || 1) * scale)
-          cv.height = Math.round((img.height || 1) * scale)
-          cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height)
-          resolve(cv.toDataURL('image/jpeg', 0.82))
-        }
-        img.src = reader.result
-      }
-      reader.readAsDataURL(file)
-    })
-  }
-
-  V.onDietPhoto = async function (input) {
-    const d = this.data
-    const file = input && input.files && input.files[0]
-    if (input) input.value = ''
-    if (!file || d.dietChecking) return
-    if (!/^image\//.test(file.type || '')) { window.cpToast('请选择一张照片'); return }
-    d.dietChecking = true
-    d.dietResult = null
-    this.rerender()
-    let dataUrl = ''
-    try {
-      dataUrl = await this._compressImage(file)
-    } catch (e) {
-      d.dietChecking = false
-      this.rerender()
-      window.cpToast('照片读取失败，请重拍')
-      return
+  V._mountDietCam = function () {
+    const el = document.getElementById('cp-nux-diet-cam')
+    if (!el || !window.NuxCameraRecognize) return
+    if (V._dietCamApp) { try { V._dietCamApp.unmount() } catch (e) {} V._dietCamApp = null }
+    const d = V.data
+    const handleRecognize = async function (blob) {
+      const ch = window.appState.current
+      if (!ch) throw new Error('挑战未加载，请刷新重试')
+      const dataUrl = await NexusUtils.compressImage(blob, { maxDim: 1280, quality: 0.82, output: 'dataurl' })
+      const res = await window.api.post('/challenges/' + ch.id + '/diet/estimate', { image: dataUrl }, { timeout: 90000 })
+      const r = res && res.data !== undefined ? res.data : res
+      if (!r || !r.total_kcal) throw new Error('没识别到食物，换个角度重拍或直接描述')
+      return r
     }
-    d.dietImage = dataUrl
-    d.dietChecking = false
-    await this._runDietEstimate(dataUrl)
+    V._dietCamApp = Vue.createApp({
+      components: { NuxCameraRecognize: window.NuxCameraRecognize },
+      setup() {
+        const cam = Vue.ref(null)
+        const onStart = () => { d.dietChecking = true }
+        const onSuccess = (payload) => {
+          if (cam.value) { try { cam.value.reset() } catch (e) {} }
+          d.dietChecking = false
+          d.dietResult = payload
+          V.rerender()
+        }
+        const onError = () => { d.dietChecking = false }
+        const onCancel = () => { d.dietChecking = false }
+        return { cam, handleRecognize, onStart, onSuccess, onError, onCancel }
+      },
+      template: '<nux-camera-recognize ref="cam" :handler="handleRecognize" hint="拍照或选一张餐食照片，AI 自动识别热量，约需 10-25 秒" recognize-text="识别热量" :max-edge="1280" @start="onStart" @success="onSuccess" @error="onError" @cancel="onCancel"></nux-camera-recognize>'
+    })
+    try { V._dietCamApp.mount(el) } catch (e) { V._dietCamApp = null }
   }
 
   V.doDietEstimate = function () {
