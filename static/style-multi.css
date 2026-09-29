@@ -168,7 +168,7 @@
 .cp-svg-trend { padding: 8px 0; margin-bottom: 10px; }
 .cp-svg-trend svg { display: block; }
 
-@media (max-width: 380px) {
+@media (max-width: 480px) {
   .cp-report-quickgrid { grid-template-columns: repeat(2, 1fr); }
   .cp-overview-grid { grid-template-columns: repeat(2, 1fr); }
   .cp-completion { flex-direction: column; gap: 12px; }
