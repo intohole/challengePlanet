@@ -24,9 +24,8 @@
     const now = new Date()
     for (let i = days - 1; i >= 0; i--) {
       const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)
-      const mm = String(dt.getMonth() + 1).padStart(2, '0')
-      const dd = String(dt.getDate()).padStart(2, '0')
-      dayArr.push({ key: mm + '-' + dd, ymd: dt.getFullYear() + '-' + mm + '-' + dd, counts: new Array(24).fill(0) })
+      const ymd = NexusUtils.formatDateKey(dt)
+      dayArr.push({ key: ymd.slice(5), ymd: ymd, counts: new Array(24).fill(0) })
     }
     const byDay = {}
     dayArr.forEach(day => { byDay[day.ymd] = day })

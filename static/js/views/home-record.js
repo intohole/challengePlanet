@@ -101,7 +101,7 @@
   V._isCurrentSlot = function (sg) {
     if (!sg.time_window_start || !sg.time_window_end) return false
     const now = new Date()
-    const hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
+    const hhmm = NexusUtils.formatDateTimeHyphen(now).slice(11)
     return hhmm >= sg.time_window_start && hhmm < sg.time_window_end
   }
 
