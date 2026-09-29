@@ -50,7 +50,7 @@
   var sf = document.getElementById('starfield')
   var dust = document.getElementById('dust')
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  var isMobile = window.innerWidth < 768
+  var isMobile = window.innerWidth <= 768
 
   if (sf) {
     var count = isMobile ? 50 : 130
