@@ -13,6 +13,7 @@ from app.models.challenge import Challenge
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import ChallengeMetaRepository
+from app.services.plan_parser import parse_ai_plan
 from app.schemas.challenge import ChallengeResponse
 from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.forecast_service import ForecastService
@@ -185,10 +186,7 @@ class ChallengeService:
     def _to_response(self, challenge: object, item: dict[str, object]) -> ChallengeResponse:
         c = challenge
         stats = item["stats"]
-        try:
-            plan = json.loads(c.ai_plan) if c.ai_plan else []
-        except json.JSONDecodeError:
-            plan = []
+        plan = parse_ai_plan(c.ai_plan)
         return ChallengeResponse(
             id=c.id,
             user_id=c.user_id,
@@ -270,13 +268,7 @@ class ChallengeService:
         )
 
     def _parse_plan(self, ai_plan: str | None) -> list[dict[str, object]]:
-        if not ai_plan:
-            return []
-        try:
-            plan_list = json.loads(ai_plan)
-            return plan_list if isinstance(plan_list, list) else []
-        except json.JSONDecodeError:
-            return []
+        return parse_ai_plan(ai_plan)
 
     def _build_today_response(
         self, challenge, challenge_id: int, day_number: int, today: str,

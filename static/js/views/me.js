@@ -45,7 +45,7 @@ window.cpViews.me = (function () {
 
     rerender() { if (this.el) this.render(this.el) },
 
-    endChallenge(id) {
+    async endChallenge(id) {
       const s = window.appState
       const c = s.challenges.find(x => x.id === id)
       if (!c) return
@@ -53,7 +53,7 @@ window.cpViews.me = (function () {
       const msg = hasRecord
         ? '删除「' + (this.titleClean(c.title) || '') + '」？已有 ' + (c.completed_days || 0) + ' 天打卡战绩，删除后不可恢复。'
         : '删除「' + (this.titleClean(c.title) || '') + '」？删除后不可恢复。'
-      if (!window.confirm(msg)) return
+      if (!(await window.nuxConfirm(msg))) return
       window.cpApi.deleteChallenge(id)
         .then(() => {
           window.cpToast('已删除挑战')
@@ -63,8 +63,8 @@ window.cpViews.me = (function () {
         .catch(e => window.cpToast(window.cpErrMsg(e, '操作失败')))
     },
 
-    logout() {
-      if (!window.confirm('确定退出登录吗？')) return
+    async logout() {
+      if (!(await window.nuxConfirm('确定退出登录吗？'))) return
       ;['uc_access_token', 'uc_refresh_token', 'cp_user_id', 'cp_nickname'].forEach(k => localStorage.removeItem(k))
       window.location.href = window.cpPrefix + '/login'
     },

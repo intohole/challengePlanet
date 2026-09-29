@@ -12,6 +12,7 @@ from app.repositories.checkin_repository import CheckInRepository, InsightReposi
 from app.services.adaptive_service import fallback_light_task
 from app.services.ai_service import AIService
 from app.services.mercy_service import load_valid_dates
+from app.services.plan_parser import parse_ai_plan
 from app.services.streak_service import day_number_of, list_missed_dates, today_str
 
 logger = get_logger("challengePlanet.diagnosis")
@@ -143,10 +144,7 @@ class DiagnosisService:
             raise ValueError("未知的应用方案")
         if action == "keep":
             return {"ok": True, "message": "好的，保持原计划。今天的一个小行动，就是最好的重启。"}
-        try:
-            plan = json.loads(challenge.ai_plan) if challenge.ai_plan else []
-        except json.JSONDecodeError:
-            plan = []
+        plan = parse_ai_plan(challenge.ai_plan)
         if not plan:
             raise ValueError("暂无可调整的计划")
         today = today_str()

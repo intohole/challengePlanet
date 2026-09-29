@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 
+from nexus import strip_code_fence
+
 _PROMPT_MARKERS: tuple[str, ...] = (
     "语言规范", "反馈结构", "方向语义", "开头示例", "语言策略",
     "觉察肯定", "模式观察", "微行动建议", "输出只呈现", "对用户说的话本身",
@@ -100,7 +102,7 @@ def _collapse_blank(text: str) -> str:
 
 
 def _strip_code_fence(text: str) -> str:
-    return re.sub(r"^```[a-z]*\s*|\s*```$", "", text).strip()
+    return strip_code_fence(text)
 
 
 def _strip_leading_heading(text: str) -> str:

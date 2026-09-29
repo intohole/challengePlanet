@@ -197,7 +197,7 @@ window.cpViews.home = (function () {
         : ((ch.completed_days || 0) > 0
           ? '删除「' + (window.cpTitleClean(ch.title) || '') + '」？已有 ' + (ch.completed_days || 0) + ' 天打卡战绩，删除后不可恢复。'
           : '删除「' + (window.cpTitleClean(ch.title) || '') + '」？删除后不可恢复。')
-      if (!window.confirm(msg)) return
+      if (!(await window.nuxConfirm(msg))) return
       try {
         await window.cpApi.deleteChallenge(ch.id)
         window.cpToast('已删除挑战')

@@ -221,7 +221,7 @@
   V.removeTodayRecord = async function (checkinId) {
     const ch = window.appState.current
     if (!ch) return
-    if (!window.confirm('撤销这条打卡记录？撤销后不可恢复。')) return
+    if (!(await window.nuxConfirm('撤销这条打卡记录？撤销后不可恢复。'))) return
     try {
       await window.cpApi.deleteCheckin(ch.id, checkinId)
       window.cpToast('已撤销该条打卡')

@@ -133,7 +133,7 @@ window.cpViews.squad = (function () {
       const d = this.data
       const sq = d.squads.find(s => s.id === d.currentId)
       if (!sq || d.busy) return
-      if (!window.confirm('确定退出「' + sq.name + '」吗？退出后本周积分将保留但无法再互相监督。')) return
+      if (!(await window.nuxConfirm('确定退出「' + sq.name + '」吗？退出后本周积分将保留但无法再互相监督。'))) return
       d.busy = true
       try {
         await window.api.delete('/squads/' + sq.id + '/leave')

@@ -12,6 +12,7 @@ from app.repositories.adaptive_repository import AdaptiveRepository
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
 from app.services.ai_service import AIService
+from app.services.plan_parser import parse_ai_plan
 from app.services.streak_service import day_number_of, today_str
 
 logger = get_logger("challengePlanet.adaptive")
@@ -72,10 +73,7 @@ class AdaptiveService:
         challenge = await self._challenge_repo.get_by_id(session, suggestion.challenge_id)
         if challenge is None:
             raise ValueError("挑战不存在")
-        try:
-            plan = json.loads(challenge.ai_plan) if challenge.ai_plan else []
-        except json.JSONDecodeError:
-            plan = []
+        plan = parse_ai_plan(challenge.ai_plan)
         task = json.loads(suggestion.task_json)
         idx = suggestion.target_day - 1
         if 0 <= idx < len(plan):
@@ -106,10 +104,7 @@ async def evaluate_after_bad_mood_task(challenge_id: int) -> None:
             target_day = current_day + 1
             if target_day > challenge.duration_days:
                 return
-            try:
-                plan = json.loads(challenge.ai_plan) if challenge.ai_plan else []
-            except json.JSONDecodeError:
-                plan = []
+            plan = parse_ai_plan(challenge.ai_plan)
             original = plan[target_day - 1] if 0 <= target_day - 1 < len(plan) else {}
             ai = AIService()
             task: dict[str, object] | None = None

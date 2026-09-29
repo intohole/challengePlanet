@@ -13,6 +13,7 @@ from app.models.challenge import Challenge
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import ChallengeMetaRepository
+from app.services.plan_parser import parse_ai_plan
 from app.services.ai_service import AIService
 from app.services.challenge_service import ChallengeService
 from app.services.companion_service import assess_risk, companion_text
@@ -216,10 +217,7 @@ class GuidanceService:
         challenge = await self._repo.get_by_share_token(session, share_token)
         if challenge is None:
             return None
-        try:
-            plan = json.loads(challenge.ai_plan) if challenge.ai_plan else []
-        except json.JSONDecodeError:
-            plan = []
+        plan = parse_ai_plan(challenge.ai_plan)
         return {
             "title": challenge.title,
             "description": challenge.description,
