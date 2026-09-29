@@ -238,3 +238,39 @@ img, video, canvas { max-width: 100%; height: auto; }
 .cp-input-row .cp-field { flex: 1; min-width: 0 }
 .cp-mb0 { margin-bottom: 0 }
 .cp-row-center { display: flex; justify-content: center }
+
+/* ---- 星夜：深空海军底，星野与极光增强，毛玻璃转暗玻璃 ---- */
+[data-theme="dark"] {
+  --bg: #0B1020;
+  --bg-aurora: radial-gradient(48rem 34rem at 12% -10%, rgba(99,102,241,.24), transparent 60%),
+               radial-gradient(42rem 30rem at 96% 16%, rgba(16,185,129,.16), transparent 60%),
+               radial-gradient(50rem 36rem at 70% 108%, rgba(245,158,11,.14), transparent 62%);
+  --bg-grad: linear-gradient(172deg, #0D1226 0%, #101830 42%, #171029 78%, #0D1A22 100%);
+  --bg-stars: radial-gradient(1px 1px at 20% 30%, rgba(200,214,255,.5), transparent),
+              radial-gradient(1px 1px at 40% 70%, rgba(200,214,255,.4), transparent),
+              radial-gradient(1.5px 1.5px at 60% 15%, rgba(220,228,255,.55), transparent),
+              radial-gradient(1px 1px at 80% 50%, rgba(200,214,255,.35), transparent),
+              radial-gradient(1px 1px at 10% 90%, rgba(200,214,255,.42), transparent),
+              radial-gradient(1.5px 1.5px at 33% 55%, rgba(170,150,255,.55), transparent),
+              radial-gradient(1.5px 1.5px at 90% 80%, rgba(200,214,255,.4), transparent),
+              radial-gradient(1px 1px at 70% 22%, rgba(200,214,255,.5), transparent);
+  --card: rgba(23,31,53,.66);
+  --card-hover: rgba(30,40,68,.82);
+  --card-border: rgba(148,163,204,.16);
+  --card-shadow: 0 4px 24px rgba(0,0,0,.45);
+  --text-primary: #E6EAF5;
+  --text-secondary: #A9B4CE;
+  --text-muted: #6B7A9C;
+  --primary: #7C7FF5;
+  --primary-light: #98A6FF;
+  --primary-dark: #6366F1;
+  --primary-glow: rgba(124,127,245,.32);
+  --emerald-glow: rgba(16,185,129,.26);
+  --amber-glow: rgba(245,158,11,.28);
+  --purple-glow: rgba(139,92,246,.26);
+  --ai-glow: rgba(139,92,246,.28);
+  --ai-grad-soft: linear-gradient(135deg, rgba(139,92,246,.18), rgba(99,102,241,.1) 50%, rgba(20,184,166,.1));
+  --shadow-soft: 0 10px 30px -12px rgba(0,0,0,.5);
+  --red-glow: rgba(239,68,68,.24);
+}
+[data-theme="dark"] body { background: var(--bg-grad); color: var(--text-primary); }
