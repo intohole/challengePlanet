@@ -4,7 +4,6 @@ import json
 import secrets
 import time
 from datetime import timedelta
-from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
