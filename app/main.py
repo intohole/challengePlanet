@@ -121,6 +121,9 @@ register_notify_proxy(app)
 
 app.include_router(create_auth_router(prefix="/api/auth", uc_sdk_provider=get_uc_sdk, tags=["认证"], password_ops=True, endpoints={"config"}))
 
+from nexus import register_voice_endpoints
+register_voice_endpoints(app)
+
 
 @app.get("/health")
 async def health() -> dict[str, str]:
