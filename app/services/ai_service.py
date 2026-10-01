@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import AsyncIterator
 
 from nexus import get_llm_service, get_vision_service, parse_llm_json
 from nexus.logging import get_logger
@@ -171,12 +172,18 @@ class AIService:
             target_value=tval, unit=tunit, direction=direction, steps=steps,
         )
 
-    async def generate_daily_feedback(
-        self, challenge_title: str, day_number: int, total_days: int,
+    @staticmethod
+    def _feedback_system(mood: str) -> str:
+        return FEEDBACK_SYSTEM + get_mood_aware_prefix(mood)
+
+    @classmethod
+    def _feedback_prompt(
+        cls,
+        challenge_title: str, day_number: int, total_days: int,
         mood: str, reflection: str, memory_context: str,
-        value: float = 0.0, target: float = 0.0,
-        direction: str = "increase", is_soft_exceeded: bool = False,
-    ) -> str:
+        value: float, target: float, direction: str,
+        is_soft_exceeded: bool,
+    ) -> tuple[str, str]:
         phase = "适应期" if day_number <= 3 else ("巩固期" if day_number <= total_days * 0.6 else "维持期")
         head = (
             f"挑战：{challenge_title}\n挑战天数：共{total_days}天\n"
@@ -188,14 +195,43 @@ class AIService:
             tail += f"\n本次已超过软目标（软目标 {target}）"
         if memory_context:
             tail += f"\n用户过往记忆：{memory_context}"
-        system = FEEDBACK_SYSTEM + get_mood_aware_prefix(mood)
+        return head + tail, cls._feedback_system(mood)
+
+    async def generate_daily_feedback(
+        self, challenge_title: str, day_number: int, total_days: int,
+        mood: str, reflection: str, memory_context: str,
+        value: float = 0.0, target: float = 0.0,
+        direction: str = "increase", is_soft_exceeded: bool = False,
+    ) -> str:
+        prompt, system = self._feedback_prompt(
+            challenge_title, day_number, total_days, mood, reflection,
+            memory_context, value, target, direction, is_soft_exceeded,
+        )
         llm = get_llm_service()
         raw = await llm.ask(
-            head + tail, system=system,
+            prompt, system=system,
             temperature=settings.FEEDBACK_TEMPERATURE,
             max_tokens=256, timeout=30.0, task_type="assistant",
         )
         return sanitize_coach_text(raw.strip(), system=system)
+
+    async def stream_daily_feedback(
+        self, challenge_title: str, day_number: int, total_days: int,
+        mood: str, reflection: str, memory_context: str,
+        value: float = 0.0, target: float = 0.0,
+        direction: str = "increase", is_soft_exceeded: bool = False,
+    ) -> AsyncIterator[str]:
+        prompt, system = self._feedback_prompt(
+            challenge_title, day_number, total_days, mood, reflection,
+            memory_context, value, target, direction, is_soft_exceeded,
+        )
+        llm = get_llm_service()
+        async for piece in llm.stream_ask(
+            prompt, system=system,
+            temperature=settings.FEEDBACK_TEMPERATURE,
+            max_tokens=256, task_type="assistant",
+        ):
+            yield piece
 
     async def generate_repair_message(self, challenge_title: str, missed_days: int) -> str:
         user_msg = f"挑战：{challenge_title}\n中断天数：{missed_days}天"

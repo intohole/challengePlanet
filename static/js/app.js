@@ -19,7 +19,7 @@ window.cpApi = {
   checkins: id => window.cpApi.get('/challenges/' + id + '/checkins').then(d => Array.isArray(d) ? d : ((d && d.items) || [])),
   checkin: (id, payload) => window.cpApi.post('/challenges/' + id + '/checkin', payload),
   deleteCheckin: (id, checkinId) => window.cpApi.unwrap(window.api.delete('/challenges/' + id + '/checkins/' + checkinId)),
-  patchCheckinContext: (id, checkinId, tag) => window.cpApi.patch('/challenges/' + id + '/checkins/' + checkinId + '/context', { context_tag: tag }),
+  patchCheckinMeta: (id, checkinId, patch) => window.cpApi.patch('/challenges/' + id + '/checkins/' + checkinId + '/meta', patch || {}),
   deleteChallenge: id => window.cpApi.unwrap(window.api.delete('/challenges/' + id)),
 }
 

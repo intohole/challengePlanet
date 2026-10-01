@@ -4,7 +4,7 @@
   V.openReport = function () {
     const s = window.appState
     if (!s.current) return
-    s.reportView = { show: true, tab: 'overview', loading: true, overview: null, hourly: null, context: null, trend: null, heatmap: null, completion: null }
+    s.reportView = { show: true, tab: 'overview', loading: true, overview: null, hourly: null, context: null, mood: null, trend: null, heatmap: null, completion: null }
     this._loadReportData()
   }
 
@@ -22,7 +22,8 @@
       Promise.all([
         safe(window.cpApi.get('/challenges/' + id + '/report/hourly?days=7')),
         safe(window.cpApi.get('/challenges/' + id + '/report/context?days=30')),
-      ]).then(([d, ctx]) => { rv.hourly = d || null; rv.context = ctx || null; this.rerender() })
+        safe(window.cpApi.get('/challenges/' + id + '/report/mood?days=30')),
+      ]).then(([d, ctx, md]) => { rv.hourly = d || null; rv.context = ctx || null; rv.mood = md || null; this.rerender() })
     } else if (tab === 'trend' && !rv.trend) {
       safe(window.cpApi.get('/challenges/' + id + '/report/trend?days=30')).then(d => { rv.trend = d || null; this.rerender() })
     } else if (tab === 'heatmap' && !rv.heatmap) {
@@ -38,14 +39,16 @@
     if (!rv || !ch) return
     const id = ch.id
     const safe = p => p.catch(() => null)
-    const [overview, hourly, context] = await Promise.all([
+    const [overview, hourly, context, mood] = await Promise.all([
       safe(window.cpApi.get('/challenges/' + id + '/report/overview')),
       safe(window.cpApi.get('/challenges/' + id + '/report/hourly?days=7')),
       safe(window.cpApi.get('/challenges/' + id + '/report/context?days=30')),
+      safe(window.cpApi.get('/challenges/' + id + '/report/mood?days=30')),
     ])
     rv.overview = overview || null
     rv.hourly = hourly || null
     rv.context = context || null
+    rv.mood = mood || null
     rv.loading = false
     this.rerender()
   }
@@ -128,7 +131,26 @@
     }
     if (r.insight) h += '<div class="cp-chart-insight nx-md"><i class="fas fa-lightbulb"></i> ' + window.cpMd(r.insight) + '</div>'
     h += this._renderContextBlock(rv && rv.context, ch)
+    h += this._renderMoodBlock(rv && rv.mood)
     return h
+  }
+
+  V._renderMoodBlock = function (md) {
+    if (!md) return ''
+    if (!md.items || !md.items.length) {
+      return '<div class="cp-ctx-empty"><i class="fas fa-face-smile"></i> 记录时顺手选一下心情（😊/😐/😔），积累几条就能看到状态起伏和坚持效果的关系</div>'
+    }
+    const emoji = { good: '😊', normal: '😐', bad: '😔' }
+    const max = Math.max.apply(null, md.items.map(i => i.checkin_count || 0)) || 1
+    let h = '<div class="cp-ctx-block"><div class="cp-ctx-title"><i class="fas fa-face-smile" style="color:var(--amber)"></i> 心情分布 · 近' + (md.date_range || '30d').replace('d', '天') + '</div>'
+    md.items.forEach(it => {
+      const ratio = (it.checkin_count || 0) / max
+      h += '<div class="cp-ctx-bar-row"><span class="cp-ctx-bar-label">' + (emoji[it.mood] || '') + ' ' + window.cpEsc(it.label || it.mood) + '</span>'
+      h += '<div class="cp-ctx-bar"><div class="cp-ctx-bar-fill" style="width:' + Math.max(4, ratio * 100) + '%"></div></div>'
+      h += '<span class="cp-ctx-bar-val">' + it.checkin_count + ' 次 · ' + it.share_pct + '%</span></div>'
+    })
+    if (md.insight) h += '<div class="cp-chart-insight nx-md"><i class="fas fa-lightbulb"></i> ' + window.cpMd(md.insight) + '</div>'
+    return h + '</div>'
   }
 
   V._renderContextBlock = function (ctx, ch) {

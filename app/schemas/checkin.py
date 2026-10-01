@@ -23,12 +23,18 @@ class CheckInPatchRequest(BaseModel):
     reflection: str = Field("", description="心得体会")
 
 
-class CheckInContextPatch(BaseModel):
+class CheckInMetaPatch(BaseModel):
     context_tag: str = Field("", description="情境标签: home/work/social/stress，空串表示清除")
+    mood: str = Field("", description="心情: good/normal/bad，空串表示清除")
 
 
 class InsightStreamRequest(BaseModel):
     force: bool = Field(False, description="是否忽略本周缓存强制重新生成")
+
+
+class FeedbackStreamRequest(BaseModel):
+    checkin_id: int = Field(..., description="目标打卡记录ID")
+    force: bool = Field(False, description="已有反馈时是否强制重新生成")
 
 
 class CheckInResponse(BaseModel):

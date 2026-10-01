@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from nexus import get_current_user_id_required
@@ -10,26 +12,35 @@ from app.db.database import get_db
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository, InsightRepository
 from app.schemas.checkin import (
-    CheckInContextPatch,
     CheckInCreate,
+    CheckInMetaPatch,
     CheckInPatchRequest,
     CheckInResponse,
     CheckInResultResponse,
     DateActionRequest,
     DateActionResponse,
+    FeedbackStreamRequest,
     ForecastResponse,
     InsightStreamRequest,
     MercyStatusResponse,
     RepairResponse,
 )
 from app.services.ai_analysis_service import AIAnalysisService
+from app.services.ai_service import AIService
 from app.services.ai_text_sanitizer import sanitize_coach_text
+from app.services.checkin_background import (
+    build_feedback_prompt_inputs,
+    feedback_fallback,
+    safe_declaration,
+)
 from app.services.checkin_service import CheckInService
 from app.services.mercy_service import MercyService
 from app.services.streak_service import week_dates_of
 from app.api._common import bad_request
 
 router = APIRouter()
+
+_feedback_locks: dict[int, asyncio.Lock] = {}
 
 
 @router.post("/{challenge_id}/checkin", response_model=CheckInResultResponse)
@@ -109,23 +120,94 @@ async def delete_checkin(
     return {"ok": True}
 
 
-@router.patch("/{challenge_id}/checkins/{checkin_id}/context", response_model=CheckInResponse)
-async def patch_checkin_context(
+@router.patch("/{challenge_id}/checkins/{checkin_id}/meta", response_model=CheckInResponse)
+async def patch_checkin_meta(
     challenge_id: int,
     checkin_id: int,
-    request: CheckInContextPatch,
+    request: CheckInMetaPatch,
     user_id: str = Depends(get_current_user_id_required),
     session: AsyncSession = Depends(get_db),
 ) -> CheckInResponse:
     service = CheckInService()
     try:
-        checkin = await service.update_context_tag(
-            session, challenge_id, checkin_id, user_id, request.context_tag,
+        checkin = await service.update_checkin_meta(
+            session, challenge_id, checkin_id, user_id,
+            context_tag=request.context_tag, mood=request.mood,
         )
     except ValueError as e:
         raise bad_request(e)
     await session.commit()
     return CheckInResponse.model_validate(checkin)
+
+
+@router.post("/{challenge_id}/feedback/stream")
+async def stream_feedback(
+    challenge_id: int,
+    request: FeedbackStreamRequest,
+    user_id: str = Depends(get_current_user_id_required),
+    session: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    challenge = await ChallengeRepository().get_by_id(session, challenge_id)
+    if challenge is None or challenge.user_id != user_id:
+        raise bad_request("挑战不存在")
+    repo = CheckInRepository()
+    checkin = await repo.get_by_id(session, request.checkin_id)
+    if checkin is None or checkin.challenge_id != challenge_id:
+        raise bad_request("打卡记录不存在")
+
+    async def gen():
+        if checkin.ai_feedback and not request.force:
+            yield sse_event_dict("done", {
+                "content": sanitize_coach_text(checkin.ai_feedback),
+                "declaration": str(checkin.declaration or ""),
+                "cached": True,
+            })
+            return
+        lock = _feedback_locks.setdefault(request.checkin_id, asyncio.Lock())
+        try:
+            async with lock:
+                fresh = await repo.get_by_id(session, request.checkin_id)
+                if fresh is None:
+                    yield sse_event_dict("done", {"content": "", "declaration": ""})
+                    return
+                if fresh.ai_feedback and not request.force:
+                    yield sse_event_dict("done", {
+                        "content": sanitize_coach_text(fresh.ai_feedback),
+                        "declaration": str(fresh.declaration or ""),
+                        "cached": True,
+                    })
+                    return
+                ai = AIService()
+                inputs = await build_feedback_prompt_inputs(session, fresh, challenge)
+                pieces: list[str] = []
+                try:
+                    async for piece in ai.stream_daily_feedback(**inputs):
+                        pieces.append(piece)
+                        yield sse_event_dict("token", {"token": piece})
+                except Exception:
+                    content = feedback_fallback(
+                        fresh.day_number, fresh.mood, bool(inputs.get("is_soft_exceeded")),
+                    )
+                    declaration = ""
+                else:
+                    content = sanitize_coach_text(
+                        "".join(pieces).strip(),
+                        system=AIService._feedback_system(inputs["mood"]),
+                        fallback="",
+                    )
+                    declaration = await safe_declaration(ai, challenge.title, fresh.day_number)
+                if content:
+                    await repo.update(session, fresh, {
+                        "ai_feedback": content, "declaration": declaration,
+                    })
+                    await session.commit()
+                yield sse_event_dict("done", {
+                    "content": content, "declaration": declaration,
+                })
+        finally:
+            _feedback_locks.pop(request.checkin_id, None)
+
+    return sse_response(gen())
 
 
 @router.post("/{challenge_id}/mend", response_model=DateActionResponse)

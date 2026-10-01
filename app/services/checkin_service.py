@@ -15,7 +15,6 @@ from app.repositories.squad_repository import SquadRepository
 from app.core.datetime_utils import now_china
 from app.services.adaptive_service import evaluate_after_bad_mood_task
 from app.services.checkin_background import (
-    fill_ai_after_checkin,
     fire_and_forget,
     save_memory,
 )
@@ -30,6 +29,7 @@ from app.services.forecast_service import ForecastService
 from app.services.goal_rule_service import is_repeatable
 from app.services.mercy_service import load_valid_dates
 from app.services.points_service import PointsService
+from app.services.prompts import MOODS
 from app.services.shield_service import ShieldService
 from app.services.streak_service import calc_streak, today_str
 from app.services.target_service import TargetService
@@ -154,12 +154,6 @@ class CheckInService:
         )
         shields = await self._shields.award_milestone(session, challenge_id, streak)
         await self._maybe_award_squad_bonus(session, challenge_id, today)
-        fire_and_forget(fill_ai_after_checkin(
-            checkin.id, user_id, challenge.title, day_number,
-            challenge.duration_days, mood, reflection, value,
-            target_snapshot["target_value"], challenge.direction,
-            soft_exceeded,
-        ))
         fire_and_forget(save_memory(user_id, challenge.title, day_number, mood, reflection, value))
         if mood == "bad":
             fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
@@ -250,12 +244,6 @@ class CheckInService:
         updated = await self._repo.update(session, checkin, {
             "mood": mood, "reflection": reflection,
         })
-        fire_and_forget(fill_ai_after_checkin(
-            checkin.id, user_id, challenge.title,
-            checkin.day_number, challenge.duration_days,
-            mood, reflection, checkin.value, checkin.target_value,
-            challenge.direction, False,
-        ))
         fire_and_forget(
             save_memory(user_id, challenge.title, checkin.day_number, mood, reflection, checkin.value)
         )
@@ -274,12 +262,16 @@ class CheckInService:
             raise ValueError("打卡记录不存在")
         await self._repo.delete(session, checkin)
 
-    async def update_context_tag(
+    async def update_checkin_meta(
         self, session: AsyncSession, challenge_id: int, checkin_id: int,
-        user_id: str, context_tag: str,
+        user_id: str, context_tag: str = "", mood: str = "",
     ) -> CheckIn:
-        if context_tag not in CONTEXT_TAGS:
+        if context_tag == "" and mood == "":
+            raise ValueError("没有需要补充的内容")
+        if context_tag and context_tag not in CONTEXT_TAGS:
             raise ValueError("情境标签无效")
+        if mood and mood not in MOODS:
+            raise ValueError("心情标签无效")
         result = await session.execute(
             select(CheckIn).where(
                 CheckIn.id == checkin_id,
@@ -291,8 +283,16 @@ class CheckInService:
         if checkin is None:
             raise ValueError("打卡记录不存在")
         if checkin.date != today_str():
-            raise ValueError("只能补充今天记录的情境")
-        return await self._repo.update(session, checkin, {"context_tag": context_tag})
+            raise ValueError("只能补充今天记录的打卡")
+        updates: dict[str, str] = {}
+        if context_tag:
+            updates["context_tag"] = context_tag
+        if mood:
+            updates["mood"] = mood
+        updated = await self._repo.update(session, checkin, updates)
+        if mood == "bad":
+            fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
+        return updated
 
     async def get_checkins(
         self, session: AsyncSession, challenge_id: int, user_id: str,

@@ -90,6 +90,10 @@ _MOOD_PREFIX_MAP: dict[str, str] = {
     "bad": MOOD_PREFIX_BAD,
 }
 
+MOODS: tuple[str, ...] = ("good", "normal", "bad")
+
+MOOD_LABELS: dict[str, str] = {"good": "状态不错", "normal": "一般般", "bad": "有点难"}
+
 
 def get_mood_aware_prefix(mood: str) -> str:
     return _MOOD_PREFIX_MAP.get(mood, "")

@@ -94,14 +94,17 @@
   V.saveReflection = async function () {
     const ch = window.appState.current
     const rf = window.appState.reflection
+    const d = this.data
     if (!ch || rf.busy) return
     rf.busy = true
-    const prev = this.data.lastFeedback || ''
     try {
       await window.cpApi.patch('/challenges/' + ch.id + '/checkin/today', { mood: rf.mood, reflection: rf.content })
-      if (window.cpPollTodayAi && this.data.today) window.cpPollTodayAi(ch.id, this.data.today.date, 8, prev)
-      window.cpToast('心得已保存')
+      window.cpToast('心得已保存，教练正在重新看你的记录…')
       rf.show = false
+      const first = ((d.today && d.today.today_checkins) || [])[0]
+      d.lastFeedback = ''
+      d.fbTried = first ? first.id : 0
+      if (first) this._streamFeedback(ch.id, first.id, true)
       await this.load()
       this.rerender()
     } catch (e) { window.cpToast(window.cpErrMsg(e, '保存失败')) }

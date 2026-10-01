@@ -1,14 +1,15 @@
 window.cpViews = window.cpViews || {}
 window.cpViews.home = (function () {
   const moodMap = { good: '😊 状态不错', normal: '😐 一般般', bad: '😔 有点难' }
+  const moodEmoji = { good: '😊', normal: '😐', bad: '😔' }
 
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, guidance: null, insightRunning: false, insightText: '', loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', contextTag: '', activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, dietImage: '', weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null },
+    data: { today: null, checkins: [], mercy: null, weekly: null, guidance: null, insightRunning: false, insightText: '', loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', contextTag: '', moodTag: '', fbStreaming: false, fbPending: null, fbTried: 0, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, dietImage: '', weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null },
 
     _freshData(loading) {
-      return { today: null, checkins: [], mercy: null, weekly: null, guidance: null, insightRunning: false, insightText: '', loading: !!loading, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', contextTag: '', activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, dietImage: '', weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null }
+      return { today: null, checkins: [], mercy: null, weekly: null, guidance: null, insightRunning: false, insightText: '', loading: !!loading, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', contextTag: '', moodTag: '', fbStreaming: false, fbPending: null, fbTried: 0, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, dietImage: '', weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null }
     },
 
     render(el) {
@@ -107,6 +108,7 @@ window.cpViews.home = (function () {
       if (!d.lastFeedback && today && today.checkin_data && today.checkin_data.ai_feedback) d.lastFeedback = today.checkin_data.ai_feedback
       d.loading = false
       this.rerender()
+      this._ensureFeedback(ch.id)
     },
 
     _skeleton() {
@@ -220,34 +222,52 @@ window.cpViews.home = (function () {
     try { localStorage.setItem('cp_decl_' + chId + '_' + dateStr, text) } catch (e) {}
   }
 
-  V._pollTodayAi = async function (chId, dateStr, maxTry, changedFrom) {
-    if (this._pollBusy) return
-    this._pollBusy = true
-    try {
-      await this._pollTodayAiLoop(chId, dateStr, maxTry, changedFrom)
-    } finally { this._pollBusy = false }
-  }
-
-  V._pollTodayAiLoop = async function (chId, dateStr, maxTry, changedFrom) {
-    for (let i = 0; i < maxTry; i++) {
-      await new Promise(r => setTimeout(r, 3500))
-      const t = await window.cpApi.today(chId).catch(() => null)
-      const cd = t && t.checkin_data
-      if (!t) break
-      const d = this.data
-      if (cd && cd.declaration) {
-        d.declaration = cd.declaration
-        this._cacheDeclaration(chId, dateStr, cd.declaration)
-      }
-      if (cd && cd.ai_feedback && (!changedFrom || cd.ai_feedback !== changedFrom)) {
-        d.lastFeedback = cd.ai_feedback
-        this.rerender()
-        return
-      }
+  V._streamFeedback = async function (chId, checkinId, force) {
+    const d = this.data
+    if (!chId || !checkinId) return
+    if (d.fbStreaming) { d.fbPending = checkinId; return }
+    d.fbStreaming = true
+    d.fbPending = null
+    this._fbSeq = (this._fbSeq || 0) + 1
+    const seq = this._fbSeq
+    const finish = () => {
+      if (seq !== this._fbSeq) return
+      d.fbStreaming = false
       this.rerender()
+      if (d.fbPending) { const nxt = d.fbPending; d.fbPending = null; this._streamFeedback(chId, nxt) }
     }
+    try {
+      await window.api.streamPost('/challenges/' + chId + '/feedback/stream', { checkin_id: checkinId, force: !!force }, {
+        onEvent: (ev, data) => {
+          if (!data || seq !== this._fbSeq) return
+          if (data.type === 'token') {
+            d.lastFeedback = (d.lastFeedback || '') + (data.token || '')
+            this.rerender()
+          } else if (data.type === 'done') {
+            d.lastFeedback = String(data.content || d.lastFeedback || '').trim()
+            if (data.declaration) {
+              d.declaration = data.declaration
+              const t = d.today
+              if (t && t.date) this._cacheDeclaration(chId, t.date, data.declaration)
+            }
+            finish()
+          }
+        },
+        onError: () => finish(),
+        timeout: 90000,
+      })
+    } catch (e) { finish() }
   }
 
-  window.cpPollTodayAi = V._pollTodayAi.bind(V)
+  V._ensureFeedback = function (chId) {
+    const d = this.data
+    const t = d.today
+    const ck = t && t.today_checkins
+    const last = ck && ck.length ? ck[ck.length - 1] : null
+    if (!chId || !last || last.ai_feedback) return
+    if (d.fbStreaming || d.fbTried === last.id) return
+    d.fbTried = last.id
+    this._streamFeedback(chId, last.id)
+  }
   return V
 })()

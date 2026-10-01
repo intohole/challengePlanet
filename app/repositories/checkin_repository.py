@@ -36,6 +36,12 @@ class CheckInRepository(StatelessRepository[CheckIn]):
         )
         return result.scalar_one_or_none()
 
+    async def get_by_id(self, session: AsyncSession, checkin_id: int) -> CheckIn | None:
+        result = await session.execute(
+            select(CheckIn).where(CheckIn.id == checkin_id)
+        )
+        return result.scalar_one_or_none()
+
     async def list_by_date(
         self, session: AsyncSession, challenge_id: int, date: str
     ) -> list[CheckIn]:
@@ -202,6 +208,31 @@ class CheckInRepository(StatelessRepository[CheckIn]):
             {
                 "context_tag": str(row.context_tag or ""),
                 "total_value": float(row.total or 0),
+                "checkin_count": int(row.cnt or 0),
+                "days": int(row.days or 0),
+            }
+            for row in result.fetchall()
+        ]
+
+    async def get_mood_totals(
+        self, session: AsyncSession, challenge_id: int,
+        start_date: str, end_date: str,
+    ) -> list[dict[str, object]]:
+        result = await session.execute(
+            select(
+                CheckIn.mood,
+                func.count(CheckIn.id).label("cnt"),
+                func.count(func.distinct(CheckIn.date)).label("days"),
+            ).where(
+                CheckIn.challenge_id == challenge_id,
+                CheckIn.date >= start_date,
+                CheckIn.date <= end_date,
+                CheckIn.mood != "",
+            ).group_by(CheckIn.mood)
+        )
+        return [
+            {
+                "mood": str(row.mood or ""),
                 "checkin_count": int(row.cnt or 0),
                 "days": int(row.days or 0),
             }

@@ -55,10 +55,10 @@ async def test_update_context_tag_roundtrip() -> None:
         svc = CheckInService()
         r = await svc.do_checkin(session, ch.id, "u1", value=1.0)
         cid = r["checkin"].id
-        updated = await svc.update_context_tag(session, ch.id, cid, "u1", "stress")
+        updated = await svc.update_checkin_meta(session, ch.id, cid, "u1", context_tag="stress")
         assert updated.context_tag == "stress"
-        cleared = await svc.update_context_tag(session, ch.id, cid, "u1", "")
-        assert cleared.context_tag == ""
+        cleared = await svc.update_checkin_meta(session, ch.id, cid, "u1", mood="good")
+        assert cleared.context_tag == "stress" and cleared.mood == "good"
 
 
 @pytest.mark.asyncio
@@ -72,11 +72,11 @@ async def test_update_context_tag_guards() -> None:
         r = await svc.do_checkin(session, ch.id, "u1", value=1.0)
         cid = r["checkin"].id
         with pytest.raises(ValueError):
-            await svc.update_context_tag(session, ch.id, cid, "u1", "party")
+            await svc.update_checkin_meta(session, ch.id, cid, "u1", context_tag="party")
         with pytest.raises(ValueError):
-            await svc.update_context_tag(session, ch.id, cid, "u2", "home")
+            await svc.update_checkin_meta(session, ch.id, cid, "u2", context_tag="home")
         with pytest.raises(ValueError):
-            await svc.update_context_tag(session, 9999, cid, "u1", "home")
+            await svc.update_checkin_meta(session, 9999, cid, "u1", context_tag="home")
         repo = CheckInRepository()
         old = await repo.create(session, {
             "challenge_id": ch.id, "user_id": "u1", "day_number": 1,
@@ -84,7 +84,7 @@ async def test_update_context_tag_guards() -> None:
             "date": shift_date(today, -1), "value": 1.0, "unit": ch.unit,
         })
         with pytest.raises(ValueError):
-            await svc.update_context_tag(session, ch.id, old.id, "u1", "home")
+            await svc.update_checkin_meta(session, ch.id, old.id, "u1", context_tag="home")
 
 
 @pytest.mark.asyncio

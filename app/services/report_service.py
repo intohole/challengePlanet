@@ -8,6 +8,7 @@ from app.core.datetime_utils import now_china
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository, InsightRepository
 from app.services.forecast_math import CONTEXT_LABELS, fmt_int
+from app.services.prompts import MOOD_LABELS
 from app.services.report_calculator import ReportCalculator
 from app.services.streak_service import today_str
 
@@ -95,6 +96,50 @@ class ReportService:
                 f"占{share:g}%），这可能是你最容易破戒的场景，下次到这个情境先想一下今天的上限"
             )
         return f"「{label}」是你的高效场景（占{share:g}%），保持在这个情境里推进目标"
+
+    async def get_mood_distribution(
+        self, session: AsyncSession, challenge_id: int, user_id: str,
+        days: int = 30,
+    ) -> dict[str, object]:
+        challenge = await self._get_challenge(session, challenge_id, user_id)
+        start_dt = now_china() - timedelta(days=days - 1)
+        rows = await self._checkin_repo.get_mood_totals(
+            session, challenge_id, start_dt.strftime("%Y-%m-%d"), today_str(),
+        )
+        rows.sort(key=lambda r: int(r.get("checkin_count", 0) or 0), reverse=True)
+        grand = sum(int(r.get("checkin_count", 0) or 0) for r in rows)
+        items: list[dict[str, object]] = []
+        for r in rows:
+            cnt = int(r.get("checkin_count", 0) or 0)
+            items.append({
+                "mood": str(r.get("mood", "")),
+                "label": MOOD_LABELS.get(str(r.get("mood", "")), ""),
+                "checkin_count": cnt,
+                "days": int(r.get("days", 0) or 0),
+                "share_pct": round(cnt / grand * 100, 1) if grand > 0 else 0.0,
+            })
+        dominant = str(items[0]["mood"]) if items else ""
+        insight = self._mood_insight(items, challenge)
+        return {
+            "challenge_id": challenge_id, "date_range": f"{days}d",
+            "items": items, "dominant": dominant, "insight": insight,
+        }
+
+    def _mood_insight(self, items: list[dict[str, object]], challenge) -> str:
+        if not items:
+            return ""
+        by_mood = {str(i["mood"]): i for i in items}
+        total = sum(int(i["checkin_count"]) for i in items)
+        bad = int(by_mood.get("bad", {}).get("checkin_count", 0) or 0)
+        good = int(by_mood.get("good", {}).get("checkin_count", 0) or 0)
+        if total >= 5 and bad / total >= 0.5:
+            return (
+                "近期的记录里有一半以上都带着「有点难」，这不是你不够努力——"
+                "可能是计划推得太紧，看看教练给你的减负建议"
+            )
+        if total >= 5 and good / total >= 0.6:
+            return "大多数记录都是好状态，你的节奏和目标匹配得很好，保持住"
+        return "记录时顺手选一下心情，就能看到状态起伏和打卡效果的关系"
 
     async def get_trend(
         self, session: AsyncSession, challenge_id: int, user_id: str,

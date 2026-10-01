@@ -104,6 +104,22 @@ class ContextDistItem(BaseModel):
     share_pct: float = 0.0
 
 
+class MoodDistItem(BaseModel):
+    mood: str
+    label: str = ""
+    checkin_count: int = 0
+    days: int = 0
+    share_pct: float = 0.0
+
+
+class MoodDistResponse(BaseModel):
+    challenge_id: int
+    date_range: str = "30d"
+    items: list[MoodDistItem] = Field(default_factory=list)
+    dominant: str = ""
+    insight: str = ""
+
+
 class ContextDistResponse(BaseModel):
     challenge_id: int
     date_range: str = "30d"

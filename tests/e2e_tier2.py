@@ -120,7 +120,7 @@ st, _ = req("GET", f"/challenges/{cid}/report/hourly?days=200", token=token)
 check("days超上限被拒绝422", st == 422, f"st={st}")
 st, _ = req("POST", "/challenges/999999/checkin", {"value": 1.0}, token)
 check("不存在挑战打卡返回400", st == 400, f"st={st}")
-st, _ = req("PATCH", f"/challenges/{cid}/checkins/999999/context", {"context_tag": "home"}, token)
+st, _ = req("PATCH", f"/challenges/{cid}/checkins/999999/meta", {"context_tag": "home"}, token)
 check("PATCH不存在记录返回400", st == 400, f"st={st}")
 
 print("== 8. 增量挑战与hard目标 ==")

@@ -20,18 +20,32 @@
 
   V.CTX_LABELS = { home: '家', work: '工作', social: '社交', stress: '压力' }
   V.CTX_EMOJI = { home: '🏠', work: '💼', social: '👥', stress: '😰' }
+  V.MOOD_EMOJI = { good: '😊', normal: '😐', bad: '😔' }
 
   V.patchContext = async function (checkinId, tag) {
     const ch = window.appState.current
     if (!ch) return
     try {
-      await window.cpApi.patchCheckinContext(ch.id, checkinId, tag)
+      await window.cpApi.patchCheckinMeta(ch.id, checkinId, { context_tag: tag })
       const t = this.data.today
       const c = ((t && t.today_checkins) || []).find(x => x.id === checkinId)
       if (c) c.context_tag = tag
       window.cpToast('已记下情境 ' + (this.CTX_EMOJI[tag] || ''))
       this.rerender()
     } catch (e) { window.cpToast(window.cpErrMsg(e, '补充情境失败')) }
+  }
+
+  V.patchMood = async function (checkinId, mood) {
+    const ch = window.appState.current
+    if (!ch) return
+    try {
+      await window.cpApi.patchCheckinMeta(ch.id, checkinId, { mood: mood })
+      const t = this.data.today
+      const c = ((t && t.today_checkins) || []).find(x => x.id === checkinId)
+      if (c) c.mood = mood
+      window.cpToast('已记下心情 ' + (this.MOOD_EMOJI[mood] || ''))
+      this.rerender()
+    } catch (e) { window.cpToast(window.cpErrMsg(e, '补充心情失败')) }
   }
 
   V._todayTimeline = function (s) {
@@ -59,6 +73,7 @@
       if (c.context_tag) html += '<div class="cp-ctx-badge">' + (this.CTX_EMOJI[c.context_tag] || '') + ' ' + (this.CTX_LABELS[c.context_tag] || c.context_tag) + '</div>'
       else if (i === 0) html += this._ctxPatchRow(c.id)
       if (c.mood) html += '<div class="cp-timeline-mood">' + ({ good: '😊', normal: '😐', bad: '😔' }[c.mood] || '') + '</div>'
+      else if (i === 0) html += this._moodPatchRow(c.id)
       if (c.reflection) html += '<div class="cp-timeline-reflection">' + window.cpEsc(c.reflection) + '</div>'
       html += '</div></div>'
     })
@@ -70,6 +85,14 @@
     let h = '<div class="cp-ctx-patch"><span class="cp-ctx-q">刚在哪？</span>'
     ;['home', 'work', 'social', 'stress'].forEach(k => {
       h += '<button class="cp-pick-btn cp-ctx-chip" onclick="cpViews.home.patchContext(' + checkinId + ',\'' + k + '\')">' + this.CTX_EMOJI[k] + ' ' + this.CTX_LABELS[k] + '</button>'
+    })
+    return h + '</div>'
+  }
+
+  V._moodPatchRow = function (checkinId) {
+    let h = '<div class="cp-ctx-patch"><span class="cp-ctx-q">这次感觉如何？</span>'
+    ;[['good', '😊 不错'], ['normal', '😐 一般'], ['bad', '😔 吃力']].forEach(kv => {
+      h += '<button class="cp-pick-btn cp-ctx-chip" onclick="cpViews.home.patchMood(' + checkinId + ',\'' + kv[0] + '\')">' + kv[1] + '</button>'
     })
     return h + '</div>'
   }
@@ -93,7 +116,7 @@
       html += '<button class="cp-tap-chip" ' + dis + ' onclick="cpViews.home.doFastTap(' + v + ')"><i class="fas fa-plus"></i>' + label + '</button>'
     })
     if ((t.today_checkins || []).length) html += '<button class="cp-tap-chip ghost" ' + dis + ' onclick="cpViews.home.doUndoLast()"><i class="fas fa-rotate-left"></i>撤销上一笔</button>'
-    html += '</div>' + this._ctxRow() + '</div>'
+    html += '</div>' + this._ctxRow() + this._moodRow() + '</div>'
     return html
   }
 

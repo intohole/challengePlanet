@@ -92,15 +92,15 @@ rows = today_view.get("today_checkins") or []
 check("today_checkins含context_tag", len(rows) == 1 and rows[0].get("context_tag") == "work",
       f"rows={str(rows)[:200]}")
 
-print("== 5. 无情境打卡后补选情境(PATCH) ==")
+print("== 5. 无情境打卡后补选情境(PATCH meta) ==")
 st, r2 = req("POST", f"/challenges/{cid}/checkin", {"value": 1.0}, token)
 ck2 = (r2.get("checkin") or {}) if isinstance(r2, dict) else {}
 check("第二笔无情境", st == 200 and ck2.get("context_tag") == "", f"st={st}")
-st, pr = req("PATCH", f"/challenges/{cid}/checkins/{ck2.get('id')}/context",
+st, pr = req("PATCH", f"/challenges/{cid}/checkins/{ck2.get('id')}/meta",
              {"context_tag": "stress"}, token)
 check("PATCH补选情境=stress", st == 200 and pr.get("context_tag") == "stress",
       f"st={st} body={str(pr)[:200]}")
-st, _ = req("PATCH", f"/challenges/{cid}/checkins/{ck2.get('id')}/context",
+st, _ = req("PATCH", f"/challenges/{cid}/checkins/{ck2.get('id')}/meta",
             {"context_tag": "party"}, token)
 check("非法情境返回400", st == 400, f"st={st}")
 

@@ -10,6 +10,7 @@ from app.schemas.report import (
     ContextDistResponse,
     HeatmapResponse,
     HourlyDistributionResponse,
+    MoodDistResponse,
     ReportOverviewResponse,
     TrendResponse,
 )
@@ -106,3 +107,18 @@ async def get_context_distribution(
     except ValueError as e:
         raise bad_request(e)
     return ContextDistResponse(**result)
+
+
+@router.get("/{challenge_id}/report/mood", response_model=MoodDistResponse)
+async def get_mood_distribution(
+    challenge_id: int,
+    days: int = Query(30, ge=1, le=365),
+    user_id: str = Depends(get_current_user_id_required),
+    session: AsyncSession = Depends(get_db),
+) -> MoodDistResponse:
+    service = ReportService()
+    try:
+        result = await service.get_mood_distribution(session, challenge_id, user_id, days)
+    except ValueError as e:
+        raise bad_request(e)
+    return MoodDistResponse(**result)
