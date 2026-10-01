@@ -93,3 +93,22 @@ class ReportOverviewResponse(BaseModel):
     peak_hour: int = -1
     generated_at: Optional[datetime] = None
     insight: str = ""
+
+
+class ContextDistItem(BaseModel):
+    context_tag: str
+    label: str = ""
+    total_value: float = 0.0
+    checkin_count: int = 0
+    days: int = 0
+    share_pct: float = 0.0
+
+
+class ContextDistResponse(BaseModel):
+    challenge_id: int
+    date_range: str = "30d"
+    direction: str = "increase"
+    unit: str = "次"
+    items: list[ContextDistItem] = Field(default_factory=list)
+    dominant: str = ""
+    insight: str = ""

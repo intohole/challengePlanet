@@ -4,7 +4,7 @@
   V.openReport = function () {
     const s = window.appState
     if (!s.current) return
-    s.reportView = { show: true, tab: 'overview', loading: true, overview: null, hourly: null, trend: null, heatmap: null, completion: null }
+    s.reportView = { show: true, tab: 'overview', loading: true, overview: null, hourly: null, context: null, trend: null, heatmap: null, completion: null }
     this._loadReportData()
   }
 
@@ -19,7 +19,10 @@
     const id = ch.id
     const safe = p => p.catch(() => null)
     if (tab === 'hourly' && !rv.hourly) {
-      safe(window.cpApi.get('/challenges/' + id + '/report/hourly?days=7')).then(d => { rv.hourly = d || null; this.rerender() })
+      Promise.all([
+        safe(window.cpApi.get('/challenges/' + id + '/report/hourly?days=7')),
+        safe(window.cpApi.get('/challenges/' + id + '/report/context?days=30')),
+      ]).then(([d, ctx]) => { rv.hourly = d || null; rv.context = ctx || null; this.rerender() })
     } else if (tab === 'trend' && !rv.trend) {
       safe(window.cpApi.get('/challenges/' + id + '/report/trend?days=30')).then(d => { rv.trend = d || null; this.rerender() })
     } else if (tab === 'heatmap' && !rv.heatmap) {
@@ -35,12 +38,14 @@
     if (!rv || !ch) return
     const id = ch.id
     const safe = p => p.catch(() => null)
-    const [overview, hourly] = await Promise.all([
+    const [overview, hourly, context] = await Promise.all([
       safe(window.cpApi.get('/challenges/' + id + '/report/overview')),
       safe(window.cpApi.get('/challenges/' + id + '/report/hourly?days=7')),
+      safe(window.cpApi.get('/challenges/' + id + '/report/context?days=30')),
     ])
     rv.overview = overview || null
     rv.hourly = hourly || null
+    rv.context = context || null
     rv.loading = false
     this.rerender()
   }
@@ -63,7 +68,7 @@
     } else if (rv.tab === 'overview') {
       html += this._renderOverview(rv.overview, ch)
     } else if (rv.tab === 'hourly') {
-      html += this._renderHourly(rv.hourly, ch)
+      html += this._renderHourly(rv, ch)
     } else if (rv.tab === 'trend') {
       html += this._renderTrend(rv.trend, ch)
     } else if (rv.tab === 'heatmap') {
@@ -98,7 +103,8 @@
     return '<div class="cp-ov-card"><div class="cp-ov-label">' + label + '</div><div class="cp-ov-val" style="color:' + color + '">' + val + '</div><div class="cp-ov-unit">' + window.cpEsc(unit || '') + '</div></div>'
   }
 
-  V._renderHourly = function (r, ch) {
+  V._renderHourly = function (rv, ch) {
+    const r = rv && rv.hourly
     if (!r || !r.items || !r.items.length) return '<div class="cp-mini-empty">暂无时段数据，先记录几次打卡看看吧</div>'
     const items = r.items
     const max = Math.max.apply(null, items.map(i => i.total_value || 0)) || 1
@@ -121,7 +127,25 @@
       h += '<div class="cp-chart-insight"><i class="fas fa-flag"></i> ' + dir + '：' + r.peak_hour + ':00 - ' + (r.peak_hour + 1) + ':00</div>'
     }
     if (r.insight) h += '<div class="cp-chart-insight nx-md"><i class="fas fa-lightbulb"></i> ' + window.cpMd(r.insight) + '</div>'
+    h += this._renderContextBlock(rv && rv.context, ch)
     return h
+  }
+
+  V._renderContextBlock = function (ctx, ch) {
+    if (!ctx) return ''
+    if (!ctx.items || !ctx.items.length) {
+      return '<div class="cp-ctx-empty"><i class="fas fa-location-dot"></i> 记一笔时选一下情境（或记录后在时间线补选），坚持一两周就能看到你在什么场景、什么时间最容易破戒</div>'
+    }
+    const max = Math.max.apply(null, ctx.items.map(i => i.total_value || 0)) || 1
+    let h = '<div class="cp-ctx-block"><div class="cp-ctx-title"><i class="fas fa-location-dot" style="color:var(--primary-light)"></i> 情境分布 · 近' + (ctx.date_range || '30d').replace('d', '天') + '</div>'
+    ctx.items.forEach(it => {
+      const ratio = (it.total_value || 0) / max
+      h += '<div class="cp-ctx-bar-row"><span class="cp-ctx-bar-label">' + window.cpEsc(it.label || it.context_tag) + '</span>'
+      h += '<div class="cp-ctx-bar"><div class="cp-ctx-bar-fill" style="width:' + Math.max(4, ratio * 100) + '%"></div></div>'
+      h += '<span class="cp-ctx-bar-val">' + it.total_value + ' ' + window.cpEsc(ctx.unit || '') + ' · ' + it.share_pct + '%</span></div>'
+    })
+    if (ctx.insight) h += '<div class="cp-chart-insight nx-md"><i class="fas fa-lightbulb"></i> ' + window.cpMd(ctx.insight) + '</div>'
+    return h + '</div>'
   }
 
   V._hourlyRhythm = function (items, peak) {

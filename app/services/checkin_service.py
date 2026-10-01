@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from datetime import datetime
 
 from nexus.logging import get_logger
@@ -17,8 +16,16 @@ from app.core.datetime_utils import now_china
 from app.services.adaptive_service import evaluate_after_bad_mood_task
 from app.services.checkin_background import (
     fill_ai_after_checkin,
+    fire_and_forget,
     save_memory,
 )
+from app.services.checkin_calc import (
+    calc_completion_pct,
+    calc_remaining,
+    calc_sport_calories,
+    is_soft_exceeded,
+)
+from app.services.forecast_math import CONTEXT_TAGS
 from app.services.forecast_service import ForecastService
 from app.services.goal_rule_service import is_repeatable
 from app.services.mercy_service import load_valid_dates
@@ -28,14 +35,6 @@ from app.services.streak_service import calc_streak, today_str
 from app.services.target_service import TargetService
 
 logger = get_logger("challengePlanet.checkin")
-
-_background_tasks: set[asyncio.Task] = set()
-
-
-def _fire_and_forget(coro: object) -> None:
-    task = asyncio.create_task(coro)  # type: ignore[arg-type]
-    _background_tasks.add(task)
-    task.add_done_callback(_background_tasks.discard)
 
 
 class CheckInService:
@@ -102,11 +101,11 @@ class CheckInService:
         sport_minutes_v = float(sport_minutes or 0.0)
         sport_calories = 0.0
         if is_diet and sport_minutes_v > 0:
-            sport_calories = self._calc_sport_calories(challenge, sport_type, sport_minutes_v)
+            sport_calories = calc_sport_calories(challenge, sport_type, sport_minutes_v)
         if is_diet and value <= 0 and sport_minutes_v <= 0:
             raise ValueError("记录内容不能为空")
         burn_total = await self._repo.sum_calories_by_date(session, challenge_id, today) if is_diet else 0.0
-        completion_pct = self._calc_completion_pct(value, target_snapshot["target_value"], challenge.direction)
+        completion_pct = calc_completion_pct(value, target_snapshot["target_value"], challenge.direction)
         if is_diet and target_snapshot["target_value"] > 0:
             from app.services.diet_service import assess_calorie
             assess = assess_calorie(
@@ -114,8 +113,8 @@ class CheckInService:
             )
             completion_pct = 100.0 if assess["status"] == "ok" else min(90.0, max(30.0, float(assess["percent"])))
         gauge_value = intake_total if is_diet else value
-        is_soft_exceeded = self._is_soft_exceeded(gauge_value, target_snapshot, challenge)
-        soft_exceeded_amount = max(0.0, gauge_value - target_snapshot["target_value"]) if is_soft_exceeded else 0.0
+        soft_exceeded = is_soft_exceeded(gauge_value, target_snapshot)
+        soft_exceeded_amount = max(0.0, gauge_value - target_snapshot["target_value"]) if soft_exceeded else 0.0
         if is_diet and sport_calories > 0 and not (reflection or "").strip():
             from app.services.sport_metrics import SPORT_LABEL
             reflection = f"运动：{SPORT_LABEL.get(sport_type, sport_type)} {sport_minutes_v:g} 分钟"
@@ -143,10 +142,10 @@ class CheckInService:
         })
 
         today_total = await self._repo.sum_value_by_date(session, challenge_id, today)
-        remaining = self._calc_remaining(today_total, target_snapshot["target_value"], challenge.direction)
+        remaining = calc_remaining(today_total, target_snapshot["target_value"])
         forecast = await ForecastService().build(
             session, challenge, today_total, target_snapshot["target_value"],
-            ts.hour, is_soft_exceeded=is_soft_exceeded, day_number=day_number,
+            ts.hour, is_soft_exceeded=soft_exceeded, day_number=day_number,
         )
         streak = await self._current_streak(session, challenge_id)
         base, chest = await self._points.award_checkin(
@@ -155,20 +154,20 @@ class CheckInService:
         )
         shields = await self._shields.award_milestone(session, challenge_id, streak)
         await self._maybe_award_squad_bonus(session, challenge_id, today)
-        _fire_and_forget(fill_ai_after_checkin(
+        fire_and_forget(fill_ai_after_checkin(
             checkin.id, user_id, challenge.title, day_number,
             challenge.duration_days, mood, reflection, value,
             target_snapshot["target_value"], challenge.direction,
-            is_soft_exceeded,
+            soft_exceeded,
         ))
-        _fire_and_forget(save_memory(user_id, challenge.title, day_number, mood, reflection, value))
+        fire_and_forget(save_memory(user_id, challenge.title, day_number, mood, reflection, value))
         if mood == "bad":
-            _fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
+            fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
 
         return self._result_payload(
             challenge, checkin, target_snapshot, baseline,
             today_total, remaining, base, chest, streak, shields,
-            already_checked=False, is_soft_exceeded=is_soft_exceeded,
+            already_checked=False, is_soft_exceeded=soft_exceeded,
             soft_exceeded_amount=soft_exceeded_amount, forecast=forecast,
         )
 
@@ -178,7 +177,7 @@ class CheckInService:
     ) -> dict[str, object]:
         today_total = await self._repo.sum_value_by_date(session, challenge.id, existing.date)
         target = float(target_snapshot["target_value"])
-        remaining = self._calc_remaining(today_total, target, challenge.direction)
+        remaining = calc_remaining(today_total, target)
         forecast = await ForecastService().build(
             session, challenge, today_total, target, now_china().hour,
             day_number=day_number,
@@ -216,33 +215,6 @@ class CheckInService:
             "forecast": forecast,
         }
 
-    def _calc_sport_calories(self, challenge: Challenge, sport_type: str, minutes: float) -> float:
-        from app.services.sport_metrics import SPORT_MET, calc_calories
-        met = SPORT_MET.get(sport_type, 0.0)
-        if met <= 0:
-            raise ValueError("请选择有效的运动类型")
-        weight_kg = float(getattr(challenge, "weight_kg", 0.0) or 0.0)
-        if weight_kg <= 0:
-            raise ValueError("缺少体重信息，无法折算运动消耗")
-        return calc_calories(met, weight_kg, minutes)
-
-    def _calc_completion_pct(self, value: float, target: float, direction: str) -> float:
-        if target <= 0:
-            return 100.0
-        if direction == "decrease":
-            return 100.0
-        return min(value / target * 100, 100.0)
-
-    def _is_soft_exceeded(self, value: float, target_snapshot: dict[str, object], challenge) -> bool:
-        target = float(target_snapshot.get("target_value", 0))
-        goal_type = str(target_snapshot.get("goal_type", "hard"))
-        if goal_type != "soft" or target <= 0:
-            return False
-        return value > target
-
-    def _calc_remaining(self, today_total: float, today_target: float, direction: str) -> float:
-        return max(0.0, today_target - today_total)
-
     async def _maybe_award_squad_bonus(
         self, session: AsyncSession, challenge_id: int, today: str,
     ) -> None:
@@ -278,17 +250,17 @@ class CheckInService:
         updated = await self._repo.update(session, checkin, {
             "mood": mood, "reflection": reflection,
         })
-        _fire_and_forget(fill_ai_after_checkin(
+        fire_and_forget(fill_ai_after_checkin(
             checkin.id, user_id, challenge.title,
             checkin.day_number, challenge.duration_days,
             mood, reflection, checkin.value, checkin.target_value,
             challenge.direction, False,
         ))
-        _fire_and_forget(
+        fire_and_forget(
             save_memory(user_id, challenge.title, checkin.day_number, mood, reflection, checkin.value)
         )
         if mood == "bad":
-            _fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
+            fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
         return updated
 
     async def delete_checkin(
@@ -301,6 +273,26 @@ class CheckInService:
         if checkin is None:
             raise ValueError("打卡记录不存在")
         await self._repo.delete(session, checkin)
+
+    async def update_context_tag(
+        self, session: AsyncSession, challenge_id: int, checkin_id: int,
+        user_id: str, context_tag: str,
+    ) -> CheckIn:
+        if context_tag not in CONTEXT_TAGS:
+            raise ValueError("情境标签无效")
+        result = await session.execute(
+            select(CheckIn).where(
+                CheckIn.id == checkin_id,
+                CheckIn.challenge_id == challenge_id,
+                CheckIn.user_id == user_id,
+            )
+        )
+        checkin = result.scalar_one_or_none()
+        if checkin is None:
+            raise ValueError("打卡记录不存在")
+        if checkin.date != today_str():
+            raise ValueError("只能补充今天记录的情境")
+        return await self._repo.update(session, checkin, {"context_tag": context_tag})
 
     async def get_checkins(
         self, session: AsyncSession, challenge_id: int, user_id: str,

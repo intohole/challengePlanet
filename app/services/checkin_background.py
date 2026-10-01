@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from nexus.logging import get_logger
 
 from app.db.database import async_session
@@ -8,6 +10,14 @@ from app.repositories.checkin_repository import CheckInRepository
 from app.services.ai_service import AIService
 
 logger = get_logger("challengePlanet.checkin_bg")
+
+_background_tasks: set[asyncio.Task] = set()
+
+
+def fire_and_forget(coro: object) -> None:
+    task = asyncio.create_task(coro)  # type: ignore[arg-type]
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
 
 
 async def recall_context(user_id: str, title: str) -> str:

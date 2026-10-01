@@ -51,11 +51,10 @@
         html += '<div class="cp-task-progress"><div class="cp-task-progress-bar"><div class="cp-task-progress-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>'
         html += '<div class="cp-task-progress-info"><span style="color:' + barColor + '">' + total + '</span><span class="cp-task-progress-sep">/</span><span>' + target + ' ' + window.cpEsc(t.unit || ch.unit || '') + '</span></div></div>'
       }
-      const hint = this._remainHint(t, ch, isDecrease)
-      if (hint) html += hint
-    }
-    if (t.sub_goals && t.sub_goals.length) html += this._subGoalProgress(t.sub_goals, ch)
-    if (t.period_target && t.period_target > 0) html += this._periodCard(t)
+    const hint = this._remainHint(t, ch, isDecrease)
+    if (hint) html += hint
+  }
+  if (t.period_target && t.period_target > 0) html += this._periodCard(t)
     if ((t.calories_week || 0) > 0 || (t.calories_today || 0) > 0) html += this._calorieCard(t)
     html += '</div>'
     if (isDiet) {

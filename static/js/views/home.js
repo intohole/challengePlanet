@@ -5,10 +5,10 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, insightRunning: false, insightText: '', loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, dietImage: '', weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null },
+    data: { today: null, checkins: [], mercy: null, weekly: null, guidance: null, insightRunning: false, insightText: '', loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', contextTag: '', activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, dietImage: '', weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null },
 
     _freshData(loading) {
-      return { today: null, checkins: [], mercy: null, weekly: null, points: null, guidance: null, insightRunning: false, insightText: '', loading: !!loading, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', quickValue: 1, quickSubGoalId: null, quickMood: '', quickReflection: '', showQuickForm: false, justRepaired: false, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, dietImage: '', weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null }
+      return { today: null, checkins: [], mercy: null, weekly: null, guidance: null, insightRunning: false, insightText: '', loading: !!loading, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', contextTag: '', activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, dietImage: '', weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null }
     },
 
     render(el) {
@@ -221,6 +221,14 @@ window.cpViews.home = (function () {
   }
 
   V._pollTodayAi = async function (chId, dateStr, maxTry, changedFrom) {
+    if (this._pollBusy) return
+    this._pollBusy = true
+    try {
+      await this._pollTodayAiLoop(chId, dateStr, maxTry, changedFrom)
+    } finally { this._pollBusy = false }
+  }
+
+  V._pollTodayAiLoop = async function (chId, dateStr, maxTry, changedFrom) {
     for (let i = 0; i < maxTry; i++) {
       await new Promise(r => setTimeout(r, 3500))
       const t = await window.cpApi.today(chId).catch(() => null)

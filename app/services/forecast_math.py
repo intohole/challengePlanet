@@ -174,6 +174,7 @@ def fmt_int(value: float) -> str:
 
 
 CONTEXT_LABELS = {"home": "家", "work": "工作", "social": "社交", "stress": "压力"}
+CONTEXT_TAGS = frozenset({"", "home", "work", "social", "stress"})
 _CONTEXT_MIN_CNT = 3
 _CONTEXT_MIN_DAYS = 2
 _CONTEXT_RATIO = 1.5

@@ -18,150 +18,20 @@
     try { localStorage.removeItem('cp_nudge_' + chId + '_' + dateStr) } catch (e) {}
   }
 
-  V.openQuickForm = function (subGoalId) {
-    const d = this.data
-    d.showQuickForm = true
-    d.quickValue = 1
-    d.quickReflection = ''
-    d.quickMood = ''
-    if (subGoalId) d.quickSubGoalId = subGoalId
-    else d.quickSubGoalId = null
-    this.rerender()
-  }
+  V.CTX_LABELS = { home: '家', work: '工作', social: '社交', stress: '压力' }
+  V.CTX_EMOJI = { home: '🏠', work: '💼', social: '👥', stress: '😰' }
 
-  V.closeQuickForm = function () {
-    this.data.showQuickForm = false
-    this.rerender()
-  }
-
-  V.adjustQuick = function (delta) {
-    const d = this.data
-    d.quickValue = Math.max(0, d.quickValue + delta)
-    this.rerender()
-  }
-
-  V.setQuick = function (val) {
-    this.data.quickValue = Math.max(0, val)
-    this.rerender()
-  }
-
-  V.setQuickSubGoal = function (id) {
-    this.data.quickSubGoalId = id
-    this.rerender()
-  }
-
-  V.setQuickContext = function (tag) {
-    this.data.quickMood = tag
-    this.rerender()
-  }
-
-  V.setQuickReflection = function (val) {
-    this.data.quickReflection = val || ''
-  }
-
-  V.doQuickCheckin = async function () {
-    const s = window.appState
-    const ch = s.current
-    const d = this.data
-    const t = d.today
-    if (!ch || !t || d.checking) return
-    if (d.quickValue <= 0) { window.cpToast('请输入数量'); return }
-    d.checking = true
-    this.rerender()
+  V.patchContext = async function (checkinId, tag) {
+    const ch = window.appState.current
+    if (!ch) return
     try {
-      const payload = {
-        value: d.quickValue,
-        sub_goal_id: d.quickSubGoalId,
-        context_tag: d.quickMood,
-        reflection: d.quickReflection || '',
-      }
-      const r = await window.cpApi.checkin(ch.id, payload)
-      window.cpCelebrate('记录成功 +' + (r.points_earned || 0) + ' 分')
-      d.showQuickForm = false
-      d.quickValue = 1
-      d.quickReflection = ''
-      d.quickMood = ''
-      d.lastFeedback = r.ai_feedback || d.lastFeedback
-      d.chest = r.chest_points || 0
-      d.shields = r.shields || 0
-      this._nudgeNotify(r, ch, t.date)
-      await this.load()
-      await window.cpLoadChallenges()
-      if (r.is_soft_exceeded) {
-        setTimeout(() => window.cpToast('这个时段对你来说特别难，记录下就好', 3200), 1300)
-      }
-    } catch (e) {
-      window.cpToast(window.cpErrMsg(e, '记录失败，请重试'))
-    } finally {
-      d.checking = false
+      await window.cpApi.patchCheckinContext(ch.id, checkinId, tag)
+      const t = this.data.today
+      const c = ((t && t.today_checkins) || []).find(x => x.id === checkinId)
+      if (c) c.context_tag = tag
+      window.cpToast('已记下情境 ' + (this.CTX_EMOJI[tag] || ''))
       this.rerender()
-    }
-  }
-
-  V._isCurrentSlot = function (sg) {
-    if (!sg.time_window_start || !sg.time_window_end) return false
-    const now = new Date()
-    const hhmm = NexusUtils.formatDateTimeHyphen(now).slice(11)
-    return hhmm >= sg.time_window_start && hhmm < sg.time_window_end
-  }
-
-  V._quickForm = function (tt, t, ch, dis) {
-    const d = this.data
-    const unit = window.cpEsc(t.unit || ch.unit || '')
-    const subGoals = t.sub_goals || []
-    let html = '<div class="glass-card cp-quick-form"><div class="cp-quick-form-head"><span><i class="fas fa-pen"></i> 记录一次</span><button class="cp-quick-form-close" onclick="cpViews.home.closeQuickForm()"><i class="fas fa-xmark"></i></button></div>'
-    if (subGoals.length) {
-      html += '<div class="cp-quick-form-row"><label class="cp-label">时段</label><div class="cp-quick-form-sgs">'
-      const currentSg = subGoals.find(sg => this._isCurrentSlot(sg))
-      const defaultId = d.quickSubGoalId || (currentSg && currentSg.id) || subGoals[0].id
-      subGoals.forEach(sg => {
-        const sel = sg.id === defaultId ? ' active' : ''
-        html += '<button class="cp-pick-btn' + sel + '" onclick="cpViews.home.setQuickSubGoal(' + sg.id + ')">' + window.cpEsc(sg.title) + '</button>'
-      })
-      html += '</div></div>'
-    }
-    html += '<div class="cp-quick-form-row"><label class="cp-label">数量</label>'
-    html += '<div class="cp-counter-row">'
-    html += '<button class="cp-counter-btn" ' + dis + ' onclick="cpViews.home.adjustQuick(-1)">−1</button>'
-    html += '<div class="cp-counter-display"><span class="cp-counter-val">' + d.quickValue + '</span><span class="cp-counter-target">' + unit + '</span></div>'
-    html += '<button class="cp-counter-btn" ' + dis + ' onclick="cpViews.home.adjustQuick(1)">+1</button></div>'
-    html += '<div class="cp-counter-quick">'
-    ;[1, 2, 3, 5].forEach(v => { html += '<button class="cp-quick-btn-input" ' + dis + ' onclick="cpViews.home.setQuick(' + v + ')">' + v + '</button>' })
-    html += '</div></div>'
-    html += '<div class="cp-quick-form-row"><label class="cp-label">情境（选填）</label><div class="cp-pick-btns">'
-    const tags = [{ k: '', l: '不选' }, { k: 'home', l: '🏠 家' }, { k: 'work', l: '💼 工作' }, { k: 'social', l: '👥 社交' }, { k: 'stress', l: '😰 压力' }]
-    tags.forEach(tg => {
-      const sel = d.quickMood === tg.k ? ' active' : ''
-      html += '<button class="cp-pick-btn' + sel + '" onclick="cpViews.home.setQuickContext(\'' + tg.k + '\')">' + tg.l + '</button>'
-    })
-    html += '</div></div>'
-    html += '<div class="cp-quick-form-row"><label class="cp-label">心得（选填）</label>'
-    html += '<textarea class="cp-text-input" ' + dis + ' placeholder="这一刻的感受..." oninput="cpViews.home.setQuickReflection(this.value)" style="resize:none;font-size:14px;min-height:60px">' + window.cpEsc(d.quickReflection || '') + '</textarea></div>'
-    html += '<button class="cp-btn-primary" ' + dis + ' onclick="cpViews.home.doQuickCheckin()"><i class="fas fa-check"></i> ' + (d.checking ? '记录中...' : '记录') + '</button>'
-    html += '</div>'
-    return html
-  }
-
-  V._subGoalProgress = function (subGoals, ch) {
-    if (!subGoals || !subGoals.length) return ''
-    let html = '<div class="cp-subgoals">'
-    subGoals.forEach(sg => {
-      const pct = sg.progress_pct || 0
-      const isDecrease = ch.direction === 'decrease'
-      const isSoft = sg.goal_type === 'soft'
-      const overTarget = isDecrease ? sg.today_value > sg.target_value : sg.today_value < sg.target_value
-      const colorClass = sg.target_value > 0 && sg.today_value > 0 && overTarget ? (isSoft ? 'warn' : 'over') : 'ok'
-      html += '<div class="cp-subgoal ' + colorClass + '">'
-      html += '<div class="cp-subgoal-head"><span class="cp-subgoal-title">' + window.cpEsc(sg.title) + '</span>'
-      if (sg.time_window_start && sg.time_window_end) html += '<span class="cp-subgoal-time">' + sg.time_window_start + '-' + sg.time_window_end + '</span>'
-      html += '</div>'
-      html += '<div class="cp-subgoal-bar"><div class="cp-subgoal-fill" style="width:' + Math.min(pct, 100) + '%"></div></div>'
-      html += '<div class="cp-subgoal-info"><span>' + sg.today_value + ' / ' + sg.target_value + ' ' + window.cpEsc(ch.unit || '') + '</span>'
-      if (sg.today_checkin_count > 0) html += '<span class="cp-subgoal-cnt">' + sg.today_checkin_count + ' 次</span>'
-      html += '</div></div>'
-    })
-    html += '</div>'
-    return html
+    } catch (e) { window.cpToast(window.cpErrMsg(e, '补充情境失败')) }
   }
 
   V._todayTimeline = function (s) {
@@ -175,7 +45,6 @@
     html += '<div class="cp-timeline-list">'
     checkins.slice().reverse().forEach((c, i) => {
       const time = (c.timestamp || '').slice(11, 16)
-      const subGoal = (t.sub_goals || []).find(sg => sg.id === c.sub_goal_id)
       const isSoftExceeded = c.target_value > 0 && c.value > c.target_value && (c.goal_type === 'soft')
       const isHardExceeded = c.target_value > 0 && c.value > c.target_value && (c.goal_type === 'hard')
       let valueColor = 'var(--emerald)'
@@ -187,13 +56,22 @@
       html += '<div class="cp-timeline-body">'
       html += '<div class="cp-timeline-valrow"><div class="cp-timeline-val" style="color:' + valueColor + '">' + c.value + ' ' + window.cpEsc(c.unit || ch.unit || '') + '</div>'
       html += '<button class="cp-timeline-del" onclick="cpViews.home.removeTodayRecord(' + c.id + ')"><i class="fas fa-trash-can"></i> 撤销</button></div>'
-      if (subGoal) html += '<div class="cp-timeline-sub">' + window.cpEsc(subGoal.title) + '</div>'
+      if (c.context_tag) html += '<div class="cp-ctx-badge">' + (this.CTX_EMOJI[c.context_tag] || '') + ' ' + (this.CTX_LABELS[c.context_tag] || c.context_tag) + '</div>'
+      else if (i === 0) html += this._ctxPatchRow(c.id)
       if (c.mood) html += '<div class="cp-timeline-mood">' + ({ good: '😊', normal: '😐', bad: '😔' }[c.mood] || '') + '</div>'
       if (c.reflection) html += '<div class="cp-timeline-reflection">' + window.cpEsc(c.reflection) + '</div>'
       html += '</div></div>'
     })
     html += '</div></div>'
     return html
+  }
+
+  V._ctxPatchRow = function (checkinId) {
+    let h = '<div class="cp-ctx-patch"><span class="cp-ctx-q">刚在哪？</span>'
+    ;['home', 'work', 'social', 'stress'].forEach(k => {
+      h += '<button class="cp-pick-btn cp-ctx-chip" onclick="cpViews.home.patchContext(' + checkinId + ',\'' + k + '\')">' + this.CTX_EMOJI[k] + ' ' + this.CTX_LABELS[k] + '</button>'
+    })
+    return h + '</div>'
   }
 
   V._tallyCta = function (tt, t, ch, dis) {
@@ -215,7 +93,8 @@
       html += '<button class="cp-tap-chip" ' + dis + ' onclick="cpViews.home.doFastTap(' + v + ')"><i class="fas fa-plus"></i>' + label + '</button>'
     })
     if ((t.today_checkins || []).length) html += '<button class="cp-tap-chip ghost" ' + dis + ' onclick="cpViews.home.doUndoLast()"><i class="fas fa-rotate-left"></i>撤销上一笔</button>'
-    return html + '</div></div>'
+    html += '</div>' + this._ctxRow() + '</div>'
+    return html
   }
 
   V.removeTodayRecord = async function (checkinId) {

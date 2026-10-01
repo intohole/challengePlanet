@@ -102,12 +102,14 @@
     const ch = window.appState.current
     const d = this.data
     const t = d.today
-    if (!ch || !t || d.checking) return false
+    if (!ch || !t) return false
     const v = Number(value) || 1
-    d.checking = true
+    t.today_total = (Number(t.today_total) || 0) + v
     this.rerender()
     try {
-      const r = await window.cpApi.checkin(ch.id, { value: v })
+      const r = await window.cpApi.checkin(ch.id, { value: v, context_tag: d.contextTag || '' })
+      d.contextTag = ''
+      t.today_total = Number(r.today_total) || t.today_total
       const total = r.today_total || 0
       const target = (t.today_target || ch.target_value || 1)
       if (ch.direction === 'decrease') {
@@ -119,25 +121,48 @@
       } else {
         window.cpCelebrate(total >= target ? '已记 ' + total + ' · 今日目标已达成' : '已记 ' + total + ' / 目标 ' + target + ' · 还差 ' + Math.max(0, target - total))
       }
-      await this._finishCheckin(r, ch, d, t.date)
+      d.lastFeedback = r.ai_feedback || d.lastFeedback
+      d.chest = r.chest_points || 0
+      d.shields = r.shields || 0
+      this._nudgeNotify(r, ch, t.date)
+      this._debouncedRefresh()
       return true
     } catch (e) {
+      t.today_total = Math.max(0, (Number(t.today_total) || 0) - v)
       window.cpToast(window.cpErrMsg(e, '记录失败，请重试'))
+      this._debouncedRefresh()
       return false
-    } finally {
-      d.checking = false
-      this.rerender()
     }
   }
 
-  V.adjustCount = function (delta) {
-    const d = this.data
-    d.taskValue = Math.max(0, d.taskValue + delta)
-    this.rerender()
+  V._debouncedRefresh = function () {
+    clearTimeout(this._fastTimer)
+    this._fastTimer = setTimeout(async () => {
+      await this.load()
+      await window.cpLoadChallenges()
+      this.rerender()
+      const ch = window.appState.current
+      const t = this.data.today
+      const ck = t && t.today_checkins
+      if (ch && t && ck && ck.length && !ck[ck.length - 1].ai_feedback && window.cpPollTodayAi) {
+        window.cpPollTodayAi(ch.id, t.date, 2)
+      }
+    }, 450)
   }
 
-  V.setCount = function (val) {
-    this.data.taskValue = Math.max(0, val)
+  V._ctxRow = function () {
+    const d = this.data
+    let h = '<div class="cp-ctx-row"><span class="cp-ctx-label"><i class="fas fa-location-dot"></i> 情境</span><div class="cp-pick-btns">'
+    const tags = [{ k: '', l: '不选' }, { k: 'home', l: '🏠 家' }, { k: 'work', l: '💼 工作' }, { k: 'social', l: '👥 社交' }, { k: 'stress', l: '😰 压力' }]
+    tags.forEach(tg => {
+      const sel = (d.contextTag || '') === tg.k ? ' active' : ''
+      h += '<button class="cp-pick-btn cp-ctx-chip' + sel + '" onclick="cpViews.home.setContext(\'' + tg.k + '\')">' + tg.l + '</button>'
+    })
+    return h + '</div></div>'
+  }
+
+  V.setContext = function (tag) {
+    this.data.contextTag = tag || ''
     this.rerender()
   }
 
@@ -161,42 +186,15 @@
     const t = d.today
     if (!ch || !t || d.checking || t.settled) return
     const steps = (t.task_steps) || []
-    if (steps.length) {
-      if (!d.taskSteps.length) { window.cpToast('先勾选完成的分步再打卡'); return }
-      d.taskValue = d.taskSteps.length
-      const payload = { value: d.taskSteps.length, reflection: d.taskSteps.join('；') }
-      d.checking = true
-      this.rerender()
-      try {
-        const r = await window.cpApi.checkin(ch.id, payload)
-        window.cpCelebrate('打卡成功 +' + (r.points_earned || 0) + ' 分')
-        d.taskSteps = []
-        await this._finishCheckin(r, ch, d, t.date)
-      } catch (e) {
-        window.cpToast(window.cpErrMsg(e, '打卡失败，请重试'))
-      } finally {
-        d.checking = false
-        this.rerender()
-      }
-      return
-    }
-    const tt = t.task_type || ch.task_type || 'binary'
-    let payload = { value: 1.0, reflection: '' }
-    if (tt === 'counter' || tt === 'timer') {
-      if (d.taskValue <= 0) { window.cpToast('先输入数量'); return }
-      payload.value = d.taskValue
-    } else if (tt === 'text') {
-      if (!d.textValue.trim()) { window.cpToast('先写点什么'); return }
-      payload.value = d.textValue.length
-      payload.reflection = d.textValue
-    }
+    if (!steps.length) return
+    if (!d.taskSteps.length) { window.cpToast('先勾选完成的分步再打卡'); return }
+    const payload = { value: d.taskSteps.length, reflection: d.taskSteps.join('；') }
     d.checking = true
     this.rerender()
     try {
       const r = await window.cpApi.checkin(ch.id, payload)
       window.cpCelebrate('打卡成功 +' + (r.points_earned || 0) + ' 分')
-      d.taskValue = 0
-      d.textValue = ''
+      d.taskSteps = []
       await this._finishCheckin(r, ch, d, t.date)
     } catch (e) {
       window.cpToast(window.cpErrMsg(e, '打卡失败，请重试'))
@@ -212,7 +210,7 @@
     const t = d.today
     if (!ch || !t || d.checking) return
     const tt = t.task_type || ch.task_type || 'binary'
-    const data = { value: payload.value || 0, reflection: payload.reflection || '', context_tag: '', sub_goal_id: null }
+    const data = { value: payload.value || 0, reflection: payload.reflection || '', context_tag: payload.context_tag || '' }
     if (tt === 'counter' && data.value <= 0) { window.cpToast('先输入数量'); return }
     d.checking = true
     this.rerender()
@@ -351,8 +349,7 @@
       const label = isTimer ? '+' + v + '分' : '+' + v
       html += '<button class="cp-tap-chip" ' + dis + ' onclick="cpViews.home.doFastTap(' + v + ')"><i class="fas fa-plus"></i>' + label + '</button>'
     })
-    html += '<button class="cp-tap-chip ghost" ' + dis + ' onclick="cpViews.home.openQuickForm()"><i class="fas fa-sliders"></i>自定义</button>'
-    html += '</div></div>'
+    html += '</div>' + this._ctxRow() + '</div>'
     return html
   }
 
@@ -385,7 +382,7 @@
     if (!lst.length) return ''
     let h = '<div class="cp-extra-panel">'
     lst.slice(0, 3).forEach(c => {
-      h += '<div class="cp-undo-item"><span class="cp-undo-time">' + (c.timestamp || '').slice(11, 16) + '</span><span class="cp-undo-val">' + c.value + ' ' + window.cpEsc(c.unit || ch.unit || '') + '</span><button class="cp-undo-del" ' + dis + ' onclick="cpViews.home.doUndoLast()"><i class="fas fa-trash-can"></i></button></div>'
+      h += '<div class="cp-undo-item"><span class="cp-undo-time">' + (c.timestamp || '').slice(11, 16) + '</span><span class="cp-undo-val">' + c.value + ' ' + window.cpEsc(c.unit || ch.unit || '') + '</span><button class="cp-undo-del" onclick="cpViews.home.removeTodayRecord(' + c.id + ')"><i class="fas fa-trash-can"></i></button></div>'
     })
     h += '</div>'
     return h

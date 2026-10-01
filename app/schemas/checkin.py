@@ -23,6 +23,10 @@ class CheckInPatchRequest(BaseModel):
     reflection: str = Field("", description="心得体会")
 
 
+class CheckInContextPatch(BaseModel):
+    context_tag: str = Field("", description="情境标签: home/work/social/stress，空串表示清除")
+
+
 class InsightStreamRequest(BaseModel):
     force: bool = Field(False, description="是否忽略本周缓存强制重新生成")
 

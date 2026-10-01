@@ -9,7 +9,7 @@ from app.db.database import Base
 from app.models.challenge import Challenge
 from app.models.checkin import CheckIn
 from app.services.challenge_service import ChallengeService
-from app.services.checkin_service import CheckInService
+from app.services.checkin_calc import calc_completion_pct
 from app.services.goal_rule_service import is_cap_mode, is_settled
 from app.services.mercy_service import load_valid_dates
 from app.services.streak_service import today_str, shift_date
@@ -93,11 +93,10 @@ async def test_cap_mode_smoking_scenario() -> None:
 
 @pytest.mark.asyncio
 async def test_decrease_completion_pct_not_punished() -> None:
-    svc = CheckInService()
-    assert svc._calc_completion_pct(15, 10, "decrease") == 100.0, "超限记录不扣单笔完成度"
-    assert svc._calc_completion_pct(3, 10, "decrease") == 100.0
-    assert svc._calc_completion_pct(30, 30, "increase") == 100.0
-    assert svc._calc_completion_pct(15, 30, "increase") == 50.0
+    assert calc_completion_pct(15, 10, "decrease") == 100.0, "超限记录不扣单笔完成度"
+    assert calc_completion_pct(3, 10, "decrease") == 100.0
+    assert calc_completion_pct(30, 30, "increase") == 100.0
+    assert calc_completion_pct(15, 30, "increase") == 50.0
 
 
 @pytest.mark.asyncio

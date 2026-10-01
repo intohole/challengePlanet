@@ -9,9 +9,7 @@
       window.cpToast(r.message || '已修复！偶尔断签没关系，重要的是继续前进')
       await this.load()
       await window.cpLoadChallenges()
-      this.data.justRepaired = true
       this.rerender()
-      setTimeout(() => { this.data.justRepaired = false; this.rerender() }, 3000)
     } catch (e) { window.cpToast(window.cpErrMsg(e, '修复失败')) }
   }
 
@@ -133,7 +131,7 @@
     const mercy = d.mercy || {}
     const tt = (t && t.task_type) || ch.task_type || 'binary'
     const active = ch.status === 'active'
-    const isDeco = ch.decompose_mode === 'time_slot' || (t && t.sub_goals && t.sub_goals.length) || tt === 'step' || tt === 'counter' || tt === 'timer'
+    const isDeco = ch.decompose_mode === 'time_slot' || tt === 'step' || tt === 'counter' || tt === 'timer'
     const props = {
       title: ch.title || '',
       icon: ch.icon || '🔥',

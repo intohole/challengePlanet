@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.schemas.report import (
     CompletionRateResponse,
+    ContextDistResponse,
     HeatmapResponse,
     HourlyDistributionResponse,
     ReportOverviewResponse,
@@ -90,3 +91,18 @@ async def get_completion_rate(
     except ValueError as e:
         raise bad_request(e)
     return CompletionRateResponse(**result)
+
+
+@router.get("/{challenge_id}/report/context", response_model=ContextDistResponse)
+async def get_context_distribution(
+    challenge_id: int,
+    days: int = Query(30, ge=1, le=365),
+    user_id: str = Depends(get_current_user_id_required),
+    session: AsyncSession = Depends(get_db),
+) -> ContextDistResponse:
+    service = ReportService()
+    try:
+        result = await service.get_context_distribution(session, challenge_id, user_id, days)
+    except ValueError as e:
+        raise bad_request(e)
+    return ContextDistResponse(**result)

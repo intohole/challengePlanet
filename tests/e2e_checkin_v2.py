@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import json
 import os
+import os
 import sys
 
 from playwright.sync_api import sync_playwright
 
-BASE = "https://songguokr.com/challengePlanet"
+BASE = os.environ.get("CP_BASE", "http://127.0.0.1:8610")
 USER, PWD = "cp_diag_probe", "Diag#2026probe"
 OUT = os.path.join(os.path.dirname(__file__), "browser_shots", "v2")
 os.makedirs(OUT, exist_ok=True)

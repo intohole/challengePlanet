@@ -10,6 +10,7 @@ from app.db.database import get_db
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository, InsightRepository
 from app.schemas.checkin import (
+    CheckInContextPatch,
     CheckInCreate,
     CheckInPatchRequest,
     CheckInResponse,
@@ -106,6 +107,25 @@ async def delete_checkin(
         raise bad_request(e)
     await session.commit()
     return {"ok": True}
+
+
+@router.patch("/{challenge_id}/checkins/{checkin_id}/context", response_model=CheckInResponse)
+async def patch_checkin_context(
+    challenge_id: int,
+    checkin_id: int,
+    request: CheckInContextPatch,
+    user_id: str = Depends(get_current_user_id_required),
+    session: AsyncSession = Depends(get_db),
+) -> CheckInResponse:
+    service = CheckInService()
+    try:
+        checkin = await service.update_context_tag(
+            session, challenge_id, checkin_id, user_id, request.context_tag,
+        )
+    except ValueError as e:
+        raise bad_request(e)
+    await session.commit()
+    return CheckInResponse.model_validate(checkin)
 
 
 @router.post("/{challenge_id}/mend", response_model=DateActionResponse)

@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.datetime_utils import now_china
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository, InsightRepository
-from app.services.forecast_math import fmt_int
+from app.services.forecast_math import CONTEXT_LABELS, fmt_int
 from app.services.report_calculator import ReportCalculator
 from app.services.streak_service import today_str
 
@@ -51,6 +51,50 @@ class ReportService:
         if challenge.direction == "decrease":
             return f"你在{peak_hour:02d}:00-{peak_hour + 1:02d}:00这个时段记录最多，这可能是你最容易想{challenge.title}的时段"
         return f"你在{peak_hour:02d}:00-{peak_hour + 1:02d}:00这个时段记录最频繁，这是你的高效时段"
+
+    async def get_context_distribution(
+        self, session: AsyncSession, challenge_id: int, user_id: str,
+        days: int = 30,
+    ) -> dict[str, object]:
+        challenge = await self._get_challenge(session, challenge_id, user_id)
+        start_dt = now_china() - timedelta(days=days - 1)
+        rows = await self._checkin_repo.get_context_totals(
+            session, challenge_id, start_dt.strftime("%Y-%m-%d"), today_str(),
+        )
+        rows.sort(key=lambda r: float(r.get("total_value", 0) or 0), reverse=True)
+        grand = sum(float(r.get("total_value", 0) or 0) for r in rows)
+        items: list[dict[str, object]] = []
+        for r in rows:
+            total = float(r.get("total_value", 0) or 0)
+            items.append({
+                "context_tag": str(r.get("context_tag", "")),
+                "label": CONTEXT_LABELS.get(str(r.get("context_tag", "")), ""),
+                "total_value": round(total, 2),
+                "checkin_count": int(r.get("checkin_count", 0) or 0),
+                "days": int(r.get("days", 0) or 0),
+                "share_pct": round(total / grand * 100, 1) if grand > 0 else 0.0,
+            })
+        dominant = str(items[0]["context_tag"]) if items else ""
+        insight = self._context_insight(items, challenge)
+        return {
+            "challenge_id": challenge_id, "date_range": f"{days}d",
+            "direction": challenge.direction, "unit": challenge.unit,
+            "items": items, "dominant": dominant, "insight": insight,
+        }
+
+    def _context_insight(self, items: list[dict[str, object]], challenge) -> str:
+        if not items:
+            return ""
+        top = items[0]
+        label = str(top.get("label", "")) or str(top.get("context_tag", ""))
+        share = float(top.get("share_pct", 0) or 0)
+        total = float(top.get("total_value", 0) or 0)
+        if challenge.direction == "decrease":
+            return (
+                f"你在「{label}」情境下记录最多（{fmt_int(total)}{challenge.unit}，"
+                f"占{share:g}%），这可能是你最容易破戒的场景，下次到这个情境先想一下今天的上限"
+            )
+        return f"「{label}」是你的高效场景（占{share:g}%），保持在这个情境里推进目标"
 
     async def get_trend(
         self, session: AsyncSession, challenge_id: int, user_id: str,
