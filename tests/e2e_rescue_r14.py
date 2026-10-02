@@ -5,6 +5,7 @@ import os
 import sqlite3
 import sys
 import urllib.request
+import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -48,8 +49,7 @@ def call(method: str, path: str, payload: dict | None = None, token: str = "") -
 
 
 def shift(day: str, n: int) -> str:
-    from datetime import datetime, timedelta
-    d = datetime.strptime(day, "%Y-%m-%d") + timedelta(days=n)
+    d = datetime.datetime.strptime(day, "%Y-%m-%d") + datetime.timedelta(days=n)
     return d.strftime("%Y-%m-%d")
 
 
@@ -66,7 +66,7 @@ def register() -> str:
 
 def main() -> int:
     global FAIL
-    today = __import__("app.services.streak_service", fromlist=["today_str"]).today_str()
+    today = datetime.datetime.now().strftime("%Y-%m-%d")
 
     print("== 1. 注册与建挑战 ==")
     token = register()
@@ -83,10 +83,8 @@ def main() -> int:
     print("== 2. 直插历史打卡制造断档（-6 天打卡，-5..-1 断 5 天） ==")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute(
-        "INSERT INTO checkins (challenge_id, user_id, timestamp, day_number, date, status, mood, reflection, ai_feedback, context_tag, completion_pct, value, unit) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        (ch_id, data.get("user_id"), shift(today, -6) + " 10:00:00", 1, shift(today, -6), "completed", "", "", "", "", 100.0, 20, "词"),
-    )
+    _cols = "INSERT INTO checkins (challenge_id, user_id, timestamp, day_number, date, status, mood, reflection, ai_feedback, context_tag, completion_pct, value, unit, target_value, goal_type, direction) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    c.execute(_cols, (ch_id, data.get("user_id"), shift(today, -6) + " 10:00:00", 1, shift(today, -6), "completed", "", "", "", "", 100.0, 20, "词", 20.0, "hard", "increase"))
     conn.commit()
     conn.close()
 
@@ -110,8 +108,8 @@ def main() -> int:
     ch_b = data_b.get("id")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("INSERT INTO checkins (challenge_id, user_id, timestamp, day_number, date, status, mood, reflection, ai_feedback, context_tag, completion_pct, value, unit) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-              (ch_b, data.get("user_id"), shift(today, -2) + " 10:00:00", 2, shift(today, -2), "completed", "", "", "", "", 100.0, 3, "公里"))
+    c.execute("INSERT INTO checkins (challenge_id, user_id, timestamp, day_number, date, status, mood, reflection, ai_feedback, context_tag, completion_pct, value, unit, target_value, goal_type, direction) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+              (ch_b, data.get("user_id"), shift(today, -2) + " 10:00:00", 2, shift(today, -2), "completed", "", "", "", "", 100.0, 3, "公里", 3.0, "hard", "increase"))
     conn.commit()
     conn.close()
     status, body = call("GET", "/challenges", token=token)
@@ -140,8 +138,8 @@ def main() -> int:
     ch_c = data_c.get("id")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("INSERT INTO checkins (challenge_id, user_id, timestamp, day_number, date, status, mood, reflection, ai_feedback, context_tag, completion_pct, value, unit) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-              (ch_c, data.get("user_id"), shift(today, -3) + " 10:00:00", 1, shift(today, -3), "completed", "", "", "", "", 100.0, 30, "页"))
+    c.execute("INSERT INTO checkins (challenge_id, user_id, timestamp, day_number, date, status, mood, reflection, ai_feedback, context_tag, completion_pct, value, unit, target_value, goal_type, direction) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+              (ch_c, data.get("user_id"), shift(today, -3) + " 10:00:00", 1, shift(today, -3), "completed", "", "", "", "", 100.0, 30, "页", 30.0, "hard", "increase"))
     conn.commit()
     conn.close()
     status, body = call("GET", "/challenges", token=token)
