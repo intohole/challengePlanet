@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 import secrets
-import time
 from datetime import timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from nexus.utils import SyncTTLCache
 
 from app.core.datetime_utils import now_china
 from app.models.challenge import Challenge
@@ -73,8 +74,7 @@ MILESTONE_TIPS: dict[int, str] = {
 }
 
 
-_COMPANION_CACHE: dict[str, dict[str, object]] = {}
-_COMPANION_TTL = 3600
+_COMPANION_CACHE = SyncTTLCache(default_ttl=3600.0, max_size=512)
 
 
 class GuidanceService:
@@ -164,18 +164,13 @@ class GuidanceService:
     async def _build_companion(self, challenge, streak: int, phase_key: str, risk: dict[str, object]) -> str:
         try:
             cache_key = f"{challenge.user_id}:{challenge.id}:{phase_key}:{streak}"
-            if cache_key in _COMPANION_CACHE:
-                entry = _COMPANION_CACHE[cache_key]
-                if entry["ts"] + _COMPANION_TTL > time.time():
-                    return str(entry["msg"])
+            cached = _COMPANION_CACHE.get(cache_key)
+            if cached is not None:
+                return str(cached)
             msg = await AIService().generate_companion_message(
                 challenge.title, streak, phase_key, list(risk["reasons"])
             )
-            _COMPANION_CACHE[cache_key] = {"msg": msg, "ts": time.time()}
-            if len(_COMPANION_CACHE) > 512:
-                stale = [k for k, v in _COMPANION_CACHE.items() if v["ts"] + _COMPANION_TTL <= time.time()]
-                for k in stale[:128]:
-                    _COMPANION_CACHE.pop(k, None)
+            _COMPANION_CACHE.set(cache_key, msg)
             return msg
         except Exception:
             return companion_text(risk)
