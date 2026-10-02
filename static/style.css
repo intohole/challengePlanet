@@ -162,14 +162,6 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 @keyframes glow-ring { 0% { box-shadow: 0 0 0 0 rgba(129,140,248,.4); } 100% { box-shadow: 0 0 0 12px rgba(129,140,248,0); } }
 
 /* Space-themed card variants */
-.cp-nebula-card { position: relative; overflow: hidden; }
-.cp-nebula-card::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 30% 20%, rgba(129,140,248,.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(167,139,250,.04) 0%, transparent 50%); pointer-events: none; }
-
-.cp-shield-break-icon { display: inline-block; font-size: 34px; line-height: 1; animation: shieldShatter .6s ease-out forwards; transform-origin: center; margin-bottom: 8px; filter: drop-shadow(0 2px 6px rgba(248,113,113,.3)); }
-.cp-shield-mend-icon { display: inline-block; font-size: 34px; line-height: 1; animation: shieldMend .8s ease-out forwards, shieldMendGlow 1.2s ease-out .6s forwards; transform-origin: center; margin-bottom: 8px; }
-.cp-shield-mend-card { border-color: rgba(52,211,153,.4) !important; background: rgba(52,211,153,.08) !important; animation: shieldMendGlow 1.2s ease-out .6s forwards; }
-.cp-shield-active { animation: shieldGlow 1.8s ease-in-out infinite; }
-
 @keyframes shieldShatter {
   0% { transform: scale(1) rotate(0); clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); opacity: 1; }
   30% { transform: scale(1.1) rotate(-2deg); }
@@ -216,7 +208,6 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 }
 body { padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); padding-left: var(--safe-left); padding-right: var(--safe-right); }
 img, video, canvas { max-width: 100%; height: auto; }
-.full-height { height: 100vh; height: 100svh; height: 100dvh; min-height: 100vh; min-height: 100svh; min-height: 100dvh; }
 .cp-modal-footer { padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; flex-shrink: 0; }
 .cp-modal-footer .cp-btn-primary, .cp-modal-footer .cp-btn-ghost { flex: 1; min-height: 48px; }
 @media (max-width: 480px) { .cp-ladder-grid { grid-template-columns: repeat(2,1fr) !important; } .cp-ladder-preview-inner { overflow-x: auto; -webkit-overflow-scrolling: touch; } }
@@ -230,15 +221,8 @@ img, video, canvas { max-width: 100%; height: auto; }
 .cp-ic-primary { color: var(--primary-light) }
 .cp-ic-emerald { color: var(--emerald) }
 .cp-ic-amber { color: var(--amber) }
-.cp-note-xs { font-size: 12px; color: var(--text-muted) }
 .cp-empty-tip { font-size: 13px; color: var(--text-muted); margin: 12px 0 }
 .cp-block { width: 100% }
-.cp-btn-inline { width: auto; padding: 11px 18px }
-.cp-input-row { display: flex; gap: 8px }
-.cp-input-row .cp-field { flex: 1; min-width: 0 }
-.cp-mb0 { margin-bottom: 0 }
-.cp-row-center { display: flex; justify-content: center }
-
 /* ---- 星夜：深空海军底，星野与极光增强，毛玻璃转暗玻璃 ---- */
 [data-theme="dark"] {
   --bg: #0B1020;
