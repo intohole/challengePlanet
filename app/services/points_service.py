@@ -17,7 +17,6 @@ CHEST_PROBABILITY = 0.18
 CHEST_PROBABILITY_HIGH = 0.25
 CHEST_MIN = 5
 CHEST_MAX = 25
-SQUAD_BONUS_POINTS = 5
 
 
 class PointsService:
@@ -60,18 +59,6 @@ class PointsService:
                     "week_key": week_key_of(),
                 })
         return base, chest
-
-    async def award_squad_bonus(
-        self, session: AsyncSession, user_ids: list[str], squad_id: int, date_str: str
-    ) -> None:
-        for uid in user_ids:
-            await self._repo.add_entry(session, {
-                "user_id": uid,
-                "delta": SQUAD_BONUS_POINTS,
-                "reason": "squad_bonus",
-                "ref_id": f"squad:{squad_id}:{date_str}",
-                "week_key": week_key_of(),
-            })
 
     async def spend(
         self, session: AsyncSession, user_id: str, amount: int, reason: str, ref_id: str = ""

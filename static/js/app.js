@@ -15,6 +15,7 @@ window.cpApi = {
   get: url => window.cpApi.unwrap(window.api.get(url)),
   post: (url, payload) => window.cpApi.unwrap(window.api.post(url, payload || {})),
   patch: (url, payload) => window.cpApi.unwrap(window.api.patch(url, payload || {})),
+  put: (url, payload) => window.cpApi.unwrap(window.api.put(url, payload || {})),
   today: id => window.cpApi.get('/challenges/' + id + '/today'),
   checkins: id => window.cpApi.get('/challenges/' + id + '/checkins').then(d => Array.isArray(d) ? d : ((d && d.items) || [])),
   checkin: (id, payload) => window.cpApi.post('/challenges/' + id + '/checkin', payload),
@@ -39,7 +40,7 @@ const state = reactive({
   dayDetail: null,
   mend: { show: false, dates: [], left: 0, busy: false },
   freeze: { show: false, dates: [], left: 0, busy: false },
-  reflection: { show: false, mood: 'good', content: '', busy: false },
+  reflection: { show: false, mood: '', content: '', busy: false },
   share: { show: false, url: '', loading: false, mode: 'win' },
   sharedConfig: { show: false, loading: false, config: null, importing: false, token: '' },
   diagnosis: { show: false, loading: false, report: null, applying: false },
@@ -193,6 +194,15 @@ function handleQuery() {
       const desc = q.get('desc') || ''
       const days = parseInt(q.get('days') || '0', 10)
       window.cpCreate.open({ rawInput: desc ? title + '，' + desc : title, days: days || 0, source: 'lifecompass' })
+      window.history.replaceState({}, '', window.cpPrefix + '/')
+    }
+    const chParam = q.get('ch')
+    if (chParam) {
+      const target = state.challenges.find(c => String(c.id) === chParam)
+      if (target) {
+        state.current = target
+        window.cpToast(q.get('rescue') ? '来看看「' + (window.cpTitleClean(target.title) || '') + '」，星轨还在' : '已切换到「' + (window.cpTitleClean(target.title) || '') + '」')
+      }
       window.history.replaceState({}, '', window.cpPrefix + '/')
     }
   } catch (e) {}

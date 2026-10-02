@@ -1,12 +1,12 @@
 window.cpViews = window.cpViews || {}
-window.cpViews.me = (function () {
-  const V = {
-    el: null,
-    data: { points: null },
+  window.cpViews.me = (function () {
+    const V = {
+      el: null,
+      data: { points: null, prefs: null, saving: false },
 
-    titleClean(t) {
-      return window.cpTitleClean(t)
-    },
+      titleClean(t) {
+        return window.cpTitleClean(t)
+      },
 
     render(el) {
       this.el = el
@@ -33,14 +33,58 @@ window.cpViews.me = (function () {
       }
       html += '<button class="cp-btn-ghost cp-block" onclick="cpCreate.open()"><i class="fas fa-plus"></i> 新建挑战</button></div>'
       html += '<div class="glass-card cp-me-stats"><div class="cp-stat"><div class="cp-stat-num cp-ic-primary">' + totalCheckins + '</div><div class="cp-stat-label">总打卡次数</div></div><div class="cp-stat"><div class="cp-stat-num cp-ic-emerald">' + bestStreak + '</div><div class="cp-stat-label">最长连续</div></div><div class="cp-stat"><div class="cp-stat-num cp-ic-amber">' + s.challenges.length + '</div><div class="cp-stat-label">挑战总数</div></div></div>'
+      html += this._prefsCard()
       html += '<button class="cp-btn-ghost danger" onclick="cpViews.me.logout()"><i class="fas fa-right-from-bracket"></i> 退出登录</button>'
       html += '</div>'
       el.innerHTML = html
     },
 
+    _prefsCard() {
+      const p = this.data.prefs
+      if (!p) return ''
+      const hours = []
+      for (let h = 6; h <= 23; h++) hours.push(h)
+      let opts = ''
+      hours.forEach(h => {
+        opts += '<option value="' + h + '"' + (p.remind_hour === h ? ' selected' : '') + '>' + h + ' 点</option>'
+      })
+      const toggle = '<button class="cp-pref-toggle' + (p.enabled ? ' on' : '') + '" onclick="cpViews.me.toggleRemind()" role="switch" aria-checked="' + p.enabled + '" aria-label="打卡提醒开关"><span class="cp-pref-knob"></span></button>'
+      return '<div class="glass-card cp-pad16"><div class="cp-section-title"><i class="fas fa-bell cp-ic-amber"></i> 打卡提醒</div><div class="cp-pref-row">' + toggle + '<div class="cp-pref-desc">' + (p.enabled ? '每天 <select class="cp-pref-hour" onchange="cpViews.me.setRemindHour(this.value)">' + opts + '</select> 提醒未完成的挑战' : '提醒已关闭，断档时也不会收到通知') + '</div></div></div>'
+    },
+
+    async toggleRemind() {
+      const p = this.data.prefs
+      if (!p || this.data.saving) return
+      p.enabled = !p.enabled
+      this.rerender()
+      await this._savePrefs()
+    },
+
+    async setRemindHour(v) {
+      const p = this.data.prefs
+      if (!p) return
+      const hour = parseInt(v, 10)
+      if (hour === p.remind_hour) return
+      p.remind_hour = hour
+      await this._savePrefs()
+    },
+
+    async _savePrefs() {
+      const p = this.data.prefs
+      if (!p || this.data.saving) return
+      this.data.saving = true
+      try {
+        const r = await window.cpApi.put('/challenges/reminder/prefs', { remind_hour: p.remind_hour, enabled: p.enabled })
+        this.data.prefs = r
+        window.cpToast(p.enabled ? '已开启，每天 ' + p.remind_hour + ' 点提醒' : '已关闭提醒')
+      } catch (e) { window.cpToast(window.cpErrMsg(e, '保存失败')) }
+      finally { this.data.saving = false; this.rerender() }
+    },
+
     onShow() {
       window.cpLoadChallenges().then(() => this.rerender()).catch(() => {})
       window.cpApi.get('/points/summary').then(d => { this.data.points = d; this.rerender() }).catch(() => { this.data.points = null })
+      window.cpApi.get('/challenges/reminder/prefs').then(d => { this.data.prefs = d; this.rerender() }).catch(() => { this.data.prefs = null })
     },
 
     rerender() { if (this.el) this.render(this.el) },

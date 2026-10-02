@@ -11,7 +11,6 @@ from app.models.checkin import CheckIn
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import ChallengeMetaRepository
-from app.repositories.squad_repository import SquadRepository
 from app.core.datetime_utils import now_china
 from app.services.adaptive_service import evaluate_after_bad_mood_task
 from app.services.checkin_background import (
@@ -42,7 +41,6 @@ class CheckInService:
         self._repo = CheckInRepository()
         self._challenge_repo = ChallengeRepository()
         self._meta_repo = ChallengeMetaRepository()
-        self._squad_repo = SquadRepository()
         self._targets = TargetService()
         self._points = points or PointsService()
         self._shields = ShieldService()
@@ -153,7 +151,6 @@ class CheckInService:
             mini=False, completion_pct=completion_pct,
         )
         shields = await self._shields.award_milestone(session, challenge_id, streak)
-        await self._maybe_award_squad_bonus(session, challenge_id, today)
         fire_and_forget(save_memory(user_id, challenge.title, day_number, mood, reflection, value))
         if mood == "bad":
             fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
@@ -209,23 +206,6 @@ class CheckInService:
             "forecast": forecast,
         }
 
-    async def _maybe_award_squad_bonus(
-        self, session: AsyncSession, challenge_id: int, today: str,
-    ) -> None:
-        meta = await self._meta_repo.get(session, challenge_id)
-        if meta is None or meta.squad_id is None:
-            return
-        members = await self._squad_repo.get_members(session, meta.squad_id)
-        if not members:
-            return
-        for member in members:
-            checked = await self._repo.user_has_checkin_on_date(session, member.user_id, today)
-            if not checked:
-                return
-        await self._points.award_squad_bonus(
-            session, [m.user_id for m in members], meta.squad_id, today
-        )
-
     async def _current_streak(self, session: AsyncSession, challenge_id: int) -> int:
         valid = await load_valid_dates(session, challenge_id)
         return calc_streak(valid, today_str())
@@ -241,9 +221,10 @@ class CheckInService:
         checkin = await self._repo.get_by_date(session, challenge_id, today)
         if checkin is None:
             raise ValueError("今日还未打卡")
-        updated = await self._repo.update(session, checkin, {
-            "mood": mood, "reflection": reflection,
-        })
+        fields: dict[str, object] = {"reflection": reflection}
+        if mood:
+            fields["mood"] = mood
+        updated = await self._repo.update(session, checkin, fields)
         fire_and_forget(
             save_memory(user_id, challenge.title, checkin.day_number, mood, reflection, checkin.value)
         )

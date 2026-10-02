@@ -258,7 +258,6 @@ class GuidanceService:
         meta_repo = ChallengeMetaRepository()
         await meta_repo.upsert(session, challenge.id, {
             "source": "shared",
-            "squad_id": None,
             "extra": "{}",
         })
         await session.commit()

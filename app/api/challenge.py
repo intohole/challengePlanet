@@ -5,7 +5,7 @@ import re
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from nexus import get_current_user_id_required
-from nexus import get_datacenter_client, DOMAIN_GROWTH, report_core
+from nexus import get_datacenter_client, DOMAIN_GROWTH
 from nexus.logging import get_logger
 from nexus.streaming import sse_event_dict, sse_response
 from nexus.user_auth import get_bearer_token
@@ -185,7 +185,7 @@ async def confirm_challenge(
     plan = [day.model_dump() for day in request.plan]
     challenge = await service.create_with_plan(
         session, user_id, request.title, request.description, request.category,
-        request.duration_days, request.start_date, plan, request.source, request.squad_id,
+        request.duration_days, request.start_date, plan, request.source,
         task_type=request.task_type, scene_template=request.scene_template,
         target_value=request.target_value, unit=request.unit,
         direction=request.direction, goal_type=request.goal_type,
@@ -208,28 +208,6 @@ async def confirm_challenge(
         except Exception:
             pass
     return await service.build_response(session, challenge, user_id)
-
-
-@router.post("/datacenter/sync")
-async def sync_challenges_to_datacenter(
-    user_id: str = Depends(get_current_user_id_required),
-    session: AsyncSession = Depends(get_db),
-    bearer: str = Depends(get_bearer_token),
-) -> dict[str, object]:
-    service = ChallengeService()
-    challenges = await service.get_user_challenges(session, user_id)
-    items: list[dict[str, object]] = []
-    for c in challenges:
-        if c.status != "active":
-            continue
-        items.append({
-            "domain": DOMAIN_GROWTH, "asset_type": "challenge",
-            "app": "challengeplanet", "ref_id": str(c.id),
-            "title": c.title, "summary": f"{c.duration_days}天挑战",
-            "occurred_at": c.created_at.isoformat() if c.created_at else None,
-        })
-    result = await report_core(bearer, items)
-    return {"synced": result.get("succeeded", 0), "total": result.get("requested", 0), "new": result.get("new", 0)}
 
 
 @router.delete("/{challenge_id}")

@@ -66,7 +66,7 @@ def _run() -> list[dict[str, object]]:
             )
             await s.commit()
 
-        await reminder_service.send_checkin_reminders()
+        await reminder_service.send_checkin_reminders(current_hour=reminder_service.DEFAULT_REMIND_HOUR)
         sent = list(fake.sent)
         await engine.dispose()
         return sent

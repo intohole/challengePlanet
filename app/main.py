@@ -19,9 +19,8 @@ from app.api.challenge import router as challenge_router
 from app.api.checkin import router as checkin_router
 from app.api.diet import router as diet_router
 from app.api.points import router as points_router
-from app.api.portal import router as portal_router
+from app.api.reminder import router as reminder_router
 from app.api.report import router as report_router
-from app.api.squad import router as squad_router
 from app.config import settings
 from app.core.middleware import register_middleware
 from app.db.database import init_db, run_migrations, engine as db_engine, async_session
@@ -65,7 +64,7 @@ async def lifespan(app: FastAPI):
     scheduler.add_cron_job(
         send_checkin_reminders,
         job_id="cp-checkin-reminder",
-        hour=20,
+        hour="*",
         minute=0,
     )
     scheduler.add_cron_job(
@@ -81,7 +80,7 @@ async def lifespan(app: FastAPI):
         minute=10,
     )
     scheduler.start()
-    logger.info("Scheduler started: check-in reminders at 20:00 daily")
+    logger.info("Scheduler started: check-in reminders hourly by user preference")
     yield
     try:
         scheduler.shutdown(wait=False)
@@ -112,9 +111,8 @@ app.include_router(checkin_router, prefix=API_PREFIX + "/challenges")
 app.include_router(diet_router, prefix=API_PREFIX + "/challenges")
 app.include_router(report_router, prefix=API_PREFIX + "/challenges")
 app.include_router(adaptive_router, prefix=API_PREFIX + "/challenges")
-app.include_router(squad_router, prefix=API_PREFIX)
+app.include_router(reminder_router, prefix=API_PREFIX + "/challenges")
 app.include_router(points_router, prefix=API_PREFIX)
-app.include_router(portal_router, prefix=API_PREFIX)
 app.include_router(chat_router(ChatEngine(db_engine).register("challengePlanet", challenge_chat_handler), "challengePlanet"))
 
 register_notify_proxy(app)

@@ -5,7 +5,9 @@
     const d = this.data
     const dis = d.checking ? 'disabled' : ''
     const done = !!t.settled
+    const isCount = tt === 'counter' || tt === 'timer'
     let html = '<div class="cp-checkin-box">' + this._mainCTA(tt, t, ch, dis, done)
+    if (!isCount && !done) html += this._ctxRow() + this._moodRow()
     if (tt === 'timer' && ch.scene_template !== 'pomodoro' && window.cpStopwatchRender) {
       html += window.cpStopwatchRender(t, ch, dis, done)
     }
@@ -33,9 +35,6 @@
     }
     if (tt === 'step' && t.task_steps && t.task_steps.length) {
       return '<button class="cp-cta-main" ' + dis + ' onclick="cpViews.home.openStep()"><i class="fas fa-list-check"></i><span>今日分步</span><em>勾选完成项后提交即自动判定</em></button>'
-    }
-    if (tt === 'step') {
-      return '<button class="cp-cta-main" disabled><i class="fas fa-list-check"></i><span>分步清单未配置</span><em>请先配置分步清单</em></button>'
     }
     let title = '今日完成'
     let sub = ''

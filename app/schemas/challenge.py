@@ -50,7 +50,6 @@ class ChallengeConfirmRequest(BaseModel):
     description: str = Field("", description="挑战描述")
     plan: list[PlanDay] = Field(default_factory=list, description="前端预览确认后的计划")
     source: str = Field("manual", description="来源")
-    squad_id: Optional[int] = Field(None, description="关联小队ID")
     task_type: str = Field("binary", description="任务类型")
     scene_template: str = Field("", description="场景模板")
 
@@ -83,6 +82,15 @@ class MercySummary(BaseModel):
     mend_left_this_month: int = 0
     freeze_left_this_week: int = 0
     repair_available: bool = False
+
+
+class RescueSignal(BaseModel):
+    missed_days: int = 0
+    rescue_level: str = ""
+    can_repair: bool = False
+    mend_date: str = ""
+    last_checked_date: str = ""
+    day_number: int = 0
 
 
 class ChallengeResponse(BaseModel):
@@ -139,6 +147,7 @@ class ChallengeResponse(BaseModel):
     bmr_kcal: float = 0.0
 
     mercy: MercySummary = Field(default_factory=MercySummary)
+    rescue: RescueSignal = Field(default_factory=RescueSignal)
     created_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}

@@ -89,7 +89,7 @@
   V.openReflection = function () {
     const t = this.data.today
     const cd = (t && t.checkin_data) || {}
-    window.appState.reflection = { show: true, mood: cd.mood || 'good', content: cd.reflection || '', busy: false }
+    window.appState.reflection = { show: true, mood: cd.mood || '', content: cd.reflection || '', busy: false }
   }
   V.saveReflection = async function () {
     const ch = window.appState.current

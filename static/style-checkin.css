@@ -229,3 +229,30 @@
 .cp-sport-est b { color: var(--emerald); font-size: 14px; }
 .cp-sport-btn { width: 100%; margin-top: 10px; }
 .cp-diet-meal-kcal.sport { color: var(--emerald); }
+
+/* 断档救援卡：不责备的「接住」语义，与红色警告 banner 区分 */
+.cp-rescue-card { margin: 0 0 12px; padding: 14px 16px; border-radius: var(--radius); background: linear-gradient(135deg, rgba(245,158,11,.10), rgba(255,255,255,.72) 55%); border: 1px solid rgba(245,158,11,.30); animation: fade-in-up .4s ease; }
+.cp-rescue-head { display: flex; align-items: center; gap: 10px; }
+.cp-rescue-star { width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.8); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.cp-rescue-title { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cp-rescue-title b { font-size: 14px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp-rescue-title span { font-size: 12px; color: var(--text-secondary); }
+.cp-rescue-days { font-size: 11px; color: var(--amber); font-weight: 600; white-space: nowrap; }
+.cp-rescue-soft { margin-top: 8px; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+.cp-rescue-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.cp-rescue-btn { border: 1px solid rgba(245,158,11,.35); background: rgba(255,255,255,.85); color: var(--text-primary); border-radius: 10px; padding: 7px 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: transform .15s ease, box-shadow .15s ease; }
+.cp-rescue-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(245,158,11,.18); }
+.cp-rescue-btn.primary { background: var(--amber); border-color: var(--amber); color: #fff; }
+.cp-rescue-btn.ghost { border-color: rgba(100,116,139,.25); color: var(--text-secondary); }
+.cp-rescue-btn i { font-size: 11px; }
+.cp-chip-badge.rescue { color: #B45309; background: rgba(245,158,11,.16); font-weight: 600; }
+
+/* 提醒偏好 */
+.cp-pref-row { display: flex; align-items: center; gap: 12px; }
+.cp-pref-toggle { width: 44px; height: 24px; min-height: 24px; border-radius: 12px; border: none; background: rgba(100,116,139,.25); position: relative; cursor: pointer; flex-shrink: 0; transition: background .2s ease; }
+.cp-pref-toggle.on { background: var(--emerald); }
+.cp-pref-knob { position: absolute; top: 50%; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transform: translateY(-50%); transition: left .2s ease; box-shadow: 0 1px 3px rgba(15,23,42,.25); }
+.cp-pref-toggle.on .cp-pref-knob { left: 22px; }
+.cp-pref-desc { font-size: 13px; color: var(--text-secondary); }
+.cp-pref-hour { border: 1px solid var(--card-border); border-radius: 8px; padding: 2px 6px; font-size: 13px; background: #fff; color: var(--text-primary); }
+@media (prefers-reduced-motion: reduce) { .cp-rescue-card { animation: none; } .cp-rescue-btn, .cp-pref-toggle, .cp-pref-knob { transition: none; } }

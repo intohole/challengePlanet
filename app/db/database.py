@@ -48,14 +48,12 @@ _EXPECTED_TABLES = (
     "challenges",
     "checkins",
     "ai_insights",
-    "squads",
-    "squad_members",
-    "squad_nudges",
     "points_ledger",
     "streak_actions",
     "challenge_meta",
     "adaptive_suggestions",
     "weight_records",
+    "reminder_prefs",
 )
 
 
@@ -65,7 +63,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 def _import_models() -> None:
-    from app.models import adaptive, challenge, checkin, points, squad  # noqa: F401
+    from app.models import adaptive, challenge, checkin, points, reminder  # noqa: F401
 
 _WHITELIST_TABLES = frozenset({"challenges", "checkins", "adaptive_suggestions"})
 

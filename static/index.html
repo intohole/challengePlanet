@@ -9,9 +9,9 @@
 <script>window.PATH_PREFIX = window.PATH_PREFIX || ''</script>
 <link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.40.0/vendor/fontawesome/css/all.min.css">
 <link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.40.0/css/nexus-all.css">
-<link rel="stylesheet" href="/static/style.css?v=20260825b">
+<link rel="stylesheet" href="/static/style.css?v=20261002a">
 <link rel="stylesheet" href="/static/style-components.css?v=20260915b">
-<link rel="stylesheet" href="/static/style-checkin.css?v=20260928c">
+<link rel="stylesheet" href="/static/style-checkin.css?v=20261002a">
 <link rel="stylesheet" href="/static/style-multi.css?v=20260919e">
 <script src="https://songguokr.com/nexus-ui/v2.40.0/vendor/vue.global.prod.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.40.0/js/nexus-all.js"></script>
@@ -41,7 +41,6 @@
 <nav class="cp-bottom-nav">
   <div class="cp-nav-inner">
     <button class="cp-nav-item" :class="{active:state.view==='home'}" @click="switchView('home')"><i class="fas fa-house"></i><span>首页</span></button>
-    <button class="cp-nav-item" :class="{active:state.view==='squad'}" @click="switchView('squad')"><i class="fas fa-users"></i><span>小队</span></button>
     <button class="cp-nav-item" :class="{active:state.view==='rank'}" @click="switchView('rank')"><i class="fas fa-trophy"></i><span>排行</span></button>
     <button class="cp-nav-item" :class="{active:state.view==='me'}" @click="switchView('me')"><i class="fas fa-user"></i><span>我的</span></button>
   </div>
@@ -289,7 +288,8 @@
 <div class="cp-modal glass">
   <div class="cp-modal-header"><h3>今日心得</h3><button class="cp-modal-close" @click="state.reflection.show=false"><i class="fas fa-xmark"></i></button></div>
   <div class="cp-modal-body">
-    <div class="cp-form-row"><label class="cp-label">今日心情</label><div class="cp-pick-btns">
+    <div class="cp-form-row"><label class="cp-label">今日心情（选填）</label><div class="cp-pick-btns">
+      <button class="cp-pick-btn" :class="{active:!state.reflection.mood}" @click="state.reflection.mood=''">不选</button>
       <button class="cp-pick-btn" :class="{active:state.reflection.mood==='good'}" @click="state.reflection.mood='good'">😊 不错</button>
       <button class="cp-pick-btn" :class="{active:state.reflection.mood==='normal'}" @click="state.reflection.mood='normal'">😐 一般</button>
       <button class="cp-pick-btn" :class="{active:state.reflection.mood==='bad'}" @click="state.reflection.mood='bad'">😔 有点难</button>
@@ -433,19 +433,18 @@
 <script src="/static/js/create.js?v=20260915a"></script>
 <script src="/static/js/create-direct.js?v=20260915a"></script>
 <script src="/static/js/create-extra.js?v=20260915a"></script>
-<script src="/static/js/views/home.js?v=20261001a"></script>
+<script src="/static/js/views/home.js?v=20261002a"></script>
 <script src="/static/js/views/home-diet.js?v=20260928d"></script>
 <script src="/static/js/views/home-task.js?v=20261001a"></script>
 <script src="/static/js/views/home-checkin.js?v=20261001a"></script>
-<script src="/static/js/views/home-panels.js?v=20261001a"></script>
+<script src="/static/js/views/home-panels.js?v=20261002a"></script>
 <script src="/static/js/views/home-record.js?v=20261001a"></script>
 <script src="/static/js/views/learn-checkin.js?v=20260915d"></script>
 <script src="/static/js/views/home-progress.js?v=20260915c"></script>
 <script src="/static/js/views/home-insights.js?v=20261001a"></script>
-<script src="/static/js/views/home-lifecycle.js?v=20261001a"></script>
-<script src="/static/js/views/squad.js?v=20260825"></script>
-<script src="/static/js/views/rank.js?v=20260911a"></script>
-<script src="/static/js/views/me.js?v=20260911a"></script>
+<script src="/static/js/views/home-lifecycle.js?v=20261002a"></script>
+<script src="/static/js/views/rank.js?v=20261002a"></script>
+<script src="/static/js/views/me.js?v=20261002a"></script>
 <script src="https://songguokr.com/nexus-ui/v2.40.0/js/components/nux-ai-chat-helpers.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.40.0/js/components/nux-ai-chat-template.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.40.0/js/components/nux-ai-widgets.js"></script>
@@ -456,7 +455,7 @@
 <script src="https://songguokr.com/nexus-ui/v2.40.0/js/components/nux-menu-about.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.40.0/js/components/nux-menu-user.js"></script>
 <script src="/static/js/home-companion.js?v=20260919a"></script>
-<script src="/static/js/app.js?v=20261001a&h=32ea176676"></script>
+<script src="/static/js/app.js?v=20261002a"></script>
 <script src="https://songguokr.com/nexus-ui/v2.40.0/js/components/nux-checkin.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.40.0/js/components/nux-calendar.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.40.0/js/components/nux-camera-recognize.js"></script>

@@ -2,15 +2,12 @@ window.cpViews = window.cpViews || {}
 window.cpViews.rank = (function () {
   const V = {
     el: null,
-    data: { loading: true, scope: 'global', list: [], squads: [], squadId: null, error: '' },
+    data: { loading: true, list: [], error: '' },
 
     render(el) {
       this.el = el
       const d = this.data
       let html = '<div class="cp-greet"><div><h1>每周排行</h1><p>坚持打卡，冲击榜单</p></div></div><div class="cp-view">'
-      html += '<div class="cp-scope-tabs"><button class="cp-pick-btn' + (d.scope === 'global' ? ' active' : '') + '" onclick="cpViews.rank.setScope(\'global\')">全服周榜</button>'
-      if (d.squads.length) html += '<button class="cp-pick-btn' + (d.scope === 'squad' ? ' active' : '') + '" onclick="cpViews.rank.setScope(\'squad\')">小队榜</button>'
-      html += '</div>'
       if (d.loading) html += '<div class="glass-card cp-skeleton-card"><div class="cp-skel-line w80"></div><div class="cp-skel-line w60"></div><div class="cp-skel-line w80"></div><div class="cp-skel-line w40"></div></div>'
       else if (d.error) html += '<div class="cp-error-box"><i class="fas fa-circle-exclamation"></i><span>' + window.cpEsc(d.error) + '</span><button class="cp-btn-ghost" onclick="cpViews.rank.load()">重试</button></div>'
       else if (!d.list.length) html += '<div class="glass-card cp-empty"><div class="cp-empty-icon">🏆</div><h2>本周榜单虚位以待</h2><p>完成一次打卡即可上榜，冲！</p></div>'
@@ -29,29 +26,13 @@ window.cpViews.rank = (function () {
     onShow() { this.load() },
     rerender() { if (this.el) this.render(this.el) },
 
-    setScope(scope) {
-      const d = this.data
-      if (d.scope === scope) return
-      d.scope = scope
-      this.load()
-    },
-
     async load() {
       const d = this.data
       d.loading = true
       d.error = ''
       this.rerender()
       try {
-        if (!d.squads.length) {
-          try {
-            const sr = await window.api.get('/squads/my')
-            const s = sr.data || sr
-            d.squads = Array.isArray(s) ? s : (s.items || [])
-            if (!d.squadId && d.squads.length) d.squadId = d.squads[0].id
-          } catch (e) {}
-        }
-        const params = d.scope === 'squad' && d.squadId ? { scope: 'squad', squad_id: d.squadId } : { scope: 'global' }
-        const res = await window.api.get('/leaderboard/weekly', params)
+        const res = await window.api.get('/leaderboard/weekly')
         const r = res.data || res
         d.list = Array.isArray(r) ? r : (r.entries || r.items || [])
       } catch (e) { d.error = window.cpErrMsg(e, '榜单加载失败') }

@@ -1,0 +1,111 @@
+from __future__ import annotations
+
+from nexus.logging import get_logger
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.challenge import Challenge
+from app.models.checkin import CheckIn
+from app.services.goal_rule_service import is_cap_mode
+from app.services.streak_service import (
+    day_number_of,
+    list_missed_dates,
+    shift_date,
+    today_str,
+)
+
+logger = get_logger("challengePlanet.rescue")
+
+REPAIR_WINDOW_DAYS = 1
+RESCUE_MAX_MISSED = 14
+LEVEL_SLIP = "slip"
+LEVEL_RESCUE = "rescue"
+LEVEL_DEEP = "deep"
+
+_LEVEL_BY_MISSED = (
+    (REPAIR_WINDOW_DAYS, LEVEL_SLIP),
+    (3, LEVEL_RESCUE),
+)
+
+
+def assess_rescue(
+    challenge: Challenge,
+    valid_dates: set[str],
+    today: str,
+    today_checked: bool,
+) -> dict[str, object]:
+    start = str(getattr(challenge, "start_date", "") or "")
+    end = str(getattr(challenge, "end_date", "") or "")
+    if not start or not end:
+        return {}
+    if today < start or today > end:
+        return {}
+    if is_cap_mode(challenge):
+        return {}
+    yesterday = shift_date(today, -1)
+    if yesterday in valid_dates or yesterday < start:
+        return {}
+    missed_days = 0
+    cursor = yesterday
+    while cursor >= start and cursor not in valid_dates:
+        missed_days += 1
+        cursor = shift_date(cursor, -1)
+    completed_before = sum(1 for d in valid_dates if d < yesterday)
+    if completed_before <= 0:
+        return {}
+    level = LEVEL_DEEP
+    for threshold, name in _LEVEL_BY_MISSED:
+        if missed_days <= threshold:
+            level = name
+            break
+    return {
+        "missed_days": missed_days,
+        "rescue_level": level,
+        "can_repair": missed_days == REPAIR_WINDOW_DAYS,
+        "mend_date": yesterday,
+        "last_checked_date": shift_date(yesterday, -missed_days),
+        "day_number": day_number_of(start, today),
+    }
+
+
+def rescue_text(challenge: Challenge, missed_days: int) -> tuple[str, str]:
+    title = str(challenge.title or "挑战")
+    category = str(getattr(challenge, "category", "") or "")
+    is_quit = category == "quit"
+    if missed_days <= 1:
+        body = "断了 1 天而已，昨天可以一键补回来，节奏马上恢复。"
+    elif missed_days <= 3:
+        body = f"断了 {missed_days} 天，别灰心——完成过的 {missed_days} 天都还在，先补一天，星轨就重新亮起来。"
+    else:
+        body = f"断了 {missed_days} 天，这不代表失败。回头看看当初为什么出发，我们把节奏调回来。"
+    if is_quit:
+        body += "记得：一次没记录不等于前功尽弃，每一天都可以重新开始。"
+    return f"「{title}」的星轨还在", body
+
+
+async def collect_rescue_items(
+    session: AsyncSession, challenges: list[Challenge]
+) -> dict[int, dict[str, object]]:
+    today = today_str()
+    ids = [c.id for c in challenges]
+    if not ids:
+        return {}
+    result = await session.execute(
+        select(CheckIn.challenge_id, CheckIn.date).where(CheckIn.challenge_id.in_(ids))
+    )
+    dates_by_challenge: dict[int, set[str]] = {}
+    for cid, date in result.all():
+        dates_by_challenge.setdefault(cid, set()).add(str(date))
+    items: dict[int, dict[str, object]] = {}
+    for challenge in challenges:
+        dates = dates_by_challenge.get(challenge.id, set())
+        signal = assess_rescue(challenge, dates, today, today_checked=False)
+        if signal:
+            items[challenge.id] = signal
+    return items
+
+
+def missed_dates_for_mend(
+    start_date: str, end_date: str, valid_dates: set[str], today: str
+) -> list[str]:
+    return list_missed_dates(start_date, end_date, valid_dates, today)[:RESCUE_MAX_MISSED]

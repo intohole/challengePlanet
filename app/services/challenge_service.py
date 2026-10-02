@@ -19,6 +19,7 @@ from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.forecast_service import ForecastService
 from app.services.goal_rule_service import is_cap_mode, is_ladder, is_repeatable, is_settled, ladder_progress_pct, resolve_mode
 from app.services.mercy_service import MercyService, load_valid_dates
+from app.services.rescue_service import assess_rescue
 from app.services.period_service import period_fields, week_aggregates
 from app.services.streak_service import calc_streak, shift_date, streak_before, today_str
 from app.services.target_service import TargetService
@@ -64,7 +65,7 @@ class ChallengeService:
         self, session: AsyncSession, user_id: str, title: str, description: str,
         category: str, duration_days: int, start_date: str,
         plan: list[dict[str, object]], source: str = "manual",
-        squad_id: int | None = None, task_type: str = "binary",
+        task_type: str = "binary",
         scene_template: str = "", target_value: float = 1.0, unit: str = "次",
         direction: str = "increase", goal_type: str = "hard",
         decompose_mode: str = "none", goal_rule: str = "fixed",
@@ -111,7 +112,7 @@ class ChallengeService:
             "share_token": secrets.token_hex(16),
         })
         await self._meta_repo.upsert(session, challenge.id, {
-            "source": source, "squad_id": squad_id, "extra": "{}",
+            "source": source, "extra": "{}",
         })
         await session.commit()
         return challenge
@@ -146,8 +147,9 @@ class ChallengeService:
 
     async def get_challenge_stats(
         self, session: AsyncSession, challenge: Challenge,
+        valid_dates: set[str] | None = None,
     ) -> dict[str, int]:
-        valid = await load_valid_dates(session, challenge.id)
+        valid = valid_dates if valid_dates is not None else await load_valid_dates(session, challenge.id)
         completed = (sum(1 for d in valid if d < today_str()) if is_cap_mode(challenge)
                      else await self._checkin_repo.count_active_days(session, challenge.id))
         return {
@@ -160,16 +162,21 @@ class ChallengeService:
     async def build_list_item(
         self, session: AsyncSession, challenge: Challenge, user_id: str,
     ) -> dict[str, object]:
-        stats = await self.get_challenge_stats(session, challenge)
+        valid_dates = await load_valid_dates(session, challenge.id)
+        stats = await self.get_challenge_stats(session, challenge, valid_dates=valid_dates)
         today_checkin = await self._checkin_repo.get_by_date(session, challenge.id, today_str())
         mercy = await MercyService().get_mercy_status(session, challenge.id, user_id)
         meta = await self._meta_repo.get(session, challenge.id)
+        rescue = assess_rescue(
+            challenge, valid_dates, today_str(), today_checkin is not None,
+        )
         return {
             "challenge": challenge, "stats": stats,
             "today_checked": today_checkin is not None,
             "source": meta.source if meta else "manual",
             "task_type": challenge.task_type,
             "scene_template": challenge.scene_template,
+            "rescue": rescue,
             "mercy": {
                 "mend_left_this_month": mercy["mend_left_this_month"],
                 "freeze_left_this_week": mercy["freeze_left_this_week"],
@@ -217,6 +224,7 @@ class ChallengeService:
             goal_weight=float(getattr(c, "goal_weight", 0.0) or 0.0), activity_level=int(getattr(c, "activity_level", 2) or 2),
             daily_calorie_target=float(getattr(c, "daily_calorie_target", 0.0) or 0.0),
             mercy=item.get("mercy", {}),
+            rescue=item.get("rescue", {}) or {},
             created_at=c.created_at,
         )
 
@@ -331,25 +339,3 @@ class ChallengeService:
             "total_checkins": stats["completed_days"],
         }
 
-    async def get_portal_today(
-        self, session: AsyncSession, user_id: str,
-    ) -> dict[str, object]:
-        challenges = await self._repo.get_active_by_user_id(session, user_id)
-        today = today_str()
-        items: list[dict[str, object]] = []
-        for challenge in challenges:
-            checked = await self._checkin_repo.get_by_date(session, challenge.id, today)
-            base_item: dict[str, object] = {
-                "challenge_id": challenge.id, "title": challenge.title,
-                "icon": challenge.icon, "color": challenge.color,
-                "checked": checked is not None,
-                "today_task_title": "",
-            }
-            try:
-                detail = await self.get_today_task(session, challenge.id, user_id)
-                base_item["today_task_title"] = str((detail or {}).get("task_title", ""))
-            except Exception as e:
-                logger.warning("portal today 单条挑战构建失败 id=%s: %s", challenge.id, e)
-            items.append(base_item)
-        pending = sum(1 for item in items if not item["checked"])
-        return {"date": today, "pending_count": pending, "items": items}
