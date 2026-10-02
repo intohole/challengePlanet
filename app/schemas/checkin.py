@@ -127,13 +127,3 @@ class MercyStatusResponse(BaseModel):
     streak: int = 0
     shields: int = 0
     shield_activated: bool = False
-
-
-class InsightResponse(BaseModel):
-    id: int
-    challenge_id: int
-    insight_type: str = "daily"
-    content: str = ""
-    created_at: Optional[datetime] = None
-
-    model_config = {"from_attributes": True}

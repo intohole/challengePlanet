@@ -75,10 +75,6 @@ def daily_target(
     return float(getattr(challenge, "target_value", 1.0) or 1.0)
 
 
-def is_ceiling_met(challenge: object, today_total: float, day_number: int) -> bool:
-    return today_total <= daily_target(challenge, day_number)
-
-
 def ladder_meta(challenge: object) -> dict[str, float | int | str]:
     return {
         "ladder_start": float(getattr(challenge, "ladder_start", 0) or 0),

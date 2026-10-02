@@ -219,12 +219,6 @@ class PortalTodayItem(BaseModel):
     today_target: float = 0.0
 
 
-class PortalTodayResponse(BaseModel):
-    date: str
-    pending_count: int = 0
-    items: list[PortalTodayItem] = Field(default_factory=list)
-
-
 class ShareDataResponse(BaseModel):
     challenge_id: int
     title: str
