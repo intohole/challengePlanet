@@ -5,7 +5,7 @@ import re
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from nexus import get_current_user_id_required
-from nexus import get_datacenter_client, DOMAIN_GROWTH
+from nexus import get_datacenter_client, report_core, DOMAIN_GROWTH
 from nexus.logging import get_logger
 from nexus.streaming import sse_event_dict, sse_response
 from nexus.user_auth import get_bearer_token
@@ -118,6 +118,30 @@ async def list_challenges(
     for challenge in challenges:
         responses.append(await service.build_response(session, challenge, user_id))
     return responses
+
+
+@router.post("/datacenter/sync")
+async def sync_challenges_to_datacenter(
+    user_id: str = Depends(get_current_user_id_required),
+    bearer: str = Depends(get_bearer_token),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, int]:
+    service = ChallengeService()
+    challenges = await service.get_user_challenges(session, user_id)
+    items = [
+        {
+            "domain": DOMAIN_GROWTH,
+            "asset_type": "challenge",
+            "app": "challengeplanet",
+            "ref_id": str(c.id),
+            "title": c.title,
+            "summary": f"{c.category} · {c.duration_days}天",
+            "occurred_at": c.created_at.isoformat() if c.created_at else None,
+        }
+        for c in challenges
+    ]
+    result = await report_core(bearer, items)
+    return {"synced": result.get("succeeded", 0), "total": result.get("requested", 0), "new": result.get("new", 0)}
 
 
 @router.post("/nl-create", response_class=StreamingResponse)
