@@ -3,11 +3,6 @@
 .cp-greet p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 .cp-greet-stats { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
 .cp-greet-stat b { color: var(--primary-light); font-weight: 700; font-size: 14px; }@keyframes fade-in-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.cp-brand-banner { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: var(--radius); background: linear-gradient(135deg, rgba(99,102,241,.08), rgba(5,150,105,.05)); border: 1px solid rgba(99,102,241,.18); margin-bottom: 12px; }
-.cp-brand-banner .cp-brand-icon { font-size: 22px; filter: drop-shadow(0 0 8px var(--primary-glow)); }
-.cp-brand-banner .cp-brand-text { flex: 1; }
-.cp-brand-banner .cp-brand-name { font-size: 16px; font-weight: 800; background: linear-gradient(135deg, var(--primary-light), var(--emerald)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.cp-brand-banner .cp-brand-slogan { font-size: 10px; color: var(--text-muted); margin-top: 1px; letter-spacing: .5px; }
 .cp-pending-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--amber); background: rgba(255,202,40,.1); border: 1px solid rgba(255,202,40,.22); padding: 5px 12px; border-radius: 20px; }
 .cp-pending-badge.zero { color: var(--emerald); background: rgba(5,150,105,.1); border-color: rgba(5,150,105,.2); }
 
@@ -81,7 +76,6 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-md pre, .cp-weekly-md pre { background: rgba(2,6,23,.55); border: 1px solid var(--card-border); border-radius: var(--radius-sm); padding: 12px 14px; overflow-x: auto; margin: 8px 0; }
 .cp-md pre code, .cp-weekly-md pre code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--text-primary); background: transparent; padding: 0; }
 .cp-chest-tag { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--amber); background: rgba(255,202,40,.1); padding: 4px 10px; border-radius: 12px; }
-.cp-tomorrow { margin-top: 10px; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
 
 .cp-weekly-meta { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
 
@@ -144,14 +138,12 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-rhythm { margin: 10px 0; padding: 11px 13px; font-size: 12.5px; line-height: 1.7; color: var(--text-primary); background: rgba(129,140,248,.07); border: 1px solid rgba(129,140,248,.16); border-radius: var(--radius-sm); }
 .cp-rhythm i { color: var(--primary-light); margin-right: 5px; }
 .cp-companion { margin-top: 12px; padding: 13px 14px; border-radius: var(--radius); background: linear-gradient(135deg, rgba(129,140,248,.1), rgba(52,211,153,.06)); border: 1px solid rgba(129,140,248,.18); }
-.cp-companion-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .cp-companion-reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .cp-companion-reasons span { font-size: 11px; color: var(--text-secondary); background: rgba(15,23,42,.05); border: 1px solid var(--card-border); padding: 2px 8px; border-radius: 10px; }
 .cp-companion-action { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--emerald); background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.22); padding: 5px 10px; border-radius: 11px; }
 .cp-days-stepper { display: flex; gap: 8px; }
 .cp-days-stepper .cp-pick-btn { flex: 1; }
 
-.cp-rule-card { padding: 12px 14px; font-size: 12px; color: var(--text-secondary); border-radius: var(--radius); background: rgba(255,202,40,.06); border: 1px solid rgba(255,202,40,.18); line-height: 1.6; }
 .cp-rank-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius); background: rgba(15,23,42,.02); border: 1px solid var(--card-border); }
 .cp-rank-row.self { border-color: var(--primary); background: rgba(99,102,241,.1); }.cp-rank-no.m1 { color: #ffd700; } .cp-rank-no.m2 { color: #c0c7d6; } .cp-rank-no.m3 { color: #e8a06a; }.cp-scope-tabs { display: flex; gap: 8px; }
 .cp-scope-tabs .cp-pick-btn { flex: 1; }
