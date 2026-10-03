@@ -2,9 +2,7 @@
 .cp-greet h1 { font-size: 20px; font-weight: 700; }
 .cp-greet p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 .cp-greet-stats { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
-.cp-greet-stat b { color: var(--primary-light); font-weight: 700; font-size: 14px; }
-.cp-greet-sep { color: var(--card-border); }
-@keyframes fade-in-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.cp-greet-stat b { color: var(--primary-light); font-weight: 700; font-size: 14px; }@keyframes fade-in-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .cp-brand-banner { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: var(--radius); background: linear-gradient(135deg, rgba(99,102,241,.08), rgba(5,150,105,.05)); border: 1px solid rgba(99,102,241,.18); margin-bottom: 12px; }
 .cp-brand-banner .cp-brand-icon { font-size: 22px; filter: drop-shadow(0 0 8px var(--primary-glow)); }
 .cp-brand-banner .cp-brand-text { flex: 1; }
@@ -94,9 +92,7 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 
 .cp-steps { display: flex; gap: 6px; margin-bottom: 18px; }
 .cp-step-dot { flex: 1; height: 4px; border-radius: 2px; background: rgba(15,23,42,.06); }
-.cp-step-dot.on { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
-.cp-create-tip { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
-.cp-gen-status { display: flex; align-items: center; gap: 10px; padding: 12px 0; font-size: 13px; color: var(--text-secondary); }
+.cp-step-dot.on { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }.cp-gen-status { display: flex; align-items: center; gap: 10px; padding: 12px 0; font-size: 13px; color: var(--text-secondary); }
 .cp-gen-spinner { width: 18px; height: 18px; border: 2px solid var(--card-border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; flex-shrink: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .cp-gen-panel { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
@@ -157,12 +153,7 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 
 .cp-rule-card { padding: 12px 14px; font-size: 12px; color: var(--text-secondary); border-radius: var(--radius); background: rgba(255,202,40,.06); border: 1px solid rgba(255,202,40,.18); line-height: 1.6; }
 .cp-rank-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius); background: rgba(15,23,42,.02); border: 1px solid var(--card-border); }
-.cp-rank-row.self { border-color: var(--primary); background: rgba(99,102,241,.1); }
-.cp-rank-no { width: 28px; text-align: center; font-size: 15px; font-weight: 800; color: var(--text-muted); flex-shrink: 0; }
-.cp-rank-no.m1 { color: #ffd700; } .cp-rank-no.m2 { color: #c0c7d6; } .cp-rank-no.m3 { color: #e8a06a; }
-.cp-rank-name { flex: 1; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cp-rank-pts { font-size: 13px; font-weight: 700; color: var(--primary-light); }
-.cp-scope-tabs { display: flex; gap: 8px; }
+.cp-rank-row.self { border-color: var(--primary); background: rgba(99,102,241,.1); }.cp-rank-no.m1 { color: #ffd700; } .cp-rank-no.m2 { color: #c0c7d6; } .cp-rank-no.m3 { color: #e8a06a; }.cp-scope-tabs { display: flex; gap: 8px; }
 .cp-scope-tabs .cp-pick-btn { flex: 1; }
 
 .cp-me-card { padding: 20px; display: flex; align-items: center; gap: 14px; }
@@ -227,14 +218,7 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-hero-companion-btn { color: var(--text-muted); }
 .cp-hero-companion-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-.cp-guidance-card { padding: 16px; animation: fade-in-up .4s ease; }
-.cp-guidance-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.cp-phase-badge { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 16px; border: 1px solid; }
-.cp-guidance-encourage { font-size: 13px; font-weight: 600; color: var(--text-primary); line-height: 1.6; margin-bottom: 6px; }
-.cp-guidance-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px; }
-.cp-guidance-tip { display: flex; gap: 6px; padding: 10px 12px; border-radius: var(--radius-sm); background: rgba(255,202,40,.06); border: 1px solid rgba(255,202,40,.18); font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 10px; }
-.cp-guidance-tip i { color: var(--amber); margin-top: 2px; flex-shrink: 0; }
-.cp-milestone { margin-bottom: 8px; }
+.cp-guidance-card { padding: 16px; animation: fade-in-up .4s ease; }.cp-phase-badge { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 16px; border: 1px solid; }.cp-milestone { margin-bottom: 8px; }
 .cp-risk-warn { display: flex; gap: 6px; padding: 10px 12px; border-radius: var(--radius-sm); background: rgba(239,83,80,.06); border: 1px solid rgba(239,83,80,.2); font-size: 12px; color: var(--red); line-height: 1.6; }
 .cp-risk-warn i { margin-top: 2px; flex-shrink: 0; }
 .cp-shared-preview { padding: 16px; }
