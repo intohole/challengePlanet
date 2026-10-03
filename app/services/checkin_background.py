@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime
 
 from nexus.logging import get_logger
 
@@ -45,31 +46,26 @@ async def build_feedback_prompt_inputs(
         "target": float(checkin.target_value or 0),
         "direction": str(challenge.direction or "increase"),
         "is_soft_exceeded": is_soft_exceeded,
+        "journey_context": await journey_context_for(session, challenge, checkin),
     }
 
 
-async def safe_feedback(
-    ai: AIService,
-    title: str,
-    day_number: int,
-    total_days: int,
-    mood: str,
-    reflection: str,
-    memory_context: str,
-    value: float = 0.0,
-    target: float = 0.0,
-    direction: str = "increase",
-    is_soft_exceeded: bool = False,
-) -> str:
+async def journey_context_for(session: object, challenge: Challenge, checkin: CheckIn) -> str:
+    from app.core.datetime_utils import now_china
+    from app.services.journey_service import JourneyService, journey_prompt_line
+
     try:
-        return await ai.generate_daily_feedback(
-            title, day_number, total_days, mood, reflection, memory_context,
-            value=value, target=target, direction=direction,
-            is_soft_exceeded=is_soft_exceeded,
+        start = datetime.strptime(str(challenge.start_date)[:10], "%Y-%m-%d").date()
+    except Exception:
+        return ""
+    try:
+        journey = await JourneyService().build(
+            session, challenge, max(1, int(checkin.day_number or 1)), start, now_china().date(),
         )
+        return journey_prompt_line(journey)
     except Exception as e:
-        logger.warning("daily feedback fallback: %s", e)
-        return feedback_fallback(day_number, mood, is_soft_exceeded)
+        logger.warning("journey context fallback: %s", e)
+        return ""
 
 
 def feedback_fallback(day_number: int, mood: str, is_soft_exceeded: bool) -> str:

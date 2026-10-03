@@ -244,6 +244,7 @@ class ReportService:
         challenge = await self._get_challenge(session, challenge_id, user_id)
         stats = await self._calc.calc_overview_stats(session, challenge_id, challenge)
         insight = self._overview_insight(stats, challenge)
+        journey = await self._journey_for(session, challenge)
         best_hour = stats["best_hour"] if challenge.direction == "increase" else -1
         worst_hour = stats["worst_hour"] if challenge.direction == "decrease" else -1
         return {
@@ -261,7 +262,23 @@ class ReportService:
             "best_hour": best_hour, "worst_hour": worst_hour,
             "peak_hour": stats["peak_hour"],
             "generated_at": now_china(), "insight": insight,
+            "journey": journey,
         }
+
+    async def _journey_for(self, session: AsyncSession, challenge) -> dict[str, object] | None:
+        from app.core.datetime_utils import now_china
+        from app.services.journey_service import JourneyService
+
+        try:
+            start = datetime.strptime(str(challenge.start_date)[:10], "%Y-%m-%d").date()
+        except Exception:
+            return None
+        today = now_china().date()
+        day_number = max(1, (today - start).days + 1)
+        try:
+            return await JourneyService().build(session, challenge, day_number, start, today)
+        except Exception:
+            return None
 
     def _overview_insight(self, stats: dict[str, object], challenge) -> str:
         last_7d_avg = float(stats["last_7d_avg"])

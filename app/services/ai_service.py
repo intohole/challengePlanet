@@ -182,7 +182,7 @@ class AIService:
         challenge_title: str, day_number: int, total_days: int,
         mood: str, reflection: str, memory_context: str,
         value: float, target: float, direction: str,
-        is_soft_exceeded: bool,
+        is_soft_exceeded: bool, journey_context: str = "",
     ) -> tuple[str, str]:
         phase = "适应期" if day_number <= 3 else ("巩固期" if day_number <= total_days * 0.6 else "维持期")
         head = (
@@ -193,6 +193,8 @@ class AIService:
         tail = f"\n第{day_number}天（{phase}）\n本次记录值：{value}\n心情：{mood or '未记录'}\n心得：{reflection or '无'}"
         if is_soft_exceeded and direction == "decrease":
             tail += f"\n本次已超过软目标（软目标 {target}）"
+        if journey_context:
+            tail += journey_context
         if memory_context:
             tail += f"\n用户过往记忆：{memory_context}"
         return head + tail, cls._feedback_system(mood)
@@ -202,10 +204,12 @@ class AIService:
         mood: str, reflection: str, memory_context: str,
         value: float = 0.0, target: float = 0.0,
         direction: str = "increase", is_soft_exceeded: bool = False,
+        journey_context: str = "",
     ) -> str:
         prompt, system = self._feedback_prompt(
             challenge_title, day_number, total_days, mood, reflection,
             memory_context, value, target, direction, is_soft_exceeded,
+            journey_context=journey_context,
         )
         llm = get_llm_service()
         raw = await llm.ask(
@@ -220,10 +224,12 @@ class AIService:
         mood: str, reflection: str, memory_context: str,
         value: float = 0.0, target: float = 0.0,
         direction: str = "increase", is_soft_exceeded: bool = False,
+        journey_context: str = "",
     ) -> AsyncIterator[str]:
         prompt, system = self._feedback_prompt(
             challenge_title, day_number, total_days, mood, reflection,
             memory_context, value, target, direction, is_soft_exceeded,
+            journey_context=journey_context,
         )
         llm = get_llm_service()
         async for piece in llm.stream_ask(

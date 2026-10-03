@@ -170,7 +170,6 @@ def main() -> int:
     for method, path in [
         ("GET", "/squads/my"),
         ("GET", "/squads"),
-        ("POST", "/challenges/datacenter/sync"),
         ("GET", "/portal/today"),
     ]:
         status, _ = call(method, path, {} if method == "POST" else None, token)

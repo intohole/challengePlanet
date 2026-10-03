@@ -30,18 +30,6 @@ class PointsRepository:
         )
         return int(result.scalar() or 0)
 
-    async def get_week_leaderboard(
-        self, session: AsyncSession, week_key: str, user_ids: list[str] | None
-    ) -> list[tuple[str, int]]:
-        stmt = select(
-            PointsLedger.user_id,
-            func.coalesce(func.sum(PointsLedger.delta), 0).label("points"),
-        ).where(PointsLedger.week_key == week_key)
-        if user_ids is not None:
-            stmt = stmt.where(PointsLedger.user_id.in_(user_ids))
-        stmt = stmt.group_by(PointsLedger.user_id).order_by(func.sum(PointsLedger.delta).desc())
-        result = await session.execute(stmt)
-        return [(str(row[0]), int(row[1])) for row in result.fetchall()]
 
 
 class StreakActionRepository:

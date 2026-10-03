@@ -18,6 +18,7 @@ from app.schemas.challenge import ChallengeResponse
 from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.forecast_service import ForecastService
 from app.services.goal_rule_service import is_cap_mode, is_ladder, is_repeatable, is_settled, ladder_progress_pct, resolve_mode
+from app.services.journey_service import JourneyService
 from app.services.mercy_service import MercyService, load_valid_dates
 from app.services.rescue_service import assess_rescue
 from app.services.period_service import period_fields, week_aggregates
@@ -269,10 +270,13 @@ class ChallengeService:
         aggregates = await week_aggregates(session, challenge_id, today_checkins, period_days)
         stats = await self.get_challenge_stats(session, challenge)
         progress = _calc_progress(stats["completed_days"], challenge.duration_days)
+        journey = await JourneyService().build(
+            session, challenge, max(1, day_number), start_date.date(), now_dt.date(),
+        )
         return self._build_today_response(
             challenge, challenge_id, day_number, today, task,
             today_checkins, today_total, today_target, dynamic_baseline,
-            stats, progress, aggregates, forecast,
+            stats, progress, aggregates, forecast, journey,
         )
 
     def _parse_plan(self, ai_plan: str | None) -> list[dict[str, object]]:
@@ -284,6 +288,7 @@ class ChallengeService:
         today_target: float, dynamic_baseline: float,
         stats: dict, progress: float, aggregates: dict[str, object] | None = None,
         forecast: dict[str, object] | None = None,
+        journey: dict[str, object] | None = None,
     ) -> dict[str, object]:
         task_steps_raw = task.get("steps", task.get("task_steps", []))
         task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
@@ -314,6 +319,7 @@ class ChallengeService:
             "ladder_step": float(getattr(challenge, "ladder_step", 1.0) or 1.0),
             "today_total": today_total, "today_target": today_target, "today_cap": today_target,
             "dynamic_baseline": dynamic_baseline, "remaining": round(remaining, 2), "forecast": forecast,
+            "journey": journey,
             "progress_pct": round(progress, 1), "ladder_progress_pct": round(ladder_progress, 1),
             "checked_in": len(today_checkins) > 0,
             "settled": False if not_started else is_settled(

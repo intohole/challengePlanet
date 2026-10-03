@@ -200,6 +200,7 @@ class TodayTaskResponse(BaseModel):
     checked_in: bool = False
     settled: bool = False
     forecast: Optional[dict[str, object]] = None
+    journey: Optional[dict[str, object]] = None
     checkin_data: Optional[dict[str, object]] = None
     today_checkins: list[dict[str, object]] = Field(default_factory=list)
     streak: int = 0

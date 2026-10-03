@@ -85,6 +85,7 @@ window.cpViews.home = (function () {
       ])
       const d = this.data
       d.today = today
+      if (today && today.journey) this._celebrateJourney(ch.id, today.journey)
       d.guidance = guidance || null
       d.dietTarget = isDiet ? (dietTarget || null) : null
       d.weightTrend = isDiet ? (weightTrend || null) : null

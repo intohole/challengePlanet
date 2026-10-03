@@ -5,7 +5,6 @@ import random
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.points import PointsLedger
 from app.repositories.points_repository import PointsRepository
 from app.services.streak_service import week_key_of
 
@@ -81,8 +80,3 @@ class PointsService:
     async def get_week_points(self, session: AsyncSession, user_id: str, week_key: str) -> int:
         return await self._repo.get_week_points(session, user_id, week_key)
 
-    async def get_leaderboard(
-        self, session: AsyncSession, week_key: str, scope_user_ids: list[str] | None = None
-    ) -> list[dict[str, object]]:
-        rows = await self._repo.get_week_leaderboard(session, week_key, scope_user_ids)
-        return [{"user_id": uid, "points": pts} for uid, pts in rows]

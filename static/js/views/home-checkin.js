@@ -153,8 +153,12 @@
 
   V._ctxRow = function () {
     const d = this.data
-    let h = '<div class="cp-ctx-row"><span class="cp-ctx-label"><i class="fas fa-location-dot"></i> 情境</span><div class="cp-pick-btns">'
-    const tags = [{ k: '', l: '不选' }, { k: 'home', l: '🏠 家' }, { k: 'work', l: '💼 工作' }, { k: 'social', l: '👥 社交' }, { k: 'stress', l: '😰 压力' }]
+    const ch = window.appState.current
+    const isDecrease = !!(ch && ch.direction === 'decrease')
+    let h = '<div class="cp-ctx-row"><span class="cp-ctx-label"><i class="fas fa-location-dot"></i> ' + (isDecrease ? '诱因' : '情境') + '</span><div class="cp-pick-btns">'
+    const tags = isDecrease
+      ? [{ k: '', l: '不选' }, { k: 'stress', l: '😰 压力' }, { k: 'social', l: '👥 社交' }, { k: 'drink', l: '🍺 酒后' }, { k: 'meal', l: '🍚 饭后' }, { k: 'bored', l: '😞 无聊' }, { k: 'habit', l: '🔄 习惯性' }]
+      : [{ k: '', l: '不选' }, { k: 'home', l: '🏠 家' }, { k: 'work', l: '💼 工作' }, { k: 'social', l: '👥 社交' }, { k: 'stress', l: '😰 压力' }]
     tags.forEach(tg => {
       const sel = (d.contextTag || '') === tg.k ? ' active' : ''
       h += '<button class="cp-pick-btn cp-ctx-chip' + sel + '" onclick="cpViews.home.setContext(\'' + tg.k + '\')">' + tg.l + '</button>'

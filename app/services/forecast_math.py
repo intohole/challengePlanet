@@ -173,8 +173,8 @@ def fmt_int(value: float) -> str:
     return str(int(round(value)))
 
 
-CONTEXT_LABELS = {"home": "家", "work": "工作", "social": "社交", "stress": "压力"}
-CONTEXT_TAGS = frozenset({"", "home", "work", "social", "stress"})
+CONTEXT_LABELS = {"home": "家", "work": "工作", "social": "社交", "stress": "压力", "drink": "酒后", "meal": "饭后", "bored": "无聊", "habit": "习惯性"}
+CONTEXT_TAGS = frozenset({"", "home", "work", "social", "stress", "drink", "meal", "bored", "habit"})
 _CONTEXT_MIN_CNT = 3
 _CONTEXT_MIN_DAYS = 2
 _CONTEXT_RATIO = 1.5

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class PointsSummaryResponse(BaseModel):
@@ -10,13 +10,3 @@ class PointsSummaryResponse(BaseModel):
     week_key: str = ""
 
 
-class LeaderboardEntry(BaseModel):
-    user_id: str
-    nickname: str = ""
-    points: int = 0
-
-
-class LeaderboardResponse(BaseModel):
-    week_key: str
-    scope: str = "global"
-    entries: list[LeaderboardEntry] = Field(default_factory=list)

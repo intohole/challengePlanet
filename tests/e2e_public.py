@@ -160,15 +160,9 @@ check("戳自己被拒绝400", st == 400, f"st={st}")
 st, bad_join = req("POST", "/squads/join", {"invite_code": "deadbeef00", "nickname": "x"}, token)
 check("无效邀请码400", st == 400, f"st={st}")
 
-print("== 10. 排行榜 ==")
+print("== 10. 排行榜（r15 已下架） ==")
 st, lb = req("GET", "/leaderboard/weekly", token=token)
-entries = lb.get("entries", [])
-check("全球周榜含自己", any(str(e.get("user_id")) for e in entries), f"entries={entries[:3]}")
-st, lb_squad = req("GET", f"/leaderboard/weekly?scope=squad&squad_id={sid}", token=token)
-check("小队周榜有昵称", bool(lb_squad.get("entries")) and bool(lb_squad["entries"][0].get("nickname")),
-      f"={lb_squad.get('entries')}")
-st, lb_forbidden = req("GET", "/leaderboard/weekly?scope=squad&squad_id=999999", token=token)
-check("非成员查小队榜403", st in (400, 403), f"st={st}")
+check("周榜端点已下架404/405", st in (404, 405), f"st={st}")
 
 print("== 11. 分享 ==")
 st, sd = req("GET", f"/challenges/{cid}/share-data", token=token)

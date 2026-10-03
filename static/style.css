@@ -70,7 +70,9 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
 .cp-logo-icon { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 17px; color: #fff; box-shadow: 0 0 24px var(--primary-glow); position: relative; }
 .cp-logo-icon::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 1.5px solid rgba(129,140,248,.2); border-top-color: var(--primary-light); animation: orbit 3s linear infinite; }
 @keyframes orbit { to { transform: rotate(360deg); } }
-.cp-logo-wrap { display: flex; flex-direction: column; line-height: 1.2; }
+.cp-logo-wrap { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.cp-logo { flex-shrink: 0; }
+.cp-logo-text { white-space: nowrap; }
 .cp-logo-text { font-size: 17px; font-weight: 800; background: linear-gradient(135deg, var(--text-primary), var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .cp-logo-tag { font-size: 9px; color: var(--text-muted); letter-spacing: 1px; }
 .cp-header-right { display: flex; align-items: center; gap: 10px; }

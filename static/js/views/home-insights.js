@@ -99,7 +99,35 @@
       h += '<div class="cp-overview-peak"><i class="fas fa-flag"></i> 高峰时段：' + o.peak_hour + ':00 - ' + (o.peak_hour + 1) + ':00</div>'
     }
     if (o.insight) h += '<div class="cp-overview-insight nx-md"><i class="fas fa-lightbulb"></i> ' + window.cpMd(o.insight) + '</div>'
+    if (o.journey) h += this._journeySection(o.journey)
     return h
+  }
+
+  V._journeySection = function (j) {
+    const cp = window.cpViews.home
+    let h = '<div class="cp-journey cp-journey-embedded">'
+    if (j.mode === 'reduction') {
+      h += '<div class="cp-journey-head"><span class="cp-journey-title"><i class="fas fa-route"></i> 减量旅程</span>' + (Number(j.ladder_total_stages) > 1 ? '<span class="cp-journey-stage">阶梯 ' + j.ladder_stage + '/' + j.ladder_total_stages + ' 档</span>' : '') + '</div>'
+      h += '<div class="cp-journey-hero"><b>' + window.cpFmtInt(j.cigarettes_avoided) + '</b><span>' + window.cpEsc(j.unit || '') + '已少抽</span><em>-' + j.reduction_pct + '%</em></div>'
+      h += '<div class="cp-journey-sub">省下约 <b>¥' + window.cpFmtInt(j.money_saved) + '</b></div>'
+      if (j.money_note) h += '<div class="cp-journey-note">' + window.cpEsc(j.money_note) + '</div>'
+    } else {
+      h += '<div class="cp-journey-head"><span class="cp-journey-title"><i class="fas fa-route"></i> 戒断旅程</span></div>'
+      h += '<div class="cp-journey-hero"><b>' + (j.quit_days || 0) + '</b><span>天戒断旅程</span></div>'
+    }
+    const reached = (j.milestones || []).filter(m => m.reached)
+    if (reached.length) h += '<div class="cp-journey-ms">' + reached.map(m => '<span class="cp-journey-ms-chip">🏅 ' + window.cpEsc(m.label) + '</span>').join('') + '</div>'
+    const health = j.health || {}
+    const ms = health.milestones || []
+    if (ms.length) {
+      const done = ms.filter(m => m.reached).length
+      h += '<div class="cp-journey-health-open"><div class="cp-journey-health-title"><i class="fas fa-heart-pulse"></i> 身体恢复线 ' + done + '/' + ms.length + '</div>'
+      ms.forEach(m => {
+        h += '<div class="cp-journey-health-item' + (m.reached ? ' reached' : '') + '"><i class="fas ' + (m.reached ? 'fa-circle-check' : 'fa-circle') + '"></i><div><b>' + window.cpEsc(m.title) + '</b><span>' + window.cpEsc(m.detail) + '</span><em>' + (m.reached ? '已达成' : window.cpEsc(m.reach_date)) + '</em></div></div>'
+      })
+      h += '<div class="cp-journey-src">' + window.cpEsc(health.source_note || '') + '</div></div>'
+    }
+    return h + '</div>'
   }
 
   V._ovCard = function (label, val, unit, color) {

@@ -18,8 +18,14 @@
     try { localStorage.removeItem('cp_nudge_' + chId + '_' + dateStr) } catch (e) {}
   }
 
-  V.CTX_LABELS = { home: '家', work: '工作', social: '社交', stress: '压力' }
-  V.CTX_EMOJI = { home: '🏠', work: '💼', social: '👥', stress: '😰' }
+  V.CTX_LABELS = { home: '家', work: '工作', social: '社交', stress: '压力', drink: '酒后', meal: '饭后', bored: '无聊', habit: '习惯性' }
+  V.CTX_EMOJI = { home: '🏠', work: '💼', social: '👥', stress: '😰', drink: '🍺', meal: '🍚', bored: '😞', habit: '🔄' }
+  V.QUIT_CTX = ['stress', 'social', 'drink', 'meal', 'bored', 'habit']
+  V.BASE_CTX = ['home', 'work', 'social', 'stress']
+  V._ctxKeys = function () {
+    const ch = window.appState.current
+    return ch && ch.direction === 'decrease' ? this.QUIT_CTX : this.BASE_CTX
+  }
   V.MOOD_EMOJI = { good: '😊', normal: '😐', bad: '😔' }
 
   V.patchContext = async function (checkinId, tag) {
@@ -82,17 +88,24 @@
   }
 
   V._ctxPatchRow = function (checkinId) {
-    let h = '<div class="cp-ctx-patch"><span class="cp-ctx-q">刚在哪？</span>'
-    ;['home', 'work', 'social', 'stress'].forEach(k => {
+    const isDecrease = (() => { const ch = window.appState.current; return !!(ch && ch.direction === 'decrease') })()
+    let h = '<div class="cp-ctx-patch"><span class="cp-ctx-q">' + (isDecrease ? '当时什么场景？' : '刚在哪？') + '</span>'
+    ;this._ctxKeys().forEach(k => {
       h += '<button class="cp-pick-btn cp-ctx-chip" onclick="cpViews.home.patchContext(' + checkinId + ',\'' + k + '\')">' + this.CTX_EMOJI[k] + ' ' + this.CTX_LABELS[k] + '</button>'
     })
     return h + '</div>'
   }
 
   V._moodPatchRow = function (checkinId) {
-    let h = '<div class="cp-ctx-patch"><span class="cp-ctx-q">这次感觉如何？</span>'
-    ;[['good', '😊 不错'], ['normal', '😐 一般'], ['bad', '😔 吃力']].forEach(kv => {
-      h += '<button class="cp-pick-btn cp-ctx-chip" onclick="cpViews.home.patchMood(' + checkinId + ',\'' + kv[0] + '\')">' + kv[1] + '</button>'
+    const ch = window.appState.current
+    const t = this.data.today
+    const over = !!(ch && ch.direction === 'decrease' && t && Number(t.today_total) > (Number(t.today_cap) || Number(t.today_target) || 0))
+    const pairs = over
+      ? [['bad', '😔 这次不太爽'], ['normal', '😐 一般'], ['good', '😊 不错']]
+      : [['good', '😊 不错'], ['normal', '😐 一般'], ['bad', '😔 吃力']]
+    let h = '<div class="cp-ctx-patch"><span class="cp-ctx-q">' + (over ? '这个时段对你特别难——这次感觉如何？' : '这次感觉如何？') + '</span>'
+    ;pairs.forEach(kv => {
+      h += '<button class="cp-pick-btn cp-ctx-chip' + (over && kv[0] === 'bad' ? ' suggest' : '') + '" onclick="cpViews.home.patchMood(' + checkinId + ',\'' + kv[0] + '\')">' + kv[1] + '</button>'
     })
     return h + '</div>'
   }

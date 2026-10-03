@@ -93,6 +93,7 @@ class ReportOverviewResponse(BaseModel):
     peak_hour: int = -1
     generated_at: Optional[datetime] = None
     insight: str = ""
+    journey: Optional[dict[str, object]] = None
 
 
 class ContextDistItem(BaseModel):

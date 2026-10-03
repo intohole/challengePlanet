@@ -63,7 +63,61 @@
       html += this._checkinArea(tt, t, ch)
       html += this._afterCheckin(tt, t, ch)
     }
+    if (isDecrease && t.journey) html += this._journeyCard(t.journey, ch)
     return html
+  }
+
+  V._journeyCard = function (j, ch) {
+    if (!j) return ''
+    const unit = window.cpEsc(j.unit || '')
+    let html = '<div class="glass-card cp-journey" data-testid="journey-card">'
+    html += '<div class="cp-journey-head"><span class="cp-journey-title"><i class="fas fa-route"></i> ' + (j.mode === 'reduction' ? '减量旅程' : '戒断旅程') + '</span>'
+    if (Number(j.ladder_total_stages) > 1) html += '<span class="cp-journey-stage">阶梯 ' + j.ladder_stage + '/' + j.ladder_total_stages + ' 档</span>'
+    html += '</div>'
+    if (j.mode === 'reduction') {
+      html += '<div class="cp-journey-hero"><b>' + window.cpFmtInt(j.cigarettes_avoided) + '</b><span>' + unit + '已少抽</span><em>-' + j.reduction_pct + '%</em></div>'
+      html += '<div class="cp-journey-sub">相比起点每天约 ' + window.cpFmtInt(j.baseline) + ' ' + unit + '，已省下约 <b>¥' + window.cpFmtInt(j.money_saved) + '</b></div>'
+      if (j.money_note) html += '<div class="cp-journey-note">' + window.cpEsc(j.money_note) + '</div>'
+      if (Number(j.ladder_total_stages) > 1) {
+        const pct = Math.min(100, Math.round(Number(j.ladder_stage) / Number(j.ladder_total_stages) * 100))
+        const goalText = Number(j.days_to_goal) > 0 ? '距终点还有 ' + j.days_to_goal + ' 天（' + window.cpEsc(j.goal_date || '') + ' 到达）' : '已到达阶梯终点 🎉'
+        html += '<div class="cp-journey-ladder"><div class="cp-journey-ladder-bar"><i style="width:' + pct + '%"></i></div><span>' + goalText + '</span></div>'
+      }
+    } else {
+      html += '<div class="cp-journey-hero"><b>' + (j.quit_days || 0) + '</b><span>天戒断旅程</span></div>'
+    }
+    const reached = (j.milestones || []).filter(m => m.reached)
+    if (reached.length) html += '<div class="cp-journey-ms">' + reached.map(m => '<span class="cp-journey-ms-chip">🏅 ' + window.cpEsc(m.label) + '</span>').join('') + '</div>'
+    const h = j.health || {}
+    const ms = h.milestones || []
+    if (ms.length) {
+      const nextMs = ms.find(m => !m.reached)
+      html += '<details class="cp-journey-health"><summary><i class="fas fa-heart-pulse"></i> 身体恢复线' + (nextMs ? ' · 下一站：' + window.cpEsc(nextMs.title) : ' · 全部达成') + '</summary>'
+      if (h.anchor_label) html += '<div class="cp-journey-health-note">' + window.cpEsc(h.anchor_label) + '</div>'
+      ms.forEach(m => {
+        html += '<div class="cp-journey-health-item' + (m.reached ? ' reached' : '') + '"><i class="fas ' + (m.reached ? 'fa-circle-check' : 'fa-circle') + '"></i><div><b>' + window.cpEsc(m.title) + '</b><span>' + window.cpEsc(m.detail) + '</span><em>' + (m.reached ? '已达成' : window.cpEsc(m.reach_date)) + '</em></div></div>'
+      })
+      html += '<div class="cp-journey-src">' + window.cpEsc(h.source_note || '') + '</div></details>'
+    }
+    return html + '</div>'
+  }
+
+  V._celebrateJourney = function (chId, j) {
+    if (!chId || !j) return
+    const keys = (j.milestones || []).filter(m => m.reached).map(m => m.key)
+    if (!keys.length) return
+    const storeKey = 'cp_journey_ms_' + chId
+    const today = window.cpTodayStr()
+    let prev = null
+    try { prev = JSON.parse(sessionStorage.getItem(storeKey) || 'null') } catch (e) { prev = null }
+    if (prev && prev.date === today && Array.isArray(prev.keys)) {
+      const fresh = keys.filter(k => prev.keys.indexOf(k) < 0)
+      if (fresh.length) {
+        const labels = (j.milestones || []).filter(m => fresh.indexOf(m.key) >= 0).map(m => m.label)
+        window.cpCelebrate('🏅 ' + labels.join(' · '))
+      }
+    }
+    try { sessionStorage.setItem(storeKey, JSON.stringify({ date: today, keys: keys })) } catch (e) {}
   }
 
   V._afterCheckin = function (tt, t, ch) {
