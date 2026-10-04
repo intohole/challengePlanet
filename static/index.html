@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="/static/style.css?v=20261003a">
 <link rel="stylesheet" href="/static/style-components.css?v=20261004">
 <link rel="stylesheet" href="/static/style-checkin.css?v=20261002a">
-<link rel="stylesheet" href="/static/style-multi.css?v=20261003a">
+<link rel="stylesheet" href="/static/style-multi.css?v=20261005a">
 <script src="https://songguokr.com/nexus-ui/v2.47.1/vendor/vue.global.prod.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.47.1/js/nexus-all.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.47.1/js/composables/use-theme.js"></script>
@@ -51,8 +51,8 @@
 </div>
 
 <transition name="modal"><div v-if="state.create.show" class="cp-modal-overlay" @click.self="cr.close()">
-<div class="cp-modal glass">
-  <div class="cp-modal-header"><h3>创建挑战</h3><button class="cp-modal-close" @click="cr.close()"><i class="fas fa-xmark"></i></button></div>
+<div class="cp-modal glass" role="dialog" aria-modal="true">
+  <div class="cp-modal-header"><h3>创建挑战</h3><button class="cp-modal-close" aria-label="关闭" @click="cr.close()"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
   <div class="cp-modal-body">
     <div class="cp-steps"><div class="cp-step-dot on"></div><div class="cp-step-dot" :class="{on:state.create.step>=2}"></div><div class="cp-step-dot" :class="{on:state.create.phase==='preview'}"></div></div>
 
@@ -239,8 +239,8 @@
 </div></transition>
 
 <transition name="modal"><div v-if="state.dayDetail" class="cp-modal-overlay" @click.self="home.closeDayDetail()">
-<div class="cp-modal glass">
-  <div class="cp-modal-header"><h3>第 {{ state.dayDetail.day }} 天 · {{ state.dayDetail.date }}</h3><button class="cp-modal-close" @click="home.closeDayDetail()"><i class="fas fa-xmark"></i></button></div>
+<div class="cp-modal glass" role="dialog" aria-modal="true">
+  <div class="cp-modal-header"><h3>第 {{ state.dayDetail.day }} 天 · {{ state.dayDetail.date }}</h3><button class="cp-modal-close" aria-label="关闭" @click="home.closeDayDetail()"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
   <div class="cp-modal-body">
     <div class="cp-detail-row" v-if="state.dayDetail.taskTitle"><div class="cp-detail-label">当日任务</div><div class="cp-detail-val">{{ state.dayDetail.taskTitle }}</div></div>
     <div class="cp-detail-row" v-if="state.dayDetail.mood"><div class="cp-detail-label">心情</div><span class="cp-mood-tag">{{ home.moodLabel(state.dayDetail.mood) }}</span></div>
@@ -254,8 +254,8 @@
 </div></transition>
 
 <transition name="modal"><div v-if="state.mend.show" class="cp-modal-overlay" @click.self="state.mend.show=false">
-<div class="cp-modal glass">
-  <div class="cp-modal-header"><h3>补签</h3><button class="cp-modal-close" @click="state.mend.show=false"><i class="fas fa-xmark"></i></button></div>
+<div class="cp-modal glass" role="dialog" aria-modal="true">
+  <div class="cp-modal-header"><h3>补签</h3><button class="cp-modal-close" aria-label="关闭" @click="state.mend.show=false"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
   <div class="cp-modal-body">
     <p class="cp-mercy-left">本月免费补签剩余 {{ state.mend.left }} 次，选择要补签的日期：</p>
     <div class="cp-date-list">
@@ -269,8 +269,8 @@
 </div></transition>
 
 <transition name="modal"><div v-if="state.freeze.show" class="cp-modal-overlay" @click.self="state.freeze.show=false">
-<div class="cp-modal glass">
-  <div class="cp-modal-header"><h3>冻结某天</h3><button class="cp-modal-close" @click="state.freeze.show=false"><i class="fas fa-xmark"></i></button></div>
+<div class="cp-modal glass" role="dialog" aria-modal="true">
+  <div class="cp-modal-header"><h3>冻结某天</h3><button class="cp-modal-close" aria-label="关闭" @click="state.freeze.show=false"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
   <div class="cp-modal-body">
     <p class="cp-mercy-left">本周冻结剩余 {{ state.freeze.left }} 次。冻结后该日不计断签，适合提前安排休息日：</p>
     <div class="cp-date-list">
@@ -284,8 +284,8 @@
 </div></transition>
 
 <transition name="modal"><div v-if="state.reflection.show" class="cp-modal-overlay" @click.self="state.reflection.show=false">
-<div class="cp-modal glass">
-  <div class="cp-modal-header"><h3>今日心得</h3><button class="cp-modal-close" @click="state.reflection.show=false"><i class="fas fa-xmark"></i></button></div>
+<div class="cp-modal glass" role="dialog" aria-modal="true">
+  <div class="cp-modal-header"><h3>今日心得</h3><button class="cp-modal-close" aria-label="关闭" @click="state.reflection.show=false"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
   <div class="cp-modal-body">
     <div class="cp-form-row"><label class="cp-label">今日心情（选填）</label><div class="cp-pick-btns">
       <button class="cp-pick-btn" :class="{active:!state.reflection.mood}" @click="state.reflection.mood=''">不选</button>
@@ -303,17 +303,18 @@
 </div></transition>
 
 <transition name="modal"><div v-if="state.share.show" class="cp-modal-overlay" @click.self="state.share.show=false">
-<div class="cp-modal glass">
-  <div class="cp-modal-header"><h3>分享海报</h3><button class="cp-modal-close" @click="state.share.show=false"><i class="fas fa-xmark"></i></button></div>
+<div class="cp-modal glass" role="dialog" aria-modal="true">
+  <div class="cp-modal-header"><h3>分享海报</h3><button class="cp-modal-close" aria-label="关闭" @click="state.share.show=false"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
   <div class="cp-modal-body">
     <div class="cp-scope-tabs" style="margin-bottom:12px">
-      <button class="cp-pick-btn" :class="{active:state.share.mode!=='flop'}" @click="openShare('win')">🏆 成就海报</button>
+      <button class="cp-pick-btn" :class="{active:state.share.mode==='win'}" @click="openShare('win')">🏆 成就海报</button>
       <button class="cp-pick-btn" :class="{active:state.share.mode==='flop'}" @click="openShare('flop')">💥 翻车复盘</button>
+      <button v-if="cpShareGradAvailable()" class="cp-pick-btn" :class="{active:state.share.mode==='grad'}" @click="openShare('grad')">🎓 毕业证书</button>
     </div>
     <div v-if="state.share.loading" class="cp-share-loading"><div class="cp-gen-spinner"></div>正在绘制海报...</div>
     <template v-else>
       <img :src="state.share.url" alt="分享海报" class="cp-share-img">
-      <p class="cp-share-hint">{{ state.share.mode==='flop' ? '真实比完美更有感染力，翻车复盘反而更打动人' : '保存图片后可在微信/朋友圈分享' }}</p>
+      <p class="cp-share-hint">{{ state.share.mode==='flop' ? '真实比完美更有感染力，翻车复盘反而更打动人' : (state.share.mode==='grad' ? '这份成果值得被看见，保存后分享给懂你的人' : '保存图片后可在微信/朋友圈分享') }}</p>
     </template>
   </div>
   <div class="cp-modal-footer" v-if="!state.share.loading">
@@ -325,8 +326,8 @@
 </div></transition>
 
 <transition name="modal"><div v-if="state.diagnosis.show" class="cp-modal-overlay" @click.self="state.diagnosis.show=false">
-<div class="cp-modal glass">
-  <div class="cp-modal-header"><h3>断签诊断</h3><button class="cp-modal-close" @click="state.diagnosis.show=false"><i class="fas fa-xmark"></i></button></div>
+<div class="cp-modal glass" role="dialog" aria-modal="true">
+  <div class="cp-modal-header"><h3>断签诊断</h3><button class="cp-modal-close" aria-label="关闭" @click="state.diagnosis.show=false"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
   <div class="cp-modal-body">
     <div v-if="state.diagnosis.loading" class="cp-share-loading"><div class="cp-gen-spinner"></div>AI 正在分析你的打卡记录...</div>
     <template v-else-if="state.diagnosis.report">
@@ -345,8 +346,8 @@
 </div></transition>
 
 <transition name="modal"><div v-if="state.sharedConfig.show" class="cp-modal-overlay" @click.self="state.sharedConfig.show=false">
-<div class="cp-modal glass">
-  <div class="cp-modal-header"><h3>导入挑战</h3><button class="cp-modal-close" @click="state.sharedConfig.show=false"><i class="fas fa-xmark"></i></button></div>
+<div class="cp-modal glass" role="dialog" aria-modal="true">
+  <div class="cp-modal-header"><h3>导入挑战</h3><button class="cp-modal-close" aria-label="关闭" @click="state.sharedConfig.show=false"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
   <div class="cp-modal-body">
     <div v-if="state.sharedConfig.loading" class="cp-share-loading"><div class="cp-gen-spinner"></div>正在加载挑战配置...</div>
     <template v-else-if="state.sharedConfig.config">
@@ -369,8 +370,8 @@
 </div></transition>
 
 <transition name="modal"><div v-if="state.reportView && state.reportView.show" class="cp-modal-overlay" @click.self="home.closeReport()">
-<div class="cp-modal glass">
-  <div class="cp-modal-header"><h3>数据报表 · {{ state.current.title }}</h3><button class="cp-modal-close" @click="home.closeReport()"><i class="fas fa-xmark"></i></button></div>
+<div class="cp-modal glass" role="dialog" aria-modal="true">
+  <div class="cp-modal-header"><h3>数据报表 · {{ state.current.title }}</h3><button class="cp-modal-close" aria-label="关闭" @click="home.closeReport()"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
   <div class="cp-modal-body" v-html="home._reportModal()"></div>
   <div class="cp-modal-footer">
     <button class="cp-btn-primary" @click="home.closeReport()">关闭</button>
@@ -384,7 +385,7 @@
     <h3><i class="fas fa-robot" style="color:var(--primary)"></i> 挑战伴学 · {{ titleClean(state.current ? state.current.title : '') }}</h3>
     <div class="cp-companion-header-actions">
       <button class="cp-modal-close cp-session-toggle" :class="{active: state.companion.sessions}" @click="cpCompanion.toggleSessions()"><i class="fas fa-list-ul"></i></button>
-      <button class="cp-modal-close" @click="cpCompanion.close()"><i class="fas fa-xmark"></i></button>
+      <button class="cp-modal-close" aria-label="关闭" @click="cpCompanion.close()"><i class="fas fa-xmark" aria-hidden="true"></i></button>
     </div>
   </div>
   <div v-if="state.companion.sessions" class="cp-companion-sessions">
@@ -429,15 +430,16 @@
 </div>
 <script src="/static/js/galaxy.js?v=20260728"></script>
 <script src="/static/js/share-poster.js?v=20260728"></script>
+<script src="/static/js/graduation-cert.js?v=20261005a"></script>
 <script src="/static/js/create.js?v=20260915a"></script>
 <script src="/static/js/create-direct.js?v=20260915a"></script>
 <script src="/static/js/create-extra.js?v=20260915a"></script>
 <script src="/static/js/views/home.js?v=20261003a"></script>
 <script src="/static/js/views/home-diet.js?v=20260928d"></script>
-<script src="/static/js/views/home-task.js?v=20261003a"></script>
-<script src="/static/js/views/home-checkin.js?v=20261003a"></script>
+<script src="/static/js/views/home-task.js?v=20261005a"></script>
+<script src="/static/js/views/home-checkin.js?v=20261005a"></script>
 <script src="/static/js/views/home-panels.js?v=20261002a"></script>
-<script src="/static/js/views/home-record.js?v=20261003a"></script>
+<script src="/static/js/views/home-record.js?v=20261005a"></script>
 <script src="/static/js/views/learn-word.js?v=20260915d"></script>
     <script src="/static/js/views/learn-poem.js?v=20260915d"></script>
     <script src="/static/js/views/learn-pomodoro.js?v=20260915d"></script>
@@ -445,7 +447,7 @@
 <script src="/static/js/views/home-progress.js?v=20260915c"></script>
 <script src="/static/js/views/home-insights.js?v=20261003a"></script>
 <script src="/static/js/views/home-lifecycle.js?v=20261002a"></script>
-<script src="/static/js/views/me.js?v=20261002a"></script>
+<script src="/static/js/views/me.js?v=20261005a"></script>
 <script src="https://songguokr.com/nexus-ui/v2.47.1/js/components/nux-ai-chat-helpers.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.47.1/js/components/nux-ai-chat-template.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.47.1/js/components/nux-ai-widgets.js"></script>
@@ -456,7 +458,7 @@
 <script src="https://songguokr.com/nexus-ui/v2.47.1/js/components/nux-menu-about.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.47.1/js/components/nux-menu-user.js"></script>
 <script src="/static/js/home-companion.js?v=20260919a"></script>
-<script src="/static/js/app.js?v=20261002a"></script>
+<script src="/static/js/app.js?v=20261005a"></script>
 <script src="https://songguokr.com/nexus-ui/v2.47.1/js/components/nux-checkin.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.47.1/js/components/nux-calendar.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.47.1/js/components/nux-camera-recognize.js"></script>
