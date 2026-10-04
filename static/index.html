@@ -70,8 +70,8 @@
         <div v-if="cr.sceneNote()" class="cp-scene-note"><span>{{ cr.sceneNote().icon }}</span><span><b>{{ cr.sceneNote().name }}</b> · {{ cr.sceneNote().desc }}</span><b v-if="state.create.sceneTemplate==='quit' && !(state.create.ladderStart>0)" class="cp-note-direct"><i class="fas fa-info-circle"></i> 填上方「当前每天」即可直接创建</b><b v-else class="cp-note-direct"><i class="fas fa-bolt"></i> 可一键直接创建</b></div>
       </div>
       <div class="cp-form-row">
-        <label class="cp-label">一句话说清你的目标</label>
-        <textarea v-model="state.create.rawInput" class="cp-field" rows="3" style="resize:none;font-size:16px;line-height:1.6" :placeholder="cr.scenePlaceholder()"></textarea>
+        <label class="cp-label" for="cp-goal-input">一句话说清你的目标</label>
+        <textarea id="cp-goal-input" v-model="state.create.rawInput" class="cp-field" rows="3" style="resize:none;font-size:16px;line-height:1.6" :placeholder="cr.scenePlaceholder()"></textarea>
         <div class="cp-sample-chips"><span v-for="s in cr.sceneExamples()" :key="s" class="cp-sample-chip" @click="cr.fillSample(s)">{{ s }}</span></div>
       </div>
       <div class="cp-form-row">
@@ -137,7 +137,7 @@
     <div v-else>
       <div v-if="state.create.phase==='parsing'" class="cp-gen-status"><div class="cp-gen-spinner"></div>AI正在理解你的目标...</div>
       <template v-if="state.create.parsed">
-        <div class="cp-form-row"><label class="cp-label">挑战标题</label><input v-model="state.create.editTitle" class="cp-field" maxlength="30"></div>
+        <div class="cp-form-row"><label class="cp-label" for="cp-challenge-title">挑战标题</label><input id="cp-challenge-title" v-model="state.create.editTitle" class="cp-field" maxlength="30"></div>
         <div class="cp-form-row"><label class="cp-label">挑战天数</label><div class="cp-days-stepper">
           <button v-for="n in [21,42,66]" :key="n" class="cp-pick-btn" :class="{active:state.create.editDays===n}" @click="cr.setDays(n)">{{ n }}天</button>
         </div></div>
@@ -212,9 +212,9 @@
           </div>
         </div>
         <div class="cp-adjust">
-          <label class="cp-label"><i class="fas fa-sliders"></i> 想调整哪里？一句话告诉 AI</label>
+          <label class="cp-label" for="cp-adjust-hint"><i class="fas fa-sliders"></i> 想调整哪里？一句话告诉 AI</label>
           <div class="cp-adjust-row">
-            <input v-model="state.create.adjustHint" class="cp-field" maxlength="60" placeholder="如：太难了减半 / 更适合上班族 / 加点趣味">
+            <input id="cp-adjust-hint" v-model="state.create.adjustHint" class="cp-field" maxlength="60" placeholder="如：太难了减半 / 更适合上班族 / 加点趣味">
             <button class="cp-btn-primary cp-adjust-btn" :disabled="state.create.adjusting || !state.create.adjustHint.trim()" @click="cr.applyAdjust()"><i class="fas fa-wand-magic-sparkles"></i> 调整</button>
           </div>
         </div>
@@ -293,7 +293,7 @@
       <button class="cp-pick-btn" :class="{active:state.reflection.mood==='normal'}" @click="state.reflection.mood='normal'">😐 一般</button>
       <button class="cp-pick-btn" :class="{active:state.reflection.mood==='bad'}" @click="state.reflection.mood='bad'">😔 有点难</button>
     </div></div>
-    <div class="cp-form-row"><label class="cp-label">心得（选填）</label><textarea v-model="state.reflection.content" class="cp-field" rows="3" style="resize:none" placeholder="记录今天的感受和收获..."></textarea></div>
+    <div class="cp-form-row"><label class="cp-label" for="cp-reflection-content">心得（选填）</label><textarea id="cp-reflection-content" v-model="state.reflection.content" class="cp-field" rows="3" style="resize:none" placeholder="记录今天的感受和收获..."></textarea></div>
   </div>
   <div class="cp-modal-footer">
     <button class="cp-btn-ghost" @click="state.reflection.show=false">取消</button>
