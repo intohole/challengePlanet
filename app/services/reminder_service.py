@@ -15,7 +15,7 @@ from app.repositories.checkin_repository import CheckInRepository
 from app.services.companion_service import assess_risk, companion_text
 from app.services.goal_rule_service import is_cap_mode
 from app.services.mercy_service import load_valid_dates
-from app.services.rescue_service import assess_rescue, rescue_text
+from app.services.rescue_service import assess_rescue, rescue_notify_due, rescue_text
 from app.services.streak_service import calc_streak, today_str
 
 logger = get_logger("challengePlanet.reminder")
@@ -114,7 +114,7 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                 for challenge in challenges:
                     valid = await load_valid_dates(session, challenge.id)
                     signal = assess_rescue(challenge, valid, today_str(), today_checked=False)
-                    if signal:
+                    if signal and rescue_notify_due(int(signal["missed_days"]), today_str()):
                         rescue_items.append((challenge, signal))
                 for challenge, signal in rescue_items:
                     rescued_ids.add(challenge.id)

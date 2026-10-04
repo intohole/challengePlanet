@@ -201,7 +201,10 @@ function handleQuery() {
       const target = state.challenges.find(c => String(c.id) === chParam)
       if (target) {
         state.current = target
-        window.cpToast(q.get('rescue') ? '来看看「' + (window.cpTitleClean(target.title) || '') + '」，星轨还在' : '已切换到「' + (window.cpTitleClean(target.title) || '') + '」')
+        const gradParam = q.get('grad')
+        window.cpToast(gradParam
+          ? '🎓 减量阶梯毕业，来看看你的旅程'
+          : (q.get('rescue') ? '来看看「' + (window.cpTitleClean(target.title) || '') + '」，星轨还在' : '已切换到「' + (window.cpTitleClean(target.title) || '') + '」'))
       }
       window.history.replaceState({}, '', window.cpPrefix + '/')
     }
@@ -224,16 +227,31 @@ async function importShared() {
   }
 }
 
+function gradJourneyOf() {
+  const home = window.cpViews && window.cpViews.home
+  const t = home && home.data && home.data.today
+  const j = t && t.journey
+  return (j && j.graduation) ? j : null
+}
+
 async function openShare(mode) {
   if (!state.current) return
+  const gradMode = mode === 'grad'
+  if (gradMode) {
+    const j = gradJourneyOf()
+    if (!j) { window.cpToast('减量阶梯挑战才有毕业证书'); return }
+    if (j.graduation.state !== 'graduated') { window.cpToast('走完阶梯那天证书就会生成'); return }
+  }
   state.share.show = true
   state.share.loading = true
   state.share.url = ''
-  state.share.mode = mode === 'flop' ? 'flop' : 'win'
+  state.share.mode = mode === 'flop' ? 'flop' : (gradMode ? 'grad' : 'win')
   try {
     state.share.url = state.share.mode === 'flop'
       ? await window.cpSharePoster.generateFlop(state.current)
-      : await window.cpSharePoster.generate(state.current)
+      : state.share.mode === 'grad'
+        ? await window.cpGradCert.generate(gradJourneyOf(), state.current)
+        : await window.cpSharePoster.generate(state.current)
   } catch (e) {
     state.share.show = false
     window.cpToast(window.cpErrMsg(e, '海报生成失败'))
@@ -242,11 +260,16 @@ async function openShare(mode) {
   }
 }
 window.cpOpenShare = openShare
+window.cpShareGradAvailable = function () {
+  const j = gradJourneyOf()
+  return !!(j && j.graduation && j.graduation.state === 'graduated')
+}
 function saveShareImage() {
   if (!state.share.url) return
+  const tag = state.share.mode === 'flop' ? '翻车复盘_' : (state.share.mode === 'grad' ? '毕业证书_' : '')
   const a = document.createElement('a')
   a.href = state.share.url
-  a.download = '星轨挑战_' + (state.share.mode === 'flop' ? '翻车复盘_' : '') + (state.current.title || '分享') + '.png'
+  a.download = '星轨挑战_' + tag + (state.current.title || '分享') + '.png'
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
@@ -258,7 +281,9 @@ function copyShareText() {
   const url = window.location.origin + window.cpPrefix
   const text = state.share.mode === 'flop'
     ? '我在星轨挑战「' + c.title + '」翻车后回来了！\n断签不可怕，可怕的是不再开始。已完成 ' + (c.completed_days || 0) + '/' + c.total_days + ' 天\n来星轨挑战，真实打卡，允许翻车\n' + url
-    : '我在星轨挑战参加「' + c.title + '」挑战！\n已完成 ' + (c.completed_days || 0) + '/' + c.total_days + ' 天，连续打卡 ' + (c.streak || 0) + ' 天\n来星轨挑战，和我一起变得更好！\n' + url
+    : state.share.mode === 'grad'
+      ? '我在星轨挑战的「' + c.title + '」减量阶梯毕业了！🎓\n累计少抽 ' + ((gradJourneyOf() || {}).cigarettes_avoided || 0) + ' 根，减量 ' + (((gradJourneyOf() || {}).reduction_pct) || 0) + '%\n来星轨挑战，每一根没抽的烟都算数\n' + url
+      : '我在星轨挑战参加「' + c.title + '」挑战！\n已完成 ' + (c.completed_days || 0) + '/' + c.total_days + ' 天，连续打卡 ' + (c.streak || 0) + ' 天\n来星轨挑战，和我一起变得更好！\n' + url
   window.cpCopy(text)
 }
 function logout() {
@@ -300,6 +325,7 @@ const cpApp = createApp({
       titleClean,
       switchView,
       openShare,
+      cpShareGradAvailable: window.cpShareGradAvailable,
       saveShareImage,
       copyShareText,
       importShared,

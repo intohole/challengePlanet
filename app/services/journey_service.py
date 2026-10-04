@@ -180,13 +180,20 @@ def compute_journey(
     if stage_info is not None:
         goal_day = _ladder_goal_day_number(challenge)
         goal_date = start_date + timedelta(days=goal_day - 1)
+        from app.services.graduation_service import graduation_block
+        grad = graduation_block(challenge, max(1, day_number), start_date, today)
         block.update({
             "ladder_stage": stage_info["stage"],
             "ladder_total_stages": stage_info["total_stages"],
             "days_to_goal": max(0, (goal_date - today).days),
             "goal_date": goal_date.isoformat(),
+            "graduation": grad,
         })
-        block["health"] = health_block(goal_date, "按你的阶梯计划到达终点后", today)
+        if grad and grad.get("state") == "graduated":
+            grad_day = date.fromisoformat(str(grad["graduation_date"]))
+            block["health"] = health_block(grad_day, "从你阶梯毕业那天起", today)
+        else:
+            block["health"] = health_block(goal_date, "按你的阶梯计划到达终点后", today)
     else:
         block["health"] = health_block(start_date, "从你开始戒断那天起", today)
     block["milestones"] = milestones

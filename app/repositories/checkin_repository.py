@@ -308,7 +308,7 @@ class InsightRepository(StatelessRepository[AIInsight]):
         result = await session.execute(
             select(AIInsight)
             .where(AIInsight.challenge_id == challenge_id, AIInsight.insight_type == insight_type)
-            .order_by(AIInsight.created_at.desc())
+            .order_by(AIInsight.id.desc())
             .limit(1)
         )
         return result.scalar_one_or_none()

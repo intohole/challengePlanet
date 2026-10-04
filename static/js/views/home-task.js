@@ -6,7 +6,10 @@
     const d = this.data
     const t = d.today
     let html = ''
-    if (ch.status !== 'active') return '<div class="glass-card cp-task-card"><p class="cp-task-title">' + (ch.status === 'completed' ? '🎉 挑战完成，太棒了！' : '挑战已结束，打卡战绩已保留') + '</p><p class="cp-task-desc">可在「我的」页创建新挑战，继续保持节奏。</p></div>'
+    if (ch.status !== 'active') {
+      if (ch.status === 'graduated') return '<div class="glass-card cp-task-card cp-grad-done"><p class="cp-task-title">🎓 减量阶梯毕业！</p><p class="cp-task-desc">这份旅程已完整走完，战绩与证书永久保留。可在「我的」页回看，或开始下一程。</p></div>'
+      return '<div class="glass-card cp-task-card"><p class="cp-task-title">' + (ch.status === 'completed' ? '🎉 挑战完成，太棒了！' : '挑战已结束，打卡战绩已保留') + '</p><p class="cp-task-desc">可在「我的」页创建新挑战，继续保持节奏。</p></div>'
+    }
     if (!t) {
       if (ch.start_date && ch.start_date > window.cpTodayStr()) return '<div class="glass-card cp-task-card"><p class="cp-task-title">挑战尚未开始</p><p class="cp-task-desc">将于 ' + ch.start_date + ' 正式开始，先去准备一下吧。</p></div>'
       return ''
@@ -80,11 +83,27 @@
       if (j.money_note) html += '<div class="cp-journey-note">' + window.cpEsc(j.money_note) + '</div>'
       if (Number(j.ladder_total_stages) > 1) {
         const pct = Math.min(100, Math.round(Number(j.ladder_stage) / Number(j.ladder_total_stages) * 100))
-        const goalText = Number(j.days_to_goal) > 0 ? '距终点还有 ' + j.days_to_goal + ' 天（' + window.cpEsc(j.goal_date || '') + ' 到达）' : '已到达阶梯终点 🎉'
-        html += '<div class="cp-journey-ladder"><div class="cp-journey-ladder-bar"><i style="width:' + pct + '%"></i></div><span>' + goalText + '</span></div>'
+        const grad = j.graduation
+        let goalText
+        if (grad && grad.state === 'graduated') {
+          goalText = grad.keep_days_total > 1
+            ? '🎓 已毕业 · 保持期第 ' + grad.keep_day + '/' + grad.keep_days_total + ' 天'
+            : '🎓 已毕业 · 阶梯完整走完'
+        } else if (grad && grad.state === 'approaching' && grad.days_to_graduation > 0) {
+          goalText = '🎓 距毕业还有 ' + grad.days_to_graduation + ' 天（' + grad.graduation_date + '）'
+        } else if (Number(j.days_to_goal) > 0) {
+          goalText = '距终点还有 ' + j.days_to_goal + ' 天（' + window.cpEsc(j.goal_date || '') + ' 到达）'
+        } else {
+          goalText = '已到达阶梯终点 🎉'
+        }
+        html += '<div class="cp-journey-ladder' + (grad && grad.state === 'graduated' ? ' graduated' : '') + '"><div class="cp-journey-ladder-bar"><i style="width:' + pct + '%"></i></div><span>' + goalText + '</span></div>'
       }
     } else {
       html += '<div class="cp-journey-hero"><b>' + (j.quit_days || 0) + '</b><span>天戒断旅程</span></div>'
+    }
+    const gradBlock = j.graduation
+    if (gradBlock && gradBlock.state === 'graduated') {
+      html += '<div class="cp-grad-banner"><div class="cp-grad-banner-text"><b>🎓 减量阶梯毕业</b><span>每一根没抽的烟都算数，这份成果值得带走</span></div><button class="cp-grad-cert-btn" onclick="cpOpenShare(\'grad\')"><i class="fas fa-award"></i> 毕业证书</button></div>'
     }
     const reached = (j.milestones || []).filter(m => m.reached)
     if (reached.length) html += '<div class="cp-journey-ms">' + reached.map(m => '<span class="cp-journey-ms-chip">🏅 ' + window.cpEsc(m.label) + '</span>').join('') + '</div>'

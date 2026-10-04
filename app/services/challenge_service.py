@@ -127,7 +127,14 @@ class ChallengeService:
         for challenge in await self._repo.get_all_active(session):
             if str(getattr(challenge, "end_date", "") or "") >= today:
                 continue
-            challenge.status = "completed"
+            from app.services.graduation_service import graduation_goal_day
+            from app.services.streak_service import day_number_of
+            goal_day = graduation_goal_day(challenge)
+            day_number = day_number_of(str(challenge.start_date), today) if goal_day else 0
+            if goal_day and day_number >= goal_day:
+                challenge.status = "graduated"
+            else:
+                challenge.status = "completed"
             closed += 1
         if closed:
             await session.commit()

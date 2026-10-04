@@ -26,6 +26,7 @@ from app.core.middleware import register_middleware
 from app.db.database import init_db, run_migrations, engine as db_engine, async_session
 from app.services.reminder_service import send_checkin_reminders
 from app.services.forecast_alert_service import send_forecast_alerts
+from app.services.graduation_service import GraduationPushService
 from app.services.challenge_service import ChallengeService
 from app.services.challenge_chat_handler import challenge_chat_handler
 
@@ -72,6 +73,12 @@ async def lifespan(app: FastAPI):
         job_id="cp-forecast-alert",
         hour=18,
         minute=30,
+    )
+    scheduler.add_cron_job(
+        GraduationPushService().send_journey_pushes,
+        job_id="cp-journey-push",
+        hour="*",
+        minute=40,
     )
     scheduler.add_cron_job(
         close_finished_challenges,
@@ -123,8 +130,24 @@ from nexus import register_voice_endpoints
 register_voice_endpoints(app)
 
 
+def _scheduler_next_runs() -> dict[str, str]:
+    scheduler = get_scheduler()
+    raw = getattr(scheduler, "_scheduler", None)
+    if raw is None or not scheduler.running:
+        return {}
+    runs: dict[str, str] = {}
+    try:
+        for job in raw.get_jobs():
+            nxt = getattr(job, "next_run_time", None)
+            if nxt is not None:
+                runs[str(job.id)] = nxt.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        return {}
+    return runs
+
+
 @app.get("/health")
-async def health() -> dict[str, str]:
+async def health() -> dict[str, object]:
     scheduler = get_scheduler()
     jobs = scheduler.list_jobs()
     return {
@@ -133,6 +156,17 @@ async def health() -> dict[str, str]:
         "version": settings.APP_VERSION,
         "ironman": "available" if is_ironman_available() else "unavailable",
         "scheduler": f"running ({len(jobs)} jobs)" if scheduler.running else "stopped",
+        "cron_next_run_at": _scheduler_next_runs(),
+    }
+
+
+@app.get("/api/v1/tools/cron-status")
+async def cron_status() -> dict[str, object]:
+    scheduler = get_scheduler()
+    return {
+        "alive": scheduler.running,
+        "jobs_registered": scheduler.list_jobs(),
+        "jobs_next_run_at": _scheduler_next_runs(),
     }
 
 

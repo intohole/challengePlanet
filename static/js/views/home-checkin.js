@@ -106,7 +106,8 @@
     const d = this.data
     const t = d.today
     if (!ch || !t) return false
-    const v = Number(value) || 1
+    const parsed = Number(value)
+    const v = Number.isFinite(parsed) && parsed >= 0 ? parsed : 1
     t.today_total = (Number(t.today_total) || 0) + v
     this.rerender()
     try {
@@ -119,7 +120,8 @@
       if (ch.direction === 'decrease') {
         const tot = r.today_total || total
         const tgt = r.today_target || target
-        if (tot > tgt) window.cpCelebrate(t.goal_rule === 'ladder' ? '已记录 +' + v + ' · 已超今日上限，明天梯度更低' : '已记录 +' + v + ' · 已超今日上限，今天辛苦了')
+        if (v === 0) window.cpCelebrate('今天 0 ' + (ch.unit || '') + ' · 完美的一天 +' + (r.points_earned || 0) + ' 分')
+        else if (tot > tgt) window.cpCelebrate(t.goal_rule === 'ladder' ? '已记录 +' + v + ' · 已超今日上限，明天梯度更低' : '已记录 +' + v + ' · 已超今日上限，今天辛苦了')
         else if (tot >= tgt) window.cpCelebrate('已记录 +' + v + ' · 已达今日上限 ' + tgt + (ch.unit || '') + '，今日守住！')
         else window.cpCelebrate('已记录 +' + v + ' ' + (ch.unit || '') + ' · 还可 ' + Math.max(0, tgt - tot) + (ch.unit || ''))
       } else {

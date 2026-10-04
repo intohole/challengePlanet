@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import date
+
 from nexus.logging import get_logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +23,25 @@ RESCUE_MAX_MISSED = 14
 LEVEL_SLIP = "slip"
 LEVEL_RESCUE = "rescue"
 LEVEL_DEEP = "deep"
+
+_DEEP_NOTIFY_WEEKDAYS = (1, 4)
+
+
+def rescue_notify_due(missed_days: int, today: str) -> bool:
+    """深断档催促降频：≤3 天每天提醒，4-6 天隔日，≥7 天每周二/五。
+
+    断档越久，「每天被同一句提醒敲打」的催促效应越差于低频触达；
+    救援动线本身（App 内救援卡）不受影响，只节流推送通道。
+    """
+    if missed_days <= 3:
+        return True
+    if missed_days <= 6:
+        return int(today.replace("-", "")) % 2 == 0
+    try:
+        return date.fromisoformat(today).weekday() in _DEEP_NOTIFY_WEEKDAYS
+    except ValueError:
+        return True
+
 
 _LEVEL_BY_MISSED = (
     (REPAIR_WINDOW_DAYS, LEVEL_SLIP),

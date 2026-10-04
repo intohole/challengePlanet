@@ -124,6 +124,9 @@
     const ctaLabel = ch.scene_template === 'quit' ? '记一根' : '记一笔'
     let html = '<div class="cp-cap-cta"><button class="cp-cta-main cp-cap-main" ' + dis + ' onclick="cpViews.home.doFastTap(1)"><i class="fas fa-plus"></i><span>' + ctaLabel + '</span><em>' + state + '</em></button>'
     html += '<div class="cp-extra-btns">'
+    if (isDecrease && total === 0 && !(t.today_checkins || []).length) {
+      html += '<button class="cp-tap-chip zero" ' + dis + ' onclick="cpViews.home.doFastTap(0)"><i class="fas fa-seedling"></i>今天 0 根</button>'
+    }
     presets.forEach(v => {
       const label = isTimer ? '+' + v + '分' : '+' + v
       html += '<button class="cp-tap-chip" ' + dis + ' onclick="cpViews.home.doFastTap(' + v + ')"><i class="fas fa-plus"></i>' + label + '</button>'
