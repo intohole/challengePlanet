@@ -193,7 +193,7 @@ button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
   .cp-main { padding: 12px 12px calc(var(--nav-h) + 24px + env(safe-area-inset-bottom)); }
   .cp-header { padding: 0 12px; }
   .cp-modal-overlay { padding: 0; align-items: flex-end; }
-  .cp-modal { max-width: 100%; max-height: 94vh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .cp-modal { max-width: 100%; max-height:94vh;max-height:94dvh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
   .cp-modal::before { content: ''; flex-shrink: 0; align-self: center; width: 42px; height: 4px; border-radius: 999px; background: rgba(100,116,139,.28); margin: 9px 0 2px; }
   .cp-modal-header { border-radius: 0; }
   .cp-templates { grid-template-columns: repeat(2, 1fr); }

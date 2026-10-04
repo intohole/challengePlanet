@@ -1,8 +1,6 @@
 .cp-greet { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px 12px; animation: fade-in-up .4s ease; }
 .cp-greet h1 { font-size: 20px; font-weight: 700; }
-.cp-greet p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-.cp-greet-stats { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
-.cp-greet-stat b { color: var(--primary-light); font-weight: 700; font-size: 14px; }@keyframes fade-in-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.cp-greet p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }@keyframes fade-in-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .cp-pending-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--amber); background: rgba(255,202,40,.1); border: 1px solid rgba(255,202,40,.22); padding: 5px 12px; border-radius: 20px; }
 .cp-pending-badge.zero { color: var(--emerald); background: rgba(5,150,105,.1); border-color: rgba(5,150,105,.2); }
 
@@ -142,10 +140,7 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-companion-reasons span { font-size: 11px; color: var(--text-secondary); background: rgba(15,23,42,.05); border: 1px solid var(--card-border); padding: 2px 8px; border-radius: 10px; }
 .cp-companion-action { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--emerald); background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.22); padding: 5px 10px; border-radius: 11px; }
 .cp-days-stepper { display: flex; gap: 8px; }
-.cp-days-stepper .cp-pick-btn { flex: 1; }
-
-.cp-rank-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius); background: rgba(15,23,42,.02); border: 1px solid var(--card-border); }
-.cp-rank-row.self { border-color: var(--primary); background: rgba(99,102,241,.1); }.cp-rank-no.m1 { color: #ffd700; } .cp-rank-no.m2 { color: #c0c7d6; } .cp-rank-no.m3 { color: #e8a06a; }.cp-scope-tabs { display: flex; gap: 8px; }
+.cp-days-stepper .cp-pick-btn { flex: 1; }.cp-scope-tabs { display: flex; gap: 8px; }
 .cp-scope-tabs .cp-pick-btn { flex: 1; }
 
 .cp-me-card { padding: 20px; display: flex; align-items: center; gap: 14px; }
@@ -211,8 +206,6 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-hero-companion-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
 
 .cp-guidance-card { padding: 16px; animation: fade-in-up .4s ease; }.cp-phase-badge { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 16px; border: 1px solid; }.cp-milestone { margin-bottom: 8px; }
-.cp-risk-warn { display: flex; gap: 6px; padding: 10px 12px; border-radius: var(--radius-sm); background: rgba(239,83,80,.06); border: 1px solid rgba(239,83,80,.2); font-size: 12px; color: var(--red); line-height: 1.6; }
-.cp-risk-warn i { margin-top: 2px; flex-shrink: 0; }
 .cp-shared-preview { padding: 16px; }
 .cp-shared-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
 .cp-shared-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px; }
@@ -289,12 +282,6 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-companion-status { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--card-border); background: rgba(15,23,42,.02); }
 .cp-companion-stat { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-secondary); background: rgba(15,23,42,.04); padding: 4px 10px; border-radius: 999px; }
 .cp-companion-stat i { color: var(--primary); }
-.cp-companion-stat.cp-risk-high { color: var(--red); background: rgba(239,68,68,.1); }
-.cp-companion-stat.cp-risk-high i { color: var(--red); }
-.cp-companion-stat.cp-risk-medium { color: var(--amber); background: rgba(245,158,11,.1); }
-.cp-companion-stat.cp-risk-medium i { color: var(--amber); }
-.cp-companion-stat.cp-risk-low { color: var(--emerald); background: rgba(16,185,129,.1); }
-.cp-companion-stat.cp-risk-low i { color: var(--emerald); }
 .cp-companion-chat { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .cp-companion-chat .nx-ai-chat { height: 100%; }
 .cp-companion-queue { display: flex; align-items: center; gap: 8px; padding: 8px 14px; margin: 8px 12px 0; font-size: 12px; color: var(--primary); background: rgba(139,92,246,.08); border: 1px solid rgba(139,92,246,.2); border-radius: 10px; }

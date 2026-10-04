@@ -77,10 +77,6 @@
 
 .cp-mini-empty { text-align: center; font-size: 11px; color: var(--text-muted); padding: 16px 8px; }
 
-.cp-quick-form { padding: 14px; animation: fade-in-up .3s ease; }
-.cp-quick-btn-input { padding: 7px 16px; border-radius: var(--radius-sm); border: 1px solid var(--card-border); background: rgba(15,23,42,.025); color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
-.cp-quick-btn-input:active { transform: scale(.95); background: rgba(99,102,241,.16); color: var(--primary-light); }
-
 .cp-report-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .cp-report-expand { font-size: 11px; padding: 5px 10px; }
 .cp-report-quickgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
