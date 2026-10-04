@@ -56,8 +56,8 @@ class AIAnalysisService:
         )
         llm = get_llm_service()
         raw = await llm.ask(user_msg, system=DIAGNOSIS_SYSTEM, temperature=0.4, max_tokens=256, timeout=30.0, task_type="extract")
-        parsed = parse_llm_json(raw)
-        if "raw_response" in parsed:
+        parsed = parse_llm_json(raw, fallback=None)
+        if parsed is None:
             return None
         if parsed.get("cause") not in ("task_hard", "no_time", "motivation_decay", "external"):
             return None
@@ -71,8 +71,8 @@ class AIAnalysisService:
         user_msg = f"挑战：{challenge_title}\n模式：{mode}\n原任务：{json.dumps(tasks, ensure_ascii=False)}"
         llm = get_llm_service()
         raw = await llm.ask(user_msg, system=ADJUST_TASKS_SYSTEM, temperature=0.5, max_tokens=2048, timeout=60.0, task_type="extract")
-        parsed = parse_llm_json(raw)
-        if "raw_response" in parsed or not isinstance(parsed.get("tasks"), list):
+        parsed = parse_llm_json(raw, fallback={})
+        if not isinstance(parsed.get("tasks"), list):
             return None
         return [t for t in parsed["tasks"] if isinstance(t, dict) and t.get("title")]
 
@@ -105,8 +105,8 @@ class AIAnalysisService:
             temperature=0.4, max_tokens=384, timeout=30.0,
             task_type="extract",
         )
-        parsed = parse_llm_json(raw)
-        if "raw_response" in parsed:
+        parsed = parse_llm_json(raw, fallback=None)
+        if parsed is None:
             return None
         valid_types = {"pattern", "risk", "progress"}
         if parsed.get("insight_type") not in valid_types:

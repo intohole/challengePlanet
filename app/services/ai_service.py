@@ -96,14 +96,12 @@ class AIService:
     async def parse_challenge_input(self, raw_input: str) -> dict[str, object]:
         llm = get_llm_service()
         raw = await llm.ask(raw_input, system=PARSE_SYSTEM, temperature=0.3, max_tokens=256, timeout=30.0, task_type="extract")
-        parsed = parse_llm_json(raw)
-        if "raw_response" in parsed:
-            parsed = {
-                "title": _slice_title(raw_input), "category": "other", "duration_days": 30,
-                "task_type": "binary", "target_value": 1.0,
-                "unit": "次", "direction": "increase", "goal_type": "hard",
-                "decompose_mode": "none",
-            }
+        parsed = parse_llm_json(raw, fallback={
+            "title": _slice_title(raw_input), "category": "other", "duration_days": 30,
+            "task_type": "binary", "target_value": 1.0,
+            "unit": "次", "direction": "increase", "goal_type": "hard",
+            "decompose_mode": "none",
+        })
         parsed.setdefault("task_type", "binary")
         parsed.setdefault("target_value", 1.0)
         parsed.setdefault("unit", "次")
@@ -137,17 +135,17 @@ class AIService:
             description, system=DIET_ESTIMATE_SYSTEM,
             temperature=0.3, max_tokens=256, timeout=30.0, task_type="extract",
         )
-        return self._normalize_diet_result(parse_llm_json(raw))
+        return self._normalize_diet_result(parse_llm_json(raw, fallback={}))
 
     async def estimate_diet_calories_from_photo(self, image: str) -> dict[str, object]:
         raw = await get_vision_service().review(
             DIET_VISION_SYSTEM, "认出这张照片里的食物和份量，估算这一餐的热量", image,
         )
-        return self._normalize_diet_result(parse_llm_json(raw))
+        return self._normalize_diet_result(parse_llm_json(raw, fallback={}))
 
     @staticmethod
     def _normalize_diet_result(parsed: dict[str, object]) -> dict[str, object]:
-        if "raw_response" in parsed or not float(parsed.get("total_kcal", 0) or 0):
+        if not parsed or not float(parsed.get("total_kcal", 0) or 0):
             return {"total_kcal": 0, "min_kcal": 0, "max_kcal": 0, "confidence": 0, "items": []}
         items = parsed.get("items")
         parsed["items"] = items if isinstance(items, list) else []
