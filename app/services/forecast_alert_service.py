@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+from nexus import loads_or
 from nexus.logging import get_logger
 from nexus.notify import get_notify_client
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,10 +23,7 @@ async def _already_alerted(session: AsyncSession, challenge_id: int, date: str) 
     insight = await InsightRepository().get_by_type(session, challenge_id, ALERT_TYPE)
     if insight is None:
         return False
-    try:
-        payload = json.loads(insight.content)
-    except (json.JSONDecodeError, TypeError):
-        return False
+    payload = loads_or(insight.content, {})
     return str(payload.get("date", "")) == date
 
 

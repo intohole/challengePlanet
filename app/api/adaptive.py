@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import json
-
 from fastapi import APIRouter, Depends
-from nexus import get_current_user_id_required
+from nexus import get_current_user_id_required, loads_or
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
@@ -25,10 +23,7 @@ router = APIRouter()
 
 
 def _to_suggestion_response(s: object) -> AdaptiveSuggestionResponse:
-    try:
-        task = json.loads(s.task_json)
-    except (json.JSONDecodeError, TypeError):
-        task = {}
+    task = loads_or(s.task_json, {})
     return AdaptiveSuggestionResponse(
         id=s.id,
         kind=s.kind,

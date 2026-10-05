@@ -5,6 +5,7 @@ from datetime import date, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from nexus import loads_or
 from nexus.logging import get_logger
 from nexus.notify import get_notify_client
 
@@ -78,11 +79,8 @@ async def _load_push_state(session: AsyncSession, challenge: Challenge) -> tuple
     row = await InsightRepository().get_by_type(session, int(challenge.id), PUSH_INSIGHT_TYPE)
     if row is None:
         return None, {}
-    try:
-        payload = json.loads(str(row.content or ""))
-        return row, (payload if isinstance(payload, dict) else {})
-    except (json.JSONDecodeError, TypeError):
-        return row, {}
+    payload = loads_or(str(row.content or ""), {})
+    return row, (payload if isinstance(payload, dict) else {})
 
 
 async def _mark_pushed(session: AsyncSession, challenge: Challenge, row: object | None, state: dict[str, object], key: str) -> None:

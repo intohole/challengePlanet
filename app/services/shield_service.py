@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+from nexus import loads_or
 from nexus.logging import get_logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,10 +18,7 @@ ACTION_SHIELD = "shield"
 def _load_extra(meta: object) -> dict[str, object]:
     if meta is None:
         return {}
-    try:
-        data = json.loads(getattr(meta, "extra", "") or "{}")
-    except (json.JSONDecodeError, TypeError):
-        return {}
+    data = loads_or(getattr(meta, "extra", ""), {})
     return data if isinstance(data, dict) else {}
 
 

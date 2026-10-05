@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
+from nexus import loads_or
 from nexus.logging import get_logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -76,10 +77,7 @@ class ShareService:
         meta = await self._meta_repo.get(session, challenge.id)
         cached: dict[str, object] = {}
         if meta is not None and meta.extra:
-            try:
-                cached = json.loads(meta.extra)
-            except json.JSONDecodeError:
-                cached = {}
+            cached = loads_or(meta.extra, {})
         quote = str(cached.get("share_quote", ""))
         if quote:
             return quote
