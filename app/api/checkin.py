@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from nexus import get_current_user_id_required
@@ -10,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.repositories.challenge_repository import ChallengeRepository
-from app.repositories.checkin_repository import CheckInRepository, InsightRepository
+from app.repositories.checkin_repository import CheckInRepository
 from app.schemas.checkin import (
     CheckInCreate,
     CheckInMetaPatch,
@@ -25,22 +23,13 @@ from app.schemas.checkin import (
     MercyStatusResponse,
     RepairResponse,
 )
-from app.services.ai_analysis_service import AIAnalysisService
-from app.services.ai_service import AIService
 from app.services.ai_text_sanitizer import sanitize_coach_text
-from app.services.checkin_background import (
-    build_feedback_prompt_inputs,
-    feedback_fallback,
-    safe_declaration,
-)
 from app.services.checkin_service import CheckInService
+from app.services.checkin_stream_service import feedback_events, insight_events
 from app.services.mercy_service import MercyService
-from app.services.streak_service import week_dates_of
 from app.api._common import bad_request
 
 router = APIRouter()
-
-_feedback_locks: dict[int, asyncio.Lock] = {}
 
 
 @router.post("/{challenge_id}/checkin", response_model=CheckInResultResponse)
@@ -150,62 +139,13 @@ async def stream_feedback(
     challenge = await ChallengeRepository().get_by_id(session, challenge_id)
     if challenge is None or challenge.user_id != user_id:
         raise bad_request("挑战不存在")
-    repo = CheckInRepository()
-    checkin = await repo.get_by_id(session, request.checkin_id)
+    checkin = await CheckInRepository().get_by_id(session, request.checkin_id)
     if checkin is None or checkin.challenge_id != challenge_id:
         raise bad_request("打卡记录不存在")
 
     async def gen():
-        if checkin.ai_feedback and not request.force:
-            yield sse_event_dict("done", {
-                "content": sanitize_coach_text(checkin.ai_feedback),
-                "declaration": str(checkin.declaration or ""),
-                "cached": True,
-            })
-            return
-        lock = _feedback_locks.setdefault(request.checkin_id, asyncio.Lock())
-        try:
-            async with lock:
-                fresh = await repo.get_by_id(session, request.checkin_id)
-                if fresh is None:
-                    yield sse_event_dict("done", {"content": "", "declaration": ""})
-                    return
-                if fresh.ai_feedback and not request.force:
-                    yield sse_event_dict("done", {
-                        "content": sanitize_coach_text(fresh.ai_feedback),
-                        "declaration": str(fresh.declaration or ""),
-                        "cached": True,
-                    })
-                    return
-                ai = AIService()
-                inputs = await build_feedback_prompt_inputs(session, fresh, challenge)
-                pieces: list[str] = []
-                try:
-                    async for piece in ai.stream_daily_feedback(**inputs):
-                        pieces.append(piece)
-                        yield sse_event_dict("token", {"token": piece})
-                except Exception:
-                    content = feedback_fallback(
-                        fresh.day_number, fresh.mood, bool(inputs.get("is_soft_exceeded")),
-                    )
-                    declaration = ""
-                else:
-                    content = sanitize_coach_text(
-                        "".join(pieces).strip(),
-                        system=AIService._feedback_system(inputs["mood"]),
-                        fallback="",
-                    )
-                    declaration = await safe_declaration(ai, challenge.title, fresh.day_number)
-                if content:
-                    await repo.update(session, fresh, {
-                        "ai_feedback": content, "declaration": declaration,
-                    })
-                    await session.commit()
-                yield sse_event_dict("done", {
-                    "content": content, "declaration": declaration,
-                })
-        finally:
-            _feedback_locks.pop(request.checkin_id, None)
+        async for event, payload in feedback_events(session, challenge, checkin, request.force):
+            yield sse_event_dict(event, payload)
 
     return sse_response(gen())
 
@@ -301,47 +241,9 @@ async def stream_insight(
     challenge = await ChallengeRepository().get_by_id(session, challenge_id)
     if challenge is None or challenge.user_id != user_id:
         raise bad_request("挑战不存在")
-    insight_repo = InsightRepository()
-    latest = await insight_repo.get_latest_weekly(session, challenge_id)
-    week_dates = set(week_dates_of())
-    fresh = bool(
-        latest and latest.created_at
-        and latest.created_at.date().strftime("%Y-%m-%d") in week_dates
-    )
 
     async def gen():
-        if fresh and not request.force:
-            yield sse_event_dict("done", {"content": latest.content, "cached": True})
-            return
-        checkins = await CheckInRepository().get_by_challenge(session, challenge_id)
-        checkin_data = [
-            {
-                "day_number": c.day_number,
-                "mood": c.mood,
-                "reflection": c.reflection,
-                "value": c.value,
-                "timestamp": c.timestamp.isoformat(),
-                "date": c.date,
-            }
-            for c in checkins
-        ]
-        pieces: list[str] = []
-        ai = AIAnalysisService()
-        async for piece in ai.stream_weekly_report(
-            challenge.title, checkin_data, challenge.duration_days
-        ):
-            pieces.append(piece)
-            yield sse_event_dict("token", {"token": piece})
-        content = sanitize_coach_text("".join(pieces).strip(), max_len=512)
-        if not content:
-            content = "本周还没有足够记录，先打几天卡再来看看洞察吧"
-        await insight_repo.create(session, {
-            "challenge_id": challenge_id,
-            "user_id": challenge.user_id,
-            "insight_type": "weekly",
-            "content": content,
-        })
-        await session.commit()
-        yield sse_event_dict("done", {"content": content})
+        async for event, payload in insight_events(session, challenge, request.force):
+            yield sse_event_dict(event, payload)
 
     return sse_response(gen())
