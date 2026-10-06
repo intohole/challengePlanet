@@ -75,6 +75,27 @@ def daily_target(
     return float(getattr(challenge, "target_value", 1.0) or 1.0)
 
 
+def plan_day_target(challenge: object, day_number: int, fallback: float | None = None) -> float:
+    plan = getattr(challenge, "ai_plan", None)
+    if isinstance(plan, str):
+        try:
+            import json
+
+            plan = json.loads(plan)
+        except ValueError:
+            plan = None
+    if not isinstance(plan, list) or not 0 < day_number <= len(plan):
+        return fallback if fallback is not None else 0.0
+    entry = plan[day_number - 1]
+    try:
+        value = float((entry or {}).get("target_value") or 0)
+    except (TypeError, ValueError, AttributeError):
+        value = 0.0
+    if value <= 0:
+        return fallback if fallback is not None else 0.0
+    return value
+
+
 def ladder_meta(challenge: object) -> dict[str, float | int | str]:
     return {
         "ladder_start": float(getattr(challenge, "ladder_start", 0) or 0),

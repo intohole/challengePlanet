@@ -11,6 +11,7 @@ from app.services.goal_rule_service import (
     dynamic_baseline_from,
     is_adaptive,
     is_ladder,
+    plan_day_target,
 )
 
 BASELINE_DAYS = 7
@@ -49,7 +50,7 @@ class TargetService:
             return {"target_value": daily_target(challenge, day_number), "goal_type": goal_type}
         if is_adaptive(challenge) and adaptive_baseline is None:
             adaptive_baseline = await self.live_baseline(session, challenge)
-        return {
-            "target_value": daily_target(challenge, day_number, adaptive_baseline=adaptive_baseline),
-            "goal_type": goal_type,
-        }
+        target = daily_target(challenge, day_number, adaptive_baseline=adaptive_baseline)
+        if str(getattr(challenge, "direction", "") or "") == "decrease":
+            target = plan_day_target(challenge, day_number, fallback=target)
+        return {"target_value": target, "goal_type": goal_type}

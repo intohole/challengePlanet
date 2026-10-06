@@ -6,10 +6,10 @@ window.cpViews.home = (function () {
   const V = {
     el: null,
     loadedFor: null,
-    data: { today: null, checkins: [], mercy: null, weekly: null, guidance: null, insightRunning: false, insightText: '', loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', contextTag: '', moodTag: '', fbStreaming: false, fbPending: null, fbTried: 0, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, dietImage: '', weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null },
+    data: { today: null, checkins: [], mercy: null, weekly: null, guidance: null, insightRunning: false, insightText: '', insightError: '', loading: false, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', contextTag: '', moodTag: '', fbStreaming: false, fbPending: null, fbTried: 0, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, dietImage: '', weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null },
 
     _freshData(loading) {
-      return { today: null, checkins: [], mercy: null, weekly: null, guidance: null, insightRunning: false, insightText: '', loading: !!loading, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', contextTag: '', moodTag: '', fbStreaming: false, fbPending: null, fbTried: 0, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, dietImage: '', weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null }
+      return { today: null, checkins: [], mercy: null, weekly: null, guidance: null, insightRunning: false, insightText: '', insightError: '', loading: !!loading, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', contextTag: '', moodTag: '', fbStreaming: false, fbPending: null, fbTried: 0, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, dietImage: '', weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null }
     },
 
     render(el) {
@@ -155,7 +155,7 @@ window.cpViews.home = (function () {
     _main(s) {
       const ch = s.current
       const d = this.data
-      let html = ''
+      let html = '<div class="cp-home-primary">'
       if (s.challenges.length > 1) {
         html += '<div class="cp-ch-scroll">'
         const ordered = s.challenges.slice().sort((a, b) => (b.rescue && b.rescue.missed_days ? 1 : 0) - (a.rescue && a.rescue.missed_days ? 1 : 0) || (b.rescue && b.rescue.missed_days ? b.rescue.missed_days : 0) - (a.rescue && a.rescue.missed_days ? a.rescue.missed_days : 0))
@@ -167,17 +167,20 @@ window.cpViews.home = (function () {
         html += '</div>'
       }
 
-      html += '<div class="glass-card cp-hero cp-ch-titlebar"><div class="cp-ch-title-main"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(window.cpTitleClean(ch.title)) + '</div>' + (ch.total_days ? '<span class="cp-ch-title-meta"><i class="fas fa-flag-checkered"></i> ' + (ch.completed_days || 0) + '/' + ch.total_days + ' 天</span>' : '') + '<div class="cp-hero-actions">' + (ch.status === 'active' ? '<button class="cp-hero-share-btn" title="放弃挑战" onclick="cpViews.home.abandonCurrent()"><i class="fas fa-flag"></i></button>' : '') + (ch.share_token ? '<button class="cp-hero-share-btn" onclick="cpViews.home.openShareConfig()"><i class="fas fa-link"></i></button>' : '') + '<button class="cp-hero-share-btn cp-hero-companion-btn" onclick="cpCompanion.open()"><i class="fas fa-robot"></i></button></div></div></div>'
+      html += '<div class="glass-card cp-hero cp-ch-titlebar"><div class="cp-ch-title-main"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(window.cpTitleClean(ch.title)) + '</div>' + (ch.total_days ? '<span class="cp-ch-title-meta"><i class="fas fa-flag-checkered"></i> ' + (ch.completed_days || 0) + '/' + ch.total_days + ' 天</span>' : '') + '<div class="cp-hero-actions">' + (ch.status === 'active' ? '<button class="cp-hero-share-btn" title="放弃挑战" aria-label="放弃挑战" onclick="cpViews.home.abandonCurrent()"><i class="fas fa-flag"></i></button>' : '') + (ch.share_token ? '<button class="cp-hero-share-btn" title="复制分享链接" aria-label="复制分享链接" onclick="cpViews.home.openShareConfig()"><i class="fas fa-link"></i></button>' : '') + '<button class="cp-hero-share-btn cp-hero-companion-btn" title="AI 伴学" aria-label="AI 伴学" onclick="cpCompanion.open()"><i class="fas fa-robot"></i></button></div></div></div>'
 
-      if (d.loading && !d.today) return html + this._skeleton()
+      if (d.loading && !d.today) return html + this._skeleton() + '</div>'
       if (d.error) html += '<div class="cp-error-box"><i class="fas fa-circle-exclamation"></i><span>' + window.cpEsc(d.error) + '</span><button class="cp-btn-ghost" onclick="cpViews.home.load()">重试</button></div>'
       html += this._rescueCards(s)
       html += this._todayTop(s)
+      html += '</div>'
+      html += '<div class="cp-home-secondary">'
       html += '<div class="cp-tabs"><button class="cp-tab' + (d.activeTab === 'today' ? ' active' : '') + '" onclick="cpViews.home.switchTab(\'today\')"><i class="fas fa-fire"></i><span>今日</span></button><button class="cp-tab' + (d.activeTab === 'progress' ? ' active' : '') + '" onclick="cpViews.home.switchTab(\'progress\')"><i class="fas fa-chart-line"></i><span>进度</span></button><button class="cp-tab' + (d.activeTab === 'insight' ? ' active' : '') + '" onclick="cpViews.home.switchTab(\'insight\')"><i class="fas fa-lightbulb"></i><span>洞察</span></button></div>'
       if (d.activeTab === 'progress') html += this._tabProgress(s)
       else if (d.activeTab === 'insight') html += this._tabInsight(s)
       else html += this._tabToday(s)
-      html += '<button class="cp-fab" onclick="cpCreate.open()"><i class="fas fa-plus"></i></button>'
+      html += '</div>'
+      html += '<button class="cp-fab" title="新建挑战" aria-label="新建挑战" onclick="cpCreate.open()"><i class="fas fa-plus"></i></button>'
       return html
     },
 
@@ -194,59 +197,16 @@ window.cpViews.home = (function () {
       return html
     },
 
-    _rescueCardHtml(c) {
-      const cc = window.cpCat(c.category)
-      const r = c.rescue
-      const isQuit = c.category === 'quit'
-      const soft = isQuit ? '<div class="cp-rescue-soft">一次没记录不等于前功尽弃，每一天都可以重新开始。</div>' : ''
-      let actions = ''
-      if (r.can_repair) actions += '<button class="cp-rescue-btn primary" onclick="cpViews.home.rescueRepair(' + c.id + ')"><i class="fas fa-wand-magic-sparkles"></i> 补回昨天</button>'
-      if (r.missed_days >= 2) actions += '<button class="cp-rescue-btn primary" onclick="cpViews.home.rescueMend(' + c.id + ')"><i class="fas fa-calendar-check"></i> 补上 ' + (r.mend_date || '').slice(5) + '</button>'
-      if (r.missed_days >= 4) actions += '<button class="cp-rescue-btn" onclick="cpViews.home.rescueDiagnose(' + c.id + ')"><i class="fas fa-stethoscope"></i> 看看怎么回事</button>'
-      actions += '<button class="cp-rescue-btn ghost" onclick="cpViews.home.rerender()"><i class="fas fa-fire"></i> 今天先打卡</button>'
-      return '<div class="cp-rescue-card"><div class="cp-rescue-head"><span class="cp-rescue-star"><i class="fas ' + cc.icon + '" style="color:' + cc.color + '"></i></span><div class="cp-rescue-title"><b>' + window.cpEsc(window.cpTitleClean(c.title)) + '</b><span>断了 ' + r.missed_days + ' 天，星轨还在</span></div><span class="cp-rescue-days">+' + (c.completed_days || 0) + ' 天已完成</span></div>' + soft + '<div class="cp-rescue-actions">' + actions + '</div></div>'
-    },
-
-    _rescueCards(s) {
-      const items = s.challenges.filter(c => c.status === 'active' && c.rescue && c.rescue.missed_days && c.id !== (s.current && s.current.id))
-      if (!items.length) return ''
-      let html = ''
-      items.slice(0, 2).forEach(c => {
-        html += this._rescueCardHtml(c)
-      })
-      return html
-    },
-
-    async rescueRepair(id) {
-      const c = window.appState.challenges.find(x => x.id === id)
-      if (!c) return
-      try {
-        const r = await window.cpApi.post('/challenges/' + id + '/repair', {})
-        window.cpToast((r && r.message) || '已补回昨天，节奏恢复了')
-        await window.cpLoadChallenges()
-        this.rerender()
-      } catch (e) { window.cpToast(window.cpErrMsg(e, '补签失败')) }
-    },
-
-    async rescueMend(id) {
-      const c = window.appState.challenges.find(x => x.id === id)
-      const r = c && c.rescue
-      if (!c || !r || !r.mend_date) return
-      try {
-        await window.cpApi.post('/challenges/' + id + '/mend', { date: r.mend_date })
-        window.cpToast('已补上 ' + (r.mend_date || '').slice(5) + '，星轨重新亮了')
-        await window.cpLoadChallenges()
-        this.rerender()
-      } catch (e) { window.cpToast(window.cpErrMsg(e, '补签失败，可能是本月免费次数用完了')) }
-    },
-
-    rescueDiagnose(id) {
-      window.cpSelectChallenge(id)
-      this.doDiagnose()
-    },
-
     _tabToday(s) {
-      return this._todayTimeline(s)
+      const ch = s.current
+      const d = this.data
+      const t = d.today
+      let html = this._todayTimeline(s)
+      if (!t || !ch || t.not_started || ch.status !== 'active') return html
+      const tt = t.task_type || ch.task_type || 'binary'
+      html += this._afterCheckin(tt, t, ch)
+      if (ch.direction === 'decrease' && t.journey) html += this._journeyCard(t.journey, ch)
+      return html
     },
 
     async abandonCurrent() {

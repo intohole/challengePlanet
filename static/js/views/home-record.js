@@ -63,6 +63,7 @@
     if (!checkins.length) return ''
     let html = '<div class="glass-card cp-timeline"><div class="cp-section-title"><i class="fas fa-list-check" style="color:var(--primary-light)"></i> 今日记录（' + checkins.length + '次）</div>'
     html += '<div class="cp-timeline-list">'
+    const total = checkins.length
     checkins.slice().reverse().forEach((c, i) => {
       const time = (c.timestamp || '').slice(11, 16)
       const isSoftExceeded = c.target_value > 0 && c.value > c.target_value && (c.goal_type === 'soft')
@@ -70,11 +71,13 @@
       let valueColor = 'var(--emerald)'
       if (isSoftExceeded) valueColor = 'var(--amber)'
       if (isHardExceeded) valueColor = 'var(--red)'
+      const ordinal = total - i
+      const valText = Number(c.value) === 1 ? '<em>第' + ordinal + '</em>' + window.cpEsc(c.unit || ch.unit || '') : window.cpFmtInt(c.value) + ' ' + window.cpEsc(c.unit || ch.unit || '')
       html += '<div class="cp-timeline-item' + (i === 0 ? ' latest' : '') + '">'
       html += '<div class="cp-timeline-time">' + time + '</div>'
       html += '<div class="cp-timeline-dot" style="background:' + valueColor + '"></div>'
       html += '<div class="cp-timeline-body">'
-      html += '<div class="cp-timeline-valrow"><div class="cp-timeline-val" style="color:' + valueColor + '">' + c.value + ' ' + window.cpEsc(c.unit || ch.unit || '') + '</div>'
+      html += '<div class="cp-timeline-valrow"><div class="cp-timeline-val" style="color:' + valueColor + '">' + valText + '</div>'
       html += '<button class="cp-timeline-del" onclick="cpViews.home.removeTodayRecord(' + c.id + ')"><i class="fas fa-trash-can"></i> 撤销</button></div>'
       if (c.context_tag) html += '<div class="cp-ctx-badge">' + (this.CTX_EMOJI[c.context_tag] || '') + ' ' + (this.CTX_LABELS[c.context_tag] || c.context_tag) + '</div>'
       else if (i === 0) html += this._ctxPatchRow(c.id)

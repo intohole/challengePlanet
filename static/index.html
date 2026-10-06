@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="/static/style.css?v=20261003a">
 <link rel="stylesheet" href="/static/style-components.css?v=20261004">
 <link rel="stylesheet" href="/static/style-checkin.css?v=20261002a">
-<link rel="stylesheet" href="/static/style-multi.css?v=20261005a">
+<link rel="stylesheet" href="/static/style-multi.css?v=20261006a">
 <script src="https://songguokr.com/nexus-ui/v2.49.0/vendor/vue.global.prod.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.49.0/js/nexus-all.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.49.0/js/composables/use-theme.js"></script>
@@ -32,7 +32,7 @@
 <header class="cp-header">
   <div class="cp-header-inner">
     <div class="cp-logo"><div class="cp-logo-icon"><i class="fas fa-meteor"></i></div><div class="cp-logo-wrap"><span class="cp-logo-text">星轨挑战</span><span class="cp-logo-tag">AI 打卡教练</span></div></div>
-    <div class="cp-header-right"><nux-theme-toggle></nux-theme-toggle><span class="cp-user-name">{{ state.nickname }}</span><nux-menu-about label="关于"></nux-menu-about><nux-menu-user app-name="星轨挑战" label="用户中心"></nux-menu-user></div>
+    <div class="cp-header-right"><button class="cp-header-link cp-desk-only" type="button" @click="switchView('me')"><i class="fas fa-user"></i> 我的挑战</button><button class="cp-header-link cp-header-create cp-desk-only" type="button" @click="openCreate()"><i class="fas fa-plus"></i> 新建挑战</button><nux-theme-toggle></nux-theme-toggle><span class="cp-user-name">{{ state.nickname }}</span><nux-menu-about label="关于"></nux-menu-about><nux-menu-user app-name="星轨挑战" label="用户中心"></nux-menu-user></div>
   </div>
 </header>
 
@@ -54,7 +54,7 @@
 <div class="cp-modal glass" role="dialog" aria-modal="true">
   <div class="cp-modal-header"><h3>创建挑战</h3><button class="cp-modal-close" aria-label="关闭" @click="cr.close()"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
   <div class="cp-modal-body">
-    <div class="cp-steps"><div class="cp-step-dot on"></div><div class="cp-step-dot" :class="{on:state.create.step>=2}"></div><div class="cp-step-dot" :class="{on:state.create.phase==='preview'}"></div></div>
+    <div class="cp-steps"><div class="cp-step-item on"><span class="cp-step-dot on"></span><span class="cp-step-name">选方向</span></div><div class="cp-step-item" :class="{on:state.create.step>=2}"><span class="cp-step-dot" :class="{on:state.create.step>=2}"></span><span class="cp-step-name">看计划</span></div><div class="cp-step-item" :class="{on:state.create.phase==='preview'}"><span class="cp-step-dot" :class="{on:state.create.phase==='preview'}"></span><span class="cp-step-name">开启</span></div></div>
 
     <div v-if="state.create.step===1">
       <div class="cp-form-row">
@@ -434,17 +434,18 @@
 <script src="/static/js/create.js?v=20260915a"></script>
 <script src="/static/js/create-direct.js?v=20260915a"></script>
 <script src="/static/js/create-extra.js?v=20260915a"></script>
-<script src="/static/js/views/home.js?v=20261003a"></script>
+<script src="/static/js/views/home.js?v=20261006a"></script>
+<script src="/static/js/views/home-rescue.js?v=20261006a"></script>
 <script src="/static/js/views/home-diet.js?v=20260928d"></script>
-<script src="/static/js/views/home-task.js?v=20261005a"></script>
+<script src="/static/js/views/home-task.js?v=20261006a"></script>
 <script src="/static/js/views/home-checkin.js?v=20261005a"></script>
 <script src="/static/js/views/home-panels.js?v=20261002a"></script>
-<script src="/static/js/views/home-record.js?v=20261005a"></script>
+<script src="/static/js/views/home-record.js?v=20261006a"></script>
 <script src="/static/js/views/learn-word.js?v=20260915d"></script>
     <script src="/static/js/views/learn-poem.js?v=20260915d"></script>
     <script src="/static/js/views/learn-pomodoro.js?v=20260915d"></script>
     <script src="/static/js/views/learn-stopwatch.js?v=20260915d"></script>
-<script src="/static/js/views/home-progress.js?v=20260915c"></script>
+<script src="/static/js/views/home-progress.js?v=20261006a"></script>
 <script src="/static/js/views/home-insights.js?v=20261003a"></script>
 <script src="/static/js/views/home-lifecycle.js?v=20261002a"></script>
 <script src="/static/js/views/me.js?v=20261005a"></script>
@@ -458,7 +459,8 @@
 <script src="https://songguokr.com/nexus-ui/v2.49.0/js/components/nux-menu-about.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.49.0/js/components/nux-menu-user.js"></script>
 <script src="/static/js/home-companion.js?v=20260919a"></script>
-<script src="/static/js/app.js?v=20261005a"></script>
+<script src="/static/js/data-scenes.js?v=20261006a"></script>
+<script src="/static/js/app.js?v=20261006a"></script>
 <script src="https://songguokr.com/nexus-ui/v2.49.0/js/components/nux-checkin.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.49.0/js/components/nux-calendar.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.49.0/js/components/nux-camera-recognize.js"></script>

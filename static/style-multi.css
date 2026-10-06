@@ -33,14 +33,15 @@
 .cp-rail-proj { position: absolute; top: -4px; width: 4px; height: 18px; border-radius: 2px; transform: translateX(-50%); box-shadow: 0 0 0 2px rgba(255,255,255,.92); transition: left .5s, background .3s; }
 
 .cp-timeline { padding: 14px; }
-.cp-timeline-list { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; position: relative; }
+.cp-timeline-list { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; position: relative; }
 .cp-timeline-list::before { content: ''; position: absolute; left: 50px; top: 8px; bottom: 8px; width: 1px; background: var(--card-border); }
 .cp-timeline-item { display: flex; align-items: flex-start; gap: 10px; position: relative; }
 .cp-timeline-item.latest { animation: fade-in-up .35s ease; }
 .cp-timeline-time { width: 42px; font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; padding-top: 4px; text-align: right; flex-shrink: 0; }
 .cp-timeline-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; z-index: 1; box-shadow: 0 0 0 3px rgba(255,255,255,.9); }
-.cp-timeline-body { flex: 1; min-width: 0; padding-bottom: 4px; }
-.cp-timeline-val { font-size: 14px; font-weight: 700; }
+.cp-timeline-body { flex: 1; min-width: 0; padding-bottom: 2px; }
+.cp-timeline-val { font-size: 13px; font-weight: 700; }
+.cp-timeline-val em { font-style: normal; font-size: 15px; font-variant-numeric: tabular-nums; }
 .cp-timeline-valrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .cp-timeline-del { border: none; background: none; color: var(--text-muted); font-size: 11px; cursor: pointer; padding: 6px 4px; min-height: 32px; display: inline-flex; align-items: center; gap: 4px; border-radius: 8px; flex-shrink: 0; transition: color .15s; }
 .cp-timeline-del:hover { color: var(--red); }
@@ -208,3 +209,53 @@
 [data-theme="dark"] .cp-grad-cert-btn { color: #451a03; }
 [data-theme="dark"] .cp-grad-banner { background: linear-gradient(135deg, rgba(245,158,11,.16), rgba(16,185,129,.12)); }
 [data-theme="dark"] .cp-tap-chip.zero { color: #6EE7B7; }
+
+
+/* ============ 前端专项1：诚实的数字·三端各形 ============ */
+/* 创建步骤：条+文字标签 */
+.cp-steps { align-items: stretch; }
+.cp-step-item { flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.cp-step-item .cp-step-dot { flex: none; width: 100%; }
+.cp-step-name { font-size: 11px; color: var(--text-muted); line-height: 1; }
+.cp-step-item.on .cp-step-name { color: var(--primary); font-weight: 600; }
+
+/* 洞察失败内联错误态 */
+.cp-insight-error { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 13px; padding: 10px 12px; background: rgba(245,158,11,.08); border: 1px dashed rgba(245,158,11,.35); border-radius: 10px; flex-wrap: wrap; }
+.cp-insight-error .cp-btn-ghost { margin-left: auto; }
+
+/* 快捷 +N 按钮：不折行（桌面窄栏挤压防御） */
+.cp-extra-btns .cp-tap-chip { white-space: nowrap; }
+.cp-extra-btns .cp-tap-chip.ghost { flex: 1 1 100%; }
+@media (min-width: 1080px) {
+  .cp-extra-btns .cp-tap-chip.ghost { flex: 1 1 100%; text-align: center; justify-content: center; }
+}
+
+/* 桌面 header 快捷入口（默认隐藏，≥1080 显示） */
+.cp-header-link { display: none; }
+
+/* 主/次容器：接管 .cp-view 的纵向节奏（移动单栏 / 桌面双栏） */
+.cp-home-primary, .cp-home-secondary { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+@media (min-width: 1080px) {
+  .cp-header-link { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 13px; border-radius: 10px; border: 1px solid var(--card-border); background: var(--card); color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: color .15s, border-color .15s; }
+  .cp-header-link:hover { color: var(--primary); border-color: var(--primary-light); }
+  .cp-header-link.cp-header-create { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; border: none; box-shadow: 0 2px 10px var(--primary-glow); }
+  .cp-header-link.cp-header-create:hover { color: #fff; filter: brightness(1.06); }
+  .cp-bottom-nav, .cp-fab { display: none; }
+  .cp-main { padding-bottom: 40px; }
+  /* 双栏工作台：左=行动区（粘性），右=回顾区 */
+  .cp-view { display: grid; grid-template-columns: minmax(380px, 440px) minmax(0, 1fr); gap: 22px; align-items: start; }
+  .cp-home-primary { position: sticky; top: calc(var(--header-h) + 16px); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .cp-home-secondary { min-width: 0; }
+}
+
+/* 创建弹窗 footer：按钮内文字禁折行（防「AI生成计/划」孤字），空间不足整按钮换行 */
+.cp-footer-create { flex-wrap: wrap; }
+.cp-footer-create .cp-btn-primary, .cp-footer-create .cp-btn-ghost { white-space: nowrap; }
+.cp-footer-create .cp-btn-primary { min-width: 0; }
+
+/* 暗色主题顶栏/底导航换肤（存量缺陷：写死白底，暗色下浅底浅字不可读） */
+[data-theme="dark"] .cp-header { background: rgba(13,18,38,.78); border-bottom-color: var(--card-border); }
+[data-theme="dark"] .cp-bottom-nav { background: rgba(13,18,38,.86); box-shadow: 0 -4px 20px rgba(0,0,0,.4); }
+[data-theme="dark"] .cp-header-link { background: var(--card); }
+[data-theme="dark"] .cp-header-link.cp-header-create { background: linear-gradient(135deg, var(--primary), var(--purple)); border: none; color: #fff; }

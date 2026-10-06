@@ -36,7 +36,9 @@
       const mainText = isDecrease ? '比昨天少 <b>' + baseline.toFixed(1) + '</b> ' + unit : '比昨天多 <b>' + baseline.toFixed(1) + '</b> ' + unit
       html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> ' + mainText + '</div>'
     } else if (t.task_target && t.task_target > 0) {
-      html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> 今日目标 <b>' + t.task_target + '</b> ' + window.cpEsc(t.task_unit || '') + '</div>'
+      const capNum = Number(t.today_cap) || Number(t.today_target) || Number(t.task_target) || 0
+      const capLabel = isDecrease ? '今日上限' : '今日目标'
+      html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> ' + capLabel + ' <b>' + (capNum || t.task_target) + '</b> ' + window.cpEsc(t.task_unit || '') + '</div>'
     }
     if ((isMultiMode || isDecrease) && t.today_total !== undefined) {
       if (t.goal_rule !== 'ladder') {
@@ -64,9 +66,7 @@
       html += this._dietArea(t, ch, (d.today && d.today.checkins_date))
     } else {
       html += this._checkinArea(tt, t, ch)
-      html += this._afterCheckin(tt, t, ch)
     }
-    if (isDecrease && t.journey) html += this._journeyCard(t.journey, ch)
     return html
   }
 
