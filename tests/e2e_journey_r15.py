@@ -8,6 +8,7 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
+from nexus.utils.time import TimeUtils
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -61,7 +62,7 @@ def insert_checkin(conn, ch_id, user_id, day, value, unit, target):
 
 
 def main() -> int:
-    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    today = TimeUtils.now_naive().strftime("%Y-%m-%d")
     name = f"r15quit{int(time.time())%1000000}"
 
     print("== 1. 注册 + 建戒烟阶梯挑战（25→1，19 天前开始） ==")

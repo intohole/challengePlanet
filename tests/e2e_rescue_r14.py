@@ -7,6 +7,7 @@ import sys
 import urllib.request
 import datetime
 from pathlib import Path
+from nexus.utils.time import TimeUtils
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -66,7 +67,7 @@ def register() -> str:
 
 def main() -> int:
     global FAIL
-    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    today = TimeUtils.now_naive().strftime("%Y-%m-%d")
 
     print("== 1. 注册与建挑战 ==")
     token = register()

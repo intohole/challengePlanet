@@ -13,6 +13,7 @@ from app.models.checkin import CheckIn
 from app.services import reminder_service
 
 import app.models  # noqa: F401 register all tables
+from nexus.utils.time import TimeUtils
 
 
 class FakeNotifyClient:
@@ -59,7 +60,7 @@ def _run() -> list[dict[str, object]]:
                 CheckIn(
                     challenge_id=c_done.id,
                     user_id=uid,
-                    timestamp=datetime.now(),
+                    timestamp=TimeUtils.now_naive(),
                     date=today,
                     status="completed",
                 )

@@ -20,6 +20,7 @@ from app.models.checkin import CheckIn
 from app.repositories.challenge_repository import ChallengeRepository
 from app.services import forecast_alert_service as fas
 from app.services.streak_service import shift_date, today_str
+from nexus.utils.time import TimeUtils
 
 sent: list[dict] = []
 
@@ -36,7 +37,7 @@ FIXED_HOUR = 20
 
 
 def _fix_clock(hour: int) -> None:
-    fixed = datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0)
+    fixed = TimeUtils.now_naive().replace(hour=hour, minute=0, second=0, microsecond=0)
     challenge_service.now_china = lambda: fixed
     forecast_service.now_china = lambda: fixed
 

@@ -9,6 +9,7 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
+from nexus.utils.time import TimeUtils
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -91,7 +92,7 @@ def run_close() -> int:
 
 
 def main() -> int:
-    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    today = TimeUtils.now_naive().strftime("%Y-%m-%d")
     name = f"r16grad{int(time.time())%1000000}"
 
     print("== 1. 注册 + 建已到终点的阶梯挑战（25→1，26 天前开始，day27 >= goal_day25） ==")
