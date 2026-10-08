@@ -212,20 +212,7 @@ window.cpViews.home = (function () {
     async abandonCurrent() {
       const ch = window.appState.current
       if (!ch) return
-      const msg = ch.status !== 'active'
-        ? '删除「' + (window.cpTitleClean(ch.title) || '') + '」？删除后不可恢复。'
-        : ((ch.completed_days || 0) > 0
-          ? '删除「' + (window.cpTitleClean(ch.title) || '') + '」？已有 ' + (ch.completed_days || 0) + ' 天打卡战绩，删除后不可恢复。'
-          : '删除「' + (window.cpTitleClean(ch.title) || '') + '」？删除后不可恢复。')
-      if (!(await window.nuxConfirm(msg))) return
-      try {
-        await window.cpApi.deleteChallenge(ch.id)
-        window.cpToast('已删除挑战')
-        this.loadedFor = null
-        this.data = this._freshData(false)
-        await window.cpLoadChallenges()
-        this.load()
-      } catch (e) { window.cpToast(window.cpErrMsg(e, '操作失败')) }
+      window.cpEndJourney(ch.id)
     },
 
     useTemplate(i) {

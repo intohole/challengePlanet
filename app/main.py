@@ -15,6 +15,7 @@ from nexus.notify import async_init_notify_client, register_notify_proxy
 from nexus.scheduler import get_scheduler
 
 from app.api.adaptive import router as adaptive_router
+from app.api.archives import router as archives_router
 from app.api.challenge import router as challenge_router
 from app.api.checkin import router as checkin_router
 from app.api.diet import router as diet_router
@@ -120,6 +121,7 @@ app.include_router(report_router, prefix=API_PREFIX + "/challenges")
 app.include_router(adaptive_router, prefix=API_PREFIX + "/challenges")
 app.include_router(reminder_router, prefix=API_PREFIX + "/challenges")
 app.include_router(points_router, prefix=API_PREFIX)
+app.include_router(archives_router, prefix=API_PREFIX)
 app.include_router(chat_router(ChatEngine(db_engine).register("challengePlanet", challenge_chat_handler), "challengePlanet"))
 
 register_notify_proxy(app)

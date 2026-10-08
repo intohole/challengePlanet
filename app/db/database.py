@@ -54,6 +54,7 @@ _EXPECTED_TABLES = (
     "adaptive_suggestions",
     "weight_records",
     "reminder_prefs",
+    "journey_archives",
 )
 
 
@@ -63,7 +64,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 def _import_models() -> None:
-    from app.models import adaptive, challenge, checkin, points, reminder  # noqa: F401
+    from app.models import adaptive, archive, challenge, checkin, points, reminder  # noqa: F401
 
 _WHITELIST_TABLES = frozenset({"challenges", "checkins", "adaptive_suggestions"})
 

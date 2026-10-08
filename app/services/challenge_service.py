@@ -145,13 +145,22 @@ class ChallengeService:
 
     async def delete_challenge(
         self, session: AsyncSession, challenge_id: int, user_id: str,
+        mode: str = "archive",
     ) -> dict[str, object] | None:
         challenge = await self._repo.get_by_id(session, challenge_id)
         if challenge is None or challenge.user_id != user_id:
             return None
-        await self._repo.delete_with_children(session, challenge.id)
+        if mode == "purge":
+            await self._repo.delete_with_children(session, challenge.id)
+            await session.commit()
+            return {"deleted": True, "status": "purged", "message": "挑战已彻底删除"}
+        from app.services.archive_service import archive_and_delete
+        summary = await archive_and_delete(session, challenge)
         await session.commit()
-        return {"deleted": True, "status": "deleted", "message": "挑战已删除"}
+        return {
+            "deleted": True, "status": "archived", "message": "旅程已封存，战绩计入累计",
+            "archived": summary,
+        }
 
     async def get_challenge_stats(
         self, session: AsyncSession, challenge: Challenge,

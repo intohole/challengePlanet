@@ -21,7 +21,9 @@ window.cpApi = {
   checkin: (id, payload) => window.cpApi.post('/challenges/' + id + '/checkin', payload),
   deleteCheckin: (id, checkinId) => window.cpApi.unwrap(window.api.delete('/challenges/' + id + '/checkins/' + checkinId)),
   patchCheckinMeta: (id, checkinId, patch) => window.cpApi.patch('/challenges/' + id + '/checkins/' + checkinId + '/meta', patch || {}),
-  deleteChallenge: id => window.cpApi.unwrap(window.api.delete('/challenges/' + id)),
+  deleteChallenge: (id, mode) => window.cpApi.unwrap(window.api.delete('/challenges/' + id + (mode === 'purge' ? '?mode=purge' : ''))),
+  archives: () => window.cpApi.get('/archives'),
+  archiveSummary: () => window.cpApi.get('/archives/summary'),
 }
 
 const state = reactive({
@@ -48,6 +50,7 @@ const state = reactive({
   companion: { show: false, sessions: false },
   companionMeta: {},
   companionQueue: { position: 0, wait: 0 },
+  endModal: { show: false, id: 0, title: '', busy: false },
 })
 window.appState = state
 
@@ -294,6 +297,8 @@ const cpApp = createApp({
       importShared,
       logout,
       openCreate: () => window.cpCreate.open(),
+      endJourneyArchive: window.cpEndJourneyArchive,
+      endJourneyPurge: window.cpEndJourneyPurge,
       genRatio,
       genStatus: () => {
         const total = state.create.genTotal || 0

@@ -298,3 +298,21 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-ladder-tip{margin-top:10px;padding:8px 10px;border-radius:10px;background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(249,115,22,.06));color:var(--text-secondary,#6b7280);font-size:12px;line-height:1.5;display:flex;align-items:flex-start;gap:6px}
 .cp-ladder-tip.muted{background:rgba(127,127,127,.07)}
 .cp-ladder-tip b{color:var(--text,#1f2937)}
+
+/* End-of-journey modal + journey archives */
+.cp-end-intro { font-size: 13px; color: var(--text-secondary, #6b7280); margin: 0 0 12px; line-height: 1.6; }
+.cp-end-opt-main { display: flex; align-items: flex-start; gap: 10px; width: 100%; text-align: left; padding: 14px; border-radius: 14px; border: 1px solid rgba(16,185,129,.35); background: linear-gradient(135deg, rgba(16,185,129,.08), rgba(139,92,246,.05)); cursor: pointer; margin-bottom: 10px; }
+.cp-end-opt-main i { color: #10b981; font-size: 18px; margin-top: 2px; }
+.cp-end-opt-main b { display: block; font-size: 15px; color: var(--text, #1f2937); margin-bottom: 3px; }
+.cp-end-opt-main span span { display: block; font-size: 12px; color: var(--text-secondary, #6b7280); line-height: 1.5; }
+.cp-end-opt-purge { display: block; width: 100%; padding: 10px; border-radius: 10px; border: none; background: transparent; color: #ef4444; font-size: 13px; cursor: pointer; }
+.cp-end-opt-purge:disabled, .cp-end-opt-main:disabled { opacity: .55; cursor: wait; }
+.cp-ch-count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: rgba(139,92,246,.12); color: var(--primary, #8b5cf6); font-size: 12px; font-weight: 600; vertical-align: 1px; }
+.cp-archive-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--card-border, rgba(15,23,42,.06)); }
+.cp-archive-row:last-child { border-bottom: none; }
+.cp-archive-icon { font-size: 20px; line-height: 1.3; }
+.cp-archive-info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cp-archive-title { font-size: 14px; font-weight: 600; color: var(--text, #1f2937); }
+.cp-archive-title i { font-size: 13px; }
+.cp-archive-meta { font-size: 12px; color: var(--text-secondary, #6b7280); }
+.cp-grad-done .cp-btn-primary { margin-top: 12px; }

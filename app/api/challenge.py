@@ -162,11 +162,14 @@ async def confirm_challenge(
 @router.delete("/{challenge_id}")
 async def delete_challenge(
     challenge_id: int,
+    mode: str = "archive",
     user_id: str = Depends(get_current_user_id_required),
     session: AsyncSession = Depends(get_db),
-) -> dict[str, str | bool]:
+) -> dict:
+    if mode not in ("archive", "purge"):
+        raise HTTPException(status_code=422, detail="mode 仅支持 archive/purge")
     service = ChallengeService()
-    result = await service.delete_challenge(session, challenge_id, user_id)
+    result = await service.delete_challenge(session, challenge_id, user_id, mode=mode)
     if result is None:
         raise HTTPException(status_code=404, detail="挑战不存在")
     return result

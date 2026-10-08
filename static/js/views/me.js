@@ -12,11 +12,13 @@ window.cpViews = window.cpViews || {}
       this.el = el
       const s = window.appState
       const d = this.data
-      const totalCheckins = s.challenges.reduce((sum, c) => sum + (c.completed_days || 0), 0)
-      const bestStreak = s.challenges.reduce((m, c) => Math.max(m, c.streak || 0), 0)
+      const sum = d.summary
+      const archives = d.archives || []
+      const totalCheckins = sum ? sum.checkin_days : s.challenges.reduce((sum2, c) => sum2 + (c.completed_days || 0), 0)
+      const bestStreak = sum ? sum.best_streak : s.challenges.reduce((m, c) => Math.max(m, c.streak || 0), 0)
       let html = '<div class="cp-greet"><div><h1>我的</h1><p>管理挑战与账号</p></div></div><div class="cp-view">'
       html += '<div class="glass-card cp-me-card"><div class="cp-me-avatar">' + window.cpEsc((s.nickname || '挑').slice(0, 1)) + '</div><div><div class="cp-me-name">' + window.cpEsc(s.nickname) + '</div><div class="cp-me-pts">总积分 <b>' + ((d.points && d.points.total) || 0) + '</b> · 本周 <b>' + ((d.points && d.points.week_points) || 0) + '</b></div></div></div>'
-      html += '<div class="glass-card cp-pad16"><div class="cp-section-title"><i class="fas fa-flag-checkered cp-ic-primary"></i> 我的挑战</div>'
+      html += '<div class="glass-card cp-pad16"><div class="cp-section-title"><i class="fas fa-flag-checkered cp-ic-primary"></i> 我的挑战' + (s.booted && s.challenges.length ? ' <span class="cp-ch-count">' + s.challenges.length + '</span>' : '') + '</div>'
       if (!s.booted) {
         html += '<div class="cp-skel-line w80"></div><div class="cp-skel-line w60"></div>'
       } else if (!s.challenges.length) {
@@ -32,7 +34,18 @@ window.cpViews = window.cpViews || {}
         })
       }
       html += '<button class="cp-btn-ghost cp-block" onclick="cpCreate.open()"><i class="fas fa-plus"></i> 新建挑战</button></div>'
-      html += '<div class="glass-card cp-me-stats"><div class="cp-stat"><div class="cp-stat-num cp-ic-primary">' + totalCheckins + '</div><div class="cp-stat-label">总打卡次数</div></div><div class="cp-stat"><div class="cp-stat-num cp-ic-emerald">' + bestStreak + '</div><div class="cp-stat-label">最长连续</div></div><div class="cp-stat"><div class="cp-stat-num cp-ic-amber">' + s.challenges.length + '</div><div class="cp-stat-label">挑战总数</div></div></div>'
+      html += '<div class="glass-card cp-me-stats"><div class="cp-stat"><div class="cp-stat-num cp-ic-primary">' + totalCheckins + '</div><div class="cp-stat-label">总打卡天数</div></div><div class="cp-stat"><div class="cp-stat-num cp-ic-emerald">' + bestStreak + '</div><div class="cp-stat-label">最长连续</div></div>' + (sum && sum.avoided_total > 0
+        ? '<div class="cp-stat"><div class="cp-stat-num cp-ic-amber">' + sum.avoided_total + '</div><div class="cp-stat-label">累计少抽</div></div>'
+        : '<div class="cp-stat"><div class="cp-stat-num cp-ic-amber">' + s.challenges.length + '</div><div class="cp-stat-label">挑战总数</div></div>') + '</div>'
+      if (archives.length) {
+        html += '<div class="glass-card cp-pad16"><div class="cp-section-title"><i class="fas fa-box-archive cp-ic-amber"></i> 走过的旅程</div>'
+        archives.forEach(a => {
+          const grad = a.graduation_state === 'graduated'
+          const avoidTxt = a.avoided_total > 0 ? ' · 少抽 ' + a.avoided_total + ' ' + window.cpEsc(a.unit || '根') : ''
+          html += '<div class="cp-archive-row"><span class="cp-archive-icon">' + (a.icon || '🎯') + '</span><span class="cp-archive-info"><span class="cp-archive-title">' + window.cpEsc(this.titleClean(a.title)) + (grad ? ' <i class="fas fa-graduation-cap cp-ic-primary" title="已毕业" aria-label="已毕业"></i>' : '') + '</span><span class="cp-archive-meta">' + window.cpEsc(a.start_date) + ' ~ ' + window.cpEsc(a.end_date) + ' · ' + a.completed_days + ' 天打卡' + avoidTxt + '</span></span></div>'
+        })
+        html += '</div>'
+      }
       html += this._prefsCard()
       html += '<button class="cp-btn-ghost danger" onclick="cpViews.me.logout()"><i class="fas fa-right-from-bracket"></i> 退出登录</button>'
       html += '</div>'
@@ -85,26 +98,14 @@ window.cpViews = window.cpViews || {}
       window.cpLoadChallenges().then(() => this.rerender()).catch(() => {})
       window.cpApi.get('/points/summary').then(d => { this.data.points = d; this.rerender() }).catch(() => { this.data.points = null })
       window.cpApi.get('/challenges/reminder/prefs').then(d => { this.data.prefs = d; this.rerender() }).catch(() => { this.data.prefs = null })
+      window.cpApi.archiveSummary().then(d => { this.data.summary = d; this.rerender() }).catch(() => { this.data.summary = null })
+      window.cpApi.archives().then(d => { this.data.archives = Array.isArray(d) ? d : []; this.rerender() }).catch(() => { this.data.archives = [] })
     },
 
     rerender() { if (this.el) this.render(this.el) },
 
     async endChallenge(id) {
-      const s = window.appState
-      const c = s.challenges.find(x => x.id === id)
-      if (!c) return
-      const hasRecord = (c.completed_days || 0) > 0
-      const msg = hasRecord
-        ? '删除「' + (this.titleClean(c.title) || '') + '」？已有 ' + (c.completed_days || 0) + ' 天打卡战绩，删除后不可恢复。'
-        : '删除「' + (this.titleClean(c.title) || '') + '」？删除后不可恢复。'
-      if (!(await window.nuxConfirm(msg))) return
-      window.cpApi.deleteChallenge(id)
-        .then(() => {
-          window.cpToast('已删除挑战')
-          return window.cpLoadChallenges()
-        })
-        .then(() => this.rerender())
-        .catch(e => window.cpToast(window.cpErrMsg(e, '操作失败')))
+      window.cpEndJourney(id)
     },
 
     async logout() {

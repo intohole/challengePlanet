@@ -7,7 +7,12 @@
     const t = d.today
     let html = ''
     if (ch.status !== 'active') {
-      if (ch.status === 'graduated') return '<div class="glass-card cp-task-card cp-grad-done"><p class="cp-task-title">🎓 减量阶梯毕业！</p><p class="cp-task-desc">这份旅程已完整走完，战绩与证书永久保留。可在「我的」页回看，或开始下一程。</p></div>'
+      if (ch.status === 'graduated') {
+        const cap = Number(ch.ladder_goal) || 0
+        const unit = window.cpEsc(ch.unit || '')
+        const lastTxt = cap > 0 ? '<p class="cp-task-desc">减量把你带到了每天 ' + cap + ' ' + unit + '。最后一程，把它也放下——从 ' + cap + ' 到 0。</p><button class="cp-btn-primary cp-block" onclick="cpNextLeg()"><i class="fas fa-seedling" aria-hidden="true"></i> 开始最后一程：到 0</button>' : '<p class="cp-task-desc">这份旅程已完整走完，战绩与证书永久保留，可在「我的」页回看。</p>'
+        return '<div class="glass-card cp-task-card cp-grad-done"><p class="cp-task-title">🎓 减量阶梯毕业！</p>' + lastTxt + '</div>'
+      }
       return '<div class="glass-card cp-task-card"><p class="cp-task-title">' + (ch.status === 'completed' ? '🎉 挑战完成，太棒了！' : '挑战已结束，打卡战绩已保留') + '</p><p class="cp-task-desc">可在「我的」页创建新挑战，继续保持节奏。</p></div>'
     }
     if (!t) {
