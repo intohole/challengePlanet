@@ -209,17 +209,6 @@ class TodayTaskResponse(BaseModel):
     diet: Optional[dict[str, object]] = None
 
 
-class PortalTodayItem(BaseModel):
-    challenge_id: int
-    title: str
-    icon: str = "🎯"
-    color: str = "#6366f1"
-    checked: bool = False
-    today_task_title: str = ""
-    today_total: float = 0.0
-    today_target: float = 0.0
-
-
 class ShareDataResponse(BaseModel):
     challenge_id: int
     title: str

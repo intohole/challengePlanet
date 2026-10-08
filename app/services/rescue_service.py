@@ -104,29 +104,3 @@ def rescue_text(challenge: Challenge, missed_days: int) -> tuple[str, str]:
     return f"「{title}」的星轨还在", body
 
 
-async def collect_rescue_items(
-    session: AsyncSession, challenges: list[Challenge]
-) -> dict[int, dict[str, object]]:
-    today = today_str()
-    ids = [c.id for c in challenges]
-    if not ids:
-        return {}
-    result = await session.execute(
-        select(CheckIn.challenge_id, CheckIn.date).where(CheckIn.challenge_id.in_(ids))
-    )
-    dates_by_challenge: dict[int, set[str]] = {}
-    for cid, date in result.all():
-        dates_by_challenge.setdefault(cid, set()).add(str(date))
-    items: dict[int, dict[str, object]] = {}
-    for challenge in challenges:
-        dates = dates_by_challenge.get(challenge.id, set())
-        signal = assess_rescue(challenge, dates, today, today_checked=False)
-        if signal:
-            items[challenge.id] = signal
-    return items
-
-
-def missed_dates_for_mend(
-    start_date: str, end_date: str, valid_dates: set[str], today: str
-) -> list[str]:
-    return list_missed_dates(start_date, end_date, valid_dates, today)[:RESCUE_MAX_MISSED]

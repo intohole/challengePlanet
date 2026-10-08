@@ -12,9 +12,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = f"sqlite+aiosqlite:///{Path(__file__).parent.parent / 'data' / 'challenge.db'}"
     API_PREFIX: str = "/api/v1"
     FEEDBACK_TEMPERATURE: float = 0.8
-    NOTIFY_CENTER_URL: str = os.environ.get("NOTIFY_CENTER_URL", "http://edge-01:8910")
     SERVICE_TOKEN: str = os.environ.get("SERVICE_TOKEN", "")
-    LION_NAMESPACE: str = "challengePlanet"
     LION_BASE_URL: str = os.environ.get("LION_BASE_URL", "http://edge-01:9527")
 
     model_config = {"env_file": ".env", "extra": "ignore"}
