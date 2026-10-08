@@ -138,8 +138,8 @@ class AIService:
         return self._normalize_diet_result(parse_llm_json(raw, fallback={}))
 
     async def estimate_diet_calories_from_photo(self, image: str) -> dict[str, object]:
-        raw = await get_vision_service().review(
-            DIET_VISION_SYSTEM, "认出这张照片里的食物和份量，估算这一餐的热量", image,
+        raw = await get_vision_service().recognize(
+            "认出这张照片里的食物和份量，估算这一餐的热量", image, system=DIET_VISION_SYSTEM,
         )
         return self._normalize_diet_result(parse_llm_json(raw, fallback={}))
 

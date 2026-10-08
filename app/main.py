@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from nexus.middleware import LoadingSplashMiddleware, NoCacheMiddleware
+from nexus.middleware import LoadingSplashMiddleware, StaticAssetsCacheMiddleware
 from nexus import close_uc_sdk, create_auth_router, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, startup_ironman, register_health_detail
 from nexus.chat.engine import ChatEngine
 from nexus.chat.router import chat_router
@@ -110,7 +110,7 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 register_middleware(app)
 app.add_middleware(LoadingSplashMiddleware, app_name="星轨挑战")
-app.add_middleware(NoCacheMiddleware, path_prefix="/static")
+app.add_middleware(StaticAssetsCacheMiddleware, path_prefix="/static")
 
 API_PREFIX = settings.API_PREFIX
 app.include_router(create_auth_router(prefix="/api/v1/auth", uc_sdk_provider=get_uc_sdk, tags=["认证"], endpoints={"config", "login", "register"}))
