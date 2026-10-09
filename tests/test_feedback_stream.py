@@ -74,15 +74,15 @@ async def test_stream_feedback_generates_and_persists(monkeypatch) -> None:
                 "is_soft_exceeded": False,
             }
 
-        monkeypatch.setattr("app.api.checkin.build_feedback_prompt_inputs", fake_inputs)
+        monkeypatch.setattr("app.services.checkin_stream_service.build_feedback_prompt_inputs", fake_inputs)
         monkeypatch.setattr(
-            "app.api.checkin.AIService",
+            "app.services.checkin_stream_service.AIService",
             type("FakeAI", (), {
                 "stream_daily_feedback": staticmethod(_fake_stream(["今天辛苦了，", "记下来就好"])),
                 "_feedback_system": staticmethod(lambda mood: "SYS"),
             }),
         )
-        monkeypatch.setattr("app.api.checkin.safe_declaration", _fake_declaration)
+        monkeypatch.setattr("app.services.checkin_stream_service.safe_declaration", _fake_declaration)
 
         resp = await stream_feedback(
             ch.id, FeedbackStreamRequest(checkin_id=cid),
@@ -118,7 +118,7 @@ async def test_stream_feedback_cached_short_circuit(monkeypatch) -> None:
             called["n"] += 1
             raise AssertionError("不应触发 AI")
 
-        monkeypatch.setattr("app.api.checkin.AIService", type("FakeAI", (), {"stream_daily_feedback": staticmethod(_boom)}))
+        monkeypatch.setattr("app.services.checkin_stream_service.AIService", type("FakeAI", (), {"stream_daily_feedback": staticmethod(_boom)}))
         resp = await stream_feedback(
             ch.id, FeedbackStreamRequest(checkin_id=cid),
             user_id="u1", session=session,

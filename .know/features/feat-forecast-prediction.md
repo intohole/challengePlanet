@@ -37,7 +37,7 @@ related: [bp-forecast-scope-and-quiet, bp-forecast-forward-looking, bp-forecast-
 - static/js/views/home-task.js: _remainHint 节奏仪表盘(静默态只留额度与窗口)
 
 验证
-tests/test_nudge_service.py 64例 + tests/test_forecast_service.py 23例(含门禁/静默) + test_forecast_alert 14例 + e2e_forecast_dashboard 45例(含凌晨静默态) + 线上真实数据脚本核对(戒烟挑战10点4根→9.6根, 无触顶, 窗口20:00)
+tests/e2e_nudge_service.py 64例 + tests/test_forecast_service.py 23例(含门禁/静默) + test_forecast_alert 14例 + e2e_forecast_dashboard 45例(含凌晨静默态) + 线上真实数据脚本核对(戒烟挑战10点4根→9.6根, 无触顶, 窗口20:00)
 
 已移除(2026-09-28)
 - 回测校准 bias 与预测快照: 快照按"当日首次打卡时刻"落库却与全天实际比对, 产生 ±40% 错偏(实测 09-27 将预测压到 0.6、09-28 抬到 1.4), 且同日第二次预测起静默失效; 预测快照无任何消费方, 一并删除

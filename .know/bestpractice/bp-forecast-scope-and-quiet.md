@@ -27,7 +27,7 @@ related: [feat-forecast-prediction, bp-forecast-forward-looking]
 5. 提示阶梯: 逼近(1)→已到上限(1, 不再弹toast)→已超上限(2, 升级提醒)
 
 验证
-challengePlanet: test_nudge_service 64例(含凌晨静默/样本门槛/凌晨纳入画像/跨夜窗口/单点窗口)、test_forecast_service 门禁23例、e2e_forecast_dashboard 45例、线上真实数据脚本(challenge 60: 10点4根→预计9.6根, 无触顶断言, 窗口20:00)
+challengePlanet: e2e_nudge_service 64例(含凌晨静默/样本门槛/凌晨纳入画像/跨夜窗口/单点窗口)、test_forecast_service 门禁23例、e2e_forecast_dashboard 45例、线上真实数据脚本(challenge 60: 10点4根→预计9.6根, 无触顶断言, 窗口20:00)
 
 反例
 - 记录按自然日、画像按"白天"→ 凌晨记录左脚踩右脚, 预测翻倍
