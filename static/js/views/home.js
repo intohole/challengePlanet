@@ -12,9 +12,10 @@ window.cpViews.home = (function () {
       return { today: null, checkins: [], mercy: null, weekly: null, guidance: null, insightRunning: false, insightText: '', insightError: '', loading: !!loading, error: '', checking: false, lastFeedback: '', chest: 0, declaration: '', shields: 0, adaptive: null, taskValue: 0, taskSteps: [], textValue: '', contextTag: '', moodTag: '', fbStreaming: false, fbPending: null, fbTried: 0, activeTab: 'today', dietTarget: null, weightTrend: null, dietDesc: '', dietResult: null, dietChecking: false, dietImage: '', weightInput: '', wordCards: [], wordIdx: 0, wordSeen: 0, wordKnown: 0, wordBlur: 0, wordForgot: 0, wordRevealed: false, wordLoading: false, wordCardsDay: 0, wordNewTotal: 0, wordReviewTotal: 0, wordReviewToday: [], wordSessionKey: '', poem: null, poemLoading: false, poemShow: false, pmRunning: false, pmLeft: 1500, pmPhase: 'work', stRunning: false, stElapsed: 0, progLoaded: false, prevChecked: null }
     },
 
-    render(el) {
+    render(el, quiet) {
       this.el = el
       this._mdJobs = []
+      el.classList.toggle('cp-quiet', !!quiet)
       const s = window.appState
       const greet = (window.NexusUtils && NexusUtils.getGreeting) ? NexusUtils.getGreeting() : '你好'
       let html = '<div class="cp-greet"><div><h1>' + greet + '，' + window.cpEsc(s.nickname) + '</h1><p>' + window.cpTodayStr() + '</p></div>'
@@ -63,7 +64,7 @@ window.cpViews.home = (function () {
 
     onShow() { this.load() },
 
-    rerender() { if (this.el) this.render(this.el) },
+    rerender() { if (this.el) this.render(this.el, true) },
 
     async load() {
       const s = window.appState
@@ -247,7 +248,9 @@ window.cpViews.home = (function () {
           if (!data || seq !== this._fbSeq) return
           if (data.type === 'token') {
             d.lastFeedback = (d.lastFeedback || '') + (data.token || '')
-            this.rerender()
+            const box = document.getElementById('cp-fb-text')
+            if (box) box.textContent = d.lastFeedback
+            else this.rerender()
           } else if (data.type === 'done') {
             d.lastFeedback = String(data.content || d.lastFeedback || '').trim()
             if (data.declaration) {

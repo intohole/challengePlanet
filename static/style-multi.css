@@ -259,3 +259,6 @@
 [data-theme="dark"] .cp-bottom-nav { background: rgba(13,18,38,.86); box-shadow: 0 -4px 20px rgba(0,0,0,.4); }
 [data-theme="dark"] .cp-header-link { background: var(--card); }
 [data-theme="dark"] .cp-header-link.cp-header-create { background: linear-gradient(135deg, var(--primary), var(--purple)); border: none; color: #fff; }
+
+.cp-quiet .cp-greet, .cp-quiet .cp-checkin-box, .cp-quiet .cp-scene-note, .cp-quiet .cp-gen-task, .cp-quiet .cp-word-meaning, .cp-quiet .cp-word-sample, .cp-quiet .cp-poem-meaning, .cp-quiet .cp-extra-panel, .cp-quiet .cp-cap-cta, .cp-quiet .cp-rescue-card, .cp-quiet .cp-guidance-card, .cp-quiet .cp-risk-banner, .cp-quiet .cp-tomorrow-enhanced, .cp-quiet .cp-timeline-item.latest, .cp-quiet .cp-ai-card, .cp-quiet .cp-declare { animation: none; }
+.cp-quiet .cp-hero::before, .cp-quiet .galaxy-orbit-group, .cp-quiet .galaxy-today-dot, .cp-quiet .galaxy-today-pulse, .cp-quiet .galaxy-sparkle, .cp-quiet .galaxy-planet, .cp-quiet .cp-empty-icon { animation: none; }
