@@ -91,6 +91,12 @@ window.cpViews.home = (function () {
       const d = this.data
       d.today = today
       if (today && today.journey) this._celebrateJourney(ch.id, today.journey)
+      if (window.appState.slipDeeplink === Number(ch.id)) {
+        window.appState.slipDeeplink = null
+        if (today && today.slip && today.slip.yesterday_over && !today.slip.today_checked && today.slip.can_shift) {
+          this.openShiftFromDeepLink(ch.id)
+        }
+      }
       d.guidance = guidance || null
       d.dietTarget = isDiet ? (dietTarget || null) : null
       d.weightTrend = isDiet ? (weightTrend || null) : null

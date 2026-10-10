@@ -12,8 +12,7 @@ from nexus.notify import get_notify_client
 from app.db.database import async_session
 from app.models.challenge import Challenge
 from app.repositories.checkin_repository import CheckInRepository, InsightRepository
-from app.services.goal_rule_service import is_cap_mode, is_ladder
-from app.services.journey_service import _ladder_goal_day_number
+from app.services.goal_rule_service import is_cap_mode, is_ladder, ladder_goal_day
 
 logger = get_logger("challengePlanet.graduation")
 
@@ -24,11 +23,7 @@ APPROACH_DAYS = 3
 def graduation_goal_day(challenge: object) -> int | None:
     if not (is_ladder(challenge) and is_cap_mode(challenge)):
         return None
-    start = float(getattr(challenge, "ladder_start", 0) or 0)
-    goal = float(getattr(challenge, "ladder_goal", 0) or 0)
-    if start <= 0 or goal >= start:
-        return None
-    return _ladder_goal_day_number(challenge)
+    return ladder_goal_day(challenge)
 
 
 def graduation_block(

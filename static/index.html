@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="/static/style-components.css?v=20261010a">
 <link rel="stylesheet" href="/static/style-checkin.css?v=20261002a">
 <link rel="stylesheet" href="/static/style-multi.css?v=20261010a">
+<link rel="stylesheet" href="/static/style-slip.css?v=20261011a">
 <script src="https://songguokr.com/nexus-ui/v2.63.0/vendor/vue.global.prod.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.63.0/js/nexus-all.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.63.0/js/composables/use-theme.js"></script>
@@ -253,6 +254,25 @@
 </div>
 </div></transition>
 
+<transition name="modal"><div v-if="state.ladderShift && state.ladderShift.show" class="cp-modal-overlay" @click.self="home.closeShift()">
+<div class="cp-modal glass" role="dialog" aria-modal="true" data-testid="ladder-shift-sheet">
+  <div class="cp-modal-header"><h3>阶梯换挡</h3><button class="cp-modal-close" aria-label="关闭" @click="home.closeShift()"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
+  <div class="cp-modal-body cp-shift-body">
+    <p class="cp-shift-lede">把整条阶梯往后移几天，走过的每一天都算数。</p>
+    <div class="cp-shift-choices">
+      <button v-for="k in home.shiftChoices" :key="k" class="cp-shift-chip" :class="{ on: state.ladderShift.k === k }" :data-shift="k" @click="home.pickShift(k)">+{{ k }} 天</button>
+    </div>
+    <div class="cp-shift-preview" data-testid="shift-preview">
+      <div v-if="state.ladderShift.preview" v-html="home._shiftPreviewRows(state.ladderShift.preview)"></div>
+      <p v-else-if="!state.ladderShift.err" class="cp-shift-loading">…</p>
+      <p v-if="state.ladderShift.err" class="cp-shift-err">{{ state.ladderShift.err }}</p>
+    </div>
+    <button class="cp-btn-primary cp-block" :disabled="!state.ladderShift.k || state.ladderShift.saving" @click="home.confirmShift()"><i class="fas fa-stairs" aria-hidden="true"></i> {{ state.ladderShift.saving ? '…' : '后移 ' + state.ladderShift.k + ' 天' }}</button>
+    <p class="cp-shift-note">换挡不改历史：守住的天数、少抽的根数、打卡记录全部保留。</p>
+  </div>
+</div>
+</div></transition>
+
 <transition name="modal"><div v-if="state.mend.show" class="cp-modal-overlay" @click.self="state.mend.show=false">
 <div class="cp-modal glass" role="dialog" aria-modal="true">
   <div class="cp-modal-header"><h3>补签</h3><button class="cp-modal-close" aria-label="关闭" @click="state.mend.show=false"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
@@ -481,14 +501,15 @@
 <script src="/static/js/create.js?v=20260915a"></script>
 <script src="/static/js/create-direct.js?v=20260915a"></script>
 <script src="/static/js/create-extra.js?v=20260915a"></script>
-<script src="/static/js/views/home.js?v=20261010a"></script>
+<script src="/static/js/views/home.js?v=20261011a"></script>
 <script src="/static/js/views/journey-end.js?v=20261010a"></script>
 <script src="/static/js/views/home-rescue.js?v=20261006a"></script>
 <script src="/static/js/views/home-diet.js?v=20260928d"></script>
-<script src="/static/js/views/home-task.js?v=20261010a"></script>
-<script src="/static/js/views/home-checkin.js?v=20261010a"></script>
+<script src="/static/js/views/home-task.js?v=20261011a"></script>
+<script src="/static/js/views/home-checkin.js?v=20261011a"></script>
 <script src="/static/js/views/home-panels.js?v=20261002a"></script>
 <script src="/static/js/views/home-record.js?v=20261010a"></script>
+<script src="/static/js/views/ladder-adjust.js?v=20261011a"></script>
 <script src="/static/js/views/learn-word.js?v=20260915d"></script>
     <script src="/static/js/views/learn-poem.js?v=20260915d"></script>
     <script src="/static/js/views/learn-pomodoro.js?v=20260915d"></script>
@@ -508,7 +529,7 @@
 <script src="https://songguokr.com/nexus-ui/v2.63.0/js/components/nux-menu-user.js"></script>
 <script src="/static/js/home-companion.js?v=20260919a"></script>
 <script src="/static/js/data-scenes.js?v=20261006a"></script>
-<script src="/static/js/app.js?v=20261010a"></script>
+<script src="/static/js/app.js?v=20261011a"></script>
 <script src="https://songguokr.com/nexus-ui/v2.63.0/js/components/nux-checkin.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.63.0/js/components/nux-calendar.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.63.0/js/components/nux-camera-recognize.js"></script>

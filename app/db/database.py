@@ -122,6 +122,7 @@ async def run_migrations() -> None:
         await _ensure_column(conn, "challenges", "ladder_goal", "ladder_goal REAL DEFAULT 0.0")
         await _ensure_column(conn, "challenges", "ladder_interval", "ladder_interval INTEGER DEFAULT 1")
         await _ensure_column(conn, "challenges", "ladder_step", "ladder_step REAL DEFAULT 1.0")
+        await _ensure_column(conn, "challenges", "ladder_adjust", "ladder_adjust TEXT DEFAULT ''")
         await _ensure_column(conn, "challenges", "decompose_mode", "decompose_mode VARCHAR(16) DEFAULT 'none'")
         await _ensure_column(conn, "challenges", "gender", "gender VARCHAR(8) DEFAULT ''")
         await _ensure_column(conn, "challenges", "age", "age INTEGER DEFAULT 0")

@@ -1,0 +1,37 @@
+.cp-slip-card { display: flex; gap: 14px; align-items: flex-start; padding: 16px; margin-bottom: 12px; border: 1px solid rgba(245,158,11,.28); background: linear-gradient(135deg, rgba(254,243,199,.34), rgba(255,255,255,.72) 58%); }
+.cp-slip-icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 17px; color: #B45309; background: rgba(245,158,11,.16); }
+.cp-slip-body { flex: 1 1 auto; min-width: 0; }
+.cp-slip-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.cp-slip-sub { font-size: 13px; color: var(--text-secondary); margin-top: 3px; line-height: 1.55; }
+.cp-slip-sub b { color: #B45309; }
+.cp-slip-actions { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+.cp-slip-shift-btn { padding: 8px 16px; font-size: 13px; }
+.cp-slip-dismiss { background: none; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 8px 4px; }
+
+.cp-shift-body { padding: 20px; }
+.cp-shift-lede { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; }
+.cp-shift-choices { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.cp-shift-chip { padding: 9px 15px; border-radius: 999px; border: 1px solid var(--card-border); background: var(--card); color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color .15s, background .15s, color .15s; }
+.cp-shift-chip.on { border-color: var(--primary); background: rgba(99,102,241,.1); color: var(--primary); }
+.cp-shift-preview { border: 1px dashed var(--card-border); border-radius: var(--radius-lg, 14px); padding: 12px 14px; margin-bottom: 14px; min-height: 58px; }
+.cp-shift-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-secondary); padding: 4px 0; }
+.cp-shift-row b { color: var(--text-primary); font-size: 14px; }
+.cp-shift-loading { color: var(--text-muted); font-size: 13px; text-align: center; padding: 10px 0; }
+.cp-shift-err { color: var(--red, #dc2626); font-size: 12px; margin-top: 6px; }
+.cp-shift-note { font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: center; }
+
+.cp-journey-adjust { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+.cp-journey-adjust-btn { background: none; border: none; color: var(--primary); font-size: 12px; cursor: pointer; padding: 2px 4px; }
+
+@media (prefers-color-scheme: dark) {
+  .cp-slip-card { border-color: rgba(245,158,11,.3); background: linear-gradient(135deg, rgba(245,158,11,.12), rgba(255,255,255,.04) 58%); }
+  .cp-slip-icon { color: #FBBF24; background: rgba(245,158,11,.14); }
+  .cp-slip-sub b { color: #FBBF24; }
+  .cp-shift-chip { background: rgba(255,255,255,.05); }
+  .cp-shift-chip.on { background: rgba(129,140,248,.16); color: #A5B4FC; }
+}
+[data-theme="dark"] .cp-slip-card { border-color: rgba(245,158,11,.3); background: linear-gradient(135deg, rgba(245,158,11,.12), rgba(255,255,255,.04) 58%); }
+[data-theme="dark"] .cp-slip-icon { color: #FBBF24; background: rgba(245,158,11,.14); }
+[data-theme="dark"] .cp-slip-sub b { color: #FBBF24; }
+[data-theme="dark"] .cp-shift-chip { background: rgba(255,255,255,.05); }
+[data-theme="dark"] .cp-shift-chip.on { background: rgba(129,140,248,.16); color: #A5B4FC; }

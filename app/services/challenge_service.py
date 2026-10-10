@@ -22,6 +22,7 @@ from app.services.journey_service import JourneyService
 from app.services.mercy_service import MercyService, load_valid_dates
 from app.services.rescue_service import assess_rescue
 from app.services.period_service import period_fields, week_aggregates
+from app.services.slip_service import assess_slip
 from app.services.streak_service import calc_streak, shift_date, streak_before, today_str
 from app.services.target_service import TargetService
 
@@ -286,13 +287,21 @@ class ChallengeService:
         aggregates = await week_aggregates(session, challenge_id, today_checkins, period_days)
         stats = await self.get_challenge_stats(session, challenge)
         progress = _calc_progress(stats["completed_days"], challenge.duration_days)
+        journey_rows = await self._checkin_repo.get_daily_totals(
+            session, challenge_id, start_date.date().isoformat(), now_dt.date().isoformat(),
+        )
         journey = await JourneyService().build(
             session, challenge, max(1, day_number), start_date.date(), now_dt.date(),
+            rows=journey_rows,
         )
+        slip = assess_slip(challenge, journey_rows, today) if day_number >= 2 else None
+        if slip is not None:
+            slip["today_checked"] = len(today_checkins) > 0
+            slip["can_shift"] = challenge.status == "active"
         return self._build_today_response(
             challenge, challenge_id, day_number, today, task,
             today_checkins, today_total, today_target, dynamic_baseline,
-            stats, progress, aggregates, forecast, journey,
+            stats, progress, aggregates, forecast, journey, slip,
         )
 
     def _parse_plan(self, ai_plan: str | None) -> list[dict[str, object]]:
@@ -305,6 +314,7 @@ class ChallengeService:
         stats: dict, progress: float, aggregates: dict[str, object] | None = None,
         forecast: dict[str, object] | None = None,
         journey: dict[str, object] | None = None,
+        slip: dict[str, object] | None = None,
     ) -> dict[str, object]:
         task_steps_raw = task.get("steps", task.get("task_steps", []))
         task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
@@ -336,6 +346,7 @@ class ChallengeService:
             "today_total": today_total, "today_target": today_target, "today_cap": today_target,
             "dynamic_baseline": dynamic_baseline, "remaining": round(remaining, 2), "forecast": forecast,
             "journey": journey,
+            "slip": slip,
             "progress_pct": round(progress, 1), "ladder_progress_pct": round(ladder_progress, 1),
             "checked_in": len(today_checkins) > 0,
             "settled": False if not_started else is_settled(

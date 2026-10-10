@@ -1,12 +1,18 @@
 from __future__ import annotations
 
-import math
 from datetime import date, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.checkin_repository import CheckInRepository
-from app.services.goal_rule_service import daily_target, is_cap_mode, is_ladder, ladder_cap_of
+from app.services.goal_rule_service import (
+    daily_target,
+    is_cap_mode,
+    is_ladder,
+    ladder_cap_of,
+    ladder_goal_day,
+    parse_ladder_adjustments,
+)
 
 MONEY_PER_UNIT = 0.9
 MONEY_NOTE = "按约 ¥18/包（20 支）估算"
@@ -36,15 +42,32 @@ def journey_baseline(challenge: object) -> float:
     return float(getattr(challenge, "target_value", 0) or 0)
 
 
+def adjustment_rows(challenge: object, start_date: date) -> list[dict[str, object]]:
+    try:
+        adjustments = parse_ladder_adjustments(getattr(challenge, "ladder_adjust", ""))
+    except Exception:
+        adjustments = []
+    rows: list[dict[str, object]] = []
+    for adj in adjustments:
+        day = int(adj["day"])
+        rows.append({
+            "date": (start_date + timedelta(days=day - 1)).isoformat(),
+            "shift": int(adj["shift"]),
+        })
+    return rows
+
+
 def _ladder_goal_day_number(challenge: object) -> int:
+    goal_day = ladder_goal_day(challenge)
+    if goal_day is not None:
+        return goal_day
     start = float(getattr(challenge, "ladder_start", 0) or 0)
     goal = float(getattr(challenge, "ladder_goal", 0) or 0)
-    step = float(getattr(challenge, "ladder_step", 1) or 1) or 1.0
-    interval = max(1, int(getattr(challenge, "ladder_interval", 1) or 1))
     if start <= goal:
         return 1
-    elapsed = math.ceil((start - goal) / step / interval)
-    return elapsed * interval + 1
+    step = float(getattr(challenge, "ladder_step", 1) or 1) or 1.0
+    interval = max(1, int(getattr(challenge, "ladder_interval", 1) or 1))
+    return int(-(-(start - goal) // step)) * interval + 1
 
 
 def ladder_stage_info(challenge: object, day_number: int) -> dict[str, int]:
@@ -187,6 +210,7 @@ def compute_journey(
             "ladder_total_stages": stage_info["total_stages"],
             "days_to_goal": max(0, (goal_date - today).days),
             "goal_date": goal_date.isoformat(),
+            "adjustments": adjustment_rows(challenge, start_date),
             "graduation": grad,
         })
         if grad and grad.get("state") == "graduated":
@@ -205,13 +229,15 @@ class JourneyService:
         self._repo = CheckInRepository()
 
     async def build(self, session: AsyncSession, challenge: object,
-                    day_number: int, start_date: date, today: date) -> dict[str, object] | None:
+                    day_number: int, start_date: date, today: date,
+                    rows: list[dict] | None = None) -> dict[str, object] | None:
         if str(getattr(challenge, "direction", "") or "") != "decrease":
             return None
-        rows = await self._repo.get_daily_totals(
-            session, int(getattr(challenge, "id")),
-            start_date.isoformat(), today.isoformat(),
-        )
+        if rows is None:
+            rows = await self._repo.get_daily_totals(
+                session, int(getattr(challenge, "id")),
+                start_date.isoformat(), today.isoformat(),
+            )
         return compute_journey(challenge, rows, day_number, start_date, today)
 
 

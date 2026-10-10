@@ -80,7 +80,7 @@ def test_archive_and_summary() -> None:
             assert summary["avoided_total"] == 5
             assert summary["baseline"] == 10.0
             assert summary["final_cap"] == 5.0
-            assert summary["graduation_state"] == "graduated"
+            assert summary["graduation_state"] == "approaching"
 
         async with Session() as s:
             rows = (await s.execute(Challenge.__table__.select())).fetchall()
@@ -88,7 +88,7 @@ def test_archive_and_summary() -> None:
             archives = (await s.execute(JourneyArchive.__table__.select())).fetchall()
             assert len(archives) == 1
             assert archives[0].completed_days == span
-            assert archives[0].graduation_state == "graduated"
+            assert archives[0].graduation_state == "approaching"
 
             total = await user_summary(s, "u1")
             assert total["checkin_days"] == span

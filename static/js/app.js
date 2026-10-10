@@ -183,6 +183,7 @@ function handleQuery() {
       if (target) {
         state.current = target
         const gradParam = q.get('grad')
+        state.slipDeeplink = q.get('slip') === '1' ? target.id : null
         window.cpToast(gradParam
           ? '🎓 减量阶梯毕业，来看看你的旅程'
           : (q.get('rescue') ? '来看看「' + (window.cpTitleClean(target.title) || '') + '」，星轨还在' : '已切换到「' + (window.cpTitleClean(target.title) || '') + '」'))

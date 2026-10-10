@@ -175,7 +175,7 @@ class NudgeService:
     ) -> str:
         if risk >= 2:
             if total > target:
-                return f"今天已超 {fmt_int(total - target)}{unit}。停下来，别再继续了"
+                return f"今天已超 {fmt_int(total - target)}{unit}。少抽的都还在，现在收住，明天是新的一天"
             return f"今天已到上限 {fmt_int(target)}{unit}，就此打住"
         if risk == 1:
             over = max(1, projected - int(round(target)))

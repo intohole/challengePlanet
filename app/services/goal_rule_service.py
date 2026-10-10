@@ -1,5 +1,43 @@
 from __future__ import annotations
 
+from nexus import loads_or
+
+_MAX_ADJUSTMENTS = 12
+_MAX_SHIFT = 31
+
+
+def parse_ladder_adjustments(raw: object) -> list[dict[str, int]]:
+    if isinstance(raw, (list, tuple)):
+        items: list[object] = list(raw)
+    else:
+        loaded = loads_or(str(raw or ""), [])
+        items = loaded if isinstance(loaded, list) else []
+    out: list[dict[str, int]] = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        try:
+            day = int(it.get("day") or 0)
+            shift = int(it.get("shift") or 0)
+        except (TypeError, ValueError):
+            continue
+        if day >= 2 and 0 < shift <= _MAX_SHIFT:
+            out.append({"day": day, "shift": shift})
+    out.sort(key=lambda a: a["day"])
+    return out
+
+
+def total_shift_days(adjustments: list[dict[str, int]]) -> int:
+    return sum(int(a["shift"]) for a in adjustments)
+
+
+def shifted_day(day_number: int, adjustments: list[dict[str, int]]) -> int:
+    day = int(day_number)
+    for adj in reversed(adjustments):
+        if day >= adj["day"]:
+            day -= adj["shift"]
+    return max(1, day)
+
 
 def is_ladder(challenge: object) -> bool:
     return str(getattr(challenge, "goal_rule", "") or "") == "ladder"
@@ -43,14 +81,44 @@ def ladder_cap_of(
     return min(goal, start + elapsed * step)
 
 
-def ladder_cap(challenge: object, day_number: int) -> float:
+def ladder_cap_with(
+    challenge: object, day_number: int, adjustments: list[dict[str, int]],
+) -> float:
     return ladder_cap_of(
         str(getattr(challenge, "direction", "") or "increase"),
         float(getattr(challenge, "ladder_start", 0) or 0),
         float(getattr(challenge, "ladder_goal", 0) or 0),
         max(1, int(getattr(challenge, "ladder_interval", 1) or 1)),
         float(getattr(challenge, "ladder_step", 1) or 1),
-        day_number,
+        shifted_day(day_number, adjustments),
+    )
+
+
+def ladder_cap(challenge: object, day_number: int) -> float:
+    return ladder_cap_with(
+        challenge, day_number,
+        parse_ladder_adjustments(getattr(challenge, "ladder_adjust", "")),
+    )
+
+
+def ladder_goal_day_with(challenge: object, adjustments: list[dict[str, int]]) -> int | None:
+    start = float(getattr(challenge, "ladder_start", 0) or 0)
+    goal = float(getattr(challenge, "ladder_goal", 0) or 0)
+    if start <= 0 or goal >= start:
+        return None
+    step = float(getattr(challenge, "ladder_step", 1) or 1) or 1.0
+    interval = max(1, int(getattr(challenge, "ladder_interval", 1) or 1))
+    plain = int(-(-(start - goal) // step)) * interval + 1
+    limit = plain + total_shift_days(adjustments) + interval + 2
+    for day in range(2, limit + 1):
+        if ladder_cap_with(challenge, day, adjustments) <= goal + 1e-9:
+            return day
+    return None
+
+
+def ladder_goal_day(challenge: object) -> int | None:
+    return ladder_goal_day_with(
+        challenge, parse_ladder_adjustments(getattr(challenge, "ladder_adjust", "")),
     )
 
 

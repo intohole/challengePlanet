@@ -31,6 +31,7 @@
     }
     const tt = t.task_type || ch.task_type || 'binary'
     const ttLabel = window.cpTaskTypeLabel(tt) || '打卡'
+    html += this._slipCard(t, ch)
     const isDiet = tt === 'diet' || ch.task_type === 'diet'
     const isMultiMode = !!t.repeatable || ch.decompose_mode === 'time_slot' || ch.task_type === 'counter' || ch.task_type === 'timer' || tt === 'counter' || tt === 'timer'
     const baseline = t.dynamic_baseline || 0
@@ -109,6 +110,12 @@
           goalText = '已到达阶梯终点 🎉'
         }
         html += '<div class="cp-journey-ladder' + (grad && grad.state === 'graduated' ? ' graduated' : '') + '"><div class="cp-journey-ladder-bar"><i style="width:' + pct + '%"></i></div><span>' + goalText + '</span></div>'
+        const adjs = j.adjustments || []
+        if (adjs.length) {
+          const last = adjs[adjs.length - 1]
+          html += '<div class="cp-journey-adjust"><i class="fas fa-stairs" aria-hidden="true"></i> ' + adjs.length + ' 次换挡 · 最近 ' + window.cpEsc(String(last.date || '')) + ' +' + Number(last.shift) + ' 天'
+            + ' <button class="cp-journey-adjust-btn" onclick="cpViews.home.openShift(' + ch.id + ')">再调</button></div>'
+        }
       }
     } else {
       html += '<div class="cp-journey-hero"><b>' + (j.quit_days || 0) + '</b><span>天戒断旅程</span></div>'
@@ -196,7 +203,7 @@
         const overAmt = over ? (total - cap) : Math.max(0, Number(fc.projected) - cap)
         const statusLabel = over ? '已超计划' : (willOver ? '预计会超' : '在计划内')
         const alert = over
-          ? '<div class="cp-dash-alert over"><i class="fas fa-circle-exclamation"></i>已超 ' + window.cpFmtInt(overAmt) + ' ' + unit + '，停下来，别再继续了</div>'
+          ? '<div class="cp-dash-alert over"><i class="fas fa-circle-exclamation"></i>已超 ' + window.cpFmtInt(overAmt) + ' ' + unit + '，少抽的都还在——现在收住，明天是新的一天</div>'
           : (willOver ? '<div class="cp-dash-alert warn"><i class="fas fa-triangle-exclamation"></i>按现在的节奏会超 ' + window.cpFmtInt(overAmt) + ' ' + unit + '，现在收住还来得及</div>' : '')
         let cells = '<span class="cp-dash-cell"><b>' + window.cpFmtInt(total) + '</b> 已记</span>'
         if (!fc.quiet && Number(fc.projected) > 0) cells += '<span class="cp-dash-cell">预计 <b>' + window.cpFmtInt(fc.projected) + '</b> ' + unit + '</span>'

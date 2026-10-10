@@ -19,6 +19,7 @@ from app.api.archives import router as archives_router
 from app.api.challenge import router as challenge_router
 from app.api.checkin import router as checkin_router
 from app.api.diet import router as diet_router
+from app.api.ladder import router as ladder_router
 from app.api.points import router as points_router
 from app.api.reminder import router as reminder_router
 from app.api.report import router as report_router
@@ -28,6 +29,7 @@ from app.db.database import init_db, run_migrations, engine as db_engine, async_
 from app.services.reminder_service import send_checkin_reminders
 from app.services.forecast_alert_service import send_forecast_alerts
 from app.services.graduation_service import GraduationPushService
+from app.services.slip_service import send_slip_care
 from app.services.challenge_service import ChallengeService
 from app.services.challenge_chat_handler import challenge_chat_handler
 
@@ -76,6 +78,12 @@ async def lifespan(app: FastAPI):
         minute=30,
     )
     scheduler.add_cron_job(
+        send_slip_care,
+        job_id="cp-slip-care",
+        hour=8,
+        minute=5,
+    )
+    scheduler.add_cron_job(
         GraduationPushService().send_journey_pushes,
         job_id="cp-journey-push",
         hour="*",
@@ -120,6 +128,7 @@ app.include_router(diet_router, prefix=API_PREFIX + "/challenges")
 app.include_router(report_router, prefix=API_PREFIX + "/challenges")
 app.include_router(adaptive_router, prefix=API_PREFIX + "/challenges")
 app.include_router(reminder_router, prefix=API_PREFIX + "/challenges")
+app.include_router(ladder_router, prefix=API_PREFIX + "/challenges")
 app.include_router(points_router, prefix=API_PREFIX)
 app.include_router(archives_router, prefix=API_PREFIX)
 app.include_router(chat_router(ChatEngine(db_engine).register("challengePlanet", challenge_chat_handler), "challengePlanet"))

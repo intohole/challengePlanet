@@ -201,12 +201,18 @@ class TodayTaskResponse(BaseModel):
     settled: bool = False
     forecast: Optional[dict[str, object]] = None
     journey: Optional[dict[str, object]] = None
+    slip: Optional[dict[str, object]] = None
     checkin_data: Optional[dict[str, object]] = None
     today_checkins: list[dict[str, object]] = Field(default_factory=list)
     streak: int = 0
     total_checkins: int = 0
 
     diet: Optional[dict[str, object]] = None
+
+
+class LadderAdjustRequest(BaseModel):
+    shift_days: int = Field(..., description="阶梯整体后移天数 1-14")
+    preview: bool = False
 
 
 class ShareDataResponse(BaseModel):
