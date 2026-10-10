@@ -10,8 +10,15 @@
       if (ch.status === 'graduated') {
         const cap = Number(ch.ladder_goal) || 0
         const unit = window.cpEsc(ch.unit || '')
-        const lastTxt = cap > 0 ? '<p class="cp-task-desc">减量把你带到了每天 ' + cap + ' ' + unit + '。最后一程，把它也放下——从 ' + cap + ' 到 0。</p><button class="cp-btn-primary cp-block" onclick="cpNextLeg()"><i class="fas fa-seedling" aria-hidden="true"></i> 开始最后一程：到 0</button>' : '<p class="cp-task-desc">这份旅程已完整走完，战绩与证书永久保留，可在「我的」页回看。</p>'
-        return '<div class="glass-card cp-task-card cp-grad-done"><p class="cp-task-title">🎓 减量阶梯毕业！</p>' + lastTxt + '</div>'
+        const start = Number(ch.ladder_start) || 0
+        const days = ch.completed_days || 0
+        const ladderLine = start > 0
+          ? '<div class="cp-grad-ladder"><span class="cp-grad-ladder-from">' + window.cpFmtNum(start) + ' ' + unit + '/天</span><span class="cp-grad-ladder-track"><i></i><i></i><i></i></span><span class="cp-grad-ladder-to">' + window.cpFmtNum(cap) + ' ' + unit + '/天</span></div>'
+          : ''
+        const lastTxt = cap > 0
+          ? '<p class="cp-task-desc">' + days + ' 天走到今天。最后一程，把剩下的 ' + window.cpFmtNum(cap) + ' ' + unit + ' 也放下——从 ' + window.cpFmtNum(cap) + ' 到 0。</p><button class="cp-btn-primary cp-block" onclick="cpNextLeg()"><i class="fas fa-seedling" aria-hidden="true"></i> 开始最后一程：到 0</button>'
+          : '<p class="cp-task-desc">' + days + ' 天，一点没剩。这份战绩已永久保留，在「我的」页随时回看。</p><button class="cp-btn-ghost cp-block" onclick="switchView(\'me\')"><i class="fas fa-box-archive" aria-hidden="true"></i> 去我的页回看</button>'
+        return '<div class="glass-card cp-task-card cp-grad-done"><div class="cp-grad-emblem"><i class="fas fa-graduation-cap" aria-hidden="true"></i></div><p class="cp-task-title">减量阶梯毕业</p>' + ladderLine + lastTxt + '</div>'
       }
       return '<div class="glass-card cp-task-card"><p class="cp-task-title">' + (ch.status === 'completed' ? '🎉 挑战完成，太棒了！' : '挑战已结束，打卡战绩已保留') + '</p><p class="cp-task-desc">可在「我的」页创建新挑战，继续保持节奏。</p></div>'
     }
@@ -43,7 +50,7 @@
     } else if (t.task_target && t.task_target > 0) {
       const capNum = Number(t.today_cap) || Number(t.today_target) || Number(t.task_target) || 0
       const capLabel = isDecrease ? '今日上限' : '今日目标'
-      html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> ' + capLabel + ' <b>' + (capNum || t.task_target) + '</b> ' + window.cpEsc(t.task_unit || '') + '</div>'
+      html += '<div class="cp-task-target"><i class="fas fa-bullseye"></i> ' + capLabel + ' <b>' + window.cpFmtNum(capNum || t.task_target) + '</b> ' + window.cpEsc(t.task_unit || '') + '</div>'
     }
     if ((isMultiMode || isDecrease) && t.today_total !== undefined) {
       if (t.goal_rule !== 'ladder') {
@@ -59,7 +66,7 @@
           barColor = ratio >= 1 ? 'var(--emerald)' : (ratio >= 0.8 ? 'var(--amber)' : 'var(--primary)')
         }
         html += '<div class="cp-task-progress"><div class="cp-task-progress-bar"><div class="cp-task-progress-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>'
-        html += '<div class="cp-task-progress-info"><span style="color:' + barColor + '">' + total + '</span><span class="cp-task-progress-sep">/</span><span>' + target + ' ' + window.cpEsc(t.unit || ch.unit || '') + '</span></div></div>'
+        html += '<div class="cp-task-progress-info"><span style="color:' + barColor + '">' + window.cpFmtNum(total) + '</span><span class="cp-task-progress-sep">/</span><span>' + window.cpFmtNum(target) + ' ' + window.cpEsc(t.unit || ch.unit || '') + '</span></div></div>'
       }
     const hint = this._remainHint(t, ch, isDecrease)
     if (hint) html += hint
@@ -202,7 +209,7 @@
         const status = '<div class="cp-dash-status ' + state + '">' + statusLabel + '</div>'
         return '<div class="cp-dash">' + status + '<div class="cp-dash-metrics">' + cells + '</div>' + alert + windowLine + basis + ladder + pattern + '</div>'
       }
-      return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>守住 ' + target + ' ' + unit + ' 以内即为今日达标</div>'
+      return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>守住 ' + window.cpFmtNum(target) + ' ' + unit + ' 以内即为今日达标</div>'
     }
     if ((t.remaining || 0) <= 0) return ''
     const winInc = fc.risk_window_msg ? '<div class="cp-dash-window"><i class="fas fa-route"></i>' + window.cpEsc(fc.risk_window_msg) + '</div>' : ''
@@ -214,7 +221,7 @@
         : '<span class="cp-dash-cell">还差 <b>' + window.cpFmtInt(t.remaining) + '</b> ' + unit + '</span>'
       return '<div class="cp-dash"><div class="cp-dash-metrics"><span class="cp-dash-cell">已记 <b>' + window.cpFmtInt(total) + '</b> / ' + window.cpFmtInt(target) + '</span>' + reachCell + '</div>' + winInc + basis + patInc + '</div>'
     }
-    return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>还差 <b>' + t.remaining + '</b> ' + unit + ' 达标</div>'
+    return '<div class="cp-remain-hint"><i class="fas fa-bullseye"></i>还差 <b>' + window.cpFmtNum(t.remaining) + '</b> ' + unit + ' 达标</div>'
   }
 
   V._periodCard = function (t) {

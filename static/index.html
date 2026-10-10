@@ -10,9 +10,9 @@
 <link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.62.0/vendor/fontawesome/css/all.min.css">
 <link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.62.0/css/nexus-all.css">
 <link rel="stylesheet" href="/static/style.css?v=20261003a">
-<link rel="stylesheet" href="/static/style-components.css?v=20261009a">
+<link rel="stylesheet" href="/static/style-components.css?v=20261010a">
 <link rel="stylesheet" href="/static/style-checkin.css?v=20261002a">
-<link rel="stylesheet" href="/static/style-multi.css?v=20261009b">
+<link rel="stylesheet" href="/static/style-multi.css?v=20261010a">
 <script src="https://songguokr.com/nexus-ui/v2.62.0/vendor/vue.global.prod.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.62.0/js/nexus-all.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.62.0/js/composables/use-theme.js"></script>
@@ -342,6 +342,36 @@
 </div>
 </div></transition>
 
+<transition name="modal"><div v-if="state.archiveView.show" class="cp-modal-overlay" @click.self="closeArchive()">
+<div class="cp-modal glass" role="dialog" aria-modal="true">
+  <div class="cp-modal-header"><h3>旅程回看</h3><button class="cp-modal-close" aria-label="关闭" @click="closeArchive()"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
+  <div class="cp-modal-body" v-if="state.archiveView.data">
+    <div class="cp-arv-head">
+      <span class="cp-arv-icon" aria-hidden="true">{{ state.archiveView.data.icon }}</span>
+      <div class="cp-arv-head-text"><div class="cp-arv-title">{{ state.archiveView.data.title }}<span v-if="state.archiveView.data.graduation_state==='graduated'" class="cp-archive-badge"><i class="fas fa-graduation-cap" aria-hidden="true"></i>已毕业</span></div>
+      <div class="cp-arv-dates">{{ state.archiveView.data.start_date }} ~ {{ state.archiveView.data.end_date }} · {{ state.archiveView.data.total_days }} 天旅程</div></div>
+    </div>
+    <div class="cp-arv-ladder" v-if="archivePct(state.archiveView.data) > 0">
+      <div class="cp-arv-ladder-nums"><span>{{ cpFmtNum(state.archiveView.data.baseline) }} {{ state.archiveView.data.unit }}/天</span><span class="cp-arv-ladder-pct">-{{ archivePct(state.archiveView.data) }}%</span><span>{{ cpFmtNum(state.archiveView.data.final_cap) }} {{ state.archiveView.data.unit }}/天</span></div>
+      <div class="cp-arv-ladder-bar"><i :style="{width: archivePct(state.archiveView.data) + '%'}"></i></div>
+      <div class="cp-arv-ladder-note">这段旅程走完的减量幅度</div>
+    </div>
+    <div class="cp-me-stats cp-arv-stats">
+      <div class="cp-stat"><div class="cp-stat-num cp-ic-primary">{{ state.archiveView.data.completed_days }}</div><div class="cp-stat-label">打卡天数</div></div>
+      <div class="cp-stat"><div class="cp-stat-num cp-ic-emerald">{{ state.archiveView.data.streak_best }}</div><div class="cp-stat-label">最长连续</div></div>
+      <div class="cp-stat"><div class="cp-stat-num cp-ic-amber">{{ state.archiveView.data.avoided_total > 0 ? state.archiveView.data.avoided_total : state.archiveView.data.total_checkins }}</div><div class="cp-stat-label">{{ state.archiveView.data.avoided_total > 0 ? '累计少抽' : '打卡次数' }}</div></div>
+    </div>
+    <div v-if="archiveMilestones(state.archiveView.data).length" class="cp-journey-ms cp-arv-ms">
+      <span class="cp-journey-ms-chip" v-for="m in archiveMilestones(state.archiveView.data)" :key="m.key">🏅 {{ m.label }}</span>
+    </div>
+    <p class="cp-arv-note">封存于 {{ state.archiveView.data.archived_at }} · 战绩永久保留</p>
+  </div>
+  <div class="cp-modal-footer">
+    <button class="cp-btn-primary" @click="closeArchive()">关闭</button>
+  </div>
+</div>
+</div></transition>
+
 <transition name="modal"><div v-if="state.diagnosis.show" class="cp-modal-overlay" @click.self="state.diagnosis.show=false">
 <div class="cp-modal glass" role="dialog" aria-modal="true">
   <div class="cp-modal-header"><h3>断签诊断</h3><button class="cp-modal-close" aria-label="关闭" @click="state.diagnosis.show=false"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
@@ -451,14 +481,14 @@
 <script src="/static/js/create.js?v=20260915a"></script>
 <script src="/static/js/create-direct.js?v=20260915a"></script>
 <script src="/static/js/create-extra.js?v=20260915a"></script>
-<script src="/static/js/views/home.js?v=20261009a"></script>
-<script src="/static/js/views/journey-end.js?v=20261009a"></script>
+<script src="/static/js/views/home.js?v=20261010a"></script>
+<script src="/static/js/views/journey-end.js?v=20261010a"></script>
 <script src="/static/js/views/home-rescue.js?v=20261006a"></script>
 <script src="/static/js/views/home-diet.js?v=20260928d"></script>
-<script src="/static/js/views/home-task.js?v=20261009a"></script>
-<script src="/static/js/views/home-checkin.js?v=20261005a"></script>
+<script src="/static/js/views/home-task.js?v=20261010a"></script>
+<script src="/static/js/views/home-checkin.js?v=20261010a"></script>
 <script src="/static/js/views/home-panels.js?v=20261002a"></script>
-<script src="/static/js/views/home-record.js?v=20261006a"></script>
+<script src="/static/js/views/home-record.js?v=20261010a"></script>
 <script src="/static/js/views/learn-word.js?v=20260915d"></script>
     <script src="/static/js/views/learn-poem.js?v=20260915d"></script>
     <script src="/static/js/views/learn-pomodoro.js?v=20260915d"></script>
@@ -466,7 +496,7 @@
 <script src="/static/js/views/home-progress.js?v=20261006a"></script>
 <script src="/static/js/views/home-insights.js?v=20261003a"></script>
 <script src="/static/js/views/home-lifecycle.js?v=20261002a"></script>
-<script src="/static/js/views/me.js?v=20261009a"></script>
+<script src="/static/js/views/me.js?v=20261010a"></script>
 <script src="https://songguokr.com/nexus-ui/v2.62.0/js/components/nux-ai-chat-helpers.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.62.0/js/components/nux-ai-chat-template.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.62.0/js/components/nux-ai-widgets.js"></script>
@@ -478,7 +508,7 @@
 <script src="https://songguokr.com/nexus-ui/v2.62.0/js/components/nux-menu-user.js"></script>
 <script src="/static/js/home-companion.js?v=20260919a"></script>
 <script src="/static/js/data-scenes.js?v=20261006a"></script>
-<script src="/static/js/app.js?v=20261009a"></script>
+<script src="/static/js/app.js?v=20261010a"></script>
 <script src="https://songguokr.com/nexus-ui/v2.62.0/js/components/nux-checkin.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.62.0/js/components/nux-calendar.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.62.0/js/components/nux-camera-recognize.js"></script>

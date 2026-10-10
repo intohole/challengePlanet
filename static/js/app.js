@@ -51,12 +51,27 @@ const state = reactive({
   companionMeta: {},
   companionQueue: { position: 0, wait: 0 },
   endModal: { show: false, id: 0, title: '', busy: false },
+  archiveView: { show: false, data: null },
 })
 window.appState = state
 
 window.cpEsc = s => window.NexusUtils.escapeHtml(s)
 
 window.cpFmtInt = v => window.NexusUtils.formatNumber(v, 0)
+
+window.cpFmtNum = v => {
+  const n = Number(v) || 0
+  return Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10)
+}
+
+window.cpOpenArchive = function (id) {
+  const a = (window.cpArchiveCache || []).find(x => String(x.id) === String(id))
+  if (!a) return
+  state.archiveView = { show: true, data: a }
+}
+window.cpCloseArchive = function () {
+  state.archiveView = { show: false, data: null }
+}
 
 window.cpTitleClean = s => String(s == null ? '' : s).replace(/[，,、]\s*(当前|进行中|打卡中|现在|目前)\s*$/, '').trim()
 
@@ -299,6 +314,17 @@ const cpApp = createApp({
       openCreate: () => window.cpCreate.open(),
       endJourneyArchive: window.cpEndJourneyArchive,
       endJourneyPurge: window.cpEndJourneyPurge,
+      closeArchive: window.cpCloseArchive,
+      cpFmtNum: window.cpFmtNum,
+      archiveMilestones: a => {
+        const labels = { 50: '累计少抽 50 根', 100: '累计少抽 100 根', 200: '累计少抽 200 根', 500: '累计少抽 500 根', 1000: '累计少抽 1000 根' }
+        return (a.milestones || []).map(k => ({ key: k, label: labels[String(k).replace('avoided_', '')] || String(k) }))
+      },
+      archivePct: a => {
+        const b = Number(a.baseline) || 0
+        const f = Number(a.final_cap) || 0
+        return b > 0 && f < b ? Math.max(1, Math.round((b - f) / b * 100)) : 0
+      },
       genRatio,
       genStatus: () => {
         const total = state.create.genTotal || 0

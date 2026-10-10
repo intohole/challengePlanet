@@ -64,7 +64,10 @@ window.cpViews.home = (function () {
 
     onShow() { this.load() },
 
-    rerender() { if (this.el) this.render(this.el, true) },
+    rerender() {
+      if (!this.el || window.appState.view !== 'home') return
+      this.render(this.el, true)
+    },
 
     async load() {
       const s = window.appState
@@ -78,9 +81,10 @@ window.cpViews.home = (function () {
       }
       const safe = p => p.catch(() => null)
       const isDiet = ch.task_type === 'diet'
+      const inactive = ch.status !== 'active'
       const [today, guidance, dietTarget, weightTrend] = await Promise.all([
         window.cpApi.today(ch.id).catch(e => { this._todayErr = e; return null }),
-        safe(window.cpApi.get('/challenges/' + ch.id + '/guidance')),
+        inactive ? Promise.resolve(null) : safe(window.cpApi.get('/challenges/' + ch.id + '/guidance')),
         isDiet ? safe(window.cpApi.get('/challenges/' + ch.id + '/diet/target')) : Promise.resolve(null),
         isDiet ? safe(window.cpApi.get('/challenges/' + ch.id + '/weight/trend')) : Promise.resolve(null),
       ])
@@ -110,7 +114,7 @@ window.cpViews.home = (function () {
       if (!d.lastFeedback && today && today.checkin_data && today.checkin_data.ai_feedback) d.lastFeedback = today.checkin_data.ai_feedback
       d.loading = false
       this.rerender()
-      this._ensureFeedback(ch.id)
+      if (!inactive) this._ensureFeedback(ch.id)
     },
 
     _skeleton() {

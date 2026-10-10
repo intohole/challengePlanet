@@ -262,3 +262,55 @@
 
 .cp-quiet .cp-greet, .cp-quiet .cp-checkin-box, .cp-quiet .cp-scene-note, .cp-quiet .cp-gen-task, .cp-quiet .cp-word-meaning, .cp-quiet .cp-word-sample, .cp-quiet .cp-poem-meaning, .cp-quiet .cp-extra-panel, .cp-quiet .cp-cap-cta, .cp-quiet .cp-rescue-card, .cp-quiet .cp-guidance-card, .cp-quiet .cp-risk-banner, .cp-quiet .cp-tomorrow-enhanced, .cp-quiet .cp-timeline-item.latest, .cp-quiet .cp-ai-card, .cp-quiet .cp-declare { animation: none; }
 .cp-quiet .cp-hero::before, .cp-quiet .galaxy-orbit-group, .cp-quiet .galaxy-today-dot, .cp-quiet .galaxy-today-pulse, .cp-quiet .galaxy-sparkle, .cp-quiet .galaxy-planet, .cp-quiet .cp-empty-icon { animation: none; }
+
+/* ============ 前端专项2：旅程有终章（毕业章卡×档案回看） ============ */
+.cp-grad-done { text-align: center; padding-top: 22px; }
+.cp-grad-done .cp-btn-primary, .cp-grad-done .cp-btn-ghost { margin-top: 14px; }
+.cp-grad-emblem { width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #92400E; background: linear-gradient(135deg, rgba(252,211,77,.55), rgba(245,158,11,.25)); border: 1px solid rgba(245,158,11,.45); box-shadow: 0 4px 16px rgba(245,158,11,.25); }
+.cp-grad-ladder { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 10px 0 2px; font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.cp-grad-ladder-track { display: inline-flex; align-items: center; gap: 4px; }
+.cp-grad-ladder-track i { width: 14px; height: 5px; border-radius: 3px; background: rgba(245,158,11,.4); }
+.cp-grad-ladder-track i:nth-child(2) { width: 10px; opacity: .7; }
+.cp-grad-ladder-track i:nth-child(3) { width: 6px; opacity: .45; }
+.cp-grad-ladder-to { color: var(--emerald); }
+[data-theme="dark"] .cp-grad-emblem { color: #FCD34D; background: linear-gradient(135deg, rgba(252,211,77,.22), rgba(245,158,11,.12)); }
+[data-theme="dark"] .cp-grad-done { background: linear-gradient(160deg, rgba(245,158,11,.12), rgba(255,255,255,.04)); }
+[data-theme="dark"] .cp-grad-ladder { color: var(--text-primary); }
+
+.cp-archive-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 11px 2px; min-height: 56px; background: none; border: none; border-bottom: 1px solid var(--card-border); cursor: pointer; font: inherit; color: inherit; }
+.cp-archive-row:last-of-type { border-bottom: none; }
+.cp-archive-row:hover .cp-archive-title { color: var(--primary); }
+.cp-archive-row:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 8px; }
+.cp-archive-chevron { margin-left: auto; flex: none; font-size: 12px; color: var(--text-muted); }
+.cp-archive-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; color: #92400E; background: rgba(245,158,11,.14); border: 1px solid rgba(245,158,11,.35); padding: 2px 8px; border-radius: 999px; white-space: nowrap; margin-left: 6px; }
+[data-theme="dark"] .cp-archive-badge { color: #FCD34D; background: rgba(245,158,11,.16); }
+.cp-section-hint { margin-left: auto; font-size: 11px; font-weight: 400; color: var(--text-muted); }
+
+.cp-ch-row-end { position: relative; }
+.cp-ch-row-end::after { content: ''; position: absolute; inset: -7px; border-radius: 12px; }
+.cp-ch-row-end:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.cp-ch-status { white-space: nowrap; }
+
+.cp-arv-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.cp-arv-icon { flex: none; width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; background: rgba(99,102,241,.08); border: 1px solid var(--card-border); }
+.cp-arv-head-text { min-width: 0; }
+.cp-arv-title { font-size: 16px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.cp-arv-dates { margin-top: 3px; font-size: 12px; color: var(--text-secondary); }
+.cp-arv-ladder { padding: 12px 14px; border-radius: 12px; background: rgba(99,102,241,.05); border: 1px solid var(--card-border); margin-bottom: 12px; }
+.cp-arv-ladder-nums { display: flex; align-items: baseline; justify-content: space-between; font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.cp-arv-ladder-pct { color: var(--emerald); font-size: 15px; }
+.cp-arv-ladder-bar { height: 6px; border-radius: 999px; background: rgba(100,116,139,.15); overflow: hidden; margin: 8px 0 6px; }
+.cp-arv-ladder-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--emerald)); }
+.cp-arv-ladder-note { font-size: 11px; color: var(--text-muted); }
+.cp-arv-stats { margin-bottom: 12px; }
+.cp-arv-ms { margin-bottom: 10px; }
+.cp-arv-note { font-size: 11px; color: var(--text-muted); text-align: center; margin: 4px 0 0; }
+
+/* ============ 前端专项2 · judge 修复：模态层级/暗色弹窗头/页脚避让 ============ */
+.cp-modal-overlay { z-index: 160; }
+[data-theme="dark"] .cp-modal-header { background: rgba(15, 23, 42, .92); }
+@media (max-width: 1079px) {
+  .nux-footer { padding-bottom: calc(var(--nav-h) + 24px + env(safe-area-inset-bottom, 0px)); }
+}
+.cp-ch-row-meta .cp-ch-status { margin-right: 6px; }
+[data-theme="dark"] .cp-pref-hour { background: rgba(30, 41, 59, .92); color: var(--text-primary); }

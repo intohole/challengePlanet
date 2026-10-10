@@ -122,8 +122,8 @@
     const isDecrease = ch.direction === 'decrease' || String(t.direction) === 'decrease'
     const presets = isTimer ? [5, 10, 20, 30, 45] : [1, 2, 3, 5]
     const state = isDecrease
-      ? (over ? '已超今日上限 ' + cap + unit + '，放慢一点，明天继续' : (total > 0 ? '已记 ' + total + ' / 上限 ' + cap + ' ' + unit + '，还可 ' + Math.max(0, cap - total) : '今日还未记录 · 上限 ' + cap + ' ' + unit))
-      : (total > 0 ? '已记 ' + total + ' / 目标 ' + cap + ' ' + unit + '，还差 ' + Math.max(0, cap - total) : '今日还未记录 · 目标 ' + cap + ' ' + unit)
+      ? (over ? '已超今日上限 ' + window.cpFmtNum(cap) + unit + '，放慢一点，明天继续' : (total > 0 ? '已记 ' + window.cpFmtNum(total) + ' / 上限 ' + window.cpFmtNum(cap) + ' ' + unit + '，还可 ' + window.cpFmtNum(Math.max(0, cap - total)) : '今日还未记录 · 上限 ' + window.cpFmtNum(cap) + ' ' + unit))
+      : (total > 0 ? '已记 ' + window.cpFmtNum(total) + ' / 目标 ' + window.cpFmtNum(cap) + ' ' + unit + '，还差 ' + window.cpFmtNum(Math.max(0, cap - total)) : '今日还未记录 · 目标 ' + window.cpFmtNum(cap) + ' ' + unit)
     const ctaLabel = ch.scene_template === 'quit' ? '记一根' : '记一笔'
     let html = '<div class="cp-cap-cta"><button class="cp-cta-main cp-cap-main" ' + dis + ' onclick="cpViews.home.doFastTap(1)"><i class="fas fa-plus"></i><span>' + ctaLabel + '</span><em>' + state + '</em></button>'
     html += '<div class="cp-extra-btns">'

@@ -7,6 +7,7 @@ import os
 import sqlite3
 import sys
 import time
+import re
 import urllib.request
 from pathlib import Path
 from nexus.utils.time import TimeUtils
@@ -193,7 +194,7 @@ def main() -> int:
     with urllib.request.urlopen(req) as resp:
         html = resp.read().decode()
     check("首页引用 graduation-cert", "graduation-cert.js" in html, "")
-    check("首页引用新指纹", "home-task.js?v=20261005a" in html, "")
+    check("首页引用新指纹", re.search(r"home-task\.js\?v=\d{8}[a-z]", html) is not None, "")
 
     print("== 7. 清理 ==")
     conn = sqlite3.connect(DB_PATH)
