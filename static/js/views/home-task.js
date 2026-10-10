@@ -274,7 +274,7 @@
     const fc = t.forecast || {}
     const state = total > cap ? 'over' : (fc.enabled && fc.risk_level === 1 ? 'warn' : 'ok')
     const label = isDesc ? '今日上限' : '今日目标'
-    let html = '<div class="cp-ladder-daily"><div class="cp-ladder-daily-head"><span>' + label + '</span>'
+    let html = '<div class="cp-ladder-daily"><div class="cp-ladder-daily-head"><span>' + label + ' <b>' + window.cpFmtNum(cap) + '</b> ' + unit + '</span>'
     if (t.ladder_goal && t.ladder_start) {
       html += '<span class="cp-ladder-daily-path">' + Number(t.ladder_start) + '→' + Number(t.ladder_goal) + ' <i class="fas fa-stairs" style="font-size:11px"></i> 阶梯</span>'
     }
