@@ -69,13 +69,12 @@ def _import_models() -> None:
 _WHITELIST_TABLES = frozenset({"challenges", "checkins", "adaptive_suggestions"})
 
 async def _ensure_column(conn: object, table: str, column: str, ddl: str) -> None:
+    from nexus import ensure_column
+
     if table not in _WHITELIST_TABLES:
         raise ValueError(f"migration: table {table} not in whitelist")
-    rows = await conn.execute(text(f"PRAGMA table_info({table})"))
-    cols = {row[1] for row in rows.fetchall()}
-    if column not in cols:
-        logger.info("migration: adding column %s.%s", table, column)
-        await conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {ddl}"))
+    col_type = ddl[len(column):].strip() if ddl.startswith(column) else ddl
+    await ensure_column(conn, table, column, col_type)
 
 
 async def _drop_legacy_column_compat(conn: object) -> None:
