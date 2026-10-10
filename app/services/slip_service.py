@@ -56,6 +56,7 @@ def assess_slip(
         "yesterday_date": yesterday,
         "yesterday_total": y_total,
         "yesterday_cap": y_cap,
+        "today_cap": float(daily_target(challenge, day_number_of(start, today))),
         "over_amount": round(y_total - y_cap, 1),
         "episode_first": episode_first,
         "avoided_total": avoided,
@@ -66,11 +67,11 @@ def slip_care_text(title: str, unit: str, slip: dict[str, object]) -> tuple[str,
     unit = unit or ""
     over = float(slip["over_amount"] or 0)
     avoided = int(slip["avoided_total"] or 0)
-    cap = float(slip["yesterday_cap"] or 0)
+    cap = float(slip["today_cap"] or 0)
     subject = f"「{title}」昨天超了 {over:g} {unit}"
     body = (
         f"已少抽的 {avoided} {unit}都算数，{ATTEMPTS_NOTE}。"
-        f"今天上限还是 {cap:g} {unit}；若坡太陡，打开就能把阶梯后移几天——走过的每一天不变。"
+        f"今天上限 {cap:g} {unit}；若坡太陡，打开就能把阶梯后移几天——走过的每一天不变。"
     )
     return subject, body
 

@@ -146,6 +146,7 @@ async def test_assess_slip_episode_and_repeat() -> None:
         slip = assess_slip(ch, rows, today)
         assert slip is not None
         assert slip["yesterday_cap"] == 11.0
+        assert slip["today_cap"] == 11.0
         assert slip["over_amount"] == 4.0
         assert slip["episode_first"] is True
         assert slip["avoided_total"] == 5

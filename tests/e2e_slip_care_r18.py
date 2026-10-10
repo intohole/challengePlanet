@@ -151,30 +151,35 @@ def main() -> None:
     check("slip.yesterday_over", slip.get("yesterday_over") is True, str(slip)[:160])
     check("slip.over_amount=3(15-12)", float(slip.get("over_amount", 0)) == 3.0, str(slip.get("over_amount")))
     check("slip.yesterday_cap=12", float(slip.get("yesterday_cap", 0)) == 12.0, str(slip.get("yesterday_cap")))
+    check("slip.today_cap=11(今天真实上限)", float(slip.get("today_cap", 0)) == 11.0, str(slip.get("today_cap")))
     check("slip.episode_first(前天无记录=守住)", slip.get("episode_first") is True, str(slip.get("episode_first")))
     check("slip.today_checked=False", slip.get("today_checked") is False, str(slip.get("today_checked")))
     check("slip.can_shift", slip.get("can_shift") is True, str(slip.get("can_shift")))
 
     captured: list[dict] = []
     asyncio.run(run_slip_care_job(captured))
-    check("触达恰好1条", len(captured) == 1, str(len(captured)))
-    if captured:
-        item = captured[0]
+    mine = [i for i in captured if str(i.get("user_id")) == uid]
+    others = [i for i in captured if str(i.get("user_id")) != uid]
+    check("触达恰好1条(限本用户)", len(mine) == 1, f"mine={len(mine)} others={len(others)}")
+    if mine:
+        item = mine[0]
         check("触达user正确", str(item.get("user_id")) == uid, str(item.get("user_id")))
         check("深链带slip=1", "slip=1" in str(item.get("link", "")) and f"ch={cid}" in str(item.get("link", "")), str(item.get("link")))
         check("标题含超量", "超了 3" in str(item.get("title", "")), str(item.get("title")))
-        check("文案含少抽资产", "都算数" in str(item.get("content", "")), str(item.get("content"))[:80])
+        check("文案含今天真实上限", f"今天上限 11" in str(item.get("content", "")), str(item.get("content"))[:90])
 
     captured2: list[dict] = []
     asyncio.run(run_slip_care_job(captured2))
-    check("同episode幂等零重发", len(captured2) == 0, str(len(captured2)))
+    mine2 = [i for i in captured2 if str(i.get("user_id")) == uid]
+    check("同episode幂等零重发", len(mine2) == 0, str(len(mine2)))
 
     cid2 = create_ladder(token, shift(3))
     asyncio.run(seed_over_day(cid2, uid, shift(1), 14.0))
     asyncio.run(seed_over_day(cid2, uid, shift(2), 13.0))
     captured3: list[dict] = []
     asyncio.run(run_slip_care_job(captured3))
-    check("连续破戒不再触达", len(captured3) == 0, str(len(captured3)))
+    mine3 = [i for i in captured3 if str(i.get("user_id")) == uid]
+    check("连续破戒不再触达", len(mine3) == 0, str(len(mine3)))
 
     pv = api("POST", f"/challenges/{cid}/ladder-adjust", {"shift_days": 2, "preview": True}, token)
     check("预览today_cap=12", float(pv.get("today_cap", 0)) == 12.0, str(pv))

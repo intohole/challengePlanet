@@ -10,7 +10,7 @@
     const unit = window.cpEsc(ch.unit || t.unit || '')
     const over = window.cpFmtInt(s.over_amount)
     const avoided = window.cpFmtInt(s.avoided_total)
-    const cap = window.cpFmtInt(s.yesterday_cap)
+    const cap = window.cpFmtInt(t.today_cap || t.today_target || 0)
     return '<div class="glass-card cp-slip-card" data-testid="slip-card">'
       + '<div class="cp-slip-icon"><i class="fas fa-mug-hot" aria-hidden="true"></i></div>'
       + '<div class="cp-slip-body">'
