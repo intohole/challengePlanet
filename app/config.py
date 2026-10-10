@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/api/v1"
     FEEDBACK_TEMPERATURE: float = 0.8
     SERVICE_TOKEN: str = os.environ.get("SERVICE_TOKEN", "")
-    LION_BASE_URL: str = os.environ.get("LION_BASE_URL", "http://edge-01:9527")
+    LION_BASE_URL: str = os.environ.get("LION__BASE_URL", "http://edge-01:9527")
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
