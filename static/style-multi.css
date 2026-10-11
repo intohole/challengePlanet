@@ -5,7 +5,7 @@
 .cp-task-progress-info b { font-size: 16px; font-weight: 800; }
 .cp-task-progress-sep { color: var(--card-border); }
 .cp-dash { margin-top: 10px; padding: 12px; border-radius: var(--radius-sm); background: rgba(15,23,42,.03); border: 1px solid var(--card-border); display: flex; flex-direction: column; gap: 8px; }
-.cp-dash-status { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-full); }
+.cp-dash-status { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-full, 999px); }
 .cp-dash-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 .cp-dash-status.ok { color: var(--emerald); background: rgba(16,185,129,.12); }
 .cp-dash-status.warn { color: var(--amber); background: rgba(245,158,11,.15); }
