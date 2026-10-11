@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from nexus.middleware import LoadingSplashMiddleware, StaticAssetsCacheMiddleware
-from nexus import close_uc_sdk, create_auth_router, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, startup_ironman, register_health_detail
+from nexus import close_uc_sdk, create_auth_router, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, startup_ironman, register_health_endpoints
 from nexus.chat.engine import ChatEngine
 from nexus.chat.router import chat_router
 from nexus.logging import get_logger, setup_logging
@@ -155,18 +155,16 @@ def _scheduler_next_runs() -> dict[str, str]:
     return runs
 
 
-@app.get("/health")
-async def health() -> dict[str, object]:
+async def _scheduler_check() -> str:
     scheduler = get_scheduler()
-    jobs = scheduler.list_jobs()
-    return {
-        "status": "ok",
-        "app": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "ironman": "available" if is_ironman_available() else "unavailable",
-        "scheduler": f"running ({len(jobs)} jobs)" if scheduler.running else "stopped",
-        "cron_next_run_at": _scheduler_next_runs(),
-    }
+    if not scheduler.running:
+        return "stopped"
+    runs = _scheduler_next_runs()
+    if not runs:
+        return "no-jobs"
+    return f"ok ({len(runs)} scheduled)"
+
+
 
 
 @app.get("/api/v1/tools/cron-status")
@@ -209,8 +207,7 @@ async def _health_uc_check() -> str:
 async def _health_ironman_check() -> str:
     return "ok" if is_ironman_available() else "unavailable"
 
-
-register_health_detail(
+register_health_endpoints(
     app,
     app_name=settings.APP_NAME,
     app_version=settings.APP_VERSION,
@@ -219,8 +216,11 @@ register_health_detail(
         "lion": _health_lion_check,
         "usercenter": _health_uc_check,
         "ironman": _health_ironman_check,
+        "scheduler": _scheduler_check,
     },
 )
+
+
 
 
 @app.get("/")

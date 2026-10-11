@@ -180,10 +180,11 @@ def main() -> int:
     check("cron-status alive", cs.get("alive") is True, str(cs)[:100])
     nxt = cs.get("jobs_next_run_at") or {}
     check("4 job next_run_at", len(nxt) == 4, str(nxt))
-    req = urllib.request.Request("http://127.0.0.1:8610/health")
+    req = urllib.request.Request("http://127.0.0.1:8610/health/detailed")
     with urllib.request.urlopen(req) as resp:
         h = json.loads(resp.read().decode())
-    check("health cron_next_run_at", bool(h.get("cron_next_run_at")), str(h.get("cron_next_run_at"))[:80])
+    sched = str(h.get("checks", {}).get("scheduler", ""))
+    check("health scheduler", sched.startswith("ok"), sched[:80])
     req = urllib.request.Request("http://127.0.0.1:8610/static/js/graduation-cert.js")
     try:
         with urllib.request.urlopen(req) as resp:
