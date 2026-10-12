@@ -12,6 +12,7 @@ from app.models.challenge import Challenge
 from app.models.checkin import CheckIn
 from app.models.reminder import ReminderPref
 from app.repositories.checkin_repository import CheckInRepository
+from app.services.absence_service import collect_absence_items, mark_absence_sent
 from app.services.companion_service import assess_risk, companion_text
 from app.services.goal_rule_service import is_cap_mode
 from app.services.mercy_service import load_valid_dates
@@ -92,19 +93,33 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
         current = current_hour if current_hour is not None else now_china().hour
         async with async_session() as session:
             unchecked = await _get_unchecked_challenges(session)
-            if not unchecked:
+            active_result = await session.execute(
+                select(Challenge).where(Challenge.status == "active")
+            )
+            absence_items = await collect_absence_items(session, list(active_result.scalars().all()))
+            if not unchecked and not absence_items:
                 logger.info("No unchecked challenges found, skipping reminders.")
                 return
             prefs = await _load_prefs(session)
+
+            def _pref_group(user_id: str) -> bool:
+                return _prefers_now(prefs.get(user_id), current)
+
             grouped: dict[str, list[Challenge]] = {}
             for challenge in unchecked:
-                pref = prefs.get(str(challenge.user_id))
-                if _prefers_now(pref, current):
+                if _pref_group(str(challenge.user_id)):
                     grouped.setdefault(str(challenge.user_id), []).append(challenge)
-            if not grouped:
+            absence_by_user: dict[str, list[dict[str, object]]] = {}
+            for entry in absence_items:
+                if _pref_group(str(entry["user_id"])):
+                    absence_by_user.setdefault(str(entry["user_id"]), []).append(entry)
+            if not grouped and not absence_by_user:
                 logger.info("No users preferring hour=%s, skipping.", current)
                 return
-            logger.info("Sending reminders to %d users at hour=%s...", len(grouped), current)
+            logger.info(
+                "Sending reminders to %d users at hour=%s (%d absence)...",
+                len(grouped), current, len(absence_by_user),
+            )
             client = get_notify_client()
             checkins_repo = CheckInRepository()
             items: list[dict[str, object]] = []
@@ -146,11 +161,28 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                         "data": {"challenge_count": len(normal)},
                     }
                 )
+            absence_flat = [e for entries in absence_by_user.values() for e in entries]
             if items:
                 await client.send_many(items)
+            if absence_flat:
+                results = await client.send_many([e["payload"] for e in absence_flat])
+                for entry, result in zip(absence_flat, results):
+                    if isinstance(result, dict) and result.get("status") == "sent":
+                        await mark_absence_sent(
+                            session, int(entry["challenge_id"]), str(entry["user_id"]),
+                            entry["absence"],
+                        )
+                    else:
+                        logger.warning(
+                            "absence care not sent for challenge %s: %s — mark skipped",
+                            entry["challenge_id"],
+                            result.get("status") if isinstance(result, dict) else result,
+                        )
+                await session.commit()
             logger.info(
-                "Check-in reminders processed: %d items (%d rescue) for %d users.",
-                len(items), len(rescued_ids), len(grouped),
+                "Check-in reminders processed: %d items (%d rescue, %d absence) for %d users.",
+                len(items) + len(absence_flat), len(rescued_ids), len(absence_flat),
+                len(grouped) + len(absence_by_user),
             )
     except Exception as e:
         logger.error("Check-in reminder task failed: %s", e)

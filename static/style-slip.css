@@ -35,3 +35,22 @@
 [data-theme="dark"] .cp-slip-sub b { color: #FBBF24; }
 [data-theme="dark"] .cp-shift-chip { background: rgba(255,255,255,.05); }
 [data-theme="dark"] .cp-shift-chip.on { background: rgba(129,140,248,.16); color: #A5B4FC; }
+
+.cp-absence-card { display: flex; gap: 14px; align-items: flex-start; padding: 16px; margin-bottom: 12px; border: 1px solid rgba(16,185,129,.30); background: linear-gradient(135deg, rgba(209,250,229,.36), rgba(255,255,255,.72) 58%); }
+.cp-absence-icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 17px; color: #047857; background: rgba(16,185,129,.14); }
+.cp-absence-body { flex: 1 1 auto; min-width: 0; }
+.cp-absence-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.cp-absence-sub { font-size: 13px; color: var(--text-secondary); margin-top: 3px; line-height: 1.55; }
+.cp-absence-sub b { color: #047857; }
+.cp-absence-actions { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+.cp-absence-log-btn { padding: 8px 16px; font-size: 13px; }
+.cp-absence-dismiss { background: none; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 8px 4px; }
+
+@media (prefers-color-scheme: dark) {
+  .cp-absence-card { border-color: rgba(16,185,129,.32); background: linear-gradient(135deg, rgba(16,185,129,.12), rgba(255,255,255,.04) 58%); }
+  .cp-absence-icon { color: #34D399; background: rgba(16,185,129,.14); }
+  .cp-absence-sub b { color: #34D399; }
+}
+[data-theme="dark"] .cp-absence-card { border-color: rgba(16,185,129,.32); background: linear-gradient(135deg, rgba(16,185,129,.12), rgba(255,255,255,.04) 58%); }
+[data-theme="dark"] .cp-absence-icon { color: #34D399; background: rgba(16,185,129,.14); }
+[data-theme="dark"] .cp-absence-sub b { color: #34D399; }

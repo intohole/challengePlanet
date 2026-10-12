@@ -31,7 +31,13 @@
     try {
       payload.mood = d.moodTag || ''
       const r = await window.cpApi.checkin(ch.id, payload)
-      window.cpCelebrate('今日达标 +' + (r.points_earned || 0) + ' 分')
+      const rb = r.return_block
+      if (rb && Number(rb.absent_days) >= 2) {
+        window.cpCelebrate('欢迎回来！离开 ' + window.cpFmtInt(rb.absent_days) + ' 天，少抽的都还在 +' + (r.points_earned || 0) + ' 分')
+        if (rb.suggest_adjust) window.cpToast('上次记录 ' + window.cpFmtInt(rb.last_value) + ' ' + (ch.unit || '') + '，已高于今天上限——阶梯可以后移一点')
+      } else {
+        window.cpCelebrate('今日达标 +' + (r.points_earned || 0) + ' 分')
+      }
       this._panel = ''
       d.textValue = ''
       d.moodTag = ''
@@ -120,7 +126,11 @@
       if (ch.direction === 'decrease') {
         const tot = r.today_total || total
         const tgt = r.today_target || target
-        if (v === 0) window.cpCelebrate('今天 0 ' + (ch.unit || '') + ' · 完美的一天 +' + (r.points_earned || 0) + ' 分')
+        const rb = r.return_block
+        if (rb && Number(rb.absent_days) >= 2) {
+          window.cpCelebrate('欢迎回来！离开 ' + window.cpFmtInt(rb.absent_days) + ' 天，少抽的都还在 +' + (r.points_earned || 0) + ' 分')
+          if (rb.suggest_adjust) window.cpToast('上次记录 ' + window.cpFmtInt(rb.last_value) + ' ' + (ch.unit || '') + '，已高于今天上限——阶梯可以后移一点')
+        } else if (v === 0) window.cpCelebrate('今天 0 ' + (ch.unit || '') + ' · 完美的一天 +' + (r.points_earned || 0) + ' 分')
         else if (tot > tgt) window.cpCelebrate(t.goal_rule === 'ladder' ? '已记录 +' + v + ' · 已超今日上限，少抽的都还在' : '已记录 +' + v + ' · 已超今日上限，今天辛苦了')
         else if (tot >= tgt) window.cpCelebrate('已记录 +' + v + ' · 已达今日上限 ' + window.cpFmtNum(tgt) + (ch.unit || '') + '，今日守住！')
         else window.cpCelebrate('已记录 +' + v + ' ' + (ch.unit || '') + ' · 还可 ' + window.cpFmtNum(Math.max(0, tgt - tot)) + (ch.unit || ''))

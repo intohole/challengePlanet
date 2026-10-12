@@ -12,6 +12,7 @@ from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import ChallengeMetaRepository
 from app.core.datetime_utils import now_china
+from app.services.absence_service import assess_absence
 from app.services.adaptive_service import evaluate_after_bad_mood_task
 from app.services.checkin_background import (
     fire_and_forget,
@@ -25,12 +26,12 @@ from app.services.checkin_calc import (
 )
 from app.services.forecast_math import CONTEXT_TAGS
 from app.services.forecast_service import ForecastService
-from app.services.goal_rule_service import is_repeatable
+from app.services.goal_rule_service import is_cap_mode, is_ladder, is_repeatable
 from app.services.mercy_service import load_valid_dates
 from app.services.points_service import PointsService
 from app.services.prompts import MOODS
 from app.services.shield_service import ShieldService
-from app.services.streak_service import calc_streak, today_str
+from app.services.streak_service import calc_streak, shift_date, today_str
 from app.services.target_service import TargetService
 
 logger = get_logger("challengePlanet.checkin")
@@ -145,6 +146,12 @@ class CheckInService:
             session, challenge, today_total, target_snapshot["target_value"],
             ts.hour, is_soft_exceeded=soft_exceeded, day_number=day_number,
         )
+        return_block = None
+        if is_cap_mode(challenge) and is_ladder(challenge) and not today_checkins:
+            rows_to_yesterday = await self._repo.get_daily_totals(
+                session, challenge_id, str(challenge.start_date), shift_date(today, -1),
+            )
+            return_block = assess_absence(challenge, rows_to_yesterday, today)
         streak = await self._current_streak(session, challenge_id)
         base, chest = await self._points.award_checkin(
             session, user_id, challenge_id, streak,
@@ -160,6 +167,7 @@ class CheckInService:
             today_total, remaining, base, chest, streak, shields,
             already_checked=False, is_soft_exceeded=soft_exceeded,
             soft_exceeded_amount=soft_exceeded_amount, forecast=forecast,
+            return_block=return_block,
         )
 
     async def _replay_checkin(
@@ -188,6 +196,7 @@ class CheckInService:
         remaining: float, points: int, chest: int, streak: int, shields: int,
         already_checked: bool, is_soft_exceeded: bool,
         soft_exceeded_amount: float, forecast: dict[str, object],
+        return_block: dict[str, object] | None = None,
     ) -> dict[str, object]:
         target = float(target_snapshot["target_value"])
         return {
@@ -204,6 +213,7 @@ class CheckInService:
             "coach_nudge": str(forecast.get("coach_nudge", "")),
             "nudge_level": int(forecast.get("nudge_level", 0)),
             "forecast": forecast,
+            "return_block": return_block,
         }
 
     async def _current_streak(self, session: AsyncSession, challenge_id: int) -> int:

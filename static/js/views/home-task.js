@@ -32,6 +32,7 @@
     const tt = t.task_type || ch.task_type || 'binary'
     const ttLabel = window.cpTaskTypeLabel(tt) || '打卡'
     html += this._slipCard(t, ch)
+    html += this._absenceCard(t, ch)
     const isDiet = tt === 'diet' || ch.task_type === 'diet'
     const isMultiMode = !!t.repeatable || ch.decompose_mode === 'time_slot' || ch.task_type === 'counter' || ch.task_type === 'timer' || tt === 'counter' || tt === 'timer'
     const baseline = t.dynamic_baseline || 0

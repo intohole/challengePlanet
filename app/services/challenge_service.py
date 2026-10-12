@@ -16,6 +16,7 @@ from app.repositories.points_repository import ChallengeMetaRepository
 from app.services.plan_parser import parse_ai_plan
 from app.schemas.challenge import ChallengeResponse
 from app.services.ai_text_sanitizer import sanitize_coach_text
+from app.services.absence_service import assess_absence
 from app.services.forecast_service import ForecastService
 from app.services.goal_rule_service import is_cap_mode, is_ladder, is_repeatable, is_settled, ladder_progress_pct, resolve_mode
 from app.services.journey_service import JourneyService
@@ -298,10 +299,14 @@ class ChallengeService:
         if slip is not None:
             slip["today_checked"] = len(today_checkins) > 0
             slip["can_shift"] = challenge.status == "active"
+        absence = assess_absence(challenge, journey_rows, today) if day_number >= 2 else None
+        if absence is not None:
+            absence["today_checked"] = len(today_checkins) > 0
+            absence["can_shift"] = challenge.status == "active"
         return self._build_today_response(
             challenge, challenge_id, day_number, today, task,
             today_checkins, today_total, today_target, dynamic_baseline,
-            stats, progress, aggregates, forecast, journey, slip,
+            stats, progress, aggregates, forecast, journey, slip, absence,
         )
 
     def _parse_plan(self, ai_plan: str | None) -> list[dict[str, object]]:
@@ -315,6 +320,7 @@ class ChallengeService:
         forecast: dict[str, object] | None = None,
         journey: dict[str, object] | None = None,
         slip: dict[str, object] | None = None,
+        absence: dict[str, object] | None = None,
     ) -> dict[str, object]:
         task_steps_raw = task.get("steps", task.get("task_steps", []))
         task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
@@ -347,6 +353,7 @@ class ChallengeService:
             "dynamic_baseline": dynamic_baseline, "remaining": round(remaining, 2), "forecast": forecast,
             "journey": journey,
             "slip": slip,
+            "absence": absence,
             "progress_pct": round(progress, 1), "ladder_progress_pct": round(ladder_progress, 1),
             "checked_in": len(today_checkins) > 0,
             "settled": False if not_started else is_settled(

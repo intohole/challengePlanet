@@ -101,6 +101,7 @@ async def send_slip_care() -> None:
         async with async_session() as session:
             challenges = await ChallengeRepository().get_all_active(session)
             items: list[dict[str, object]] = []
+            marks: list[tuple[int, str, str]] = []
             for challenge in challenges:
                 if not (is_cap_mode(challenge) and is_ladder(challenge)):
                     continue
@@ -132,12 +133,20 @@ async def send_slip_care() -> None:
                     "link": f"/challengePlanet/?ch={challenge.id}&slip=1",
                     "data": {"challenge_id": challenge.id, "slip_care": True},
                 })
-                await _mark_sent(session, int(challenge.id), str(challenge.user_id), yesterday)
+                marks.append((int(challenge.id), str(challenge.user_id), yesterday))
             if not items:
                 logger.info("no slip care to send")
                 return
-            await get_notify_client().send_many(items)
+            results = await get_notify_client().send_many(items)
+            for (challenge_id, user_id, date_str), result in zip(marks, results):
+                if isinstance(result, dict) and result.get("status") == "sent":
+                    await _mark_sent(session, challenge_id, user_id, date_str)
+                else:
+                    logger.warning(
+                        "slip care not sent for challenge %s: %s — mark skipped",
+                        challenge_id, result.get("status") if isinstance(result, dict) else result,
+                    )
             await session.commit()
-            logger.info("slip care sent to %d challenges", len(items))
+            logger.info("slip care sent to %d challenges", len(marks))
     except Exception as e:
         logger.error("slip care task failed: %s", e)

@@ -27,6 +27,36 @@
     this.rerender()
   }
 
+  V._absenceCard = function (t, ch) {
+    const a = t.absence
+    if (!a || !a.can_shift || a.today_checked) return ''
+    const key = 'cp_absence_dismiss_' + ch.id + '_' + window.cpTodayStr()
+    try { if (sessionStorage.getItem(key)) return '' } catch (e) {}
+    const unit = window.cpEsc(ch.unit || t.unit || '')
+    const days = window.cpFmtInt(a.absent_days)
+    const avoided = window.cpFmtInt(a.avoided_total)
+    const cap = window.cpFmtInt(t.today_cap || t.today_target || 0)
+    const shiftBtn = a.suggest_adjust
+      ? '<button class="cp-btn-primary cp-absence-log-btn" onclick="cpViews.home.openShift(' + ch.id + ')"><i class="fas fa-stairs" aria-hidden="true"></i> 阶梯后移一点</button>'
+      : ''
+    const kept = avoided > 0 ? '已少抽的 <b>' + avoided + '</b> ' + unit + ' 都还在。' : ''
+    return '<div class="glass-card cp-absence-card" data-testid="absence-card">'
+      + '<div class="cp-absence-icon"><i class="fas fa-door-open" aria-hidden="true"></i></div>'
+      + '<div class="cp-absence-body">'
+      + '<p class="cp-absence-title">' + days + ' 天没见了，门一直开着</p>'
+      + '<p class="cp-absence-sub">今天上限 <b>' + cap + ' ' + unit + '</b>，记一笔就算守住。' + kept + '</p>'
+      + '<div class="cp-absence-actions">'
+      + '<button class="cp-btn-primary cp-absence-log-btn" onclick="cpViews.home.dismissAbsence(' + ch.id + ')"><i class="fas fa-pen" aria-hidden="true"></i> 今天记一笔</button>'
+      + shiftBtn
+      + '<button class="cp-absence-dismiss" onclick="cpViews.home.dismissAbsence(' + ch.id + ')">先看看</button>'
+      + '</div></div></div>'
+  }
+
+  V.dismissAbsence = function (chId) {
+    try { sessionStorage.setItem('cp_absence_dismiss_' + chId + '_' + window.cpTodayStr(), '1') } catch (e) {}
+    this.rerender()
+  }
+
   V.openShift = async function (chId) {
     const s = window.appState
     s.ladderShift = { show: true, chId: chId, k: 0, preview: null, saving: false, err: '' }
