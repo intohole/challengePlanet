@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -13,8 +13,16 @@ from app.models.challenge import Challenge
 from app.models.checkin import CheckIn
 from app.services.archive_service import archive_and_delete, best_streak, user_summary
 from app.services.challenge_service import ChallengeService
+from app.services.streak_service import today_str
 
 import app.models.archive  # noqa: F401,F811 register table
+
+_ANCHOR = datetime.strptime(today_str(), "%Y-%m-%d") - timedelta(days=9)
+START = _ANCHOR.strftime("%Y-%m-%d")
+END = (_ANCHOR + timedelta(days=29)).strftime("%Y-%m-%d")
+SPAN = 9
+CHECKIN_DAYS = [(_ANCHOR + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(3)]
+EXTRA_DAY = (_ANCHOR + timedelta(days=4)).strftime("%Y-%m-%d")
 
 
 def _mk_challenge(uid: str, **kw: object) -> Challenge:
@@ -22,7 +30,7 @@ def _mk_challenge(uid: str, **kw: object) -> Challenge:
         user_id=uid, title="戒烟挑战", description="", category="quit",
         task_type="counter", target_value=10.0, unit="根", direction="decrease",
         goal_type="hard", decompose_mode="none", duration_days=30,
-        start_date="2026-10-01", end_date="2026-10-30", status="active",
+        start_date=START, end_date=END, status="active",
         ai_plan="[]", color="#ef4444", icon="🚭", scene_template="",
         is_shared=False, share_token="t" * 32,
         goal_rule="ladder", goal_mode="ceiling",
@@ -50,10 +58,6 @@ def test_best_streak() -> None:
 
 def test_archive_and_summary() -> None:
     async def main() -> None:
-        from app.services.streak_service import today_str
-
-        today = today_str()
-        span = (datetime.strptime(today, "%Y-%m-%d") - datetime.strptime("2026-10-01", "%Y-%m-%d")).days
         fd, path = tempfile.mkstemp(suffix=".db")
         os.close(fd)
         engine = create_async_engine("sqlite+aiosqlite:///" + path)
@@ -66,17 +70,17 @@ def test_archive_and_summary() -> None:
             s.add(ch)
             await s.flush()
             s.add_all([
-                _mk_checkin(ch.id, "u1", "2026-10-01", 10.0),
-                _mk_checkin(ch.id, "u1", "2026-10-02", 8.0),
-                _mk_checkin(ch.id, "u1", "2026-10-03", 7.0),
+                _mk_checkin(ch.id, "u1", CHECKIN_DAYS[0], 10.0),
+                _mk_checkin(ch.id, "u1", CHECKIN_DAYS[1], 8.0),
+                _mk_checkin(ch.id, "u1", CHECKIN_DAYS[2], 7.0),
             ])
             await s.flush()
 
             summary = await archive_and_delete(s, ch)
             await s.commit()
-            assert summary["completed_days"] == span
+            assert summary["completed_days"] == SPAN
             assert summary["total_checkins"] == 3
-            assert summary["streak_best"] == span
+            assert summary["streak_best"] == SPAN
             assert summary["avoided_total"] == 5
             assert summary["baseline"] == 10.0
             assert summary["final_cap"] == 5.0
@@ -87,22 +91,22 @@ def test_archive_and_summary() -> None:
             assert not rows
             archives = (await s.execute(JourneyArchive.__table__.select())).fetchall()
             assert len(archives) == 1
-            assert archives[0].completed_days == span
+            assert archives[0].completed_days == SPAN
             assert archives[0].graduation_state == "approaching"
 
             total = await user_summary(s, "u1")
-            assert total["checkin_days"] == span
-            assert total["best_streak"] == span
+            assert total["checkin_days"] == SPAN
+            assert total["best_streak"] == SPAN
             assert total["avoided_total"] == 5
             assert total["archive_count"] == 1
 
             ch2 = _mk_challenge("u1")
             s.add(ch2)
             await s.flush()
-            s.add(_mk_checkin(ch2.id, "u1", "2026-10-05", 6.0))
+            s.add(_mk_checkin(ch2.id, "u1", EXTRA_DAY, 6.0))
             await s.flush()
             total2 = await user_summary(s, "u1")
-            assert total2["checkin_days"] == span * 2
+            assert total2["checkin_days"] == SPAN * 2
             assert total2["avoided_total"] == 9
             assert total2["active_count"] == 1
 
@@ -122,7 +126,7 @@ def test_purge_leaves_no_archive() -> None:
             ch = _mk_challenge("u2")
             s.add(ch)
             await s.flush()
-            s.add(_mk_checkin(ch.id, "u2", "2026-10-01", 3.0))
+            s.add(_mk_checkin(ch.id, "u2", CHECKIN_DAYS[0], 3.0))
             await s.flush()
 
             service = ChallengeService()
