@@ -15,7 +15,6 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import select
 
-from app.core.datetime_utils import now_china
 from app.db.database import async_session, init_db
 from app.models.checkin import AIInsight, CheckIn
 from app.repositories.challenge_repository import ChallengeRepository

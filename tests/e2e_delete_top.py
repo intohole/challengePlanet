@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """已弃用：断言停留在原生 dialog+「结束该挑战」旧动线（nuxConfirm 上线前），
 r17 删除动线改为「结束旅程」封存弹窗，由 tests/e2e_archive_r17.py 全量覆盖。"""
-import sys
 
 print("SKIP: 已被 e2e_archive_r17.py 替代（断言基于已废弃的删除动线）")
 raise SystemExit(0)

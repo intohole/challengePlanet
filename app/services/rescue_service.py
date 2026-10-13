@@ -3,17 +3,12 @@ from __future__ import annotations
 from datetime import date
 
 from nexus.logging import get_logger
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.challenge import Challenge
-from app.models.checkin import CheckIn
 from app.services.goal_rule_service import is_cap_mode
 from app.services.streak_service import (
     day_number_of,
-    list_missed_dates,
     shift_date,
-    today_str,
 )
 
 logger = get_logger("challengePlanet.rescue")

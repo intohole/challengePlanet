@@ -40,7 +40,6 @@ def check(name: str, cond: bool, detail: str = "") -> None:
 
 
 def _patch_external() -> None:
-    import app.services.ai_service as ai
     import app.services.checkin_service as checkin
     from app.services.ai_service import AIService
 

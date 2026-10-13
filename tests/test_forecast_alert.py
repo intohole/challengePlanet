@@ -11,7 +11,7 @@ os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{tmpdir}/test.db"
 sys.path.insert(0, "/Users/intoblack/remoteWork/challengePlanet")
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import app.services.challenge_service as challenge_service
 import app.services.forecast_service as forecast_service

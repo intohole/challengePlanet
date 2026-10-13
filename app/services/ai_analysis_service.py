@@ -6,8 +6,6 @@ from collections.abc import AsyncGenerator
 from nexus import get_llm_service, parse_llm_json
 from nexus.logging import get_logger
 
-from app.config import settings
-from app.services.ai_text_sanitizer import sanitize_coach_text
 from app.services.prompts import (
     ADJUST_TASKS_SYSTEM,
     DIAGNOSIS_SYSTEM,
