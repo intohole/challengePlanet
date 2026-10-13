@@ -88,6 +88,7 @@ window.cpViews.home = (function () {
         isDiet ? safe(window.cpApi.get('/challenges/' + ch.id + '/diet/target')) : Promise.resolve(null),
         isDiet ? safe(window.cpApi.get('/challenges/' + ch.id + '/weight/trend')) : Promise.resolve(null),
       ])
+      if (this.loadedFor !== ch.id || s.current !== ch) return
       const d = this.data
       d.today = today
       if (today && today.journey) this._celebrateJourney(ch.id, today.journey)

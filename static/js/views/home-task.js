@@ -141,6 +141,20 @@
     return html + '</div>'
   }
 
+  V._slopeBar = function (t, ch) {
+    const d = this.data
+    let rb = d.returnBlock
+    if (rb === undefined) {
+      try { rb = JSON.parse(sessionStorage.getItem('cp_rb_' + ch.id + '_' + window.cpTodayStr()) || 'null') } catch (e) { rb = null }
+      d.returnBlock = rb
+    }
+    if (!rb || !rb.suggest_adjust) return ''
+    const unit = window.cpEsc(ch.unit || t.unit || '')
+    const last = window.cpFmtInt(rb.last_value)
+    const cap = window.cpFmtInt(t.today_cap || t.today_target || 0)
+    return '<div class="cp-slope-bar" data-testid="slope-bar"><i class="fas fa-stairs" aria-hidden="true"></i><span>上次记录 <b>' + last + ' ' + unit + '</b>，高于今天上限 <b>' + cap + ' ' + unit + '</b>——坡太陡可以后移。</span><button class="cp-slope-btn" onclick="cpViews.home.openShift(' + ch.id + ',\'absence\')">阶梯后移</button></div>'
+  }
+
   V._celebrateJourney = function (chId, j) {
     if (!chId || !j) return
     const keys = (j.milestones || []).filter(m => m.reached).map(m => m.key)
@@ -162,7 +176,7 @@
   V._afterCheckin = function (tt, t, ch) {
     const d = this.data
     if (!t.checked_in) return ''
-    let html = ''
+    let html = this._slopeBar(t, ch)
     if (tt === 'text' && t.checkin_data && t.checkin_data.reflection) {
       html += '<div class="glass-card cp-text-display"><div class="cp-text-display-head"><i class="fas fa-quote-left"></i> 今日记录</div><p class="cp-text-display-body">' + window.cpEsc(t.checkin_data.reflection) + '</p></div>'
     }
