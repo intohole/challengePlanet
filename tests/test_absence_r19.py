@@ -51,7 +51,7 @@ def _rows(values: dict[str, float]) -> list[dict]:
 def test_assess_absence_core_matrix() -> None:
     today = today_str()
     ch = _ladder_challenge()
-    d1, d2, d3 = shift_date(today, -3), shift_date(today, -2), shift_date(today, -1)
+    d1 = shift_date(today, -3)
 
     miss = assess_absence(ch, _rows({d1: 6.0}), today)
     assert miss is not None

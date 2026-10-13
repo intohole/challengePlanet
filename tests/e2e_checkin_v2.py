@@ -88,7 +88,7 @@ def main() -> None:
         page.wait_for_timeout(2500)
         nux2 = page.evaluate("() => !!document.querySelector('.nux-checkin')")
         cal = page.evaluate("() => !!document.querySelector('.nux-checkin-calendar')")
-        shot = page.screenshot(path=os.path.join(OUT, "progress_with_calendar.png"), full_page=False)
+        page.screenshot(path=os.path.join(OUT, "progress_with_calendar.png"), full_page=False)
         check("进度页含打卡日历", nux2 and cal, f"nux={nux2} cal={cal}")
 
         page.evaluate("window.cpSelectChallenge(%d)" % types.get("binary", [1])[0])

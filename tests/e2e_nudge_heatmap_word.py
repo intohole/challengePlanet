@@ -136,7 +136,6 @@ def main() -> None:
         page.wait_for_timeout(1500)
         card_cnt = page.locator(".cp-word-card").count()
         check("词卡面板打开", card_cnt >= 1)
-        first_card = page.locator(".cp-word-card").first
 
         def grade_one(kind: str) -> None:
             page.locator(".cp-word-card", has_text="").first.click()

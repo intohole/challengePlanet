@@ -67,7 +67,6 @@ def main() -> None:
         page.wait_for_selector(".cp-cap-main", timeout=30000)
         check("首页渲染出记一根CTA", True)
 
-        total_before = page.inner_text(".cp-cap-main em")
         page.click(".cp-cap-main")
         page.wait_for_selector(".cp-timeline-item.latest", timeout=15000)
         check("记一根后时间线出现最新记录", True)
