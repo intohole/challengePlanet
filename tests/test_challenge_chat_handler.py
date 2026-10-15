@@ -53,6 +53,7 @@ class FakeSession:
 def _patch_db(monkeypatch, challenge: SimpleNamespace | None, checkins: list | None = None) -> None:
     from app.repositories.challenge_repository import ChallengeRepository
     from app.repositories.checkin_repository import CheckInRepository
+    from app.repositories.points_repository import StreakActionRepository
 
     async def fake_get_by_id(self, session: object, challenge_id: int) -> SimpleNamespace | None:
         return challenge
@@ -60,9 +61,13 @@ def _patch_db(monkeypatch, challenge: SimpleNamespace | None, checkins: list | N
     async def fake_get_checkins(self, session: object, challenge_id: int) -> list:
         return checkins or []
 
+    async def fake_get_actions(self, session: object, challenge_id: int) -> list:
+        return []
+
     monkeypatch.setattr("app.services.companion_service.async_session", FakeSession)
     monkeypatch.setattr(ChallengeRepository, "get_by_id", fake_get_by_id)
     monkeypatch.setattr(CheckInRepository, "get_by_challenge", fake_get_checkins)
+    monkeypatch.setattr(StreakActionRepository, "get_by_challenge", fake_get_actions)
 
 
 def test_default_title(handler: ChallengeChatHandler) -> None:

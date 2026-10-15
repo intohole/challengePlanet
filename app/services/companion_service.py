@@ -6,6 +6,7 @@ from app.db.database import async_session
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
 from app.services.goal_rule_service import is_ladder, ladder_progress_pct
+from app.services.mercy_service import load_valid_dates
 from app.services.streak_service import calc_streak, day_number_of, today_str
 
 _DROP_LOOKBACK = 4
@@ -19,10 +20,9 @@ def _detect_phase(completed: int) -> str:
     return "stable"
 
 
-def _recent_gap(checkins: list, today: str) -> bool:
-    if not checkins:
+def _recent_gap(valid: set[str], today: str) -> bool:
+    if not valid:
         return False
-    valid = {c.date for c in checkins}
     base = datetime.strptime(today, "%Y-%m-%d").date()
     for i in range(1, _DROP_LOOKBACK + 1):
         d = (base - timedelta(days=i)).strftime("%Y-%m-%d")
@@ -31,8 +31,8 @@ def _recent_gap(checkins: list, today: str) -> bool:
     return False
 
 
-def assess_risk(checkins: list, streak: int, today: str) -> dict[str, object]:
-    completed = len({c.date for c in checkins})
+def assess_risk(checkins: list, valid: set[str], streak: int, today: str) -> dict[str, object]:
+    completed = len(valid)
     if completed <= 0:
         return {"score": 0, "level": "low", "reasons": [], "micro_action": "", "phase": "adaptation"}
 
@@ -65,7 +65,7 @@ def assess_risk(checkins: list, streak: int, today: str) -> dict[str, object]:
         score += 10
         reasons.append("最近几次没有完全达标，信心略有波动")
 
-    if _recent_gap(checkins, today):
+    if _recent_gap(valid, today):
         score += 20
         reasons.append("最近有中断记录，连续中断最难重启")
 
@@ -106,11 +106,11 @@ async def load_challenge_state(user_id: str, challenge_id: int) -> dict:
         if challenge is None or challenge.user_id != user_id:
             return {"error": "not_found"}
         checkins = await CheckInRepository().get_by_challenge(session, challenge_id)
-        valid = {c.date for c in checkins}
+        valid = await load_valid_dates(session, challenge_id)
         today = today_str()
         streak = calc_streak(valid, today)
         phase = _detect_phase(len(valid))
-        risk = assess_risk(checkins, streak, today)
+        risk = assess_risk(checkins, valid, streak, today)
         day_number = day_number_of(challenge.start_date, today) if challenge.start_date else 1
         ladder_pct = ladder_progress_pct(challenge, day_number) if is_ladder(challenge) else None
         return {

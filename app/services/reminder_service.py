@@ -141,7 +141,7 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                 checkins = await checkins_repo.get_by_challenge(session, representative.id)
                 valid = await load_valid_dates(session, representative.id)
                 streak = calc_streak(valid, today_str())
-                risk = assess_risk(checkins, streak, today_str())
+                risk = assess_risk(checkins, valid, streak, today_str())
                 content = _reminder_content(risk, len(normal))
                 if len(normal) > 1:
                     title = f"{len(normal)} 个挑战待打卡"

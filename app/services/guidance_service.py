@@ -127,7 +127,7 @@ class GuidanceService:
         avg_completion = int(benchmark["avg_completion"])
         completion_rate = (completed * 100) // challenge.duration_days if challenge.duration_days > 0 else 0
         percentile = self._calc_percentile(completed)
-        risk = assess_risk(checkins, streak, today_str())
+        risk = assess_risk(checkins, valid, streak, today_str())
         companion_msg = await self._build_companion(challenge, streak, phase_key, risk)
         return {
             "phase": phase_key,
