@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.datetime_utils import now_china
 from app.db.database import Base
 
 
@@ -17,7 +18,7 @@ class PointsLedger(Base):
     reason: Mapped[str] = mapped_column(String(32), nullable=False)
     ref_id: Mapped[str] = mapped_column(String(64), default="", nullable=True)
     week_key: Mapped[str] = mapped_column(String(8), index=True, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_china)
 
 
 class StreakAction(Base):
@@ -29,7 +30,7 @@ class StreakAction(Base):
     action: Mapped[str] = mapped_column(String(16), nullable=False)
     action_date: Mapped[str] = mapped_column(String(10), nullable=False)
     cost: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_china)
 
 
 class ChallengeMeta(Base):

@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, Float, Integer, String, Text, DateTime, func
+from sqlalchemy import Boolean, Float, Integer, String, Text, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.datetime_utils import now_china
 from app.db.database import Base
 
 
@@ -57,7 +58,7 @@ class Challenge(Base):
     is_shared: Mapped[bool] = mapped_column(Boolean, default=False)
     share_token: Mapped[str] = mapped_column(String(64), default="")
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_china)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now()
+        DateTime, default=now_china, onupdate=now_china
     )

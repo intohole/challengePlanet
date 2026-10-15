@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Float, Integer, String, Text, DateTime, func, ForeignKey
+from sqlalchemy import Float, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.datetime_utils import now_china
 from app.db.database import Base
 
 
@@ -37,7 +38,7 @@ class CheckIn(Base):
     declaration: Mapped[str] = mapped_column(Text, default="")
     context_tag: Mapped[str] = mapped_column(String(32), default="")
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_china)
 
 
 class AIInsight(Base):
@@ -50,7 +51,7 @@ class AIInsight(Base):
     user_id: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
     insight_type: Mapped[str] = mapped_column(String(16), default="daily")
     content: Mapped[str] = mapped_column(Text, default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_china)
 
 
 class WeightRecord(Base):
@@ -63,4 +64,4 @@ class WeightRecord(Base):
     user_id: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
     date: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
     weight_kg: Mapped[float] = mapped_column(Float, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_china)
