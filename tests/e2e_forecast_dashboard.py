@@ -286,7 +286,7 @@ def main() -> None:
         page.wait_for_timeout(1200)
         body3 = page.locator("body").inner_text()
         check("展示红灯状态(已超计划)", "已超计划" in body3)
-        check("展示严厉文案(停下来)", "停下来，别再继续了" in body3)
+        check("展示严厉文案(收住)", "现在收住，明天是新的一天" in body3)
         check("已超时隐藏前瞻窗口", "对你来说最难" not in body3)
         over_status = page.evaluate("""() => {
           const s = document.querySelector('.cp-dash-status')

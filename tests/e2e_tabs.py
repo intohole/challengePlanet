@@ -63,7 +63,9 @@ def start_server() -> tuple[str, ThreadingHTTPServer]:
     return f"http://127.0.0.1:{port}", httpd
 
 
-TODAY = "2026-08-25"
+from datetime import datetime
+
+TODAY = datetime.now().strftime("%Y-%m-%d")
 
 MOCK = {
     "/api/v1/challenges": {
@@ -102,7 +104,10 @@ MOCK = {
             ],
         }
     },
-    "/api/v1/challenges/1/checkins": {"data": []},
+    "/api/v1/challenges/1/checkins": {"data": [
+        {"timestamp": TODAY + "T08:12:00", "value": 10, "unit": "页", "sub_goal_id": 11, "mood": "good", "reflection": ""},
+        {"timestamp": TODAY + "T21:30:00", "value": 10, "unit": "页", "sub_goal_id": 12, "mood": "normal", "reflection": ""},
+    ]},
     "/api/v1/challenges/1/mercy": {"data": {"missed_dates": []}},
     "/api/v1/challenges/1/weekly-report": {"data": {"content": "本周你完成了 5/7 天打卡，晨间时段表现最佳。", "week_checkins": 5, "week_days": 7}},
     "/api/v1/points/summary": {"data": {"points": 128, "level": 3}},
@@ -200,21 +205,31 @@ def main() -> None:
         check("切换至进度Tab", active is not None and active.inner_text() == "进度", "")
         check("进度卡渲染", page.query_selector(".cp-progress-card") is not None, "")
         check("数据报表渲染", page.query_selector(".cp-report-quickgrid") is not None, "")
-        check("近7天节奏容器渲染", page.query_selector(".cp-today-viz") is not None, "")
-        page.wait_for_selector("#cp-mini-hourly-1 .cp-mini-bar", timeout=10000)
-        bars = page.query_selector_all("#cp-mini-hourly-1 .cp-mini-bar")
-        check("时段条渲染", len(bars) >= 12, f"bars={len(bars)}")
+        check("近7天节奏容器渲染", page.query_selector(".cp-heatmap-card") is not None, "")
+
+        print("== 2b. 打开完整报表（现行动线：mini-hourly 已由报表弹窗玫瑰图替代） ==")
+        page.click(".cp-report-expand")
+        page.wait_for_selector(".cp-report-tab", timeout=10000)
+        page.wait_for_timeout(1500)
+        page.click(".cp-report-tab:has-text('时段分布')")
+        page.wait_for_selector(".cp-rose-bar", timeout=10000)
+        bars = page.query_selector_all(".cp-rose-bar")
+        check("时段玫瑰图渲染", len(bars) >= 12, f"bars={len(bars)}")
+        peak = page.query_selector(".cp-rose-bar.peak")
+        check("峰值时段高亮", peak is not None, "")
+        page.click(".cp-modal .cp-modal-close")
+        page.wait_for_timeout(600)
 
         print("== 3. 切换洞察Tab ==")
         page.click(".cp-tab:has-text('洞察')")
-        page.wait_for_selector(".cp-guidance-card", timeout=10000)
+        page.wait_for_selector(".cp-phase-snap", timeout=10000)
         page.wait_for_timeout(1200)
         shot(page, "tabs_3_insight.png")
         active = page.query_selector(".cp-tab.active span")
         check("切换至洞察Tab", active is not None and active.inner_text() == "洞察", "")
-        check("本周洞察渲染", page.query_selector(".cp-weekly-md") is not None, "")
-        check("引导卡渲染", page.query_selector(".cp-guidance-card") is not None, "")
-        check("里程碑渲染", page.query_selector(".cp-milestone") is not None, "")
+        check("本周洞察渲染", page.query_selector(".cp-weekly-md, .cp-weekly-stream") is not None, "")
+        check("阶段快照渲染", page.query_selector(".cp-phase-snap") is not None, "")
+        check("里程碑进度渲染", page.query_selector(".cp-phase-snap-milestone") is not None, "")
         check("无行业参考数据", page.query_selector(".cp-benchmark") is None, "")
         check("无percentile", page.query_selector(".cp-percentile") is None, "")
         check("无场景徽章", page.query_selector(".cp-hero-scene") is None, "")

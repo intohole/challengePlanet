@@ -60,7 +60,7 @@ chk("decrease 凌晨静默 仍给还可", r["remaining_units"], 10.0)
 
 r = svc.evaluate(FakeCh(), 6, 5, hour=15, today_count=6)
 chk("decrease 已超限 risk=2", r["risk_level"], 2)
-chk("decrease 已超限 话术严厉", r["coach_nudge"], "今天已超 1根。停下来，别再继续了")
+chk("decrease 已超限 话术严厉", r["coach_nudge"], "今天已超 1根。少抽的都还在，现在收住，明天是新的一天")
 
 r = svc.evaluate(FakeCh(), 5, 5, hour=15, today_count=5)
 chk("decrease 到顶 risk=2", r["risk_level"], 2)
