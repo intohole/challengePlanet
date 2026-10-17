@@ -10,7 +10,7 @@ import sys
 import time
 import urllib.request
 
-BASE = "http://127.0.0.1:8610"
+BASE = os.environ.get("E2E_BASE", "http://127.0.0.1:8610")
 API = BASE + "/api/v1"
 SPA = BASE + "/"
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

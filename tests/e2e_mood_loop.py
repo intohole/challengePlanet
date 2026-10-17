@@ -9,7 +9,7 @@ import time
 import urllib.request
 import urllib.error
 
-BASE = os.environ.get("CP_BASE", "http://127.0.0.1:8610/api/v1")
+BASE = os.environ.get("CP_BASE", "http://127.0.0.1:8610") + "/api/v1"
 USER = "cp_mood_" + str(int(time.time()))
 PWD = "CpMood#2026x"
 passed: list[str] = []

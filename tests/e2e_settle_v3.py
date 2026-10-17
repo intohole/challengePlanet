@@ -24,7 +24,23 @@ def check(name: str, cond: bool, detail: str = "") -> None:
         print(f"  FAIL {name} :: {detail}")
 
 
+def ensure_user() -> None:
+    import urllib.request
+    for ep in ("/auth/register", "/auth/login"):
+        try:
+            req = urllib.request.Request(
+                BASE + "/api/v1" + ep,
+                data=json.dumps({"username": USER, "password": PWD}).encode(),
+                headers={"Content-Type": "application/json"}, method="POST")
+            with urllib.request.urlopen(req, timeout=15) as r:
+                if r.status == 200:
+                    return
+        except Exception:
+            continue
+
+
 def main() -> None:
+    ensure_user()
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         ctx = browser.new_context(viewport={"width": 390, "height": 844}, ignore_https_errors=True)

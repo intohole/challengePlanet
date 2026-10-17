@@ -5,7 +5,7 @@ import sys
 import time
 import urllib.request
 
-BASE = os.environ.get("CP_BASE", "http://127.0.0.1:8600/api/v1")
+BASE = os.environ.get("CP_BASE", "http://127.0.0.1:8600") + "/api/v1"
 DB = os.environ.get(
     "CP_DB", "/home/cool/workspace/miniDeploy/apps/challengePlanet/extracted/data/challenge.db"
 )
