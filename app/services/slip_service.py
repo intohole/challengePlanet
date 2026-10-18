@@ -130,7 +130,7 @@ async def send_slip_care() -> None:
                     "priority": 3,
                     "app_id": "challengePlanet",
                     "channels": ["in_app", "email"],
-                    "link": f"/challengePlanet/?ch={challenge.id}&slip=1",
+                    "link": f"/challengePlanet/?ch={challenge.id}&slip=1&rc=slip",
                     "data": {"challenge_id": challenge.id, "slip_care": True},
                 })
                 marks.append((int(challenge.id), str(challenge.user_id), yesterday))

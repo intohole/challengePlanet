@@ -30,7 +30,8 @@ window.cpViews = window.cpViews || {}
           const cur = s.current && s.current.id === c.id
           const done = c.status === 'completed' || c.status === 'graduated'
           const statusLabel = c.status === 'graduated' ? '已毕业' : (done ? '已完成' : (c.status === 'active' ? '进行中' : '已结束'))
-          const stTxt = (c.streak || 0) > 0 ? '连续 ' + c.streak + ' 天' : ((c.completed_days || 0) > 0 ? '上次连续 ' + (c.last_streak || 0) + ' 天' : '连续 0 天')
+          const silentTxt = (c.streak || 0) > 0 && (c.silent_kept || 0) > 0 ? '（' + c.silent_kept + ' 天静默守）' : ''
+          const stTxt = (c.streak || 0) > 0 ? '连续 ' + c.streak + ' 天' + silentTxt : ((c.completed_days || 0) > 0 ? '上次连续 ' + (c.last_streak || 0) + ' 天' : '连续 0 天')
           const endIcon = done ? 'fa-box-archive' : 'fa-flag'
           const endTitle = done ? '归档这段旅程' : '结束这段旅程'
           html += '<button class="cp-ch-row' + (cur ? ' current' : '') + '" onclick="cpSelectChallenge(\'' + c.id + '\')"><span class="cp-ch-row-icon">' + (c.icon || window.cpTemplates[0].icon) + '</span><span class="cp-ch-row-info"><span class="cp-ch-row-title">' + window.cpEsc(this.titleClean(c.title)) + '</span><span class="cp-progress-bar"><span class="cp-progress-fill" style="width:' + pct + '%"></span></span><span class="cp-ch-row-meta"><span class="cp-ch-status' + (done ? ' done' : '') + '">' + statusLabel + '</span>' + (c.completed_days || 0) + '/' + c.total_days + ' 天 · ' + stTxt + '</span></span>' + (cur ? '<span class="cp-ic-primary"><i class="fas fa-circle-check"></i></span>' : '') + '<span class="cp-ch-row-end" role="button" tabindex="0" aria-label="' + endTitle + '" title="' + endTitle + '" onclick="event.stopPropagation();cpViews.me.endChallenge(' + c.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();cpViews.me.endChallenge(' + c.id + ')}"><i class="fas ' + endIcon + '"></i></span></button>'

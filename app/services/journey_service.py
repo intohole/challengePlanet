@@ -5,6 +5,8 @@ from datetime import date, datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.checkin_repository import CheckInRepository
+from app.services.mercy_service import load_valid_dates
+from app.services.streak_service import shift_date, trailing_kept_from_valid
 from app.services.goal_rule_service import (
     daily_target,
     is_cap_mode,
@@ -238,7 +240,36 @@ class JourneyService:
                 session, int(getattr(challenge, "id")),
                 start_date.isoformat(), today.isoformat(),
             )
-        return compute_journey(challenge, rows, day_number, start_date, today)
+        block = compute_journey(challenge, rows, day_number, start_date, today)
+        if block is not None and block.get("mode") == "reduction":
+            valid = await load_valid_dates(session, int(getattr(challenge, "id")))
+            kept = trailing_kept_from_valid(
+                valid, today.isoformat(), start_date.isoformat(),
+                str(getattr(challenge, "end_date", "") or ""),
+            )
+            checkin_rows = await self._repo.get_by_challenge(session, int(getattr(challenge, "id")))
+            checkin_dates = {str(c.date) for c in checkin_rows}
+            block["guard_days"] = kept
+            block["guard_silent"] = _silent_in_window(valid, checkin_dates, today.isoformat(), kept)
+            for m in block.get("milestones", []):
+                if str(m.get("key")) == f"guard_{GUARD_DAYS}":
+                    m["reached"] = kept >= GUARD_DAYS
+        return block
+
+
+def _silent_in_window(
+    valid: set[str], checkin_dates: set[str], today_iso: str, window: int,
+) -> int:
+    """guard 窗口（昨天往回 window 天的 valid 段）内无记录的守住天数。"""
+    silent = 0
+    counted = 0
+    cursor = shift_date(today_iso, -1)
+    while counted < window and cursor in valid:
+        if cursor not in checkin_dates:
+            silent += 1
+        counted += 1
+        cursor = shift_date(cursor, -1)
+    return silent
 
 
 def journey_prompt_line(journey: dict[str, object] | None) -> str:

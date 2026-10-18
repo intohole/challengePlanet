@@ -5,6 +5,8 @@ import json
 from nexus import loads_or
 from nexus.logging import get_logger
 from nexus.notify import get_notify_client
+
+from app.services.reminder_guard import sendable_users
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import async_session
@@ -86,8 +88,20 @@ async def send_forecast_alerts() -> None:
             if not by_user:
                 logger.info("no forecast alerts to send")
                 return
+            sendable = await sendable_users(by_user.keys())
+            skipped = set(by_user) - sendable
+            if skipped:
+                logger.info(
+                    "audience guard: %d forecast users skipped (orphan/test/disabled)",
+                    len(skipped),
+                )
+            by_user = {u: a for u, a in by_user.items() if u in sendable}
+            if not by_user:
+                logger.info("all forecast alerts filtered by audience guard")
+                return
             client = get_notify_client()
             items: list[dict[str, object]] = []
+            marks: list[list] = []
             for user_id, alerts in by_user.items():
                 title, content = _compose(alerts)
                 high = any(int(f.get("risk_level", 0) or 0) >= 2 for _, f, _ in alerts)
@@ -102,9 +116,16 @@ async def send_forecast_alerts() -> None:
                     "link": "/challengePlanet/",
                     "data": {"challenge_count": len(alerts)},
                 })
-                for challenge, _, _ in alerts:
-                    await _mark_alerted(session, challenge, today)
-            await client.send_many(items)
+                marks.append([challenge for challenge, _, _ in alerts])
+            results = await client.send_many(items)
+            for alert_list, result in zip(marks, results):
+                if isinstance(result, dict) and result.get("status") == "sent":
+                    for challenge, _, _ in alert_list:
+                        await _mark_alerted(session, challenge, today)
+                else:
+                    logger.warning(
+                        "forecast alert not sent — mark skipped (will retry next run)",
+                    )
             await session.commit()
             logger.info("forecast alerts sent to %d users", len(items))
     except Exception as e:

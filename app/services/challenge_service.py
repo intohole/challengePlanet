@@ -24,7 +24,13 @@ from app.services.mercy_service import MercyService, load_valid_dates
 from app.services.rescue_service import assess_rescue
 from app.services.period_service import period_fields, week_aggregates
 from app.services.slip_service import assess_slip
-from app.services.streak_service import calc_streak, shift_date, streak_before, today_str
+from app.services.streak_service import (
+    calc_streak,
+    shift_date,
+    silent_kept_of,
+    streak_before,
+    today_str,
+)
 from app.services.target_service import TargetService
 
 logger = logging.getLogger(__name__)
@@ -171,10 +177,13 @@ class ChallengeService:
         valid = valid_dates if valid_dates is not None else await load_valid_dates(session, challenge.id)
         completed = (sum(1 for d in valid if d < today_str()) if is_cap_mode(challenge)
                      else await self._checkin_repo.count_active_days(session, challenge.id))
+        checkin_rows = await self._checkin_repo.get_by_challenge(session, challenge.id)
+        checkin_dates = {str(c.date) for c in checkin_rows}
         return {
             "completed_days": completed,
             "total_days": challenge.duration_days,
             "streak": calc_streak(valid, today_str()),
+            "silent_kept": silent_kept_of(valid, checkin_dates, today_str()),
             "last_streak": streak_before(valid, shift_date(max(valid), 1)) if valid else 0,
         }
 
@@ -223,6 +232,7 @@ class ChallengeService:
             total_days=stats["total_days"],
             completed_days=stats["completed_days"],
             streak=stats["streak"],
+            silent_kept=int(stats.get("silent_kept", 0)),
             last_streak=stats["last_streak"],
             start_date=c.start_date, end_date=c.end_date, status=c.status,
             ai_plan=plan, color=c.color, icon=c.icon,
@@ -376,6 +386,7 @@ class ChallengeService:
                 for c in today_checkins
             ],
             "streak": stats["streak"],
+            "silent_kept": int(stats.get("silent_kept", 0)),
             "total_checkins": stats["completed_days"],
         }
 

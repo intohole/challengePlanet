@@ -185,6 +185,7 @@ function handleQuery() {
         state.current = target
         const gradParam = q.get('grad')
         state.slipDeeplink = q.get('slip') === '1' ? target.id : null
+        if (window.cpRecallTrack) window.cpRecallTrack.arrived(target.id, q.get('rc') || 'deep')
         if (changed && state.view === 'home') switchView('home')
         window.cpToast(gradParam
           ? '🎓 减量阶梯毕业，来看看你的旅程'

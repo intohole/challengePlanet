@@ -123,7 +123,9 @@ def test_push_texts():
 
 
 def test_rescue_notify_due_throttle():
-    for m in (1, 2, 3):
+    for m in (1, 2):
+        assert rescue_notify_due(m, "2026-10-05") is False
+    for m in (3,):
         assert rescue_notify_due(m, "2026-10-05") is True
     assert rescue_notify_due(4, "2026-10-05") is False
     assert rescue_notify_due(4, "2026-10-06") is True

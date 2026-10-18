@@ -21,6 +21,7 @@ from app.api.checkin import router as checkin_router
 from app.api.diet import router as diet_router
 from app.api.ladder import router as ladder_router
 from app.api.points import router as points_router
+from app.api.recall import router as recall_router
 from app.api.reminder import router as reminder_router
 from app.api.report import router as report_router
 from app.config import settings
@@ -131,6 +132,7 @@ app.include_router(reminder_router, prefix=API_PREFIX + "/challenges")
 app.include_router(ladder_router, prefix=API_PREFIX + "/challenges")
 app.include_router(points_router, prefix=API_PREFIX)
 app.include_router(archives_router, prefix=API_PREFIX)
+app.include_router(recall_router, prefix=API_PREFIX)
 app.include_router(chat_router(ChatEngine(db_engine).register("challengePlanet", challenge_chat_handler), "challengePlanet"))
 
 register_notify_proxy(app)

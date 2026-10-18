@@ -103,6 +103,7 @@ class ChallengeResponse(BaseModel):
     total_days: int = 0
     completed_days: int = 0
     streak: int = 0
+    silent_kept: int = 0
     last_streak: int = 0
     start_date: str = ""
     end_date: str = ""
@@ -206,6 +207,7 @@ class TodayTaskResponse(BaseModel):
     checkin_data: Optional[dict[str, object]] = None
     today_checkins: list[dict[str, object]] = Field(default_factory=list)
     streak: int = 0
+    silent_kept: int = 0
     total_checkins: int = 0
 
     diet: Optional[dict[str, object]] = None

@@ -43,6 +43,6 @@ def test_rescue_notify_item_shape():
     assert item["user_id"] == "42"
     assert "星轨还在" in item["title"]
     assert "3 天" in item["content"]
-    assert item["link"].endswith("ch=7&rescue=1")
+    assert item["link"].endswith("ch=7&rescue=1&rc=rescue")
     assert item["data"]["rescue"] is True
     assert item["priority"] == 4

@@ -170,7 +170,7 @@ async def test_collect_absence_items_end_to_end() -> None:
         assert len(items) == 1
         payload = items[0]["payload"]
         assert payload["title"] == "「戒断挑战」2 天没见了"
-        assert payload["link"] == f"/challengePlanet/?ch={ch.id}"
+        assert payload["link"] == f"/challengePlanet/?ch={ch.id}&rc=absence"
         assert payload["channels"] == ["in_app", "email"]
         assert items[0]["absence"]["suggest_adjust"] is False
 

@@ -160,7 +160,7 @@ async def collect_absence_items(
                 "priority": 3,
                 "app_id": "challengePlanet",
                 "channels": ["in_app", "email"],
-                "link": f"/challengePlanet/?ch={challenge.id}",
+                "link": f"/challengePlanet/?ch={challenge.id}&rc=absence",
                 "data": {"challenge_id": challenge.id, "absence_care": True},
             },
             "challenge_id": int(challenge.id),

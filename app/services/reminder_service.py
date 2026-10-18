@@ -16,7 +16,14 @@ from app.services.absence_service import collect_absence_items, mark_absence_sen
 from app.services.companion_service import assess_risk, companion_text
 from app.services.goal_rule_service import is_cap_mode
 from app.services.mercy_service import load_valid_dates
-from app.services.rescue_service import assess_rescue, rescue_notify_due, rescue_text
+from app.services.reminder_guard import sendable_users
+from app.services.rescue_service import (
+    assess_rescue,
+    mark_rescue_sent,
+    rescue_notify_due,
+    rescue_sent_today,
+    rescue_text,
+)
 from app.services.streak_service import calc_streak, today_str
 
 logger = get_logger("challengePlanet.reminder")
@@ -83,7 +90,7 @@ def _rescue_notify_item(
         "priority": 4,
         "app_id": "challengePlanet",
         "channels": ["in_app", "email"],
-        "link": f"/challengePlanet/?ch={challenge.id}&rescue=1",
+        "link": f"/challengePlanet/?ch={challenge.id}&rescue=1&rc=rescue",
         "data": {"challenge_id": challenge.id, "missed_days": missed_days, "rescue": True},
     }
 
@@ -116,24 +123,45 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
             if not grouped and not absence_by_user:
                 logger.info("No users preferring hour=%s, skipping.", current)
                 return
+            sendable = await sendable_users(set(grouped) | set(absence_by_user))
+            skipped = (set(grouped) | set(absence_by_user)) - sendable
+            if skipped:
+                logger.info(
+                    "audience guard: %d users skipped (orphan/test/disabled)", len(skipped),
+                )
+            grouped = {u: cs for u, cs in grouped.items() if u in sendable}
+            absence_by_user = {u: es for u, es in absence_by_user.items() if u in sendable}
+            if not grouped and not absence_by_user:
+                logger.info("All candidates filtered by audience guard, skipping.")
+                return
             logger.info(
                 "Sending reminders to %d users at hour=%s (%d absence)...",
                 len(grouped), current, len(absence_by_user),
             )
             client = get_notify_client()
             checkins_repo = CheckInRepository()
-            items: list[dict[str, object]] = []
+            rescue_payloads: list[dict[str, object]] = []
+            rescue_metas: list[dict[str, object]] = []
+            normal_items: list[dict[str, object]] = []
             rescued_ids: set[int] = set()
             for user_id, challenges in grouped.items():
                 rescue_items: list[tuple[Challenge, dict[str, object]]] = []
                 for challenge in challenges:
                     valid = await load_valid_dates(session, challenge.id)
                     signal = assess_rescue(challenge, valid, today_str(), today_checked=False)
-                    if signal and rescue_notify_due(int(signal["missed_days"]), today_str()):
+                    if (
+                        signal
+                        and rescue_notify_due(int(signal["missed_days"]), today_str())
+                        and not await rescue_sent_today(session, challenge.id)
+                    ):
                         rescue_items.append((challenge, signal))
                 for challenge, signal in rescue_items:
                     rescued_ids.add(challenge.id)
-                    items.append(_rescue_notify_item(user_id, challenge, int(signal["missed_days"])))
+                    rescue_payloads.append(_rescue_notify_item(user_id, challenge, int(signal["missed_days"])))
+                    rescue_metas.append({
+                        "challenge_id": int(challenge.id), "user_id": user_id,
+                        "missed_days": int(signal["missed_days"]),
+                    })
                 normal = [c for c in challenges if c.id not in rescued_ids]
                 if not normal:
                     continue
@@ -148,7 +176,7 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                 else:
                     title = f"「{representative.title}」打卡提醒"
                 priority = 4 if risk["level"] == "high" else 3
-                items.append(
+                normal_items.append(
                     {
                         "user_id": user_id,
                         "title": title,
@@ -162,8 +190,22 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                     }
                 )
             absence_flat = [e for entries in absence_by_user.values() for e in entries]
-            if items:
-                await client.send_many(items)
+            if rescue_payloads:
+                rescue_results = await client.send_many(rescue_payloads)
+                for meta, result in zip(rescue_metas, rescue_results):
+                    if isinstance(result, dict) and result.get("status") == "sent":
+                        await mark_rescue_sent(
+                            session, meta["challenge_id"], meta["user_id"], meta["missed_days"],
+                        )
+                    else:
+                        logger.warning(
+                            "rescue not sent for challenge %s: %s — mark skipped",
+                            meta["challenge_id"],
+                            result.get("status") if isinstance(result, dict) else result,
+                        )
+                await session.commit()
+            if normal_items:
+                await client.send_many(normal_items)
             if absence_flat:
                 results = await client.send_many([e["payload"] for e in absence_flat])
                 for entry, result in zip(absence_flat, results):
@@ -180,8 +222,8 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                         )
                 await session.commit()
             logger.info(
-                "Check-in reminders processed: %d items (%d rescue, %d absence) for %d users.",
-                len(items) + len(absence_flat), len(rescued_ids), len(absence_flat),
+                "Check-in reminders processed: %d rescue + %d normal + %d absence for %d users.",
+                len(rescue_payloads), len(normal_items), len(absence_flat),
                 len(grouped) + len(absence_by_user),
             )
     except Exception as e:

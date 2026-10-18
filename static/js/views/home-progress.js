@@ -177,7 +177,9 @@
     html += this._quickStat('今日', (d.today && d.today.today_total) || 0, '/', (d.today && d.today.today_target) || ch.target_value, ch.unit, 'var(--emerald)')
     const baseline = (d.today && d.today.dynamic_baseline) || 0
     html += this._quickStat('动态基线', baseline.toFixed(1), '', '', ch.unit, 'var(--amber)')
-    html += this._quickStat('连续', ch.streak || 0, '', '', '天', 'var(--primary-light)')
+    const silentKept = (d.today && d.today.silent_kept) || 0
+    const streakUnit = silentKept > 0 ? '天·含' + silentKept + '静默守' : '天'
+    html += this._quickStat('连续', ch.streak || 0, '', '', streakUnit, 'var(--primary-light)')
     html += this._quickStat('累计', ch.completed_days || 0, '/', ch.total_days || 0, '天', 'var(--primary)')
     html += '</div>'
     return html

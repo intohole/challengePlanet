@@ -57,6 +57,44 @@ def streak_before(valid_dates: set[str], from_date: str) -> int:
     return streak
 
 
+def silent_kept_of(
+    valid_dates: set[str], checkin_dates: set[str], today: str,
+) -> int:
+    """当前 streak 窗口内「静默守」的天数：valid 但无打卡记录（今天不计）。
+
+    cap 补齐口径下没记录=没超上限=守住（缺席披露：连续数字不因缺勤虚涨，
+    但静默守的部分如实披露——「连续 10 天（含 3 天静默守）」）。
+    """
+    yesterday = shift_date(today, -1)
+    cursor = today if today in valid_dates else yesterday
+    if cursor not in valid_dates:
+        return 0
+    silent = 0
+    while cursor in valid_dates:
+        if cursor != today and cursor not in checkin_dates:
+            silent += 1
+        cursor = shift_date(cursor, -1)
+    return silent
+
+
+def trailing_kept_from_valid(
+    valid_dates: set[str], today: str, start_date: str, end_date: str,
+) -> int:
+    """journey「连续守住」口径对齐：从昨天往回数 valid 连续天数（补齐口径）。
+
+    与 trailing_guard_days（记录口径，没记录即断）的区别：静默守也计入——
+    减量挑战的本质是「不超上限」不是「必须记录」（r21 口径统一收口）。
+    """
+    cursor = shift_date(today, -1)
+    count = 0
+    while cursor >= start_date and (not end_date or cursor <= end_date):
+        if cursor not in valid_dates:
+            break
+        count += 1
+        cursor = shift_date(cursor, -1)
+    return count
+
+
 def list_missed_dates(
     start_date: str,
     end_date: str,

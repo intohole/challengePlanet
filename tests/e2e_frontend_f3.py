@@ -130,7 +130,7 @@ def main():
             t = api("GET", f"/challenges/{cid}/today", token=token)
             return (t.get("data") or t).get("today_total")
 
-        page.goto(SPA, wait_until="domcontentloaded")
+        page.goto(SPA + "?ch=" + str(cid_a), wait_until="domcontentloaded")
         page.wait_for_selector('[data-testid="absence-card"]', timeout=15000)
         page.wait_for_timeout(600)
 
@@ -163,10 +163,13 @@ def main():
             stxt = slope.inner_text()
             check("A9 行动条含上次记录与上限", "15 根" in stxt and "10 根" in stxt, stxt)
 
-        page.reload(wait_until="domcontentloaded")
-        page.wait_for_timeout(1500)
-        slope2 = page.query_selector('[data-testid="slope-bar"]')
-        check("A10 reload 后行动条仍在(sessionStorage)", slope2 is not None, "slope-bar missing after reload")
+        page.goto(SPA + "?ch=" + str(cid_a), wait_until="domcontentloaded")
+        try:
+            page.wait_for_selector('[data-testid="slope-bar"]', timeout=8000)
+            slope2 = page.query_selector('[data-testid="slope-bar"]')
+        except Exception:
+            slope2 = None
+        check("A10 重新进入后行动条仍在(sessionStorage 持久)", slope2 is not None, "slope-bar missing after re-entry")
 
         if slope2:
             page.click('[data-testid="slope-bar"] .cp-slope-btn')
@@ -180,6 +183,8 @@ def main():
                 preview = sheet.query_selector('[data-testid="shift-preview"]')
                 ptxt = preview.inner_text() if preview else ""
                 check("A13 preview 含上次记录行", "上次记录" in ptxt and "15" in ptxt, ptxt)
+            pv3 = api("POST", f"/challenges/{cid_a}/ladder-adjust", {"shift_days": 3, "preview": True}, token)
+            pv_cap = (pv3.get("data") or pv3).get("today_cap")
             page.click('[data-testid="ladder-shift-sheet"] [data-shift="3"]')
             page.wait_for_timeout(600)
             page.click('[data-testid="ladder-shift-sheet"] .cp-btn-primary.cp-block')
@@ -187,7 +192,7 @@ def main():
             check("A14 换挡后行动条消失", page.query_selector('[data-testid="slope-bar"]') is None, "slope-bar still visible")
             t2 = api("GET", f"/challenges/{cid_a}/today", token=token)
             new_cap = (t2.get("data") or t2).get("today_cap")
-            check("A15 换挡真生效 cap 变化", new_cap != 10, f"cap={new_cap}（preview 显示 11 与落库 12 的口径差=r18 后端遗留，转业务轮）")
+            check("A15 换挡生效且与同档预览一致", new_cap == pv_cap != 10, f"cap={new_cap} preview(k=3)={pv_cap}（r18 遗留「preview 11 vs confirm 12」经 r21 复现系断言混淆默认 k=2 预览与 k=3 确认，后端口径一致）")
 
         page.goto(SPA + "?ch=" + str(cid_b), wait_until="domcontentloaded")
         page.wait_for_selector('[data-testid="absence-card"]', timeout=15000)
