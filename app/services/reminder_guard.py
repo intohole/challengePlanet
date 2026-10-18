@@ -78,7 +78,7 @@ async def _fetch_statuses(ids: list[str]) -> dict[str, dict[str, object]] | None
         headers = await client.header()
         async with httpx.AsyncClient(timeout=httpx.Timeout(8.0, connect=3.0)) as http:
             resp = await http.get(
-                f"{base_url}/internal/users/status",
+                f"{base_url}/api/internal/users/status",
                 params={"ids": ",".join(ids[:200])},
                 headers=headers,
             )
