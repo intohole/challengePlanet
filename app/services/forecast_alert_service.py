@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 
 from nexus import loads_or
+from nexus.audience import sendable_users
 from nexus.logging import get_logger
 from nexus.notify import get_notify_client
 
-from app.services.reminder_guard import sendable_users
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import async_session

@@ -3,6 +3,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from nexus.audience import sendable_users
 from nexus.notify import get_notify_client
 from nexus.logging import get_logger
 
@@ -16,7 +17,6 @@ from app.services.absence_service import collect_absence_items, mark_absence_sen
 from app.services.companion_service import assess_risk, companion_text
 from app.services.goal_rule_service import is_cap_mode
 from app.services.mercy_service import load_valid_dates
-from app.services.reminder_guard import sendable_users
 from app.services.rescue_service import (
     assess_rescue,
     mark_rescue_sent,

@@ -7,12 +7,14 @@ import tempfile
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from nexus import audience
+
 import app.models  # noqa: F401 register all tables
 from app.db.database import Base
 from app.models.challenge import Challenge
 from app.models.checkin import AIInsight, CheckIn
 from app.models.recall import RecallEvent
-from app.services import reminder_guard, recall_service
+from app.services import recall_service
 from app.services.journey_service import JourneyService, _silent_in_window
 from app.services.mercy_service import load_valid_dates
 from app.services.rescue_service import mark_rescue_sent, rescue_notify_due
@@ -66,10 +68,10 @@ def test_sendable_users_fail_open_on_fetch_error(monkeypatch: pytest.MonkeyPatch
     async def boom(ids: list[str]):
         return None
 
-    monkeypatch.setattr(reminder_guard, "_fetch_statuses", boom)
-    out = asyncio.run(reminder_guard.sendable_users({"1001", "2002"}))
+    monkeypatch.setattr(audience, "_fetch_statuses", boom)
+    out = asyncio.run(audience.sendable_users({"1001", "2002"}))
     assert out == {"1001", "2002"}
-    reminder_guard._status_cache.clear()
+    audience._status_cache.clear()
 
 
 def test_sendable_users_filters_orphan_and_test(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -80,15 +82,15 @@ def test_sendable_users_filters_orphan_and_test(monkeypatch: pytest.MonkeyPatch)
             "3003": {"exists": True, "is_test": True, "disabled": False},
         }
 
-    monkeypatch.setattr(reminder_guard, "_fetch_statuses", fake)
-    out = asyncio.run(reminder_guard.sendable_users({"1001", "2002", "3003"}))
+    monkeypatch.setattr(audience, "_fetch_statuses", fake)
+    out = asyncio.run(audience.sendable_users({"1001", "2002", "3003"}))
     assert out == {"1001"}
-    reminder_guard._status_cache.clear()
+    audience._status_cache.clear()
 
 
 def test_sendable_users_guard_off(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("REMINDER_GUARD_OFF", "1")
-    out = asyncio.run(reminder_guard.sendable_users({"1001"}))
+    out = asyncio.run(audience.sendable_users({"1001"}))
     assert out == {"1001"}
     monkeypatch.delenv("REMINDER_GUARD_OFF")
 
