@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <script src="https://songguokr.com/nexus-ui/v2.70.10/js/nexus-theme-init.js"></script>
 <link rel="icon" type="image/svg+xml" href="/static/icon.svg?h=89ab3b1780">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-content">
 <title>星轨挑战 · AI打卡教练</title>
 <script>window.PATH_PREFIX = window.PATH_PREFIX || ''</script>
 <link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.70.10/vendor/fontawesome/css/all.min.css">
 <link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.70.10/css/nexus-all.css">
 <link rel="stylesheet" href="/static/style.css?v=20261003a">
-<link rel="stylesheet" href="/static/style-components.css?v=20261010a">
-<link rel="stylesheet" href="/static/style-checkin.css?v=20261002a">
-<link rel="stylesheet" href="/static/style-multi.css?v=e6b206d29f">
+<link rel="stylesheet" href="/static/style-components.css?v=20261020a">
+<link rel="stylesheet" href="/static/style-checkin.css?v=20261020a">
+<link rel="stylesheet" href="/static/style-multi.css?v=20261020a">
 <link rel="stylesheet" href="/static/style-slip.css?v=20261013b">
 <script src="https://songguokr.com/nexus-ui/v2.70.10/vendor/vue.global.prod.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.70.10/js/nexus-all.js"></script>
@@ -470,7 +470,7 @@
     <span class="cp-companion-stat"><i class="fas fa-fire"></i> 连续 {{ state.companionMeta.streak || 0 }} 天</span>
     <span class="cp-companion-stat"><i class="fas fa-calendar-check"></i> 已完成 {{ state.companionMeta.completed_days }} 天</span>
     <span class="cp-companion-stat" :class="'cp-risk-' + (state.companionMeta.risk_level || 'low')"><i class="fas fa-heart-pulse"></i> {{ riskLabel(state.companionMeta.risk_level) }}</span>
-    <span v-if="state.companionMeta.ladder_progress_pct !== undefined && state.companionMeta.ladder_progress_pct !== null" class="cp-companion-stat"><i class="fas fa-stairs"></i> 阶梯 {{ state.companionMeta.ladder_progress_pct }}%</span>
+    <span v-if="state.companionMeta.ladder_progress_pct !== undefined && state.companionMeta.ladder_progress_pct !== null" class="cp-companion-stat"><i class="fas fa-stairs"></i> 阶梯 {{ cpFmtNum(state.companionMeta.ladder_progress_pct) }}%</span>
   </div>
   <div class="cp-companion-chat">
     <nux-ai-chat
@@ -478,7 +478,7 @@
       :send-handler="cpCompanion.sendHandler"
       :welcome="{ icon: '🤖', title: '我是你的挑战伴学', description: '聊聊今天的进展，我会陪你稳住节奏、给出可执行的建议～' }"
       :quick-replies="companionQuickReplies"
-      :features="{ stopButton: true, streamFallback: false, scrollToBottomButton: true, smartScroll: true, messageCopy: true, aiTag: true, voice: true }"
+      :features="{ stopButton: true, streamFallback: false, scrollToBottomButton: true, smartScroll: true, messageCopy: true, aiTag: true, voice: true, keyboardAvoid: true }"
       :input-config="{ enterToSend: true, autoResize: false, maxLength: 500, maxRows: 4, voiceUrl: '/v1/voice/transcribe' }"
       :roles="{ user: { avatar: '👤', label: '我' }, assistant: { avatar: '🤖', label: '挑战伴学', aiTag: true } }"
       placeholder="说说今天的进展或困扰..."
@@ -495,7 +495,7 @@
 </div></transition>
 
 </div>
-<script src="/static/js/galaxy.js?v=20260728"></script>
+<script src="/static/js/galaxy.js?v=20261020a"></script>
 <script src="/static/js/share-poster.js?v=20260728"></script>
 <script src="/static/js/graduation-cert.js?v=20261005a"></script>
 <script src="/static/js/create.js?v=20260915a"></script>
@@ -511,14 +511,14 @@
 <script src="/static/js/views/home-record.js?v=20261010a"></script>
 <script src="/static/js/views/recall-track.js?v=20261019a"></script>
 <script src="/static/js/views/ladder-adjust.js?v=20261013a"></script>
-<script src="/static/js/views/learn-word.js?v=20260915d"></script>
+<script src="/static/js/views/learn-word.js?v=20261020a"></script>
     <script src="/static/js/views/learn-poem.js?v=20260915d"></script>
     <script src="/static/js/views/learn-pomodoro.js?v=20260915d"></script>
     <script src="/static/js/views/learn-stopwatch.js?v=20260915d"></script>
-<script src="/static/js/views/home-progress.js?v=20261019a"></script>
+<script src="/static/js/views/home-progress.js?v=20261020a"></script>
 <script src="/static/js/views/home-insights.js?v=20261003a"></script>
 <script src="/static/js/views/home-lifecycle.js?v=20261002a"></script>
-<script src="/static/js/views/me.js?v=20261019a"></script>
+<script src="/static/js/views/me.js?v=20261020a"></script>
 <script src="https://songguokr.com/nexus-ui/v2.70.10/js/components/nux-ai-chat-helpers.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.70.10/js/components/nux-ai-chat-template.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.70.10/js/components/nux-ai-widgets.js"></script>
@@ -528,9 +528,9 @@
 <script src="https://songguokr.com/nexus-ui/v2.70.10/js/components/nux-conversation-list.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.70.10/js/components/nux-menu-about.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.70.10/js/components/nux-menu-user.js"></script>
-<script src="/static/js/home-companion.js?v=20260919a"></script>
+<script src="/static/js/home-companion.js?v=20261020a"></script>
 <script src="/static/js/data-scenes.js?v=20261006a"></script>
-<script src="/static/js/app.js?v=20261019a"></script>
+<script src="/static/js/app.js?v=20261020a"></script>
 <script src="https://songguokr.com/nexus-ui/v2.70.10/js/components/nux-checkin.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.70.10/js/components/nux-calendar.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.70.10/js/components/nux-camera-recognize.js"></script>

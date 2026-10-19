@@ -178,18 +178,18 @@
     const baseline = (d.today && d.today.dynamic_baseline) || 0
     html += this._quickStat('动态基线', baseline.toFixed(1), '', '', ch.unit, 'var(--amber)')
     const silentKept = (d.today && d.today.silent_kept) || 0
-    const streakUnit = silentKept > 0 ? '天·含' + silentKept + '静默守' : '天'
-    html += this._quickStat('连续', ch.streak || 0, '', '', streakUnit, 'var(--primary-light)')
+    html += this._quickStat('连续', ch.streak || 0, '', '', '天', 'var(--primary-light)', window.cpStreakSilent(silentKept))
     html += this._quickStat('累计', ch.completed_days || 0, '/', ch.total_days || 0, '天', 'var(--primary)')
     html += '</div>'
     return html
   }
 
-  V._quickStat = function (label, val, sep, val2, unit, color) {
+  V._quickStat = function (label, val, sep, val2, unit, color, note) {
     let v = '<div class="cp-quick-stat"><div class="cp-quick-stat-label">' + label + '</div>'
     v += '<div class="cp-quick-stat-val" style="color:' + color + '"><b>' + val + '</b>'
     if (sep) v += '<span class="cp-quick-stat-sep">' + sep + '</span><span class="cp-quick-stat-val2">' + val2 + '</span>'
-    v += '</div><div class="cp-quick-stat-unit">' + window.cpEsc(unit || '') + '</div></div>'
-    return v
+    v += '</div><div class="cp-quick-stat-unit">' + window.cpEsc(unit || '') + '</div>'
+    if (note) v += '<div class="cp-quick-stat-note" title="' + window.cpEsc(window.cpStreakHint) + '">' + window.cpEsc(note) + '</div>'
+    return v + '</div>'
   }
 })()

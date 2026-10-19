@@ -63,7 +63,8 @@
     }
     let html = '<div class="cp-checkin-box">'
     html += '<div class="cp-word-progress"><span>今日 ' + (d.wordNewTotal || total) + ' 新词' + (d.wordReviewTotal ? ' + ' + d.wordReviewTotal + ' 复习' : '') + '</span><span>' + (d.wordIdx + 1) + '/' + total + '</span></div>'
-    html += '<div class="cp-word-card' + (d.wordRevealed ? ' revealed' : '') + '" onclick="cpViews.home.wordReveal()">'
+    V._ensureWordKeys()
+    html += '<div class="cp-word-card' + (d.wordRevealed ? ' revealed' : '') + '" role="button" tabindex="0" aria-label="' + (d.wordRevealed ? '词卡 ' + window.cpEsc(cur.w) : '词卡 ' + window.cpEsc(cur.w) + '，按空格或回车查看释义') + '" onclick="cpViews.home.wordReveal()">'
     if (cur.r) html += '<span class="cp-word-review-tag">🔁 复习</span>'
     html += '<div class="cp-word-main">' + window.cpEsc(cur.w) + '</div>'
     if (d.wordRevealed) {
@@ -72,16 +73,40 @@
     }
     html += '</div>'
     if (!d.wordRevealed) {
-      html += '<p class="cp-word-hint">点击卡片查看释义</p>'
+      html += '<p class="cp-word-hint">点击卡片或按空格查看释义</p>'
     } else {
       html += '<div class="cp-word-feedback">'
       html += '<button class="cp-word-fb known" ' + dis + ' onclick="cpViews.home.wordGrade(\'known\')">😀 认识</button>'
       html += '<button class="cp-word-fb blur" ' + dis + ' onclick="cpViews.home.wordGrade(\'blur\')">🤔 模糊</button>'
       html += '<button class="cp-word-fb forgot" ' + dis + ' onclick="cpViews.home.wordGrade(\'forgot\')">😵 忘记</button>'
       html += '</div>'
+      html += '<p class="cp-word-hint cp-word-kbd-hint">快捷键：1 认识 · 2 模糊 · 3 忘记</p>'
     }
     html += '</div>'
     return html
+  }
+
+  V._ensureWordKeys = function () {
+    if (V._wordKeysBound) return
+    V._wordKeysBound = true
+    document.addEventListener('keydown', function (e) {
+      const H = window.cpViews.home
+      if (H._panel !== 'word' || !H.data.wordCards.length) return
+      const ae = document.activeElement
+      const tag = ae ? ae.tagName : ''
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return
+      if ((e.key === ' ' || e.key === 'Enter') && !H.data.wordRevealed) {
+        if (!document.querySelector('.cp-word-card')) return
+        e.preventDefault()
+        H.wordReveal()
+        return
+      }
+      const grade = { 1: 'known', 2: 'blur', 3: 'forgot' }[e.key]
+      if (grade && H.data.wordRevealed) {
+        e.preventDefault()
+        H.wordGrade(grade)
+      }
+    })
   }
 
   V.wordReveal = function () { this.data.wordRevealed = true; this.rerender() }

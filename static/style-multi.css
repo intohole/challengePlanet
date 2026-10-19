@@ -88,6 +88,7 @@
 .cp-quick-stat-sep { color: var(--card-border); margin: 0 2px; font-size: 12px; }
 .cp-quick-stat-val2 { font-size: 12px; color: var(--text-muted); font-weight: 600; }
 .cp-quick-stat-unit { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.cp-quick-stat-note { font-size: 9px; color: var(--primary-light); margin-top: 2px; cursor: help; }
 
 .cp-mini-empty { text-align: center; font-size: 11px; color: var(--text-muted); padding: 16px 8px; }
 
@@ -314,3 +315,14 @@
 }
 .cp-ch-row-meta .cp-ch-status { margin-right: 6px; }
 [data-theme="dark"] .cp-pref-hour { background: rgba(30, 41, 59, .92); color: var(--text-primary); }
+
+/* ---- 暗色光晕修：白圈改随主题 ---- */
+[data-theme="dark"] .cp-timeline-dot { box-shadow: 0 0 0 3px rgba(13, 18, 38, .9); }
+[data-theme="dark"] .cp-rail-proj { box-shadow: 0 0 0 2px rgba(13, 18, 38, .92); }
+
+/* ---- 浮标滚动礼让（installDockYield 消费端）：让位要快、恢复可缓 ---- */
+body.nx-dock-yield .cp-fab { opacity: .12 !important; transition: none !important; pointer-events: none; }
+body.nx-dock-yield .nxs-trigger { opacity: .12 !important; transition: none !important; }
+body.nx-dock-yield #nux-feedback-root { opacity: .12 !important; transition: none !important; }
+.cp-fab { transition: transform .2s, box-shadow .2s, opacity .35s ease; }
+.nxs-trigger { transition: transform .25s cubic-bezier(.4, 0, .2, 1), border-color .25s, box-shadow .25s, opacity .35s ease !important; }

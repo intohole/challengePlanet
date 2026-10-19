@@ -156,8 +156,8 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-ch-row-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 .cp-ch-status { font-size: 10px; color: var(--text-muted); background: rgba(15,23,42,.05); padding: 1px 7px; border-radius: 8px; }
 .cp-ch-status.done { color: var(--emerald); background: rgba(5,150,105,.1); }
-.cp-progress-bar { height: 5px; border-radius: 3px; background: rgba(15,23,42,.05); margin-top: 7px; overflow: hidden; }
-.cp-progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--primary), var(--primary-light)); transition: width .5s; }
+.cp-progress-bar { display: block; height: 5px; border-radius: 3px; background: rgba(15,23,42,.05); margin-top: 7px; overflow: hidden; }
+.cp-progress-fill { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--primary), var(--primary-light)); transition: width .5s; }
 .cp-ch-row-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 .cp-ch-row-end { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; color: var(--text-muted); transition: all .2s; }
 .cp-ch-row-end:hover { background: rgba(239,68,68,.12); color: #ef4444; }
@@ -255,6 +255,14 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 
 /* Star twinkle overlay */
 @keyframes twinkle-star { 0%, 100% { opacity: .2; } 50% { opacity: .8; } }
+
+/* 星图文本/轨道：描边保证任意类目色行星上可读，轨道点双主题分档 */
+.galaxy-streak-num { fill: #fff; stroke: rgba(15,23,42,.5); stroke-width: 3.5px; paint-order: stroke; stroke-linejoin: round; }
+.galaxy-streak-label { fill: rgba(255,255,255,.95); stroke: rgba(15,23,42,.55); stroke-width: 2.5px; paint-order: stroke; stroke-linejoin: round; }
+.galaxy-dot-future { fill: rgba(100,116,139,.3); }
+.galaxy-orbit-ring { stroke: rgba(100,116,139,.22); }
+[data-theme="dark"] .galaxy-dot-future { fill: rgba(148,163,204,.2); }
+[data-theme="dark"] .galaxy-orbit-ring { stroke: rgba(148,163,204,.13); }
 /* Ladder gameplay card */
 .cp-ladder-card{margin-top:12px;padding:12px;border:1px solid var(--border,#e5e7eb);border-radius:14px;background:linear-gradient(135deg,rgba(139,92,246,.05),rgba(99,102,241,.04));}
 .cp-ladder-toggle{width:100%;justify-content:space-between;padding:10px 12px;font-weight:600}
@@ -288,7 +296,7 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-companion-queue-spinner { width: 14px; height: 14px; border: 2px solid rgba(139,92,246,.25); border-top-color: var(--primary); border-radius: 50%; animation: cp-spin .8s linear infinite; flex-shrink: 0; }
 .cp-companion-header-actions { display: flex; align-items: center; gap: 6px; }
 .cp-session-toggle.active { background: rgba(139,92,246,.14); color: var(--primary); }
-.cp-companion-sessions { max-height: 38vh; min-height: 0; overflow-y: auto; border-bottom: 1px solid var(--card-border); background: var(--card-bg, #fff); }
+.cp-companion-sessions { max-height: 38vh; min-height: 0; overflow-y: auto; border-bottom: 1px solid var(--card-border); background: var(--card); }
 .cp-companion-sessions .nx-conv-list { padding: 6px 12px 8px; }
 @keyframes cp-spin { to { transform: rotate(360deg); } }
 @media (min-width: 768px) {

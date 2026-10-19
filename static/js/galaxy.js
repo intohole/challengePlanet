@@ -41,7 +41,7 @@
         dots += '<circle class="galaxy-today-dot" cx="' + x + '" cy="' + y + '" r="5" fill="none" stroke="#818cf8" stroke-width="2.5"/>'
         dots += '<circle class="galaxy-today-pulse" cx="' + x + '" cy="' + y + '" r="5" fill="none" stroke="rgba(129,140,248,.3)" stroke-width="4"/>'
       } else {
-        dots += '<circle cx="' + x + '" cy="' + y + '" r="3" fill="rgba(148,163,184,.15)"/>'
+        dots += '<circle class="galaxy-dot-future" cx="' + x + '" cy="' + y + '" r="3" fill="rgba(148,163,184,.15)"/>'
       }
     }
 
@@ -61,7 +61,7 @@
       '</radialGradient>' +
       '</defs>' +
       '<circle cx="' + cx + '" cy="' + cy + '" r="' + (orbit + 20) + '" fill="url(#ng)"/>' +
-      '<circle cx="' + cx + '" cy="' + cy + '" r="' + orbit + '" fill="none" stroke="rgba(148,163,184,.1)" stroke-width="1.5" stroke-dasharray="3 5"/>' +
+      '<circle class="galaxy-orbit-ring" cx="' + cx + '" cy="' + cy + '" r="' + orbit + '" fill="none" stroke="rgba(148,163,184,.1)" stroke-width="1.5" stroke-dasharray="3 5"/>' +
       '<g class="galaxy-orbit-group">' + dots + '</g>' +
       '<g class="galaxy-planet" style="--planet-glow:' + color + ';filter:drop-shadow(0 0 ' + (18 + pct * 12) + 'px ' + color + '80)">' +
       '<circle cx="' + cx + '" cy="' + cy + '" r="' + planetR + '" fill="url(#pg)" opacity="' + dim.toFixed(2) + '"/>' +
@@ -70,8 +70,8 @@
       '<circle cx="' + (cx + 16) + '" cy="' + (cy + 8) + '" r="5" fill="rgba(255,255,255,.05)"/>' +
       '</g>' +
       (icon ? '<text x="' + cx + '" y="' + (cy - 14) + '" text-anchor="middle" font-size="20">' + icon + '</text>' : '') +
-      '<text x="' + cx + '" y="' + (cy + 14) + '" text-anchor="middle" font-size="30" font-weight="800" fill="#eef1fa" style="' + fireGlow + '">' + streak + '</text>' +
-      '<text x="' + cx + '" y="' + (cy + 32) + '" text-anchor="middle" font-size="11" fill="#64748B">连续打卡</text>' +
+      '<text class="galaxy-streak-num" x="' + cx + '" y="' + (cy + 14) + '" text-anchor="middle" font-size="30" font-weight="800" fill="#eef1fa" style="' + fireGlow + '">' + streak + '</text>' +
+      '<text class="galaxy-streak-label" x="' + cx + '" y="' + (cy + 32) + '" text-anchor="middle" font-size="11" fill="#64748B">连续打卡</text>' +
       '</svg>'
   }
 })()

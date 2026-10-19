@@ -64,6 +64,9 @@ window.cpFmtNum = v => {
   return Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10)
 }
 
+window.cpStreakSilent = v => (Number(v) > 0 ? '含 ' + Number(v) + ' 天静默守' : '')
+window.cpStreakHint = '静默守：这天没打卡，但数据没超上限——减量挑战不超上限就是守住'
+
 window.cpOpenArchive = function (id) {
   const a = (window.cpArchiveCache || []).find(x => String(x.id) === String(id))
   if (!a) return
@@ -374,4 +377,5 @@ const cpApp = createApp({
   }
 })
 NexusComponents.register(cpApp)
+if (window.NexusUtils && NexusUtils.installDockYield) NexusUtils.installDockYield()
 cpApp.mount('#app')

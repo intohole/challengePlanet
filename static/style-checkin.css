@@ -83,6 +83,8 @@
 .cp-learn-loading { padding: 24px 0; text-align: center; color: var(--text-muted); font-size: 14px; }
 .cp-word-progress { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
 .cp-word-card { min-height: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px 14px; border-radius: var(--radius); background: linear-gradient(135deg, rgba(59,130,246,.08), rgba(99,102,241,.05)); border: 1px solid rgba(59,130,246,.2); cursor: pointer; transition: all .2s; position: relative; }
+.cp-word-card:focus-visible { border-color: var(--primary); }
+@media (max-width: 768px) { .cp-word-kbd-hint { display: none; } }
 .cp-word-card:active { transform: scale(.98); }
 .cp-word-review-tag { position: absolute; top: 8px; left: 10px; font-size: 10px; color: var(--amber); background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3); padding: 2px 8px; border-radius: 10px; }
 .cp-word-main { font-size: 30px; font-weight: 800; letter-spacing: 1px; color: var(--text-primary); }
@@ -241,3 +243,19 @@
 .cp-pref-desc { font-size: 13px; color: var(--text-secondary); }
 .cp-pref-hour { border: 1px solid var(--card-border); border-radius: 8px; padding: 2px 6px; font-size: 13px; background: #fff; color: var(--text-primary); }
 @media (prefers-reduced-motion: reduce) { .cp-rescue-card { animation: none; } .cp-rescue-btn, .cp-pref-toggle, .cp-pref-knob { transition: none; } }
+
+/* ---- 暗色清扫：亮色硬编码白底改绑暗档（场景卡/示例 chips/番茄钟盘/快捷面板/救援卡族） ---- */
+[data-theme="dark"] .cp-scene-card { background: rgba(30, 40, 68, .6); }
+[data-theme="dark"] .cp-scene-card.active { background: color-mix(in srgb, var(--scene-c, var(--primary)) 16%, rgba(23, 31, 53, .8)); }
+[data-theme="dark"] .cp-scene-type { color: var(--text-secondary); background: rgba(148, 163, 204, .12); }
+[data-theme="dark"] .cp-scene-card.active .cp-scene-type { background: color-mix(in srgb, var(--scene-c, var(--primary)) 22%, rgba(23, 31, 53, .8)); }
+[data-theme="dark"] .cp-sample-chip { color: var(--text-secondary); background: rgba(99, 102, 241, .12); border-color: rgba(129, 140, 248, .28); }
+[data-theme="dark"] .cp-extra-chip { background: rgba(148, 163, 204, .08); }
+[data-theme="dark"] .cp-extra-panel { background: rgba(30, 40, 68, .5); }
+[data-theme="dark"] .cp-pm-ring::before { background: #18213B; }
+[data-theme="dark"] .cp-rescue-card { background: linear-gradient(135deg, rgba(245, 158, 11, .12), rgba(23, 31, 53, .5) 55%); }
+[data-theme="dark"] .cp-rescue-star { background: rgba(245, 158, 11, .14); }
+[data-theme="dark"] .cp-rescue-btn { background: rgba(30, 40, 68, .72); }
+[data-theme="dark"] .cp-rescue-btn.primary { background: var(--amber); }
+[data-theme="dark"] .cp-ladder-card { border-color: var(--card-border); }
+[data-theme="dark"] .cp-ladder-field input { background: rgba(15, 23, 42, .45); border-color: var(--card-border); color: var(--text-primary); }
