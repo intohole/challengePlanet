@@ -18,7 +18,7 @@
   --card-shadow: 0 4px 24px rgba(30,64,175,.08);
   --text-primary: #1E293B;
   --text-secondary: #475569;
-  --text-muted: #7690AC;
+  --text-muted: #5A7190;
   --primary: #6366F1;
   --primary-light: #8A9BF9;
   --primary-dark: #4F46E5;
@@ -246,7 +246,7 @@ img, video, canvas { max-width: 100%; height: auto; }
   --card-shadow: 0 4px 24px rgba(0,0,0,.45);
   --text-primary: #E6EAF5;
   --text-secondary: #A9B4CE;
-  --text-muted: #6B7A9C;
+  --text-muted: #8FA3C0;
   --primary: #7C7FF5;
   --primary-light: #98A6FF;
   --primary-dark: #6366F1;
