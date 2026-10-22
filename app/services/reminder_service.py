@@ -91,6 +91,7 @@ def _rescue_notify_item(
         "app_id": "challengePlanet",
         "channels": ["in_app", "email"],
         "link": f"/challengePlanet/?ch={challenge.id}&rescue=1&rc=rescue",
+        "why_you": f"你立的挑战「{challenge.title or '挑战'}」断了 {missed_days} 天，星轨还留着等你回来",
         "data": {"challenge_id": challenge.id, "missed_days": missed_days, "rescue": True},
     }
 
