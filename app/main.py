@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from nexus.middleware import LoadingSplashMiddleware, StaticAssetsCacheMiddleware
+from app.api.probe import register_probe
 from nexus import close_uc_sdk, create_auth_router, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, startup_ironman, register_health_endpoints
 from nexus.chat.engine import ChatEngine
 from nexus.chat.router import chat_router
@@ -208,6 +209,8 @@ async def _health_uc_check() -> str:
 
 async def _health_ironman_check() -> str:
     return "ok" if is_ironman_available() else "unavailable"
+
+register_probe(app)
 
 register_health_endpoints(
     app,
