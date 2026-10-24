@@ -31,9 +31,12 @@
     }
     const tt = t.task_type || ch.task_type || 'binary'
     const ttLabel = window.cpTaskTypeLabel(tt) || '打卡'
-    html += this._slipCard(t, ch)
-    html += this._absenceCard(t, ch)
+    const returnState = t.return_state || null
+    if (returnState) html += this._returnHero(returnState, t, ch)
+    else html += this._slipCard(t, ch)
+    if (!returnState) html += this._absenceCard(t, ch)
     if (window.cpRecallTrack) {
+      if (returnState) window.cpRecallTrack.seen(ch.id, 'return')
       if (t.slip && t.slip.yesterday_over && !t.slip.today_checked) window.cpRecallTrack.seen(ch.id, 'slip')
       if (t.absence && !t.absence.today_checked) window.cpRecallTrack.seen(ch.id, 'absence')
     }
@@ -300,5 +303,28 @@
     html += '</div>'
     html += this._paceRail(total, Number(fc.projected) || 0, cap, unit, state)
     return html + '</div>'
+  }
+
+  V._returnHero = function (rs, t, ch) {
+    const unit = window.cpEsc(t.unit || ch.unit || '')
+    const micro = Number(rs.micro_target) || 0
+    const microLine = micro > 0 && unit
+      ? '今天先做最小的：<b>' + window.cpFmtNum(micro) + ' ' + unit + '</b>（目标的 1/5）'
+      : '今天先记一笔，就算今天上路'
+    const dis = this.data.checking ? 'disabled' : ''
+    let backfill = ''
+    if (rs.reward_granted) {
+      backfill = '<p class="cp-return-backfill cp-return-backfill-done"><i class="fas fa-gift" aria-hidden="true"></i> 连续回来 3 天做到了，送你 1 张免费补签卡（补签时自动可用）</p>'
+    } else {
+      const done = Math.min(Number(rs.backfill_done) || 1, Number(rs.backfill_target) || 3)
+      backfill = '<p class="cp-return-backfill"><i class="fas fa-gift" aria-hidden="true"></i> 连续回来 ' + done + '/' + (rs.backfill_target || 3) + ' 天，送 1 张免费补签卡</p>'
+    }
+    return '<div class="glass-card cp-task-card cp-return-hero" data-testid="return-hero">'
+      + '<div class="cp-return-emblem"><i class="fas fa-door-open" aria-hidden="true"></i></div>'
+      + '<p class="cp-task-title">欢迎回来，这是你回来的第 ' + window.cpFmtInt(rs.return_day) + ' 天</p>'
+      + '<p class="cp-task-desc">离开了 ' + window.cpFmtInt(rs.gap_days) + ' 天，走过的 <b>' + window.cpFmtInt(rs.walked_days) + '</b> 天都算数。</p>'
+      + '<div class="cp-return-micro"><i class="fas fa-feather" aria-hidden="true"></i> ' + microLine + '</div>'
+      + '<button class="cp-btn-primary cp-block" ' + dis + ' onclick="cpViews.home.logAbsenceReturn(' + ch.id + ')"><i class="fas fa-pen" aria-hidden="true"></i> 今天记一笔</button>'
+      + backfill + '</div>'
   }
 })()

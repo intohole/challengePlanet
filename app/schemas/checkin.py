@@ -102,6 +102,7 @@ class CheckInResultResponse(BaseModel):
     nudge_level: int = 0
     forecast: ForecastResponse = Field(default_factory=ForecastResponse)
     return_block: Optional[dict[str, object]] = None
+    return_state: Optional[dict[str, object]] = None
 
 
 class DateActionRequest(BaseModel):

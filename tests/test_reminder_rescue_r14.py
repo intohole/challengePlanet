@@ -9,8 +9,8 @@ from app.models.reminder import ReminderPref
 from app.services.reminder_service import (
     DEFAULT_REMIND_HOUR,
     _prefers_now,
-    _rescue_notify_item,
 )
+from app.services.rescue_service import rescue_notify_item as _rescue_notify_item
 
 
 def _pref(hour: int, enabled: bool = True) -> ReminderPref:

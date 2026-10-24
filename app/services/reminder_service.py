@@ -17,18 +17,13 @@ from app.services.absence_service import collect_absence_items, mark_absence_sen
 from app.services.companion_service import assess_risk, companion_text
 from app.services.goal_rule_service import is_cap_mode
 from app.services.mercy_service import load_valid_dates
-from app.services.rescue_service import (
-    assess_rescue,
-    mark_rescue_sent,
-    rescue_notify_due,
-    rescue_sent_today,
-    rescue_text,
-)
+from app.services.rescue_service import collect_rescue_items, mark_rescue_sent
 from app.services.streak_service import calc_streak, today_str
 
 logger = get_logger("challengePlanet.reminder")
 
 DEFAULT_REMIND_HOUR = 20
+MAX_SENDS_PER_USER_PER_DAY = 3
 
 
 def _reminder_content(risk: dict[str, object], total: int = 1) -> str:
@@ -78,24 +73,6 @@ def _prefers_now(pref: ReminderPref | None, current_hour: int) -> bool:
     return int(hour) == current_hour
 
 
-def _rescue_notify_item(
-    user_id: str, challenge: Challenge, missed_days: int,
-) -> dict[str, object]:
-    title, body = rescue_text(challenge, missed_days)
-    return {
-        "user_id": str(user_id),
-        "title": title,
-        "content": body,
-        "type": "task",
-        "priority": 4,
-        "app_id": "challengePlanet",
-        "channels": ["in_app", "email"],
-        "link": f"/challengePlanet/?ch={challenge.id}&rescue=1&rc=rescue",
-        "why_you": f"你立的挑战「{challenge.title or '挑战'}」断了 {missed_days} 天，星轨还留着等你回来",
-        "data": {"challenge_id": challenge.id, "missed_days": missed_days, "rescue": True},
-    }
-
-
 async def send_checkin_reminders(current_hour: int | None = None) -> None:
     try:
         current = current_hour if current_hour is not None else now_china().hour
@@ -141,39 +118,17 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
             )
             client = get_notify_client()
             checkins_repo = CheckInRepository()
-            rescue_payloads: list[dict[str, object]] = []
-            rescue_metas: list[dict[str, object]] = []
+            rescue_items = await collect_rescue_items(session, [c for cs in grouped.values() for c in cs])
             normal_items: list[dict[str, object]] = []
-            rescued_ids: set[int] = set()
             for user_id, challenges in grouped.items():
-                rescue_items: list[tuple[Challenge, dict[str, object]]] = []
-                for challenge in challenges:
-                    valid = await load_valid_dates(session, challenge.id)
-                    signal = assess_rescue(challenge, valid, today_str(), today_checked=False)
-                    if (
-                        signal
-                        and rescue_notify_due(int(signal["missed_days"]), today_str())
-                        and not await rescue_sent_today(session, challenge.id)
-                    ):
-                        rescue_items.append((challenge, signal))
-                for challenge, signal in rescue_items:
-                    rescued_ids.add(challenge.id)
-                    rescue_payloads.append(_rescue_notify_item(user_id, challenge, int(signal["missed_days"])))
-                    rescue_metas.append({
-                        "challenge_id": int(challenge.id), "user_id": user_id,
-                        "missed_days": int(signal["missed_days"]),
-                    })
-                normal = [c for c in challenges if c.id not in rescued_ids]
-                if not normal:
-                    continue
-                representative = normal[0]
+                representative = challenges[0]
                 checkins = await checkins_repo.get_by_challenge(session, representative.id)
                 valid = await load_valid_dates(session, representative.id)
                 streak = calc_streak(valid, today_str())
                 risk = assess_risk(checkins, valid, streak, today_str())
-                content = _reminder_content(risk, len(normal))
-                if len(normal) > 1:
-                    title = f"{len(normal)} 个挑战待打卡"
+                content = _reminder_content(risk, len(challenges))
+                if len(challenges) > 1:
+                    title = f"{len(challenges)} 个挑战待打卡"
                 else:
                     title = f"「{representative.title}」打卡提醒"
                 priority = 4 if risk["level"] == "high" else 3
@@ -187,45 +142,101 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                         "app_id": "challengePlanet",
                         "channels": ["in_app", "email"],
                         "link": "/challengePlanet/",
-                        "data": {"challenge_count": len(normal)},
+                        "data": {"challenge_count": len(challenges)},
                     }
                 )
             absence_flat = [e for entries in absence_by_user.values() for e in entries]
-            if rescue_payloads:
-                rescue_results = await client.send_many(rescue_payloads)
-                for meta, result in zip(rescue_metas, rescue_results):
-                    if isinstance(result, dict) and result.get("status") == "sent":
+            sent_counter = {"rescue": 0, "normal": 0, "absence": 0}
+            gate_counter: dict[str, int] = {}
+            for kind_name, entries in (
+                ("rescue", rescue_items), ("absence", absence_flat),
+            ):
+                for entry in entries:
+                    gate_counter[str((entry.get("gate") or {}).get("action", kind_name))] = (
+                        gate_counter.get(str((entry.get("gate") or {}).get("action", kind_name)), 0) + 1
+                    )
+            per_user_budget: dict[str, int] = {}
+
+            def _budget_left(user_id: str) -> int:
+                return MAX_SENDS_PER_USER_PER_DAY - per_user_budget.get(str(user_id), 0)
+
+            def _spend(user_id: str) -> None:
+                per_user_budget[str(user_id)] = per_user_budget.get(str(user_id), 0) + 1
+
+            rescue_ok: list[dict[str, object]] = []
+            for entry in rescue_items:
+                if _budget_left(str(entry["user_id"])) <= 0:
+                    logger.warning("daily send budget exhausted for user %s — rescue held", entry["user_id"])
+                    continue
+                rescue_ok.append(entry)
+                _spend(str(entry["user_id"]))
+            absence_ok: list[dict[str, object]] = []
+            for entry in absence_flat:
+                if _budget_left(str(entry["user_id"])) <= 0:
+                    logger.warning("daily send budget exhausted for user %s — absence held", entry["user_id"])
+                    continue
+                absence_ok.append(entry)
+                _spend(str(entry["user_id"]))
+            normal_ok: list[dict[str, object]] = []
+            for item in normal_items:
+                if _budget_left(str(item["user_id"])) <= 0:
+                    logger.warning("daily send budget exhausted for user %s — reminder held", item["user_id"])
+                    continue
+                normal_ok.append(item)
+                _spend(str(item["user_id"]))
+
+            if rescue_ok:
+                rescue_results = await client.send_many([e["payload"] for e in rescue_ok])
+                rescued_users: set[str] = set()
+                for entry, result in zip(rescue_ok, rescue_results):
+                    status = result.get("status") if isinstance(result, dict) else None
+                    if status == "sent":
+                        rescued_users.add(str(entry["user_id"]))
+                        sent_counter["rescue"] += 1
                         await mark_rescue_sent(
-                            session, meta["challenge_id"], meta["user_id"], meta["missed_days"],
+                            session, int(entry["challenge_id"]), str(entry["user_id"]),
+                            int(entry["missed_days"]), gate=entry.get("gate"),
+                            notif_id=int(result.get("id") or 0),
                         )
                     else:
                         logger.warning(
-                            "rescue not sent for challenge %s: %s — mark skipped",
-                            meta["challenge_id"],
-                            result.get("status") if isinstance(result, dict) else result,
+                            "rescue not sent for challenge %s: %s — normal reminder keeps this user covered",
+                            entry["challenge_id"],
+                            status if isinstance(result, dict) else result,
                         )
                 await session.commit()
-            if normal_items:
-                await client.send_many(normal_items)
-            if absence_flat:
-                results = await client.send_many([e["payload"] for e in absence_flat])
-                for entry, result in zip(absence_flat, results):
-                    if isinstance(result, dict) and result.get("status") == "sent":
+                if rescued_users:
+                    normal_items = [i for i in normal_items if str(i["user_id"]) not in rescued_users]
+                    normal_ok = [i for i in normal_ok if str(i["user_id"]) not in rescued_users]
+            if normal_ok:
+                results = await client.send_many(normal_ok)
+                for item, result in zip(normal_ok, results):
+                    status = result.get("status") if isinstance(result, dict) else None
+                    if status == "sent":
+                        sent_counter["normal"] += 1
+            if absence_ok:
+                results = await client.send_many([e["payload"] for e in absence_ok])
+                for entry, result in zip(absence_ok, results):
+                    status = result.get("status") if isinstance(result, dict) else None
+                    if status == "sent":
+                        sent_counter["absence"] += 1
                         await mark_absence_sent(
                             session, int(entry["challenge_id"]), str(entry["user_id"]),
-                            entry["absence"],
+                            entry["absence"], gate=entry.get("gate"),
+                            notif_id=int(result.get("id") or 0),
                         )
                     else:
                         logger.warning(
                             "absence care not sent for challenge %s: %s — mark skipped",
                             entry["challenge_id"],
-                            result.get("status") if isinstance(result, dict) else result,
+                            status if isinstance(result, dict) else result,
                         )
                 await session.commit()
             logger.info(
-                "Check-in reminders processed: %d rescue + %d normal + %d absence for %d users.",
-                len(rescue_payloads), len(normal_items), len(absence_flat),
+                "Check-in reminders processed: %d rescue + %d normal + %d absence for %d users; gates=%s",
+                sent_counter["rescue"], sent_counter["normal"], sent_counter["absence"],
                 len(grouped) + len(absence_by_user),
+                gate_counter or {},
             )
     except Exception as e:
         logger.error("Check-in reminder task failed: %s", e)

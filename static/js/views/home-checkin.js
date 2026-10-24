@@ -32,6 +32,10 @@
       payload.mood = d.moodTag || ''
       const r = await window.cpApi.checkin(ch.id, payload)
       const rb = r.return_block
+      const rs = r.return_state
+      if (rs && rs.reward_granted) {
+        window.cpToast('🎁 连续回来 3 天，送你 1 张免费补签卡（补签时自动可用）')
+      }
       if (rb && Number(rb.absent_days) >= 2) {
         window.cpCelebrate('欢迎回来！离开 ' + window.cpFmtInt(rb.absent_days) + ' 天 +' + (r.points_earned || 0) + ' 分')
         if (rb.suggest_adjust) {

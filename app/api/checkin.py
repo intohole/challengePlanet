@@ -73,6 +73,7 @@ async def do_checkin(
         nudge_level=int(result.get("nudge_level", 0)),
         forecast=ForecastResponse(**result.get("forecast", {})),
         return_block=result.get("return_block"),
+        return_state=result.get("return_state"),
     )
 
 

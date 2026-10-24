@@ -120,10 +120,27 @@ async def same_episode_cared(session: AsyncSession, challenge_id: int, last_reco
     return str(payload.get("last_record_date", "")) == str(last_record_date)
 
 
+async def _legacy_touch_sent_at(
+    session: AsyncSession, challenge_id: int, last_record_date: str,
+) -> tuple[object, int] | None:
+    """TouchState 上线前的存量回退：同缺席期 insight 触达 → (created_at, notif_id=0)。"""
+    row = await InsightRepository().get_by_type(session, challenge_id, ABSENCE_CARE_INSIGHT)
+    if row is None:
+        return None
+    payload = loads_or(str(row.content or ""), {})
+    if isinstance(payload, dict) and str(payload.get("last_record_date", "")) == str(last_record_date):
+        return row.created_at, 0
+    return None
+
+
 async def collect_absence_items(
     session: AsyncSession, challenges: list,
 ) -> list[dict[str, object]]:
-    """扫描全部活跃挑战，返回待发送的 absence 触达（含标记元数据，未发送未落痕）。"""
+    """扫描全部活跃挑战，返回待发送的 absence 触达（含标记元数据，未发送未落痕）。
+
+    频率层=2 天冷却（slip/absence 共享）；语义层=touch_gate（首触单发→7 天 REVIVE
+    门开着变体→30 天 SUNSET 诚实退场），legacy insight 回退防新表无历史重发首触。
+    """
     today = today_str()
     from app.repositories.checkin_repository import CheckInRepository
 
@@ -143,14 +160,33 @@ async def collect_absence_items(
         if absence is None:
             continue
         last_record = str(absence["last_record_date"])
-        if await same_episode_cared(session, int(challenge.id), last_record):
-            continue
         touches = await load_touch_dates(session, int(challenge.id))
         if not absence_due(touches, today):
+            continue
+        legacy = await _legacy_touch_sent_at(session, int(challenge.id), last_record)
+        from app.services.touch_gate_service import decide_touch_kind
+
+        gate = await decide_touch_kind(
+            session, kind="absence", challenge_id=int(challenge.id),
+            user_id=str(challenge.user_id), episode_anchor=last_record, today=today,
+            legacy_sent_at=legacy[0] if legacy else None,
+        )
+        if gate["action"] not in ("send", "revive"):
+            logger.info(
+                "absence gate %s: challenge %s episode since %s (%s)",
+                gate["action"], challenge.id, last_record, gate["reason"],
+            )
             continue
         title, body = absence_care_text(
             str(challenge.title or "挑战"), str(challenge.unit or ""), absence,
         )
+        link_rc = "absence"
+        if gate["action"] == "revive":
+            title, body = absence_revive_text(
+                str(challenge.title or "挑战"), str(challenge.unit or ""), absence,
+                lane=str(gate["lane"]),
+            )
+            link_rc = "revive"
         items.append({
             "payload": {
                 "user_id": str(challenge.user_id),
@@ -160,18 +196,43 @@ async def collect_absence_items(
                 "priority": 3,
                 "app_id": "challengePlanet",
                 "channels": ["in_app", "email"],
-                "link": f"/challengePlanet/?ch={challenge.id}&rc=absence",
-                "data": {"challenge_id": challenge.id, "absence_care": True},
+                "link": f"/challengePlanet/?ch={challenge.id}&rc={link_rc}",
+                "data": {"challenge_id": challenge.id, "absence_care": True,
+                         "touch_action": str(gate["action"])},
             },
             "challenge_id": int(challenge.id),
             "user_id": str(challenge.user_id),
             "absence": absence,
+            "gate": gate,
         })
     return items
 
 
+def absence_revive_text(
+    title: str, unit: str, absence: dict[str, object], lane: str,
+) -> tuple[str, str]:
+    """同缺席期 7 天后的再邀请：未读=门开着；已读未行动=换道（给安静出口）。"""
+    unit = unit or ""
+    cap = float(absence["cap_now"] or 0)
+    avoided = int(absence["avoided_total"] or 0)
+    subject = f"「{title}」的门一直开着"
+    if lane == "switch":
+        body = (
+            f"上次说的话你大概看到了，这次不催打卡。今天上限 {cap:g} {unit}，"
+            "想继续，回来记一笔就算守住；不想硬扛，打开把阶梯后移几天也一样——"
+            "走过的每一天不变。"
+        )
+        return subject, body
+    kept = f"已少抽的 {avoided} {unit}都还在；" if avoided > 0 else ""
+    return subject, (
+        f"回来不需要理由。今天上限 {cap:g} {unit}，记一笔就算今天守住。{kept}"
+        "坡想调随时可以调。"
+    )
+
+
 async def mark_absence_sent(
     session: AsyncSession, challenge_id: int, user_id: str, absence: dict[str, object],
+    gate: dict[str, object] | None = None, notif_id: int = 0,
 ) -> None:
     await InsightRepository().create(session, {
         "challenge_id": challenge_id,
@@ -183,3 +244,11 @@ async def mark_absence_sent(
             "last_record_date": str(absence.get("last_record_date", "")),
         }, ensure_ascii=False),
     })
+    if gate is not None:
+        from app.services.touch_gate_service import mark_touch_sent
+
+        await mark_touch_sent(
+            session, user_id=user_id, challenge_id=challenge_id, kind="absence",
+            fingerprint_value=str(gate.get("fingerprint", "")),
+            notif_id=notif_id, action=str(gate.get("action", "")),
+        )

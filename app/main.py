@@ -51,6 +51,20 @@ async def close_finished_challenges() -> None:
         logger.error("close finished challenges failed: %s", e)
 
 
+def _start_scheduler_gated(scheduler) -> None:
+    """调度器门禁渐进采纳（nexus 1.84.0 scheduler_gate，geniusStudent 判例）。
+
+    gated 只有 SCHEDULER_ENABLED=1 显式在场才启动——本地/E2E 残留实例的 cron
+    是通往生产触达的暗道；节点 nexus < 1.84.0 无该参数（TypeError）→ 回退旧语义。
+    """
+    try:
+        scheduler.start(mode="gated")
+    except TypeError:
+        scheduler.start()
+    except Exception as e:
+        logger.warning("scheduler gated start refused: %s", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
@@ -97,7 +111,7 @@ async def lifespan(app: FastAPI):
         hour=0,
         minute=10,
     )
-    scheduler.start()
+    _start_scheduler_gated(scheduler)
     logger.info("Scheduler started: check-in reminders hourly by user preference")
     yield
     try:

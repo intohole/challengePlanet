@@ -13,6 +13,7 @@ from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import ChallengeMetaRepository
 from app.core.datetime_utils import now_china
 from app.services.absence_service import assess_absence
+from app.services.return_service import return_after_checkin
 from app.services.adaptive_service import evaluate_after_bad_mood_task
 from app.services.checkin_background import (
     fire_and_forget,
@@ -158,6 +159,7 @@ class CheckInService:
             mini=False, completion_pct=completion_pct,
         )
         shields = await self._shields.award_milestone(session, challenge_id, streak)
+        return_state = await return_after_checkin(session, challenge, today) if not today_checkins else None
         fire_and_forget(save_memory(user_id, challenge.title, day_number, mood, reflection, value))
         if mood == "bad":
             fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
@@ -167,7 +169,7 @@ class CheckInService:
             today_total, remaining, base, chest, streak, shields,
             already_checked=False, is_soft_exceeded=soft_exceeded,
             soft_exceeded_amount=soft_exceeded_amount, forecast=forecast,
-            return_block=return_block,
+            return_block=return_block, return_state=return_state,
         )
 
     async def _replay_checkin(
@@ -197,6 +199,7 @@ class CheckInService:
         already_checked: bool, is_soft_exceeded: bool,
         soft_exceeded_amount: float, forecast: dict[str, object],
         return_block: dict[str, object] | None = None,
+        return_state: dict[str, object] | None = None,
     ) -> dict[str, object]:
         target = float(target_snapshot["target_value"])
         return {
@@ -214,6 +217,7 @@ class CheckInService:
             "nudge_level": int(forecast.get("nudge_level", 0)),
             "forecast": forecast,
             "return_block": return_block,
+            "return_state": return_state,
         }
 
     async def _current_streak(self, session: AsyncSession, challenge_id: int) -> int:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta
 
 from nexus.logging import get_logger
@@ -8,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.challenge import Challenge
 from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
-from app.repositories.points_repository import StreakActionRepository
+from app.repositories.points_repository import ChallengeMetaRepository, StreakActionRepository
 from app.services.ai_service import AIService
 from app.services.goal_rule_service import daily_target, is_cap_mode
 from app.services.points_service import PointsService
@@ -24,7 +25,23 @@ from app.services.streak_service import (
     week_dates_of,
 )
 
+from app.services.return_service import bonus_mends_of
+
 logger = get_logger("challengePlanet.mercy")
+
+
+async def _consume_bonus_mend(session: AsyncSession, challenge_id: int) -> None:
+    from nexus import loads_or
+
+    repo = ChallengeMetaRepository()
+    meta = await repo.get(session, challenge_id)
+    extra: dict[str, object] = {}
+    if meta is not None:
+        loaded = loads_or(str(meta.extra or "{}"), {})
+        if isinstance(loaded, dict):
+            extra = dict(loaded)
+    extra["bonus_mends"] = max(0, int(extra.get("bonus_mends", 0) or 0) - 1)
+    await repo.upsert(session, challenge_id, {"extra": json.dumps(extra, ensure_ascii=False)})
 
 FREE_MEND_PER_MONTH = 2
 MEND_COST = 50
@@ -118,12 +135,15 @@ class MercyService:
         used = await self._action_repo.count_user_actions_in_month(
             session, user_id, ACTION_MEND, month_prefix
         )
+        bonus = await bonus_mends_of(session, challenge_id)
         cost = 0
-        if used >= FREE_MEND_PER_MONTH:
+        if used >= FREE_MEND_PER_MONTH + bonus:
             ok = await self._points.spend(session, user_id, MEND_COST, ACTION_MEND, str(challenge_id))
             if not ok:
                 raise ValueError(f"免费补签卡已用完，积分不足{MEND_COST}分")
             cost = MEND_COST
+        elif used >= FREE_MEND_PER_MONTH:
+            await _consume_bonus_mend(session, challenge_id)
 
         day_number = day_number_of(challenge.start_date, target_date)
         await self._checkin_repo.create(session, {

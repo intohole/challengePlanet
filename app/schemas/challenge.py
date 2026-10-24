@@ -204,6 +204,7 @@ class TodayTaskResponse(BaseModel):
     journey: Optional[dict[str, object]] = None
     slip: Optional[dict[str, object]] = None
     absence: Optional[dict[str, object]] = None
+    return_state: Optional[dict[str, object]] = None
     checkin_data: Optional[dict[str, object]] = None
     today_checkins: list[dict[str, object]] = Field(default_factory=list)
     streak: int = 0

@@ -313,10 +313,14 @@ class ChallengeService:
         if absence is not None:
             absence["today_checked"] = len(today_checkins) > 0
             absence["can_shift"] = challenge.status == "active"
+        from app.services.return_service import active_return_state
+
+        return_state = await active_return_state(session, challenge, today)
         return self._build_today_response(
             challenge, challenge_id, day_number, today, task,
             today_checkins, today_total, today_target, dynamic_baseline,
             stats, progress, aggregates, forecast, journey, slip, absence,
+            return_state=return_state,
         )
 
     def _parse_plan(self, ai_plan: str | None) -> list[dict[str, object]]:
@@ -331,6 +335,7 @@ class ChallengeService:
         journey: dict[str, object] | None = None,
         slip: dict[str, object] | None = None,
         absence: dict[str, object] | None = None,
+        return_state: dict[str, object] | None = None,
     ) -> dict[str, object]:
         task_steps_raw = task.get("steps", task.get("task_steps", []))
         task_steps = task_steps_raw if isinstance(task_steps_raw, list) else []
@@ -364,6 +369,7 @@ class ChallengeService:
             "journey": journey,
             "slip": slip,
             "absence": absence,
+            "return_state": return_state,
             "progress_pct": round(progress, 1), "ladder_progress_pct": round(ladder_progress, 1),
             "checked_in": len(today_checkins) > 0,
             "settled": False if not_started else is_settled(

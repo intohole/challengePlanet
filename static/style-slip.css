@@ -95,3 +95,15 @@
 [data-theme="dark"] .cp-slope-bar b { color: #34D399; }
 [data-theme="dark"] .cp-slope-btn { color: #34D399; border-color: rgba(52,211,153,.5); }
 [data-theme="dark"] .cp-shift-row.cp-shift-last b { color: #34D399; }
+
+/* 回归页 hero（回来第 N 天）：fresh start 仪式感，emerald 欢迎系与缺席卡同族 */
+.cp-return-hero { border: 1px solid rgba(16,185,129,.34); background: linear-gradient(150deg, rgba(209,250,229,.42), rgba(255,255,255,.78) 62%); animation: cp-absence-in .24s ease-out both; }
+.cp-return-emblem { width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 19px; color: #047857; background: rgba(16,185,129,.16); margin-bottom: 10px; }
+.cp-return-micro { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; background: rgba(16,185,129,.10); color: #065F46; font-size: 13px; margin: 10px 0 12px; }
+.cp-return-backfill { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-secondary,#6b7280); margin: 10px 2px 0; }
+.cp-return-backfill-done { color: #047857; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .cp-return-hero { animation: none; } }
+[data-theme="dark"] .cp-return-hero { border-color: rgba(16,185,129,.30); background: linear-gradient(150deg, rgba(16,185,129,.14), rgba(255,255,255,.04) 62%); }
+[data-theme="dark"] .cp-return-emblem { color: #34D399; background: rgba(16,185,129,.16); }
+[data-theme="dark"] .cp-return-micro { background: rgba(16,185,129,.12); color: #A7F3D0; }
+[data-theme="dark"] .cp-return-backfill-done { color: #6EE7B7; }
