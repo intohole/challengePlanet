@@ -174,6 +174,10 @@ async def collect_rescue_items(
                 gate["action"], challenge.id, anchor, gate["reason"],
             )
             continue
+        logger.info(
+            "touch decision: user=%s kind=rescue challenge=%s action=%s lane=%s reason=%s",
+            challenge.user_id, challenge.id, gate["action"], gate["lane"], gate["reason"],
+        )
         items.append({
             "payload": rescue_notify_item(
                 str(challenge.user_id), challenge, missed, str(gate["action"]), str(gate["lane"]),

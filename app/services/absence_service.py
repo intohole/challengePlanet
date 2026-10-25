@@ -177,6 +177,10 @@ async def collect_absence_items(
                 gate["action"], challenge.id, last_record, gate["reason"],
             )
             continue
+        logger.info(
+            "touch decision: user=%s kind=absence challenge=%s action=%s lane=%s reason=%s",
+            challenge.user_id, challenge.id, gate["action"], gate["lane"], gate["reason"],
+        )
         title, body = absence_care_text(
             str(challenge.title or "挑战"), str(challenge.unit or ""), absence,
         )
