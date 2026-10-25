@@ -11,7 +11,7 @@ from app.api.probe import register_probe
 from nexus import close_uc_sdk, create_auth_router, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, startup_ironman, register_health_endpoints
 from nexus.chat.engine import ChatEngine
 from nexus.chat.router import chat_router
-from nexus.logging import get_logger, setup_logging
+from nexus.logging import get_logger, setup_loguru
 from nexus.notify import async_init_notify_client, register_notify_proxy
 from nexus.scheduler import get_scheduler
 
@@ -35,7 +35,7 @@ from app.services.slip_service import send_slip_care
 from app.services.challenge_service import ChallengeService
 from app.services.challenge_chat_handler import challenge_chat_handler
 
-setup_logging()
+setup_loguru(app_name="challengeplanet")
 logger = get_logger("challengePlanet.main")
 
 _STATIC_DIR = Path(__file__).parent.parent / "static"
