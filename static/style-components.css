@@ -264,20 +264,20 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 [data-theme="dark"] .galaxy-dot-future { fill: rgba(148,163,204,.2); }
 [data-theme="dark"] .galaxy-orbit-ring { stroke: rgba(148,163,204,.13); }
 /* Ladder gameplay card */
-.cp-ladder-card{margin-top:12px;padding:12px;border:1px solid var(--border,#e5e7eb);border-radius:14px;background:linear-gradient(135deg,rgba(139,92,246,.05),rgba(99,102,241,.04));}
+.cp-ladder-card{margin-top:12px;padding:12px;border:1px solid var(--card-border,#e5e7eb);border-radius:14px;background:linear-gradient(135deg,rgba(139,92,246,.05),rgba(99,102,241,.04));}
 .cp-ladder-toggle{width:100%;justify-content:space-between;padding:10px 12px;font-weight:600}
 .cp-ladder-toggle.active{border-color:var(--app-accent,#8b5cf6);color:var(--app-accent,#8b5cf6)}
 .cp-ladder-hint{font-size:12px;font-weight:500;opacity:.7}
 .cp-ladder-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
 .cp-ladder-field{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text-secondary,#666)}
-.cp-ladder-field input{width:100%;padding:8px 10px;border:1px solid var(--border,#e5e7eb);border-radius:10px;font-size:14px;background:#fff}
-.cp-ladder-preview{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border,#e5e7eb)}
+.cp-ladder-field input{width:100%;padding:8px 10px;border:1px solid var(--card-border,#e5e7eb);border-radius:10px;font-size:14px;background:#fff}
+.cp-ladder-preview{margin-top:12px;padding-top:12px;border-top:1px dashed var(--card-border,#e5e7eb)}
 .cp-ladder-preview-title{font-size:12px;color:var(--text-secondary,#666);margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .cp-ladder-preview-inner{display:flex;flex-direction:column;gap:4px}
 .cp-ladder-node{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary,#666)}
 .cp-ladder-node b{color:var(--text-primary);font-weight:600;min-width:28px}
 .cp-ladder-node i{font-style:normal;font-weight:700;color:var(--app-accent,#8b5cf6)}
-.cp-ladder-node:not(.last)::after{content:"";flex:1;border-bottom:1px dashed var(--border,#e5e7eb);margin:0 2px}
+.cp-ladder-node:not(.last)::after{content:"";flex:1;border-bottom:1px dashed var(--card-border,#e5e7eb);margin:0 2px}
 .cp-ladder-node.last i{color:#10b981}
 
 /* Ladder daily block */
