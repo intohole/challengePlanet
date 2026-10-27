@@ -63,7 +63,13 @@ def assess_absence(
     }
 
 
-def absence_care_text(title: str, unit: str, absence: dict[str, object]) -> tuple[str, str]:
+def absence_care_text(
+    title: str, unit: str, absence: dict[str, object], graduated: bool = False,
+) -> tuple[str, str]:
+    if graduated:
+        return f"🎓 「{title}」毕业了，证书在等你", (
+            "减量阶梯走完了，毕业证书已经生成。回来领走它——今天记不记一笔都欢迎。"
+        )
     unit = unit or ""
     days = int(absence["absent_days"] or 0)
     cap = float(absence["cap_now"] or 0)
@@ -164,31 +170,31 @@ async def collect_absence_items(
         if not absence_due(touches, today):
             continue
         legacy = await _legacy_touch_sent_at(session, int(challenge.id), last_record)
-        from app.services.touch_gate_service import decide_touch_kind
+        from app.services.graduation_service import is_graduated
+        from app.services.touch_gate_service import decide_touch_kind, log_gate_decision
 
+        graduated = is_graduated(challenge, today)
         gate = await decide_touch_kind(
             session, kind="absence", challenge_id=int(challenge.id),
             user_id=str(challenge.user_id), episode_anchor=last_record, today=today,
             legacy_sent_at=legacy[0] if legacy else None,
         )
         if gate["action"] not in ("send", "revive"):
-            logger.info(
-                "absence gate %s: challenge %s episode since %s (%s)",
-                gate["action"], challenge.id, last_record, gate["reason"],
-            )
+            log_gate_decision("absence", int(challenge.id), str(gate["action"]), str(gate["reason"]))
             continue
-        logger.info(
-            "touch decision: user=%s kind=absence challenge=%s action=%s lane=%s reason=%s",
-            challenge.user_id, challenge.id, gate["action"], gate["lane"], gate["reason"],
+        log_gate_decision(
+            "absence", int(challenge.id), str(gate["action"]), str(gate["reason"]),
+            extra=f"lane={gate['lane']} user={challenge.user_id}",
         )
         title, body = absence_care_text(
             str(challenge.title or "挑战"), str(challenge.unit or ""), absence,
+            graduated=graduated,
         )
         link_rc = "absence"
         if gate["action"] == "revive":
             title, body = absence_revive_text(
                 str(challenge.title or "挑战"), str(challenge.unit or ""), absence,
-                lane=str(gate["lane"]),
+                lane=str(gate["lane"]), graduated=graduated,
             )
             link_rc = "revive"
         items.append({
@@ -214,8 +220,22 @@ async def collect_absence_items(
 
 def absence_revive_text(
     title: str, unit: str, absence: dict[str, object], lane: str,
+    graduated: bool = False,
 ) -> tuple[str, str]:
-    """同缺席期 7 天后的再邀请：未读=门开着；已读未行动=换道（给安静出口）。"""
+    """同缺席期 7 天后的再邀请：未读=门开着；已读未行动=换道（给安静出口）。
+
+    毕业后（keep 期）缺席：触达从「星轨还在」换成「证书在等你」——阶梯已经走完，
+    打卡催促的语境变了，毕业凭证本身是更好的回来理由。
+    """
+    if graduated:
+        if lane == "switch":
+            return f"「{title}」的证书不会过期", (
+                "不催打卡。毕业证书会一直在旅程档案里等你，想看看的时候回来就好。"
+            )
+        return f"「{title}」的毕业证书在等你", (
+            "阶梯走完那天证书就生成了，一直留着。回来看看这段旅程；"
+            "最后一程（到 0）想启程随时可以——不急。"
+        )
     unit = unit or ""
     cap = float(absence["cap_now"] or 0)
     avoided = int(absence["avoided_total"] or 0)

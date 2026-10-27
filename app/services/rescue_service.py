@@ -149,7 +149,7 @@ async def collect_rescue_items(
     gate：30 天缺席 SUNSET 诚实退场 / 同期 ≥7 天 REVIVE 变体（未读=门开着、
     已读未行动=换道给安静出口）/ 首触原文。
     """
-    from app.services.touch_gate_service import decide_touch_kind
+    from app.services.touch_gate_service import decide_touch_kind, log_gate_decision
 
     today = today_str()
     items: list[dict[str, object]] = []
@@ -169,14 +169,11 @@ async def collect_rescue_items(
             legacy_sent_at=legacy[0] if legacy else None,
         )
         if gate["action"] not in ("send", "revive"):
-            logger.info(
-                "rescue gate %s: challenge %s episode since %s (%s)",
-                gate["action"], challenge.id, anchor, gate["reason"],
-            )
+            log_gate_decision("rescue", int(challenge.id), str(gate["action"]), str(gate["reason"]))
             continue
-        logger.info(
-            "touch decision: user=%s kind=rescue challenge=%s action=%s lane=%s reason=%s",
-            challenge.user_id, challenge.id, gate["action"], gate["lane"], gate["reason"],
+        log_gate_decision(
+            "rescue", int(challenge.id), str(gate["action"]), str(gate["reason"]),
+            extra=f"lane={gate['lane']} user={challenge.user_id}",
         )
         items.append({
             "payload": rescue_notify_item(

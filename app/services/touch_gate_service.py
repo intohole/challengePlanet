@@ -15,6 +15,28 @@ logger = get_logger("challengePlanet.touch_gate")
 REVIVE_AFTER_DAYS = 7
 SUNSET_EPISODE_DAYS = 30
 
+_LAST_GATE_LOG: dict[tuple[str, int, str], str] = {}
+
+
+def log_gate_decision(
+    kind: str, challenge_id: int, action: str, reason: str, extra: str = "",
+) -> None:
+    """gate 决策日志按 (kind, challenge, action) 去重：同决策首次 INFO、重复降 DEBUG。
+
+    节拍任务每小时跑，sunset/silence 的重复决策曾每天刷 200+ 行同文日志
+    （4 个死挑战 × 24 小时 × 双引擎）；首现 INFO 保留可观测，重复 DEBUG 保信噪比。
+    """
+    key = (str(kind), int(challenge_id), str(action))
+    line = (
+        f"touch gate {kind}: challenge {challenge_id} action={action} ({reason})"
+        + (f" {extra}" if extra else "")
+    )
+    if _LAST_GATE_LOG.get(key) == str(reason):
+        logger.debug(line)
+        return
+    _LAST_GATE_LOG[key] = str(reason)
+    logger.info(line)
+
 
 async def _is_unread(notif_id: int) -> bool | None:
     """回执行号→已读状态：True=未读 / False=已读 / None=证据缺失（travelMate 范本语义）。"""

@@ -18,6 +18,7 @@ logger = get_logger("challengePlanet.graduation")
 
 PUSH_INSIGHT_TYPE = "journey_push"
 APPROACH_DAYS = 3
+ABSENT_GRADUATION_GAP_DAYS = 7
 
 
 def graduation_goal_day(challenge: object) -> int | None:
@@ -115,6 +116,24 @@ def milestone_push_text(unit: str, threshold: int) -> tuple[str, str]:
     )
 
 
+def is_graduated(challenge: object, today: str) -> bool:
+    """阶梯毕业的纯日历判定（goal_day 由 ladder_adjust 顺延共同决定），与是否打卡无关。"""
+    goal_day = graduation_goal_day(challenge)
+    if goal_day is None:
+        return False
+    from app.services.streak_service import day_number_of
+
+    day_number = day_number_of(str(getattr(challenge, "start_date", "") or ""), today)
+    return bool(day_number and day_number >= goal_day)
+
+
+def last_checkin_date(daily_rows: list[dict[str, object]]) -> str | None:
+    for row in reversed(daily_rows):
+        if int(row.get("checkin_count", 0) or 0):
+            return str(row.get("date") or "")
+    return None
+
+
 def graduation_push_text(
     challenge: Challenge, avoided: int, pct: int, unit: str,
 ) -> tuple[str, str]:
@@ -125,6 +144,26 @@ def graduation_push_text(
     body = (
         f"从每天约 {start:g} {unit}走到 {goal:g} {unit}，累计少抽 {avoided} {unit}（-{pct}%）。"
         "毕业证书已生成，来保存这份成果。"
+    )
+    return title, body
+
+
+def graduation_push_absent_text(
+    challenge: Challenge, avoided: int, gap_days: int, unit: str,
+) -> tuple[str, str]:
+    """缺席中的毕业：阶梯按日历走完了，但人不在——只说记录在案的事实，不冒领最近的状态。
+
+    不提降幅（recent_avg 来自缺勤前的旧数据，当"-31%"讲是误导），不写"走到 X"的
+    行为抵达口吻；把"证书保留+随时回来"作为主句，毕业触达成为回来的理由而非空头庆祝。
+    """
+    unit = unit or ""
+    start = float(getattr(challenge, "ladder_start", 0) or 0)
+    goal = float(getattr(challenge, "ladder_goal", 0) or 0)
+    title = f"🎓 「{challenge.title}」阶梯走完了"
+    avoided_line = f"你记录的日子里累计少抽了 {avoided} {unit}。" if avoided > 0 else ""
+    body = (
+        f"减量阶梯今天走到终点：从每天约 {start:g} {unit}到 {goal:g} {unit}。{avoided_line}"
+        "毕业证书已为你保留，不会过期——回来看看这份成果，什么时候都欢迎。"
     )
     return title, body
 
@@ -161,10 +200,18 @@ class GraduationPushService:
                     max(0.0, baseline - float(r.get("value", 0) or 0))
                     for r in rows if int(r.get("checkin_count", 0) or 0)
                 )
-                title, body = graduation_push_text(
-                    challenge, int(round(avoided)), reduction_pct(baseline, recent_average(rows)),
-                    str(getattr(challenge, "unit", "") or ""),
-                )
+                avoided_int = int(round(avoided))
+                last_day = last_checkin_date(rows)
+                gap_days = (date.fromisoformat(today) - date.fromisoformat(last_day)).days if last_day else None
+                if gap_days is not None and gap_days >= ABSENT_GRADUATION_GAP_DAYS:
+                    title, body = graduation_push_absent_text(
+                        challenge, avoided_int, gap_days, str(getattr(challenge, "unit", "") or ""),
+                    )
+                else:
+                    title, body = graduation_push_text(
+                        challenge, avoided_int, reduction_pct(baseline, recent_average(rows)),
+                        str(getattr(challenge, "unit", "") or ""),
+                    )
                 items.append(_push_item(challenge, title, body, link))
                 await _mark_pushed(session, challenge, state_row, state, "graduated")
         if items:
