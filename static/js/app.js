@@ -48,6 +48,7 @@ const state = reactive({
   diagnosis: { show: false, loading: false, report: null, applying: false },
   reportView: { show: false, tab: 'overview', loading: false, overview: null, hourly: null, trend: null, heatmap: null, completion: null },
   companion: { show: false, sessions: false },
+  gradShowcase: false,
   companionMeta: {},
   companionQueue: { position: 0, wait: 0 },
   endModal: { show: false, id: 0, title: '', busy: false },
@@ -187,6 +188,7 @@ function handleQuery() {
         const changed = !state.current || state.current.id !== target.id
         state.current = target
         const gradParam = q.get('grad')
+        state.gradShowcase = !!gradParam
         state.slipDeeplink = q.get('slip') === '1' ? target.id : null
         if (window.cpRecallTrack) window.cpRecallTrack.arrived(target.id, q.get('rc') || 'deep')
         if (changed && state.view === 'home') switchView('home')
@@ -222,6 +224,13 @@ function gradJourneyOf() {
   return (j && j.graduation) ? j : null
 }
 
+function gradAbsentOf() {
+  const home = window.cpViews && window.cpViews.home
+  const t = home && home.data && home.data.today
+  const a = t && t.absence
+  return !!(a && Number(a.absent_days) >= 7)
+}
+
 async function openShare(mode) {
   if (!state.current) return
   const gradMode = mode === 'grad'
@@ -238,7 +247,7 @@ async function openShare(mode) {
     state.share.url = state.share.mode === 'flop'
       ? await window.cpSharePoster.generateFlop(state.current)
       : state.share.mode === 'grad'
-        ? await window.cpGradCert.generate(gradJourneyOf(), state.current)
+        ? await window.cpGradCert.generate(gradJourneyOf(), state.current, { absent: gradAbsentOf() })
         : await window.cpSharePoster.generate(state.current)
   } catch (e) {
     state.share.show = false
@@ -252,12 +261,24 @@ window.cpShareGradAvailable = function () {
   const j = gradJourneyOf()
   return !!(j && j.graduation && j.graduation.state === 'graduated')
 }
-function saveShareImage() {
+async function saveShareImage() {
   if (!state.share.url) return
   const tag = state.share.mode === 'flop' ? '翻车复盘_' : (state.share.mode === 'grad' ? '毕业证书_' : '')
+  const name = '星轨挑战_' + tag + (state.current.title || '分享') + '.png'
+  try {
+    const blob = await (await fetch(state.share.url)).blob()
+    const file = new File([blob], name, { type: 'image/png' })
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: name })
+      window.cpToast('已唤起分享，可保存或发送')
+      return
+    }
+  } catch (e) {
+    if (e && e.name === 'AbortError') return
+  }
   const a = document.createElement('a')
   a.href = state.share.url
-  a.download = '星轨挑战_' + tag + (state.current.title || '分享') + '.png'
+  a.download = name
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
@@ -267,18 +288,15 @@ function copyShareText() {
   const c = state.current
   if (!c) return
   const url = window.location.origin + window.cpPrefix
+  const gj = gradJourneyOf() || {}
+  const pctPart = gradAbsentOf() ? '' : '，减量 ' + (gj.reduction_pct || 0) + '%'
   const text = state.share.mode === 'flop'
     ? '我在星轨挑战「' + c.title + '」翻车后回来了！\n断签不可怕，可怕的是不再开始。已完成 ' + (c.completed_days || 0) + '/' + c.total_days + ' 天\n来星轨挑战，真实打卡，允许翻车\n' + url
     : state.share.mode === 'grad'
-      ? '我在星轨挑战的「' + c.title + '」减量阶梯毕业了！🎓\n累计少抽 ' + ((gradJourneyOf() || {}).cigarettes_avoided || 0) + ' 根，减量 ' + (((gradJourneyOf() || {}).reduction_pct) || 0) + '%\n来星轨挑战，每一根没抽的烟都算数\n' + url
+      ? '我在星轨挑战的「' + c.title + '」减量阶梯毕业了！🎓\n累计少抽 ' + (gj.cigarettes_avoided || 0) + ' 根' + pctPart + '\n来星轨挑战，每一根没抽的烟都算数\n' + url
       : '我在星轨挑战参加「' + c.title + '」挑战！\n已完成 ' + (c.completed_days || 0) + '/' + c.total_days + ' 天，连续打卡 ' + (c.streak || 0) + ' 天\n来星轨挑战，和我一起变得更好！\n' + url
   window.cpCopy(text)
 }
-function logout() {
-  ;['uc_access_token', 'uc_refresh_token', 'cp_user_id', 'cp_nickname'].forEach(k => localStorage.removeItem(k))
-  window.location.href = window.cpPrefix + '/login'
-}
-
 const cpApp = createApp({
   setup() {
     const companionChatRef = Vue.ref(null)
@@ -317,7 +335,6 @@ const cpApp = createApp({
       saveShareImage,
       copyShareText,
       importShared,
-      logout,
       openCreate: () => window.cpCreate.open(),
       endJourneyArchive: window.cpEndJourneyArchive,
       endJourneyPurge: window.cpEndJourneyPurge,

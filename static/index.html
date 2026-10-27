@@ -10,9 +10,9 @@
 <link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.75.0/vendor/fontawesome/css/all.min.css">
 <link rel="stylesheet" href="https://songguokr.com/nexus-ui/v2.75.0/css/nexus-all.css">
 <link rel="stylesheet" href="/static/style.css?v=20261028a">
-<link rel="stylesheet" href="/static/style-components.css?v=20261020a">
+<link rel="stylesheet" href="/static/style-components.css?v=20261028c">
 <link rel="stylesheet" href="/static/style-checkin.css?v=20261020a">
-<link rel="stylesheet" href="/static/style-multi.css?v=20261020a">
+<link rel="stylesheet" href="/static/style-multi.css?v=20261028c">
 <link rel="stylesheet" href="/static/style-slip.css?v=20261024a">
 <script src="https://songguokr.com/nexus-ui/v2.75.0/vendor/vue.global.prod.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.75.0/js/nexus-all.js"></script>
@@ -323,18 +323,18 @@
 </div></transition>
 
 <transition name="modal"><div v-if="state.share.show" class="cp-modal-overlay" @click.self="state.share.show=false">
-<div class="cp-modal glass" role="dialog" aria-modal="true">
-  <div class="cp-modal-header"><h3>分享海报</h3><button class="cp-modal-close" aria-label="关闭" @click="state.share.show=false"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
+<div class="cp-modal glass" role="dialog" aria-modal="true" data-testid="share-modal">
+  <div class="cp-modal-header"><h3>{{ state.share.mode==='grad' ? '毕业证书' : (state.share.mode==='flop' ? '翻车复盘' : '分享海报') }}</h3><button class="cp-modal-close" aria-label="关闭" @click="state.share.show=false"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
   <div class="cp-modal-body">
     <div class="cp-scope-tabs" style="margin-bottom:12px">
       <button class="cp-pick-btn" :class="{active:state.share.mode==='win'}" @click="openShare('win')">🏆 成就海报</button>
       <button class="cp-pick-btn" :class="{active:state.share.mode==='flop'}" @click="openShare('flop')">💥 翻车复盘</button>
       <button v-if="cpShareGradAvailable()" class="cp-pick-btn" :class="{active:state.share.mode==='grad'}" @click="openShare('grad')">🎓 毕业证书</button>
     </div>
-    <div v-if="state.share.loading" class="cp-share-loading"><div class="cp-gen-spinner"></div>正在绘制海报...</div>
+    <div v-if="state.share.loading" class="cp-share-loading"><div class="cp-gen-spinner"></div>{{ state.share.mode==='grad' ? '正在为你颁发证书...' : '正在绘制海报...' }}</div>
     <template v-else>
       <img :src="state.share.url" alt="分享海报" class="cp-share-img">
-      <p class="cp-share-hint">{{ state.share.mode==='flop' ? '真实比完美更有感染力，翻车复盘反而更打动人' : (state.share.mode==='grad' ? '这份成果值得被看见，保存后分享给懂你的人' : '保存图片后可在微信/朋友圈分享') }}</p>
+      <p class="cp-share-hint">{{ state.share.mode==='flop' ? '真实比完美更有感染力，翻车复盘反而更打动人' : (state.share.mode==='grad' ? '证书已永久保留，保存图片发给懂你的人' : '保存图片后可在微信/朋友圈分享') }}<span class="cp-share-longpress"> · 长按图片也可保存</span></p>
     </template>
   </div>
   <div class="cp-modal-footer" v-if="!state.share.loading">
@@ -497,15 +497,15 @@
 </div>
 <script src="/static/js/galaxy.js?v=20261020a"></script>
 <script src="/static/js/share-poster.js?v=20260728"></script>
-<script src="/static/js/graduation-cert.js?v=20261005a"></script>
+<script src="/static/js/graduation-cert.js?v=20261028b"></script>
 <script src="/static/js/create.js?v=20260915a"></script>
 <script src="/static/js/create-direct.js?v=20260915a"></script>
 <script src="/static/js/create-extra.js?v=20260915a"></script>
-<script src="/static/js/views/home.js?v=20261013a"></script>
+<script src="/static/js/views/home.js?v=20261028b"></script>
 <script src="/static/js/views/journey-end.js?v=20261010a"></script>
 <script src="/static/js/views/home-rescue.js?v=20261006a"></script>
 <script src="/static/js/views/home-diet.js?v=20260928d"></script>
-<script src="/static/js/views/home-task.js?v=20261024a"></script>
+<script src="/static/js/views/home-task.js?v=20261028b"></script>
 <script src="/static/js/views/home-checkin.js?v=20261024a"></script>
 <script src="/static/js/views/home-panels.js?v=20261002a"></script>
 <script src="/static/js/views/home-record.js?v=20261010a"></script>
@@ -530,7 +530,7 @@
 <script src="https://songguokr.com/nexus-ui/v2.75.0/js/components/nux-menu-user.js"></script>
 <script src="/static/js/home-companion.js?v=20261020a"></script>
 <script src="/static/js/data-scenes.js?v=20261006a"></script>
-<script src="/static/js/app.js?v=20261020a"></script>
+<script src="/static/js/app.js?v=20261028b"></script>
 <script src="https://songguokr.com/nexus-ui/v2.75.0/js/components/nux-checkin.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.75.0/js/components/nux-calendar.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.75.0/js/components/nux-camera-recognize.js"></script>

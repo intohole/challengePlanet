@@ -192,7 +192,7 @@ def main():
             page2.add_init_script(
                 "window.localStorage.setItem('uc_access_token', '" + token + "');"
                 "window.localStorage.setItem('cp_user_id', 'r23br');"
-                "document.documentElement.setAttribute('data-theme','dark');"
+                "window.localStorage.setItem('nx-theme', 'dark');"
             )
             page2.on("pageerror", lambda e: errors.append("dark:" + str(e)))
             page2.goto(BASE + "/", wait_until="networkidle")

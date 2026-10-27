@@ -278,6 +278,30 @@
 [data-theme="dark"] .cp-grad-done { background: linear-gradient(160deg, rgba(245,158,11,.12), rgba(255,255,255,.04)); }
 [data-theme="dark"] .cp-grad-ladder { color: var(--text-primary); }
 
+/* ============ 前端专项5：毕业的第一眼（深链承接卡） ============ */
+.cp-grad-welcome { display: flex; gap: 14px; align-items: flex-start; padding: 18px 16px; margin-bottom: 12px; border-radius: var(--radius, 14px); border: 1px solid rgba(245,158,11,.42); background: linear-gradient(150deg, rgba(253,230,138,.32), rgba(255,255,255,.78) 62%); box-shadow: 0 4px 18px rgba(245,158,11,.14); animation: cp-absence-in .28s ease-out both; }
+.cp-grad-welcome-icon { flex-shrink: 0; width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #92400E; background: linear-gradient(135deg, rgba(252,211,77,.55), rgba(245,158,11,.28)); border: 1px solid rgba(245,158,11,.5); box-shadow: 0 3px 12px rgba(245,158,11,.28); }
+.cp-grad-welcome-body { flex: 1 1 auto; min-width: 0; }
+.cp-grad-welcome-kicker { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #92400E; }
+.cp-grad-welcome-head { margin-top: 3px; font-size: 17px; font-weight: 800; color: var(--text-primary); line-height: 1.4; }
+.cp-grad-welcome-sub { margin-top: 4px; font-size: 13px; color: var(--text-secondary); line-height: 1.55; }
+.cp-grad-welcome-sub b { color: #92400E; }
+.cp-grad-welcome-note { margin-top: 3px; font-size: 12px; color: var(--text-secondary); }
+.cp-grad-welcome-actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+.cp-grad-welcome-btn { flex: 1 1 auto; max-width: 300px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 18px; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; color: #451a03; background: linear-gradient(135deg, #FCD34D, #F59E0B); box-shadow: 0 2px 12px rgba(245,158,11,.32); cursor: pointer; min-height: 44px; }
+.cp-grad-welcome-btn:hover { filter: brightness(1.04); }
+.cp-grad-welcome-btn:active { transform: scale(.98); }
+.cp-grad-welcome-btn:focus-visible { outline: 2px solid #92400E; outline-offset: 2px; }
+.cp-grad-welcome-dismiss { background: none; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 8px 4px; min-height: 44px; }
+.cp-grad-welcome-dismiss:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 8px; }
+[data-theme="dark"] .cp-grad-welcome { border-color: rgba(245,158,11,.38); background: linear-gradient(150deg, rgba(245,158,11,.14), rgba(255,255,255,.03) 62%); }
+[data-theme="dark"] .cp-grad-welcome-icon { color: #FCD34D; background: linear-gradient(135deg, rgba(252,211,77,.2), rgba(245,158,11,.1)); }
+[data-theme="dark"] .cp-grad-welcome-kicker { color: #FCD34D; }
+[data-theme="dark"] .cp-grad-welcome-sub b { color: #FCD34D; }
+[data-theme="dark"] .cp-grad-welcome-btn { color: #451a03; }
+@media (prefers-reduced-motion: reduce) { .cp-grad-welcome { animation: none; } }
+@media (max-width: 768px) { .cp-grad-welcome-btn, .cp-grad-welcome-dismiss { min-height: 44px; } }
+
 .cp-archive-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 11px 2px; min-height: 56px; background: none; border: none; border-bottom: 1px solid var(--card-border); cursor: pointer; font: inherit; color: inherit; }
 .cp-archive-row:last-of-type { border-bottom: none; }
 .cp-archive-row:hover .cp-archive-title { color: var(--primary); }

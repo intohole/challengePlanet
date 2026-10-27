@@ -141,7 +141,7 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-companion-action { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--emerald); background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.22); padding: 5px 10px; border-radius: 11px; }
 .cp-days-stepper { display: flex; gap: 8px; }
 .cp-days-stepper .cp-pick-btn { flex: 1; }.cp-scope-tabs { display: flex; gap: 8px; }
-.cp-scope-tabs .cp-pick-btn { flex: 1; }
+.cp-scope-tabs .cp-pick-btn { flex: 1; font-size: 12px; white-space: nowrap; padding-left: 8px; padding-right: 8px; }
 
 .cp-me-card { padding: 20px; display: flex; align-items: center; gap: 14px; }
 .cp-me-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; color: #fff; box-shadow: 0 0 20px var(--primary-glow); }
@@ -165,6 +165,8 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 
 .cp-share-img { width: 100%; border-radius: var(--radius); display: block; }
 .cp-share-hint { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 12px; }
+.cp-share-longpress { display: none; }
+@media (max-width: 768px), (pointer: coarse) { .cp-share-longpress { display: inline; } }
 .cp-share-loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 60px 0; color: var(--text-secondary); font-size: 13px; }
 
 .cp-detail-row { padding: 10px 0; border-bottom: 1px solid rgba(15,23,42,.04); }

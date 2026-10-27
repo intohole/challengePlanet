@@ -10,7 +10,7 @@ import urllib.request
 
 BASE = os.environ.get("CP_BASE", "http://127.0.0.1:8610")
 API = BASE + "/api/v1"
-DB = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "challenge.db")
+DB = os.environ.get("DATABASE_URL", "sqlite+aiosqlite:///" + os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "challenge.db")).replace("sqlite+aiosqlite:///", "") or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "challenge.db")
 USER = "cp_fe2_e2e_" + str(int(time.time()))
 PWD = "CpFe2#x2026"
 passed: list[str] = []
@@ -67,10 +67,10 @@ def insert_history(cid: int, uid: str, start_ago: int, count: int, base: float, 
         date = shift(d)
         conn.execute(
             "INSERT INTO checkins(challenge_id,user_id,day_number,status,timestamp,date,value,unit,"
-            "target_value,goal_type,direction,completion_pct,mood,reflection,ai_feedback,context_tag)"
-            " VALUES (?,?,?,?,datetime('now'),?,?,?,?,?,?,?,?,?,?,?)",
-            (cid, uid, i, "completed", date, round(base - (i - 1) * step, 1), "根", base,
-             "soft", "decrease", 100.0, "", "", "", ""),
+            "calories,target_value,goal_type,direction,completion_pct,mood,reflection,ai_feedback,declaration,context_tag,created_at)"
+            " VALUES (?,?,?,?,datetime('now'),?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))",
+            (cid, uid, i, "completed", date, round(base - (i - 1) * step, 1), "根", 0, base,
+             "soft", "decrease", 100.0, "", "", "", "", ""),
         )
         d = max(0, d - 1)
     conn.commit()

@@ -13,9 +13,10 @@ window.cpGradCert = (function () {
     return size
   }
 
-  async function generate(journey, ch) {
+  async function generate(journey, ch, opts) {
     if (!journey || !journey.graduation) throw new Error('no graduation')
     const g = journey.graduation
+    const absent = !!(opts && opts.absent)
     const unit = journey.unit || ''
     const avoided = journey.cigarettes_avoided || 0
     const money = journey.money_saved || 0
@@ -84,12 +85,19 @@ window.cpGradCert = (function () {
     ctx.font = 'bold 24px sans-serif'
     ctx.fillText('累计少抽 ' + unit, 375, 446)
 
-    const cells = [
-      ['阶梯旅程', goalDay + ' 天'],
-      ['减量幅度', '-' + pct + '%'],
-      ['省下约', '¥' + money],
-      ['守线纪录', '连续 ' + guard + ' 天'],
-    ]
+    const cells = absent
+      ? [
+          ['阶梯旅程', goalDay + ' 天'],
+          ['记录天数', (journey.records_days || 0) + ' 天'],
+          ['省下约', '¥' + money],
+          ['守线纪录', '连续 ' + guard + ' 天'],
+        ]
+      : [
+          ['阶梯旅程', goalDay + ' 天'],
+          ['减量幅度', '-' + pct + '%'],
+          ['省下约', '¥' + money],
+          ['守线纪录', '连续 ' + guard + ' 天'],
+        ]
     const cw = 290, chh = 92, gx = 60, gy = 490
     cells.forEach((c, i) => {
       const x = gx + (i % 2) * (cw + 50), y = gy + Math.floor(i / 2) * (chh + 18)

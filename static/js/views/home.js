@@ -205,6 +205,7 @@ window.cpViews.home = (function () {
       } else if (d.guidance && d.guidance.is_at_risk) {
         html += '<div class="cp-risk-banner"><i class="fas fa-triangle-exclamation"></i><span>中断了！今天重新打卡，节奏就能恢复</span><button class="cp-risk-btn" onclick="cpViews.home.load()">立即打卡</button></div>'
       }
+      html += this._gradWelcome(s)
       html += this._taskArea(s)
       return html
     },

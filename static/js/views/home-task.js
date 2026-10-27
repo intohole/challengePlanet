@@ -1,6 +1,38 @@
 ;(function () {
   const V = window.cpViews.home
 
+  V._gradWelcome = function (s) {
+    const ch = s.current
+    const t = this.data.today
+    if (!s.gradShowcase || !ch || ch.status !== 'active' || !t) return ''
+    const j = t.journey
+    if (!j || !j.graduation || j.graduation.state !== 'graduated') return ''
+    const a = t.absence
+    if (a && !a.today_checked && a.can_shift) return ''
+    const key = 'cp_grad_welcome_dismiss_' + ch.id + '_' + window.cpTodayStr()
+    try { if (sessionStorage.getItem(key)) return '' } catch (e) {}
+    const unit = window.cpEsc(j.unit || '')
+    const avoidedLine = Number(j.cigarettes_avoided) > 0
+      ? (a ? '记录的日子里累计少抽了 <b>' + window.cpFmtInt(j.cigarettes_avoided) + '</b> ' + unit + '。' : '累计少抽了 <b>' + window.cpFmtInt(j.cigarettes_avoided) + '</b> ' + unit + '。')
+      : ''
+    return '<div class="cp-grad-welcome" data-testid="grad-welcome">'
+      + '<div class="cp-grad-welcome-icon"><i class="fas fa-graduation-cap" aria-hidden="true"></i></div>'
+      + '<div class="cp-grad-welcome-body">'
+      + '<p class="cp-grad-welcome-kicker">减量阶梯毕业</p>'
+      + '<p class="cp-grad-welcome-head">从每天约 ' + window.cpFmtInt(j.baseline) + ' ' + unit + '，走到 ' + window.cpFmtInt(j.graduation.final_cap) + ' ' + unit + '</p>'
+      + (avoidedLine ? '<p class="cp-grad-welcome-sub">' + avoidedLine + '</p>' : '')
+      + '<p class="cp-grad-welcome-note">证书已为你保留，不会过期。</p>'
+      + '<div class="cp-grad-welcome-actions">'
+      + '<button class="cp-grad-welcome-btn" data-testid="grad-welcome-btn" onclick="cpOpenShare(\'grad\')"><i class="fas fa-award" aria-hidden="true"></i> 领取毕业证书</button>'
+      + '<button class="cp-grad-welcome-dismiss" onclick="cpViews.home.dismissGradWelcome(' + ch.id + ')">先逛逛</button>'
+      + '</div></div></div>'
+  }
+
+  V.dismissGradWelcome = function (chId) {
+    try { sessionStorage.setItem('cp_grad_welcome_dismiss_' + chId + '_' + window.cpTodayStr(), '1') } catch (e) {}
+    this.rerender()
+  }
+
   V._taskArea = function (s) {
     const ch = s.current
     const d = this.data
