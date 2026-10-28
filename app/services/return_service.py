@@ -14,12 +14,6 @@ BACKFILL_TARGET_DAYS = 3
 BONUS_MENDS_PER_BACKFILL = 1
 
 
-def _day_diff(later: str, earlier: str) -> int:
-    from datetime import date
-
-    return (date.fromisoformat(later) - date.fromisoformat(earlier)).days
-
-
 def _gap_run_ending_at(valid_dates: set[str], start: str, first_missing: str) -> tuple[int, str] | None:
     """从 first_missing 起向前数连续缺失日：(缺失天数, 缺口前最后一个有效日)。"""
     gap_days = 0
