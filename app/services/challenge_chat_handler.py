@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import AsyncIterator
+from typing import AsyncIterator, ClassVar
 
 from nexus import get_llm_service
 from nexus.chat.context import ChatContext
@@ -16,7 +16,7 @@ from app.services.companion_service import companion_meta, load_challenge_state
 
 class ChallengeChatHandler(BaseChatHandler):
     default_title = "挑战伴学"
-    capabilities = {"chat", "stream", "meta"}
+    capabilities: ClassVar = {"chat", "stream", "meta"}
 
     async def build_context(self, context: ChatContext) -> None:
         meta = context.meta
