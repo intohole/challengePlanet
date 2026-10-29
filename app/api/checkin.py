@@ -52,7 +52,7 @@ async def do_checkin(
             sport_minutes=request.sport_minutes,
         )
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     await session.commit()
     return CheckInResultResponse(
         checkin=CheckInResponse.model_validate(result["checkin"]),
@@ -90,7 +90,7 @@ async def patch_today_checkin(
             session, challenge_id, user_id, request.mood, request.reflection
         )
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     await session.commit()
     return CheckInResponse.model_validate(checkin)
 
@@ -106,7 +106,7 @@ async def delete_checkin(
     try:
         await service.delete_checkin(session, checkin_id, user_id)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     await session.commit()
     return {"ok": True}
 
@@ -126,7 +126,7 @@ async def patch_checkin_meta(
             context_tag=request.context_tag, mood=request.mood,
         )
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     await session.commit()
     return CheckInResponse.model_validate(checkin)
 
@@ -163,7 +163,7 @@ async def mend_checkin(
     try:
         result = await service.mend(session, challenge_id, user_id, request.date)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     await session.commit()
     return DateActionResponse(**result)
 
@@ -179,7 +179,7 @@ async def freeze_checkin(
     try:
         result = await service.freeze(session, challenge_id, user_id, request.date)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     await session.commit()
     return DateActionResponse(**result)
 
@@ -194,7 +194,7 @@ async def repair_streak(
     try:
         result = await service.repair(session, challenge_id, user_id)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     await session.commit()
     return RepairResponse(**result)
 
@@ -209,7 +209,7 @@ async def get_mercy_status(
     try:
         result = await service.get_mercy_status(session, challenge_id, user_id)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     return MercyStatusResponse(**result)
 
 
@@ -223,7 +223,7 @@ async def get_checkins(
     try:
         checkins = await service.get_checkins(session, challenge_id, user_id)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     return [_sanitized_checkin(c) for c in checkins]
 
 

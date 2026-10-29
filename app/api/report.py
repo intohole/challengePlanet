@@ -30,7 +30,7 @@ async def get_overview(
     try:
         result = await service.get_overview(session, challenge_id, user_id)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     return ReportOverviewResponse(**result)
 
 
@@ -45,7 +45,7 @@ async def get_hourly_distribution(
     try:
         result = await service.get_hourly_distribution(session, challenge_id, user_id, days)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     return HourlyDistributionResponse(**result)
 
 
@@ -60,7 +60,7 @@ async def get_trend(
     try:
         result = await service.get_trend(session, challenge_id, user_id, days)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     return TrendResponse(**result)
 
 
@@ -75,7 +75,7 @@ async def get_heatmap(
     try:
         result = await service.get_heatmap(session, challenge_id, user_id, year)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     return HeatmapResponse(**result)
 
 
@@ -90,7 +90,7 @@ async def get_completion_rate(
     try:
         result = await service.get_completion_rate(session, challenge_id, user_id, period)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     return CompletionRateResponse(**result)
 
 
@@ -105,7 +105,7 @@ async def get_context_distribution(
     try:
         result = await service.get_context_distribution(session, challenge_id, user_id, days)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     return ContextDistResponse(**result)
 
 
@@ -120,5 +120,5 @@ async def get_mood_distribution(
     try:
         result = await service.get_mood_distribution(session, challenge_id, user_id, days)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     return MoodDistResponse(**result)

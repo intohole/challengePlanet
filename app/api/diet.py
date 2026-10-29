@@ -59,7 +59,7 @@ async def estimate_calories(
             challenge, description=description, image=image, today_intake=today_intake,
         )
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     return DietEstimateResponse(**result)
 
 

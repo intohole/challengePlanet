@@ -44,7 +44,7 @@ async def get_pending_suggestion(
     try:
         suggestion = await service.get_pending(session, challenge_id, user_id)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     await session.commit()
     if suggestion is None:
         return AdaptivePendingResponse(suggestion=None)
@@ -63,7 +63,7 @@ async def respond_suggestion(
     try:
         result = await service.respond(session, suggestion_id, user_id, request.accept)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     await session.commit()
     task = result.get("task")
     return AdaptiveRespondResponse(
@@ -83,7 +83,7 @@ async def diagnose_break(
     try:
         report = await service.diagnose(session, challenge_id, user_id)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     await session.commit()
     return DiagnoseResponse(**report)
 
@@ -99,6 +99,6 @@ async def apply_diagnosis(
     try:
         result = await service.apply(session, challenge_id, user_id, request.action)
     except ValueError as e:
-        raise bad_request(e)
+        raise bad_request(e) from e
     await session.commit()
     return DiagnoseApplyResponse(**result)
