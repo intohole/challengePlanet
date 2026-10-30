@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+from nexus import parse_json_column
 from nexus.logging import get_logger
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -74,7 +75,9 @@ class AdaptiveService:
         if challenge is None:
             raise ValueError("挑战不存在")
         plan = parse_ai_plan(challenge.ai_plan)
-        task = json.loads(suggestion.task_json)
+        task = parse_json_column(suggestion.task_json, {})
+        if not task:
+            raise ValueError("建议的任务数据无效")
         idx = suggestion.target_day - 1
         if 0 <= idx < len(plan):
             task["day"] = suggestion.target_day
