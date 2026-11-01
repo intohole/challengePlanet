@@ -231,6 +231,11 @@ class MercyService:
         if used >= REPAIR_LIMIT_PER_MONTH:
             raise ValueError("本月修复机会已用完")
 
+        try:
+            message = await self._ai.generate_repair_message(challenge.title, 1)
+        except Exception as e:
+            logger.warning("repair message fallback: %s", e)
+            message = "断签一天不代表失败，只是生活打了个岔。今天完成一个小行动，把节奏接回来。"
         await self._action_repo.create(session, {
             "challenge_id": challenge_id,
             "user_id": user_id,
@@ -238,11 +243,6 @@ class MercyService:
             "action_date": yesterday,
             "cost": 0,
         })
-        try:
-            message = await self._ai.generate_repair_message(challenge.title, 1)
-        except Exception as e:
-            logger.warning("repair message fallback: %s", e)
-            message = "断签一天不代表失败，只是生活打了个岔。今天完成一个小行动，把节奏接回来。"
         valid.add(yesterday)
         return {"ok": True, "message": message, "streak": calc_streak(valid, today)}
 
