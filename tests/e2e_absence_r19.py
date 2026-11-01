@@ -10,6 +10,7 @@ import time
 import urllib.request
 
 BASE = os.environ.get("CP_BASE", "http://127.0.0.1:8610")
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:////tmp/cp_fe5_regression.db")
 API = BASE + "/api/v1"
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO)
@@ -32,6 +33,7 @@ def check(name: str, cond: bool, detail: str = "") -> None:
 def api(method: str, path: str, body=None, token=None):
     r = urllib.request.Request(API + path, method=method)
     r.add_header("Content-Type", "application/json")
+    r.add_header("X-Service-Token", os.environ.get("SERVICE_TOKEN", "cp-fe5-reg-service"))
     if token:
         r.add_header("Authorization", f"Bearer {token}")
     data = json.dumps(body).encode() if body is not None else None

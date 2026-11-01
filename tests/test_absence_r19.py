@@ -86,8 +86,17 @@ def test_assess_absence_negative_paths() -> None:
     rows_with_today.append({"date": today, "value": 2.0, "checkin_count": 1})
     assert assess_absence(ch, rows_with_today, today) is None
 
+    # r24 起 absence 覆盖全部 cap 形态（含 goal_rule=fixed）——fixed 的今日上限=目标值常量
     fixed = _ladder_challenge(goal_rule="fixed", ladder_start=0.0, ladder_goal=0.0)
-    assert assess_absence(fixed, _rows({d1: 9.0}), today) is None
+    fixed_miss = assess_absence(fixed, _rows({d1: 9.0}), today)
+    assert fixed_miss is not None
+    assert fixed_miss["absent_days"] == 2
+    assert fixed_miss["cap_now"] == 1.0
+    assert fixed_miss["suggest_adjust"] is True
+
+    # 非 cap（increase 方向）仍不入 absence 语义
+    gain = _ladder_challenge(task_type="word", direction="increase")
+    assert assess_absence(gain, _rows({d1: 9.0}), today) is None
 
     fresh = _ladder_challenge(start_date=shift_date(today, -1))
     assert assess_absence(fresh, [], today) is None

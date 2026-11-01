@@ -7,7 +7,7 @@ from nexus.logging import get_logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.checkin_repository import InsightRepository
-from app.services.goal_rule_service import daily_target, is_cap_mode, is_ladder
+from app.services.goal_rule_service import daily_target, is_cap_mode
 from app.services.journey_service import cumulative_avoided, journey_baseline
 from app.services.slip_service import SLIP_CARE_INSIGHT
 from app.services.streak_service import day_number_of, shift_date, today_str
@@ -22,12 +22,14 @@ TOUCH_GAP_DAYS = 2
 def assess_absence(
     challenge: object, daily_rows: list[dict], today: str,
 ) -> dict[str, object] | None:
-    """cap 阶梯挑战连续 ≥2 天无记录的失踪判定：失踪是 slip 之外的另一种高危状态。
+    """cap 挑战（减量方向 counter/timer）连续 ≥2 天无记录的失踪判定：失踪是 slip 之外的另一种高危状态。
 
     前提：建档后至少记过一次（从未记录=尚未启程，不是失踪）；
     今天已有记录=失踪期已结束，不再判缺席。
+    r24 起覆盖全部 cap 形态（含 goal_rule=fixed）——此前 ladder 才有 absence，
+    fixed cap 缺席后 normal 复读、rescue 不收（assess_rescue 跳过 cap）=覆盖洞。
     """
-    if not (is_cap_mode(challenge) and is_ladder(challenge)):
+    if not is_cap_mode(challenge):
         return None
     start = str(getattr(challenge, "start_date", "") or "")
     if not start or today <= start:
@@ -153,7 +155,7 @@ async def collect_absence_items(
     checkin_repo = CheckInRepository()
     items: list[dict[str, object]] = []
     for challenge in challenges:
-        if not (is_cap_mode(challenge) and is_ladder(challenge)):
+        if not is_cap_mode(challenge):
             continue
         start = str(challenge.start_date or "")
         end = str(challenge.end_date or "")
@@ -230,7 +232,7 @@ def absence_revive_text(
     if graduated:
         if lane == "switch":
             return f"「{title}」的证书不会过期", (
-                "不催打卡。毕业证书会一直在旅程档案里等你，想看看的时候回来就好。"
+                "不催打卡。毕业证书一直在，想看看的时候回来就好。"
             )
         return f"「{title}」的毕业证书在等你", (
             "阶梯走完那天证书就生成了，一直留着。回来看看这段旅程；"

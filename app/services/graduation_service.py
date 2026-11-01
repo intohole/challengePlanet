@@ -19,6 +19,11 @@ logger = get_logger("challengePlanet.graduation")
 PUSH_INSIGHT_TYPE = "journey_push"
 APPROACH_DAYS = 3
 ABSENT_GRADUATION_GAP_DAYS = 7
+# 旅程推送的 humane 窗口：与 notifyCenter 平台静默窗（22:00–08:00）对齐。
+# 生产实锤：毕业推送 cron 每小时 :40 全天跑，阶梯在午夜翻日后首个 tick=00:40 深夜送达。
+# 窗外跳过且不置位（insight 状态只在 items 非空时写），次日首个窗口 tick 自然补发。
+PUSH_WINDOW_START_HOUR = 8
+PUSH_WINDOW_END_HOUR = 22
 
 
 def graduation_goal_day(challenge: object) -> int | None:
@@ -168,6 +173,10 @@ def graduation_push_absent_text(
     return title, body
 
 
+def journey_push_window_open(hour: int) -> bool:
+    return PUSH_WINDOW_START_HOUR <= hour < PUSH_WINDOW_END_HOUR
+
+
 class GraduationPushService:
     """旅程成果推送：每小时扫描，里程碑/毕业各只推一次（insight 去重）。"""
 
@@ -219,6 +228,10 @@ class GraduationPushService:
         return items
 
     async def send_journey_pushes(self) -> None:
+        from app.core.datetime_utils import now_china
+
+        if not journey_push_window_open(now_china().hour):
+            return
         try:
             async with async_session() as session:
                 from app.repositories.challenge_repository import ChallengeRepository

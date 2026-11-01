@@ -132,6 +132,18 @@ class CheckInRepository(StatelessRepository[CheckIn]):
         )
         return int(result.scalar_one() or 0)
 
+    async def last_checkin_dates(
+        self, session: AsyncSession, challenge_ids: list[int],
+    ) -> dict[int, str]:
+        if not challenge_ids:
+            return {}
+        result = await session.execute(
+            select(CheckIn.challenge_id, func.max(CheckIn.date)).where(
+                CheckIn.challenge_id.in_(challenge_ids)
+            ).group_by(CheckIn.challenge_id)
+        )
+        return {int(cid): str(d) for cid, d in result.all()}
+
     async def count_active_days(self, session: AsyncSession, challenge_id: int) -> int:
         result = await session.execute(
             select(func.count(func.distinct(CheckIn.date))).where(

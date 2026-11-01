@@ -7,6 +7,11 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import os
+
+# r24 存量修：本脚本直连(ChallengeRepository/seed_day)与 8610 服务必须同一库
+# （fe5_regression_env 的 DATABASE_URL）；否则 seed_day 读到 None 静默炸
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:////tmp/cp_fe5_regression.db")
 import json
 import sys
 import time
@@ -33,11 +38,16 @@ def check(name, cond, detail=""):
         print(f"  FAIL {name} :: {detail}")
 
 
+SERVICE_TOKEN = os.environ.get("SERVICE_TOKEN", "cp-fe5-reg-service")
+
+
 def api(method, path, body=None, token=None):
+    # S53 起服务侧启用 ServiceTokenMiddleware：用户面请求需同时携带服务头（r24 存量修）
     r = urllib.request.Request(API + path, method=method)
     r.add_header("Content-Type", "application/json")
     if token:
         r.add_header("Authorization", "Bearer " + token)
+    r.add_header("X-Service-Token", SERVICE_TOKEN)
     data = json.dumps(body).encode() if body is not None else None
     with urllib.request.urlopen(r, data=data, timeout=20) as resp:
         return json.loads(resp.read())
@@ -157,7 +167,8 @@ def main():
     check("S2 断4天首发催促", len(rescues) == 1, str([s.get("title") for s in mine2]))
     async def _insights():
         import sqlite3
-        conn = sqlite3.connect("data/challenge.db")
+        db_path = os.environ.get("DATABASE_URL", "sqlite+aiosqlite:///data/challenge.db").replace("sqlite+aiosqlite:///", "")
+        conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
             "SELECT content FROM ai_insights WHERE challenge_id=? AND insight_type='rescue_care'",
@@ -183,7 +194,7 @@ def main():
         ctx.add_init_script(f"window.localStorage.setItem('uc_access_token', '{token}')")
         page = ctx.new_page()
         page.goto(BASE + "/?ch=" + str(cid_c) + "&rc=absence", wait_until="domcontentloaded")
-        page.wait_for_timeout(3000)
+        page.wait_for_timeout(8000)
         ss = page.evaluate("Object.fromEntries(Object.entries(sessionStorage).filter(([k])=>k.startsWith('cp_rk')))")
         arrived_keys = [k for k in ss if "_arrived_" in k]
         seen_keys = [k for k in ss if "_seen_" in k]
@@ -193,7 +204,8 @@ def main():
     api("POST", f"/challenges/{cid_c}/checkin", {"value": 1, "context_tag": "", "mood": ""}, token)
     async def _funnel_rows():
         import sqlite3
-        conn = sqlite3.connect("data/challenge.db")
+        db_path = os.environ.get("DATABASE_URL", "sqlite+aiosqlite:///data/challenge.db").replace("sqlite+aiosqlite:///", "")
+        conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
             "SELECT stage, channel, COUNT(*) n FROM recall_events WHERE challenge_id=? GROUP BY stage, channel",

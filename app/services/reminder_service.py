@@ -17,13 +17,24 @@ from app.services.absence_service import collect_absence_items, mark_absence_sen
 from app.services.companion_service import assess_risk, companion_text
 from app.services.goal_rule_service import is_cap_mode
 from app.services.mercy_service import load_valid_dates
-from app.services.rescue_service import collect_rescue_items, mark_rescue_sent
+from app.services.rescue_service import (
+    RESCUE_FIRST_NOTIFY_DAY,
+    collect_rescue_items,
+    mark_rescue_sent,
+)
 from app.services.streak_service import calc_streak, today_str
 
 logger = get_logger("challengePlanet.reminder")
 
 DEFAULT_REMIND_HOUR = 20
 MAX_SENDS_PER_USER_PER_DAY = 3
+# 缺席挑战让位 rescue 引擎（首发门槛/隔日/周二五节奏+REVIVE/SUNSET gate）。阈值口径
+# 必须与 rescue 的 missed_days 同钟：rescue 从昨天起算漏记天数（缺席天数=missed+1），
+# 故「最后打卡 ≥RESCUE_FIRST_NOTIFY_DAY+1 天前」⟺ rescue missed_days ≥3 首发到期——
+# 阈值差一天就会造出「normal 不发、rescue 未到期」的一天真空。生产实锤 lxz 断 25 天
+# 期间 normal 逐字复读 6 次（「节奏有些波动」与同日 rescue「断了 25 天」语义矛盾），
+# 平台 repeat_storm 只能隔天拦一半，复读源头必须在应用侧根治。
+NORMAL_HANDOFF_AFTER_DAYS = RESCUE_FIRST_NOTIFY_DAY + 1
 
 
 def _reminder_content(risk: dict[str, object], total: int = 1) -> str:
@@ -34,6 +45,17 @@ def _reminder_content(risk: dict[str, object], total: int = 1) -> str:
     if level == "medium":
         return f"{head}记得留点时间完成它们。{companion_text(risk)}"
     return f"{head}别让连击断在这里！{companion_text(risk)}"
+
+
+def _absence_days(last_date: str | None, today: str) -> int:
+    from datetime import date as _date
+
+    if not last_date:
+        return 0
+    try:
+        return (_date.fromisoformat(today) - _date.fromisoformat(last_date)).days
+    except ValueError:
+        return 0
 
 
 async def _get_unchecked_challenges(session: AsyncSession) -> list[Challenge]:
@@ -116,9 +138,29 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                 "Sending reminders to %d users at hour=%s (%d absence)...",
                 len(grouped), current, len(absence_by_user),
             )
+            pref_user_count = len(grouped)
             client = get_notify_client()
             checkins_repo = CheckInRepository()
             rescue_items = await collect_rescue_items(session, [c for cs in grouped.values() for c in cs])
+            last_dates = await checkins_repo.last_checkin_dates(
+                session, [c.id for cs in grouped.values() for c in cs],
+            )
+            fresh_grouped: dict[str, list[Challenge]] = {}
+            handoff_count = 0
+            for user_id, challenges in grouped.items():
+                fresh = [
+                    c for c in challenges
+                    if _absence_days(last_dates.get(int(c.id)), today_str()) < NORMAL_HANDOFF_AFTER_DAYS
+                ]
+                handoff_count += len(challenges) - len(fresh)
+                if fresh:
+                    fresh_grouped[user_id] = fresh
+            if handoff_count:
+                logger.info(
+                    "absence handoff: %d challenges owned by rescue engine (>=%d days absent)",
+                    handoff_count, NORMAL_HANDOFF_AFTER_DAYS,
+                )
+            grouped = fresh_grouped
             normal_items: list[dict[str, object]] = []
             for user_id, challenges in grouped.items():
                 representative = challenges[0]
@@ -235,7 +277,7 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
             logger.info(
                 "Check-in reminders processed: %d rescue + %d normal + %d absence for %d users; gates=%s",
                 sent_counter["rescue"], sent_counter["normal"], sent_counter["absence"],
-                len(grouped) + len(absence_by_user),
+                pref_user_count + len(absence_by_user),
                 gate_counter or {},
             )
     except Exception as e:

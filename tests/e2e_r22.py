@@ -310,7 +310,18 @@ def main():
         has_rescue = any((s.get("data") or {}).get("rescue") for s in mine5)
         has_normal = any("打卡提醒" in str(s.get("title", "")) or "待打卡" in str(s.get("title", "")) for s in mine5)
         check("E6a rescue失败不送达", has_rescue is False, str([s.get("title") for s in mine5]))
-        check("E6b normal提醒兜底当日不空窗", has_normal is True, str([s.get("title") for s in mine5]))
+        # r24 新语义：缺席挑战归 rescue 所有，normal 不再用「今天还没打卡」日课兜底（复读根治）；
+        # 失败不置位 → 下一次到期节拍自然重试（E6b 用好 client 复跑验证重试可达）
+        check(
+            "E6b 缺席挑战无 normal 日课兜底（让位 rescue）",
+            has_normal is False,
+            str([s.get("title") for s in mine5]),
+        )
+        fake5b = FakeNotify()
+        asyncio.run(_run_job(fake5b))
+        mine5b = [s for s in fake5b.sent if str(s.get("user_id")) == uid]
+        retried = any((s.get("data") or {}).get("rescue") for s in mine5b)
+        check("E6c 失败不置位→下节拍 rescue 重试", retried is True, str([s.get("title") for s in mine5b]))
 
         # ---------- E7 rescue 成功 → 同用户 normal 抑制 ----------
         fake6 = FakeNotify()
@@ -318,7 +329,8 @@ def main():
         mine6 = [s for s in fake6.sent if str(s.get("user_id")) == uid]
         rescues6 = [s for s in mine6 if (s.get("data") or {}).get("rescue")]
         normals6 = [s for s in mine6 if "打卡提醒" in str(s.get("title", ""))]
-        check("E7 rescue成功则normal抑制", len(rescues6) == 1 and len(normals6) == 0, str([s.get("title") for s in mine6]))
+        # r24：rescue 已发（rescue_sent_today 幂等）+ 缺席挑战无 normal 兜底 = 当日完全静默
+        check("E7 rescue成功当日不重复触达（幂等+无normal兜底）", len(rescues6) == 0 and len(normals6) == 0 and len(mine6) == 0, str([s.get("title") for s in mine6]))
 
         # ---------- E8 每用户每日聚合频控 ≤3 ----------
         async def e8():
