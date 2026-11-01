@@ -11,6 +11,7 @@ import urllib.request
 
 BASE = os.environ.get("E2E_BASE", "http://127.0.0.1:8610")
 API = BASE + "/api/v1"
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:////tmp/cp_fe5_regression.db")
 SPA = BASE + "/"
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO)
@@ -33,8 +34,10 @@ def check(name: str, cond: bool, detail: str = "") -> None:
 
 
 def api(method: str, path: str, body=None, token=None):
+    r_service = os.environ.get("SERVICE_TOKEN", "cp-fe5-reg-service")
     r = urllib.request.Request(API + path, method=method)
     r.add_header("Content-Type", "application/json")
+    r.add_header("X-Service-Token", r_service)
     if token:
         r.add_header("Authorization", f"Bearer {token}")
     data = json.dumps(body).encode() if body is not None else None
