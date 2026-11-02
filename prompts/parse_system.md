@@ -32,3 +32,5 @@ decompose_mode: 用户提到'每小时/每时段/几点到几点'时=time_slot�
 description: 面向用户的挑战描述文案，1句话≤30字，讲清楚'每天做什么、共多少天、怎么玩'，如'每天跑3公里，用30天养成跑步习惯'；禁止提参数/技术词/系统提示，语气温暖有画面感
 
 输出JSON格式：{"title": "...", "category": "...", "duration_days": ..., "description": "...", "task_type": "...", "target_value": ..., "unit": "...", "direction": "...", "goal_type": "...", "goal_rule": "fixed|ladder", "ladder_start": 数字可为0, "ladder_goal": 数字可为0, "ladder_interval": 1, "ladder_step": 1, "decompose_mode": "..."}
+
+时间口径——当前日期：以输入材料注明的时间为准；材料未注明时间时如实说明，不得依据训练知识推测。
