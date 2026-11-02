@@ -100,8 +100,7 @@ async def test_build_context_with_challenge(handler: ChallengeChatHandler, monke
     assert state["challenge"].title == "戒烟挑战"
     assert state["completed_days"] == 6
     assert state["ladder_progress_pct"] is not None
-    assert any("戒烟挑战" in p for p in ctx.context_parts)
-    assert any("阶梯进度" in p for p in ctx.context_parts)
+    assert ctx.context_parts == []
 
 
 @pytest.mark.asyncio
@@ -120,6 +119,36 @@ async def test_stream_reply_no_challenge(handler: ChallengeChatHandler) -> None:
     texts = [e for e in events if isinstance(e, str)]
     assert texts and "挑战" in texts[0]
     assert any(isinstance(e, dict) and e.get("type") == "meta" for e in events)
+
+
+@pytest.mark.asyncio
+async def test_memory_parts_reach_system_prompt(handler: ChallengeChatHandler, monkeypatch) -> None:
+    """context_parts（MemoryMiddleware 注入的记忆块）必须进入 stream_reply 的 system。"""
+    from nexus.chat.middleware.memory import MemoryMiddleware
+
+    _patch_db(monkeypatch, _make_challenge(), [_make_checkin("2026-08-19")])
+
+    captured: dict = {}
+
+    class FakeLLM:
+        async def stream_ask(self, prompt: str, **kw: object):
+            captured["system"] = kw.get("system")
+            yield "稳住"
+
+    monkeypatch.setattr("app.services.challenge_chat_handler.get_llm_service", lambda: FakeLLM())
+
+    class StubSDK:
+        async def recall_memories(self, **kwargs):
+            return {"memories": [{"content": "用户上次中断三天后重新开始", "created_at": "2026-11-01"}]}
+
+    ctx = _make_context(handler, meta={"challenge_id": 1})
+    await handler.build_context(ctx)
+    await MemoryMiddleware(StubSDK()).before(ctx)
+    events = [e async for e in handler.stream_reply(ctx, [{"role": "user", "content": "我今天有点不想坚持了"}])]
+    assert any(isinstance(e, str) for e in events)
+    assert captured["system"].startswith("以下是用户的历史记忆")
+    assert "重新开始" in captured["system"]
+    assert "挑战信息" in captured["system"]
 
 
 @pytest.mark.asyncio

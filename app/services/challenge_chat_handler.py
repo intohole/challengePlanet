@@ -30,9 +30,6 @@ class ChallengeChatHandler(BaseChatHandler):
             return
         state.update(await load_challenge_state(str(context.conversation.user_id), challenge_id))
         context.domain_state = state
-        if state.get("error"):
-            return
-        context.context_parts = _build_parts(state)
 
     async def stream_reply(
         self, context: ChatContext, messages: list[dict[str, str]]
@@ -46,7 +43,7 @@ class ChallengeChatHandler(BaseChatHandler):
             yield "这个挑战不存在或不属于你哦～"
             yield {"type": "meta", **self.stream_meta(context)}
             return
-        system = _build_system_prompt(state)
+        system = "\n\n".join([*context.context_parts, _build_system_prompt(state)])
         async for chunk in get_llm_service().stream_ask(
             context.user_message, system=system,
             temperature=0.8, max_tokens=160, task_type="assistant",
@@ -61,25 +58,6 @@ class ChallengeChatHandler(BaseChatHandler):
         self, context: ChatContext, user_message: str, reply: str
     ) -> dict | None:
         return companion_meta(context.domain_state)
-
-
-def _build_parts(state: dict) -> list[str]:
-    challenge = state["challenge"]
-    risk = state["risk"]
-    direction = "越少越好" if challenge.direction == "decrease" else "越多越好"
-    parts = [
-        f"## 挑战：{challenge.title}",
-        f"目标：每天{challenge.target_value}{challenge.unit}（{direction}）",
-        f"进度：已完成{state['completed_days']}天 / 共{challenge.duration_days}天，当前连续{state['streak']}天",
-        f"阶段：{state['phase']}",
-    ]
-    if state.get("ladder_progress_pct") is not None:
-        parts.append(f"阶梯进度：{state['ladder_progress_pct']:.0f}%")
-    if risk.get("reasons"):
-        parts.append("风险信号：" + "；".join(str(r) for r in risk["reasons"]))
-    if risk.get("micro_action"):
-        parts.append(f"微行动建议：{risk['micro_action']}")
-    return parts
 
 
 def _build_system_prompt(state: dict) -> str:

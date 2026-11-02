@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from pathlib import Path
+import os
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from nexus.middleware import LoadingSplashMiddleware, StaticAssetsCacheMiddleware
 from app.api.probe import register_probe
-from nexus import close_uc_sdk, create_auth_router, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, startup_ironman, register_health_endpoints
+from nexus import close_uc_sdk, create_auth_router, get_bm_sdk, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, startup_ironman, register_health_endpoints
 from nexus.chat.engine import ChatEngine
+from nexus.chat.middleware.memory import MemoryMiddleware
 from nexus.chat.router import chat_router
 from nexus.logging import get_logger, setup_loguru
 from nexus.notify import async_init_notify_client, register_notify_proxy
@@ -145,7 +147,12 @@ app.include_router(ladder_router, prefix=API_PREFIX + "/challenges")
 app.include_router(points_router, prefix=API_PREFIX)
 app.include_router(archives_router, prefix=API_PREFIX)
 app.include_router(recall_router, prefix=API_PREFIX)
-app.include_router(chat_router(ChatEngine(db_engine).register("challengePlanet", challenge_chat_handler), "challengePlanet"))
+challenge_chat_engine = (
+    ChatEngine(db_engine)
+    .register("challengePlanet", challenge_chat_handler)
+    .use(MemoryMiddleware(get_bm_sdk(app_name="ChallengePlanet"), channel=os.environ.get("BEEMEMORY_CHANNEL") or None))
+)
+app.include_router(chat_router(challenge_chat_engine, "challengePlanet"))
 
 register_notify_proxy(app)
 
