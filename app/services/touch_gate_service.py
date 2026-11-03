@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from nexus.logging import get_logger
+from nexus.notify import unread_status as _is_unread  # noqa: F401 — travelMate 范本收归 r160，测试 patch 面沿本模块属性
 from nexus.touch import fingerprint
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,26 +37,6 @@ def log_gate_decision(
         return
     _LAST_GATE_LOG[key] = str(reason)
     logger.info(line)
-
-
-async def _is_unread(notif_id: int) -> bool | None:
-    """回执行号→已读状态：True=未读 / False=已读 / None=证据缺失（travelMate 范本语义）。"""
-    if not notif_id:
-        return None
-    try:
-        from nexus.notify import get_notify_client
-
-        client = get_notify_client()
-        method = getattr(client, "read_status", None)
-        if method is None:
-            return None
-        statuses = await method([int(notif_id)])
-    except Exception as e:
-        logger.warning("read_status check failed: %s", e)
-        return None
-    if int(notif_id) not in statuses:
-        return None
-    return not statuses[int(notif_id)]
 
 
 async def decide_touch_kind(
