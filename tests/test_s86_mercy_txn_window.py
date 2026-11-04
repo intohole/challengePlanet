@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import time
 from datetime import date, timedelta
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy import select
@@ -17,6 +18,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from app.db.database import Base
 from app.models.challenge import Challenge
 from app.models.points import StreakAction
+from app.services import mercy_service as mercy_mod
 from app.services.mercy_service import ACTION_REPAIR, MercyService
 
 CHALLENGE_ID = 101
@@ -74,22 +76,26 @@ async def _hang_repair(tmp_path: str) -> tuple[bool, float, int]:
     svc._action_repo.count_challenge_actions_in_month = fake_count
 
     async with sm() as sa:
-        task = asyncio.create_task(svc.repair(sa, CHALLENGE_ID, OWNER))
-        await asyncio.wait_for(entered.wait(), timeout=5)
-        t0 = time.monotonic()
-        locked = False
-        async with sm() as sb:
-            try:
-                sb.add(StreakAction(challenge_id=CHALLENGE_ID + 1, user_id="u2",
-                                    action="checkin", action_date=YESTERDAY, cost=0))
-                await asyncio.wait_for(sb.commit(), timeout=9)
-            except (OperationalError, asyncio.TimeoutError):
-                locked = True
-            await sb.rollback()
-        dt = time.monotonic() - t0
-        hang.set()
-        await asyncio.wait_for(task, timeout=5)
-        await sa.commit()
+        # repair 内部用真实时钟（today_str=now_china）；测试日期写死会让「昨天断签」
+        # 相对语义随日历漂移过期（11-02 写死的 TODAY 跑在 11-05 即腐化：streak_before
+        # 落空→校验 ValueError→task 死→entered 永不 set→超时）。钉死被测时钟。
+        with patch.object(mercy_mod, "today_str", lambda: TODAY.isoformat()):
+            task = asyncio.create_task(svc.repair(sa, CHALLENGE_ID, OWNER))
+            await asyncio.wait_for(entered.wait(), timeout=5)
+            t0 = time.monotonic()
+            locked = False
+            async with sm() as sb:
+                try:
+                    sb.add(StreakAction(challenge_id=CHALLENGE_ID + 1, user_id="u2",
+                                        action="checkin", action_date=YESTERDAY, cost=0))
+                    await asyncio.wait_for(sb.commit(), timeout=9)
+                except (OperationalError, asyncio.TimeoutError):
+                    locked = True
+                await sb.rollback()
+            dt = time.monotonic() - t0
+            hang.set()
+            await asyncio.wait_for(task, timeout=5)
+            await sa.commit()
 
     async with sm() as sc:
         n = len((await sc.execute(select(StreakAction))).scalars().all())

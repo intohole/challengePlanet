@@ -15,6 +15,7 @@ from app.models.reminder import ReminderPref
 from app.repositories.checkin_repository import CheckInRepository
 from app.services.absence_service import collect_absence_items, mark_absence_sent
 from app.services.companion_service import assess_risk, companion_text
+from app.services.graduation_service import journey_push_window_open
 from app.services.goal_rule_service import is_cap_mode
 from app.services.mercy_service import load_valid_dates
 from app.services.rescue_service import (
@@ -95,6 +96,17 @@ def _prefers_now(pref: ReminderPref | None, current_hour: int) -> bool:
     return int(hour) == current_hour
 
 
+def _recall_allowed(pref: ReminderPref | None, current_hour: int) -> bool:
+    # 召回触达（absence/rescue）挂 humane 窗口而非偏好小时：gate 决策每小时跑，
+    # 发送只认偏好小时的旧形态让「决策先到、发送等窗」——生产实锤毕业 REVIVE
+    # 11-03 21:00 决策被拖到次日 20:00 才送达（迟到 23h）。召回自带三层节流
+    # （absence 2 天冷却/rescue cadence/REVIVE 7 天窗），豁免偏好不致骚扰；
+    # 用户主动关闭提醒仍尊重。窗口复用 journey 推送纪律（r24 C1，对齐平台静默窗）。
+    if pref is not None and not pref.enabled:
+        return False
+    return journey_push_window_open(current_hour)
+
+
 async def send_checkin_reminders(current_hour: int | None = None) -> None:
     try:
         current = current_hour if current_hour is not None else now_china().hour
@@ -104,44 +116,60 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                 select(Challenge).where(Challenge.status == "active")
             )
             absence_items = await collect_absence_items(session, list(active_result.scalars().all()))
+            rescue_items = await collect_rescue_items(session, unchecked)
             if not unchecked and not absence_items:
                 logger.info("No unchecked challenges found, skipping reminders.")
                 return
             prefs = await _load_prefs(session)
 
-            def _pref_group(user_id: str) -> bool:
-                return _prefers_now(prefs.get(user_id), current)
-
             grouped: dict[str, list[Challenge]] = {}
             for challenge in unchecked:
-                if _pref_group(str(challenge.user_id)):
+                if _prefers_now(prefs.get(str(challenge.user_id)), current):
                     grouped.setdefault(str(challenge.user_id), []).append(challenge)
+            # 召回通道独立分组：窗口内即发；被 hold 的条目逐个留痕（决策行↔发送行可对账）。
+            hold_ids: list[str] = []
             absence_by_user: dict[str, list[dict[str, object]]] = {}
-            for entry in absence_items:
-                if _pref_group(str(entry["user_id"])):
-                    absence_by_user.setdefault(str(entry["user_id"]), []).append(entry)
-            if not grouped and not absence_by_user:
+            rescue_by_user: dict[str, list[dict[str, object]]] = {}
+            for kind, entries, bucket in (
+                ("absence", absence_items, absence_by_user),
+                ("rescue", rescue_items, rescue_by_user),
+            ):
+                for entry in entries:
+                    uid = str(entry["user_id"])
+                    if not _recall_allowed(prefs.get(uid), current):
+                        hold_ids.append(f"{kind}:ch{entry.get('challenge_id')}")
+                        continue
+                    bucket.setdefault(uid, []).append(entry)
+            if hold_ids:
+                logger.info(
+                    "recall held: %d items (humane window or user disabled, hour=%d): %s",
+                    len(hold_ids), current, ",".join(hold_ids),
+                )
+            candidates = set(grouped) | set(absence_by_user) | set(rescue_by_user)
+            if not candidates:
                 logger.info("No users preferring hour=%s, skipping.", current)
                 return
-            sendable = await sendable_users(set(grouped) | set(absence_by_user))
-            skipped = (set(grouped) | set(absence_by_user)) - sendable
+            sendable = await sendable_users(candidates)
+            skipped = candidates - sendable
             if skipped:
                 logger.info(
                     "audience guard: %d users skipped (orphan/test/disabled)", len(skipped),
                 )
             grouped = {u: cs for u, cs in grouped.items() if u in sendable}
             absence_by_user = {u: es for u, es in absence_by_user.items() if u in sendable}
-            if not grouped and not absence_by_user:
+            rescue_by_user = {u: es for u, es in rescue_by_user.items() if u in sendable}
+            if not grouped and not absence_by_user and not rescue_by_user:
                 logger.info("All candidates filtered by audience guard, skipping.")
                 return
+            rescue_flat = [e for entries in rescue_by_user.values() for e in entries]
+            absence_flat = [e for entries in absence_by_user.values() for e in entries]
             logger.info(
-                "Sending reminders to %d users at hour=%s (%d absence)...",
-                len(grouped), current, len(absence_by_user),
+                "Sending reminders to %d users at hour=%s (%d rescue + %d absence)...",
+                len(set(grouped) | set(absence_by_user) | set(rescue_by_user)),
+                current, len(rescue_flat), len(absence_flat),
             )
-            pref_user_count = len(grouped)
             client = get_notify_client()
             checkins_repo = CheckInRepository()
-            rescue_items = await collect_rescue_items(session, [c for cs in grouped.values() for c in cs])
             last_dates = await checkins_repo.last_checkin_dates(
                 session, [c.id for cs in grouped.values() for c in cs],
             )
@@ -187,11 +215,10 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                         "data": {"challenge_count": len(challenges)},
                     }
                 )
-            absence_flat = [e for entries in absence_by_user.values() for e in entries]
             sent_counter = {"rescue": 0, "normal": 0, "absence": 0}
             gate_counter: dict[str, int] = {}
             for kind_name, entries in (
-                ("rescue", rescue_items), ("absence", absence_flat),
+                ("rescue", rescue_flat), ("absence", absence_flat),
             ):
                 for entry in entries:
                     gate_counter[str((entry.get("gate") or {}).get("action", kind_name))] = (
@@ -206,7 +233,7 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                 per_user_budget[str(user_id)] = per_user_budget.get(str(user_id), 0) + 1
 
             rescue_ok: list[dict[str, object]] = []
-            for entry in rescue_items:
+            for entry in rescue_flat:
                 if _budget_left(str(entry["user_id"])) <= 0:
                     logger.warning("daily send budget exhausted for user %s — rescue held", entry["user_id"])
                     continue
@@ -277,7 +304,7 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
             logger.info(
                 "Check-in reminders processed: %d rescue + %d normal + %d absence for %d users; gates=%s",
                 sent_counter["rescue"], sent_counter["normal"], sent_counter["absence"],
-                pref_user_count + len(absence_by_user),
+                len(set(grouped) | set(absence_by_user) | set(rescue_by_user)),
                 gate_counter or {},
             )
     except Exception as e:

@@ -13,17 +13,12 @@ from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.checkin_repository import CheckInRepository
 from app.repositories.points_repository import ChallengeMetaRepository
 from app.services.ai_service import AIService
+from app.services.challenge_present import calc_progress as _calc_progress
 from app.services.goal_rule_service import is_cap_mode
 from app.services.mercy_service import load_valid_dates
 from app.services.streak_service import calc_streak, today_str
 
 logger = get_logger("challengePlanet.share")
-
-
-def _calc_progress(completed_days: int, duration_days: int) -> float:
-    if duration_days <= 0:
-        return 0.0
-    return round(completed_days * 100.0 / duration_days, 1)
 
 
 class ShareService:
