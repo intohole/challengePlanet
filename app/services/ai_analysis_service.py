@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from collections.abc import AsyncGenerator
 
-from nexus import get_llm_service, parse_llm_json
+from nexus import ask_json, get_llm_service, parse_llm_json
 from nexus.logging import get_logger
 
 from app.services.prompts import (
@@ -53,8 +53,10 @@ class AIAnalysisService:
             f"最近打卡记录：\n{recent_summary or '暂无'}"
         )
         llm = get_llm_service()
-        raw = await llm.ask(user_msg, system=DIAGNOSIS_SYSTEM, temperature=0.4, max_tokens=256, timeout=30.0, task_type="extract")
-        parsed = parse_llm_json(raw, fallback=None)
+        parsed = await ask_json(
+            llm, user_msg, system=DIAGNOSIS_SYSTEM,
+            temperature=0.4, max_tokens=256, timeout=30.0, task_type="extract",
+        )
         if parsed is None:
             return None
         if parsed.get("cause") not in ("task_hard", "no_time", "motivation_decay", "external"):
@@ -98,12 +100,11 @@ class AIAnalysisService:
             f"最近30条打卡：\n" + "\n".join(summary_lines)
         )
         llm = get_llm_service()
-        raw = await llm.ask(
-            user_msg, system=INSIGHT_SYSTEM,
+        parsed = await ask_json(
+            llm, user_msg, system=INSIGHT_SYSTEM,
             temperature=0.4, max_tokens=384, timeout=30.0,
             task_type="extract",
         )
-        parsed = parse_llm_json(raw, fallback=None)
         if parsed is None:
             return None
         valid_types = {"pattern", "risk", "progress"}
