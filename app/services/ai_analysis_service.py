@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from collections.abc import AsyncGenerator
 
-from nexus import ask_json, get_llm_service, parse_llm_json
+from nexus import ask_json, get_llm_service
 from nexus.logging import get_logger
 
 from app.services.prompts import (
@@ -70,11 +70,13 @@ class AIAnalysisService:
     ) -> list[dict[str, object]] | None:
         user_msg = f"挑战：{challenge_title}\n模式：{mode}\n原任务：{json.dumps(tasks, ensure_ascii=False)}"
         llm = get_llm_service()
-        raw = await llm.ask(user_msg, system=ADJUST_TASKS_SYSTEM, temperature=0.5, max_tokens=2048, timeout=60.0, task_type="extract")
-        parsed = parse_llm_json(raw, fallback={})
-        if not isinstance(parsed.get("tasks"), list):
+        parsed = await ask_json(
+            llm, user_msg, system=ADJUST_TASKS_SYSTEM, root_type=list, list_key="tasks",
+            temperature=0.5, max_tokens=2048, timeout=60.0, task_type="extract",
+        )
+        if parsed is None:
             return None
-        return [t for t in parsed["tasks"] if isinstance(t, dict) and t.get("title")]
+        return [t for t in parsed if isinstance(t, dict) and t.get("title")]
 
     async def generate_deep_insight(
         self, challenge_title: str, direction: str, unit: str,
