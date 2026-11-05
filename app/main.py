@@ -80,6 +80,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("UC SDK init failed: %s", e)
     scheduler = get_scheduler()
+    from app.infra.backup import register_backup
+
+    register_backup()
     scheduler.add_cron_job(
         send_checkin_reminders,
         job_id="cp-checkin-reminder",
