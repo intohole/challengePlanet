@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from nexus.middleware import LoadingSplashMiddleware, StaticAssetsCacheMiddleware
 from app.api.probe import register_probe
-from nexus import close_uc_sdk, create_auth_router, get_bm_sdk, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, startup_ironman, register_health_endpoints
+from nexus import close_uc_sdk, create_auth_router, ensure_ironman, get_bm_sdk, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, register_health_endpoints
 from nexus.chat.engine import ChatEngine
 from nexus.chat.middleware.memory import MemoryMiddleware
 from nexus.chat.router import chat_router
@@ -69,9 +69,7 @@ async def lifespan(app: FastAPI):
     await init_db()
     await run_migrations()
     if not is_ironman_available():
-        result = await startup_ironman("ChallengePlanet")
-        if result.get("degraded"):
-            logger.warning("Ironman degraded: %s", result.get("error", "unknown"))
+        await ensure_ironman("ChallengePlanet")
     logger.info("Ironman available: %s", is_ironman_available())
     await async_init_notify_client()
     try:
