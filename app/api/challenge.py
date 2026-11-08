@@ -38,11 +38,27 @@ async def list_challenges(
     session: AsyncSession = Depends(get_db),
 ) -> list[ChallengeResponse]:
     service = ChallengeService()
+    await service.close_resting(session)
     challenges = await service.get_user_challenges(session, user_id)
     responses: list[ChallengeResponse] = []
     for challenge in challenges:
         responses.append(await service.build_response(session, challenge, user_id))
     return responses
+
+
+@router.post("/{challenge_id}/revive")
+async def revive_challenge(
+    challenge_id: int,
+    user_id: str = Depends(get_current_user_id_required),
+    session: AsyncSession = Depends(get_db),
+) -> dict:
+    service = ChallengeService()
+    result = await service.revive_challenge(session, challenge_id, user_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="挑战不存在")
+    if not result.get("revived"):
+        raise HTTPException(status_code=409, detail=str(result.get("reason", "挑战不在告一段落状态")))
+    return result
 
 
 @router.post("/datacenter/sync")

@@ -19,6 +19,33 @@ SUNSET_EPISODE_DAYS = 30
 _LAST_GATE_LOG: dict[tuple[str, int, str], str] = {}
 
 
+def episode_over(episode_anchor: str, today: str) -> bool:
+    """episode 是否已越过 SUNSET 线（r26 起触达 gate 与呈现面 resting 迁移共用本判定）。
+
+    语义：同一次失踪（episode_anchor=最后一次在场日）超过 SUNSET_EPISODE_DAYS
+    即告一段落——gate 停止触达，呈现面迁入 resting，复活后新 episode 自动解除。
+    """
+    if not episode_anchor:
+        return False
+    return shift_date(str(episode_anchor), SUNSET_EPISODE_DAYS) <= str(today)
+
+
+def effective_anchor(episode_anchor: str, episode_floor: str) -> str:
+    """episode 锚下限（r26）：复活重开的新 episode 从 start_date 起算缺席钟。
+
+    历史 last_seen 早于新起点时（resting→revive 重置了 start_date，旧打卡保留），
+    锚抬到起点——否则复活挑战会在下一次 gate/列表瞬间被旧锚判 SUNSET 打回。
+    ISO 日期字符串字典序=时间序，max 安全。
+    """
+    anchor = str(episode_anchor or "")
+    floor = str(episode_floor or "")
+    if not anchor:
+        return floor
+    if not floor:
+        return anchor
+    return max(anchor, floor)
+
+
 def log_gate_decision(
     kind: str, challenge_id: int, action: str, reason: str, extra: str = "",
 ) -> None:
@@ -50,6 +77,7 @@ async def decide_touch_kind(
     now: datetime | None = None,
     legacy_sent_at: datetime | None = None,
     legacy_notif_id: int = 0,
+    episode_floor: str = "",
 ) -> dict[str, object]:
     """触达语义决策层（缺席陪伴的 REVIVE/SUNSET 语义；频率控制留在各引擎节奏层）。
 
@@ -64,13 +92,14 @@ async def decide_touch_kind(
     返回 {action: send|revive|silence|sunset, reason, lane, fingerprint, state_row}。
     """
     now = now or now_china()
-    fp = fingerprint(kind, int(challenge_id), str(episode_anchor or ""))
+    anchor = effective_anchor(episode_anchor, episode_floor)
+    fp = fingerprint(kind, int(challenge_id), str(anchor))
     row = await session.get(
         TouchState,
         {"user_id": str(user_id), "challenge_id": int(challenge_id), "kind": kind},
     )
     base = {"fingerprint": fp, "state_row": row}
-    if episode_anchor and shift_date(str(episode_anchor), SUNSET_EPISODE_DAYS) <= today:
+    if episode_over(anchor, today):
         return {
             **base, "action": "sunset", "lane": "sunset",
             "reason": f"episode_over_{SUNSET_EPISODE_DAYS}d",

@@ -129,6 +129,73 @@ class ChallengeService:
             await session.commit()
         return closed
 
+    async def close_resting(self, session: AsyncSession) -> int:
+        """失踪越过 SUNSET 线的 active 挑战迁入 resting（r26 诚实终局）。
+
+        判定单源 touch_gate_service.episode_over（与触达 gate 同一语义，防两处漂移）：
+        最后一次在场日（load_valid_dates 含冻结/修复/护盾）超 30 天 = 这段旅程告一段落。
+        从未在场（无 valid 日期）不判——尚未启程不是失踪（对齐 assess_absence 前提）。
+        幂等：resting 的挑战不再出现在 active 扫描里，重复执行恒 0。
+        """
+        from app.services.touch_gate_service import effective_anchor, episode_over
+        from app.services.streak_service import day_number_of
+        from app.services.graduation_service import graduation_goal_day
+
+        today = today_str()
+        rested = 0
+        for challenge in await self._repo.get_all_active(session):
+            valid_dates = await load_valid_dates(session, int(challenge.id))
+            if not valid_dates:
+                continue
+            last_seen = effective_anchor(max(valid_dates), str(challenge.start_date or ""))
+            if not episode_over(last_seen, today):
+                continue
+            goal_day = graduation_goal_day(challenge)
+            if goal_day and day_number_of(str(challenge.start_date), today) >= goal_day:
+                continue
+            challenge.status = "resting"
+            logger.info(
+                "challenge rested: id=%s user=%s title=%s last_seen=%s",
+                challenge.id, challenge.user_id, challenge.title, last_seen,
+            )
+            rested += 1
+        if rested:
+            await session.commit()
+        return rested
+
+    async def revive_challenge(
+        self, session: AsyncSession, challenge_id: int, user_id: str,
+    ) -> dict[str, object] | None:
+        """resting 挑战重新出发：新 episode 从今天起算（计划期重开，历史打卡保留）。
+
+        TouchState 一并清除——触达 gate 的发送钟/缺席钟锚旧 episode，不清会让
+        复活后的首条触达被旧时钟判 revive/silence（新 episode 应从 first_touch 起步）。
+        """
+        from app.models.reminder import TouchState
+        from sqlalchemy import delete as sa_delete
+
+        challenge = await self._repo.get_by_id(session, challenge_id)
+        if challenge is None or challenge.user_id != user_id:
+            return None
+        if challenge.status != "resting":
+            return {"revived": False, "reason": f"status={challenge.status}"}
+        today = today_str()
+        challenge.status = "active"
+        challenge.start_date = today
+        challenge.end_date = shift_date(today, max(int(challenge.duration_days or 30) - 1, 1))
+        await session.execute(
+            sa_delete(TouchState).where(
+                TouchState.user_id == str(user_id),
+                TouchState.challenge_id == int(challenge_id),
+            )
+        )
+        await session.commit()
+        logger.info(
+            "challenge revived: id=%s user=%s new_start=%s end=%s",
+            challenge_id, user_id, today, challenge.end_date,
+        )
+        return {"revived": True, "start_date": today, "end_date": challenge.end_date}
+
     async def get_challenge(self, session: AsyncSession, challenge_id: int) -> Challenge | None:
         return await self._repo.get_by_id(session, challenge_id)
 

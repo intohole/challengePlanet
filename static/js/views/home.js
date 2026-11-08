@@ -164,20 +164,51 @@ window.cpViews.home = (function () {
       })
     },
 
+    _chips(s, ch) {
+      if (s.challenges.length <= 1) return ''
+      let html = '<div class="cp-ch-scroll">'
+      const ordered = s.challenges.slice().sort((a, b) => (b.rescue && b.rescue.missed_days ? 1 : 0) - (a.rescue && a.rescue.missed_days ? 1 : 0) || (b.rescue && b.rescue.missed_days ? b.rescue.missed_days : 0) - (a.rescue && a.rescue.missed_days ? a.rescue.missed_days : 0))
+      ordered.forEach(c => {
+        const cc = window.cpCat(c.category)
+        const r = c.rescue && c.rescue.missed_days
+        html += '<div class="cp-ch-chip' + (c.id === ch.id ? ' active' : '') + '" onclick="cpSelectChallenge(\'' + c.id + '\')"><i class="fas ' + (c.status === 'resting' ? 'fa-box-archive' : cc.icon) + '" style="color:' + cc.color + '"></i><span>' + window.cpEsc(window.cpTitleClean(c.title)) + '</span>' + (c.status === 'resting' ? '<span class="cp-chip-badge">🌙 告一段落</span>' : '') + (r ? '<span class="cp-chip-badge rescue">⚡断' + r + '天</span>' : '') + '<span class="cp-chip-badge">' + (c.completed_days || 0) + '/' + c.total_days + '</span></div>'
+      })
+      html += '</div>'
+      return html
+    },
+
+    async revive(id) {
+      try {
+        const res = await window.cpApi.post('/challenges/' + id + '/revive')
+        const d = res.data || res
+        if (d && d.revived) {
+          window.cpToast('新的旅程从今天开始，加油！')
+          this.loadedFor = null
+          await window.cpLoadChallenges()
+          this.load()
+        } else {
+          window.cpToast('这段挑战不在告一段落状态')
+        }
+      } catch (e) {
+        window.cpToast(window.cpErrMsg(e, '重新出发失败，请稍后重试'))
+      }
+    },
+
     _main(s) {
       const ch = s.current
       const d = this.data
       let html = '<div class="cp-home-primary">'
-      if (s.challenges.length > 1) {
-        html += '<div class="cp-ch-scroll">'
-        const ordered = s.challenges.slice().sort((a, b) => (b.rescue && b.rescue.missed_days ? 1 : 0) - (a.rescue && a.rescue.missed_days ? 1 : 0) || (b.rescue && b.rescue.missed_days ? b.rescue.missed_days : 0) - (a.rescue && a.rescue.missed_days ? a.rescue.missed_days : 0))
-        ordered.forEach(c => {
-          const cc = window.cpCat(c.category)
-          const r = c.rescue && c.rescue.missed_days
-          html += '<div class="cp-ch-chip' + (c.id === ch.id ? ' active' : '') + '" onclick="cpSelectChallenge(\'' + c.id + '\')"><i class="fas ' + cc.icon + '" style="color:' + cc.color + '"></i><span>' + window.cpEsc(window.cpTitleClean(c.title)) + '</span>' + (r ? '<span class="cp-chip-badge rescue">⚡断' + r + '天</span>' : '') + '<span class="cp-chip-badge">' + (c.completed_days || 0) + '/' + c.total_days + '</span></div>'
-        })
-        html += '</div>'
+      if (ch.status === 'resting') {
+        html += this._chips(s, ch)
+        html += '<div class="glass-card cp-rest-card" data-testid="resting-card">'
+        html += '<div class="cp-rest-icon">' + (ch.icon || '🌙') + '</div>'
+        html += '<h3 class="cp-rest-title">' + window.cpEsc(window.cpTitleClean(ch.title)) + '</h3>'
+        html += '<p class="cp-rest-lede">这段旅程已告一段落——' + (ch.completed_days || 0) + ' 天的坚持都在。想继续的话，随时从今天重新出发。</p>'
+        html += '<button class="cp-btn-primary" data-testid="revive-btn" onclick="cpViews.home.revive(' + ch.id + ')"><i class="fas fa-arrows-rotate"></i> 重新出发</button>'
+        html += '</div></div>'
+        return html
       }
+      html += this._chips(s, ch)
 
       html += '<div class="glass-card cp-hero cp-ch-titlebar"><div class="cp-ch-title-main"><div class="cp-hero-title">' + (ch.icon ? ch.icon + ' ' : '') + window.cpEsc(window.cpTitleClean(ch.title)) + '</div>' + (ch.total_days ? '<span class="cp-ch-title-meta"><i class="fas fa-flag-checkered"></i> ' + (ch.completed_days || 0) + '/' + ch.total_days + ' 天</span>' : '') + '<div class="cp-hero-actions">' + (ch.status === 'active' ? '<button class="cp-hero-share-btn" title="放弃挑战" aria-label="放弃挑战" onclick="cpViews.home.abandonCurrent()"><i class="fas fa-flag"></i></button>' : '') + (ch.share_token ? '<button class="cp-hero-share-btn" title="复制分享链接" aria-label="复制分享链接" onclick="cpViews.home.openShareConfig()"><i class="fas fa-link"></i></button>' : '') + '<button class="cp-hero-share-btn cp-hero-companion-btn" title="AI 伴学" aria-label="AI 伴学" onclick="cpCompanion.open()"><i class="fas fa-robot"></i></button></div></div></div>'
 

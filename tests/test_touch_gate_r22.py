@@ -46,7 +46,7 @@ def test_gate_first_touch_in_episode(session_factory) -> None:
         async with Session() as s:
             gate = await touch_gate_service.decide_touch_kind(
                 s, kind="absence", challenge_id=7, user_id="2",
-                episode_anchor="2026-10-16", today=today_str(),
+                episode_anchor=shift_date(today_str(), -10), today=today_str(),
             )
             await engine.dispose()
             return gate
@@ -58,7 +58,7 @@ def test_gate_first_touch_in_episode(session_factory) -> None:
 
 def test_gate_silence_same_episode_recent(session_factory) -> None:
     engine, Session = session_factory()
-    fp = _fp("absence", 7, "2026-10-16")
+    fp = _fp("absence", 7, shift_date(today_str(), -10))
 
     async def main() -> dict[str, object]:
         async with engine.begin() as conn:
@@ -71,7 +71,7 @@ def test_gate_silence_same_episode_recent(session_factory) -> None:
             await s.flush()
             gate = await touch_gate_service.decide_touch_kind(
                 s, kind="absence", challenge_id=7, user_id="2",
-                episode_anchor="2026-10-16", today=today_str(),
+                episode_anchor=shift_date(today_str(), -10), today=today_str(),
             )
             await engine.dispose()
             return gate
@@ -82,7 +82,7 @@ def test_gate_silence_same_episode_recent(session_factory) -> None:
 
 def test_gate_revive_after_seven_days(session_factory) -> None:
     engine, Session = session_factory()
-    fp = _fp("rescue", 4, "2026-10-08")
+    fp = _fp("rescue", 4, shift_date(today_str(), -8))
 
     async def main() -> dict[str, object]:
         async with engine.begin() as conn:
@@ -95,7 +95,7 @@ def test_gate_revive_after_seven_days(session_factory) -> None:
             await s.flush()
             gate = await touch_gate_service.decide_touch_kind(
                 s, kind="rescue", challenge_id=4, user_id="2",
-                episode_anchor="2026-10-08", today=today_str(),
+                episode_anchor=shift_date(today_str(), -8), today=today_str(),
             )
             await engine.dispose()
             return gate
@@ -111,7 +111,7 @@ def test_gate_revive_lane_switch_when_last_was_read(session_factory, monkeypatch
 
     monkeypatch.setattr(touch_gate_service, "_is_unread", _read)
     engine, Session = session_factory()
-    fp = _fp("absence", 7, "2026-10-16")
+    fp = _fp("absence", 7, shift_date(today_str(), -10))
 
     async def main() -> dict[str, object]:
         async with engine.begin() as conn:
@@ -124,7 +124,7 @@ def test_gate_revive_lane_switch_when_last_was_read(session_factory, monkeypatch
             await s.flush()
             gate = await touch_gate_service.decide_touch_kind(
                 s, kind="absence", challenge_id=7, user_id="2",
-                episode_anchor="2026-10-16", today=today_str(),
+                episode_anchor=shift_date(today_str(), -10), today=today_str(),
             )
             await engine.dispose()
             return gate
@@ -170,7 +170,7 @@ def test_gate_legacy_insight_prevents_duplicate_first_care(session_factory) -> N
         async with Session() as s:
             gate = await touch_gate_service.decide_touch_kind(
                 s, kind="absence", challenge_id=101, user_id="2",
-                episode_anchor="2026-10-16", today=today_str(),
+                episode_anchor=shift_date(today_str(), -10), today=today_str(),
                 legacy_sent_at=legacy_sent,
             )
             await engine.dispose()
@@ -190,7 +190,7 @@ def test_gate_legacy_over_seven_days_revives(session_factory) -> None:
         async with Session() as s:
             gate = await touch_gate_service.decide_touch_kind(
                 s, kind="absence", challenge_id=101, user_id="2",
-                episode_anchor="2026-10-16", today=today_str(),
+                episode_anchor=shift_date(today_str(), -10), today=today_str(),
                 legacy_sent_at=legacy_sent,
             )
             await engine.dispose()
@@ -202,7 +202,7 @@ def test_gate_legacy_over_seven_days_revives(session_factory) -> None:
 
 def test_mark_touch_sent_upserts(session_factory) -> None:
     engine, Session = session_factory()
-    fp = _fp("rescue", 4, "2026-10-08")
+    fp = _fp("rescue", 4, shift_date(today_str(), -8))
 
     async def main() -> tuple[TouchState | None, TouchState | None]:
         async with engine.begin() as conn:
@@ -233,6 +233,6 @@ def test_mark_touch_sent_upserts(session_factory) -> None:
 
 def test_fingerprint_changes_with_episode() -> None:
     today = today_str()
-    assert _fp("rescue", 4, "2026-10-08") != _fp("rescue", 4, "2026-10-01")
-    assert _fp("rescue", 4, "2026-10-08") == _fp("rescue", 4, "2026-10-08")
+    assert _fp("rescue", 4, "d1") != _fp("rescue", 4, "d2")
+    assert _fp("rescue", 4, "d1") == _fp("rescue", 4, "d1")
     assert _fp("rescue", 4, today) != _fp("absence", 4, today)

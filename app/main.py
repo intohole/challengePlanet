@@ -47,8 +47,9 @@ async def close_finished_challenges() -> None:
     try:
         async with async_session() as session:
             closed = await ChallengeService().close_finished(session)
-            if closed:
-                logger.info("已结束挑战自动归档 %d 个", closed)
+            rested = await ChallengeService().close_resting(session)
+            if closed or rested:
+                logger.info("已结束挑战自动归档 %d 个, 告一段落 %d 个", closed, rested)
     except Exception as e:
         logger.error("close finished challenges failed: %s", e)
 

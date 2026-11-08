@@ -326,3 +326,8 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-archive-title i { font-size: 13px; }
 .cp-archive-meta { font-size: 12px; color: var(--text-secondary, #6b7280); }
 .cp-grad-done .cp-btn-primary { margin-top: 12px; }
+.cp-ch-status.resting { color: var(--amber, #d97706); background: rgba(217,119,6,.1); }
+.cp-rest-card { text-align: center; padding: 28px 20px; }
+.cp-rest-icon { font-size: 40px; margin-bottom: 10px; }
+.cp-rest-title { font-size: 17px; font-weight: 700; margin: 0 0 8px; }
+.cp-rest-lede { color: var(--text-muted, #64748b); font-size: 13px; line-height: 1.7; margin: 0 auto 16px; max-width: 320px; }

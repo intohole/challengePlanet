@@ -180,6 +180,7 @@ async def collect_absence_items(
             session, kind="absence", challenge_id=int(challenge.id),
             user_id=str(challenge.user_id), episode_anchor=last_record, today=today,
             legacy_sent_at=legacy[0] if legacy else None,
+            episode_floor=str(challenge.start_date or ""),
         )
         if gate["action"] not in ("send", "revive"):
             log_gate_decision("absence", int(challenge.id), str(gate["action"]), str(gate["reason"]))

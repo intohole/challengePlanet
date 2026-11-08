@@ -167,6 +167,7 @@ async def collect_rescue_items(
             session, kind="rescue", challenge_id=int(challenge.id),
             user_id=str(challenge.user_id), episode_anchor=anchor, today=today,
             legacy_sent_at=legacy[0] if legacy else None,
+            episode_floor=str(challenge.start_date or ""),
         )
         if gate["action"] not in ("send", "revive"):
             log_gate_decision("rescue", int(challenge.id), str(gate["action"]), str(gate["reason"]))
