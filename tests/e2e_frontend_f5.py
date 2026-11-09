@@ -108,14 +108,7 @@ def _lion_stub():
         def do_GET(self):
             import json as _json
 
-            if self.path.rstrip("/").endswith("/llm/chat"):
-                value = _json.dumps({
-                    "api_key": "stub-key", "base_url": "http://127.0.0.1:1",
-                    "model": "stub-model",
-                })
-                body = _json.dumps({"code": 200, "data": {"value": value}}).encode()
-            else:
-                body = b'{"code": 404, "message": "Config not found: stub"}'
+            body = b'{"code": 404, "message": "Config not found: stub"}'
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
@@ -185,8 +178,11 @@ def main():
                     + CERT_SPY + (";" + SHARE_STUB if stub_share else "")
                 )
                 pg.on("pageerror", lambda e: errors.append(str(e)))
-                pg.goto(BASE + path, wait_until="networkidle")
-                pg.wait_for_timeout(1800)
+                pg.goto(BASE + path, wait_until="domcontentloaded", timeout=60000)
+                pg.wait_for_selector('.cp-ch-list .cp-ch-row, .cp-greet', timeout=15000, state="attached")
+                if "grad=1" in path:
+                    pg.wait_for_selector('[data-testid="grad-welcome"], [data-testid="absence-card"]', timeout=12000)
+                pg.wait_for_timeout(800)
                 return pg
 
             print("== 在场毕业：承接卡签名位 ==")
@@ -251,8 +247,9 @@ def main():
                 dis.first.click()
                 pg4.wait_for_timeout(600)
                 check("G5 先逛逛收起", pg4.locator('[data-testid="grad-welcome"]').count() == 0, "")
-                pg4.reload(wait_until="networkidle")
-                pg4.wait_for_timeout(1500)
+                pg4.reload(wait_until="domcontentloaded", timeout=60000)
+                pg4.wait_for_selector('.cp-ch-list, .cp-greet', timeout=15000, state="attached")
+                pg4.wait_for_timeout(1200)
                 check("G5a 当日刷新不复活", pg4.locator('[data-testid="grad-welcome"]').count() == 0, "")
             pg5 = open_page(f"/?ch={ch_b}")
             check("G4a 非深链不渲染", pg5.locator('[data-testid="grad-welcome"]').count() == 0, "")
@@ -310,8 +307,8 @@ def main():
             )
             pd = ctx_d.new_page()
             pd.on("pageerror", lambda e: errors.append("dark:" + str(e)))
-            pd.goto(BASE + f"/?ch={ch_b}&grad=1", wait_until="networkidle")
-            pd.wait_for_timeout(1800)
+            pd.goto(BASE + f"/?ch={ch_b}&grad=1", wait_until="domcontentloaded", timeout=60000)
+            pd.wait_for_selector('[data-testid="grad-welcome"]', timeout=15000)
             bg = pd.evaluate(
                 "(()=>{const el=document.querySelector('[data-testid=grad-welcome]');"
                 "return el?getComputedStyle(el).backgroundImage.slice(0,60):''})()"

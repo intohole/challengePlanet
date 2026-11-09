@@ -25,7 +25,8 @@ os.environ.update(
     UC__APP_SECRET="cp-fe5-reg-secret",
     UC__BASE_URL=f"http://127.0.0.1:{STUB_PORT}",
     LION__BASE_URL=f"http://127.0.0.1:{STUB_PORT}",
-    NOTIFY_CENTER_URL="http://127.0.0.1:1",
+    DISCOVERY_CACHE_PATH="/tmp/cp_fe5_regression/no-discovery-snapshot.json",
+    NOTIFY_CENTER_URL=f"http://127.0.0.1:{STUB_PORT}",
     SERVICE_TOKEN="cp-fe5-reg-service",
     REMINDER_GUARD_OFF="1",
     RATE_LIMIT__REQUESTS_PER_MINUTE="100000",
@@ -45,6 +46,10 @@ class Stub(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        route = self.path.split("?")[0].rstrip("/")
+        if route.endswith("/api/notify/webpush/status"):
+            self._send(b'{"enabled": false, "subscribed": false}')
+            return
         if self.path.rstrip("/").endswith("/llm/chat"):
             value = json.dumps({"api_key": "stub", "base_url": "http://127.0.0.1:1", "model": "stub"})
             self._send(json.dumps({"code": 200, "data": {"value": value}}).encode())
@@ -54,14 +59,15 @@ class Stub(BaseHTTPRequestHandler):
     def do_POST(self):
         n = int(self.headers.get("Content-Length") or 0)
         raw = self.rfile.read(n) if n else b"{}"
-        if self.path.rstrip("/").endswith("/api/auth/register"):
+        route = self.path.split("?")[0].rstrip("/")
+        if route.endswith("/api/auth/register") or route.endswith("/api/auth/login"):
             import jwt
 
             try:
                 req = json.loads(raw or b"{}")
             except Exception:
                 req = {}
-            uid = "reg_" + str(abs(hash(req.get("username", "u"))) % 10_000_000)
+            uid = "reg_" + str(abs(hash(req.get("username") or req.get("email") or "u")) % 10_000_000)
             now = int(time.time())
             access = jwt.encode({"sub": uid, "exp": now + 7200}, SECRET, algorithm="HS256")
             refresh = jwt.encode({"sub": uid, "typ": "refresh", "exp": now + 86400}, SECRET, algorithm="HS256")
@@ -69,10 +75,15 @@ class Stub(BaseHTTPRequestHandler):
                 "success": True,
                 "data": {
                     "access_token": access, "refresh_token": refresh,
-                    "user": {"id": uid, "username": req.get("username", ""), "nickname": "回归用户"},
+                    "user": {"id": uid, "username": req.get("username") or req.get("email") or "", "nickname": "回归用户"},
                 },
             }).encode())
-        elif self.path.rstrip("/").endswith("/api/auth/refresh"):
+        elif route.endswith("/api/auth/token"):
+            self._send(json.dumps({
+                "success": True,
+                "data": {"access_token": "stub-service-token", "token_type": "bearer", "expires_in": 1800},
+            }).encode())
+        elif route.endswith("/api/auth/refresh"):
             self._send(b'{"success": false, "detail": "stub no refresh"}')
         else:
             self._send(b'{"code": 404, "message": "stub"}')

@@ -94,16 +94,7 @@ def _lion_stub():
 
     class H(BaseHTTPRequestHandler):
         def do_GET(self):
-            import json as _json
-
-            if self.path.rstrip("/").endswith("/llm/chat"):
-                value = _json.dumps({
-                    "api_key": "stub-key", "base_url": "http://127.0.0.1:1",
-                    "model": "stub-model",
-                })
-                body = _json.dumps({"code": 200, "data": {"value": value}}).encode()
-            else:
-                body = b'{"code": 404, "message": "Config not found: stub"}'
+            body = b'{"code": 404, "message": "Config not found: stub"}'
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
@@ -155,8 +146,8 @@ def main():
             )
             errors: list[str] = []
             page.on("pageerror", lambda e: errors.append(str(e)))
-            page.goto(BASE + "/", wait_until="networkidle")
-            page.wait_for_timeout(1500)
+            page.goto(BASE + "/", wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_selector('[data-testid="return-hero"]', timeout=15000)
             hero = page.locator('[data-testid="return-hero"]')
             visible = hero.count() > 0 and hero.first.is_visible()
             check("B1 回归页 hero 渲染", visible, f"count={hero.count()}")

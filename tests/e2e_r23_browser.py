@@ -99,16 +99,7 @@ def _lion_stub():
 
     class H(BaseHTTPRequestHandler):
         def do_GET(self):
-            import json as _json
-
-            if self.path.rstrip("/").endswith("/llm/chat"):
-                value = _json.dumps({
-                    "api_key": "stub-key", "base_url": "http://127.0.0.1:1",
-                    "model": "stub-model",
-                })
-                body = _json.dumps({"code": 200, "data": {"value": value}}).encode()
-            else:
-                body = b'{"code": 404, "message": "Config not found: stub"}'
+            body = b'{"code": 404, "message": "Config not found: stub"}'
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
@@ -160,8 +151,8 @@ def main():
             )
             errors: list[str] = []
             page.on("pageerror", lambda e: errors.append(str(e)))
-            page.goto(BASE + "/", wait_until="networkidle")
-            page.wait_for_timeout(1500)
+            page.goto(BASE + "/", wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_selector('[data-testid="absence-card"]', timeout=15000)
             card = page.locator('[data-testid="absence-card"]')
             visible = card.count() > 0 and card.first.is_visible()
             check("B1 缺席卡渲染", visible, f"count={card.count()}")
@@ -195,8 +186,8 @@ def main():
                 "window.localStorage.setItem('nx-theme', 'dark');"
             )
             page2.on("pageerror", lambda e: errors.append("dark:" + str(e)))
-            page2.goto(BASE + "/", wait_until="networkidle")
-            page2.wait_for_timeout(1200)
+            page2.goto(BASE + "/", wait_until="domcontentloaded", timeout=60000)
+            page2.wait_for_selector('[data-testid="absence-card"]', timeout=15000)
             card2 = page2.locator('[data-testid="absence-card"]')
             check("B9 深色主题缺席卡照常渲染", card2.count() > 0 and card2.first.is_visible(), f"count={card2.count()}")
             page2.screenshot(path="../out/r23_absence_grad_dark.png", full_page=False)

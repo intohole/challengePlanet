@@ -13,6 +13,7 @@ BASE = os.environ.get("E2E_BASE", "http://127.0.0.1:8821")
 API = BASE + "/api/v1"
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO)
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:////tmp/cp_fe5_regression.db")
 
 USER = "cp_r20_e2e_" + str(int(time.time()))
 PWD = "CpR20#x2026"

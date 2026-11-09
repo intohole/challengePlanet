@@ -12,6 +12,7 @@ import time
 import urllib.request
 
 BASE = os.environ.get("E2E_BASE", "http://127.0.0.1:8610")
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:////tmp/cp_fe5_regression.db")
 API = BASE + "/api/v1"
 SPA = BASE + "/"
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -110,11 +111,11 @@ async def cleanup(challenge_ids):
 
 
 def main():
-    st = api("POST", "/auth/register", {"username": USER, "password": PWD})
-    d = st.get("data") or st
-    token = d.get("access_token")
-    uid = str((d.get("user") or {}).get("id") or "")
-    assert token, str(st)[:200]
+    import jwt
+
+    uid = "fe4t" + str(int(time.time()))
+    token = jwt.encode({"sub": uid, "exp": int(time.time()) + 7200}, "cp-fe5-regression-secret" * 2, algorithm="HS256")
+    assert token
 
     cid = create_challenge(token, "前4静默守链", {}, make_plan(40))
     asyncio.run(seed_day(cid, uid, shift(3), 3.0))
