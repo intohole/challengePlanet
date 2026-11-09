@@ -6,6 +6,9 @@
   C 进程     serve_app              resumeAI 前7 Popen 自起自收 / verseCraft fe5 19xxx 端口 / verseCraft fe5 stub 黑洞
   D 等待     goto_app/wait_state    #13 语义等待（固定睡≥600ms=竞态彩票）/ #30 等待窗=最后一块异步数据
   E 数据     iso_db                 #12 残片 rmtree / fkg 前6 串户 sweep / #42 状态耦合复原
+  F 服务发现 isolate_discovery     S124 discovery 快照劫持（~/.cache 快照恒压 env→SDK 打生产）；
+                                   只隔离 DISCOVERY_CACHE_PATH 不动 UC/MINIDEPLOY 键（fe9 隧道形态），
+                                   必须在 import nexus/app 前进入，或先调 nexus.discovery.reset_registry()
 
 舰队纪律：本文件是母版（scripts/canon/fe_env2.py），平移=逐字节复制进各仓 tests/fe_env2.py，
 不建跨仓 import 不建 pip 包（S119 判例同款）；漂移由 scripts/s120_e2e_env_audit.py R3 对表。
@@ -130,6 +133,21 @@ def trio_env(empty_dir: str | Path | None = None):
                 os.environ[k] = v
 
 
+@contextlib.contextmanager
+def isolate_discovery(path: str | Path | None = None):
+    saved = os.environ.get("DISCOVERY_CACHE_PATH")
+    p = str(path or tempfile.mkdtemp(prefix="fe_env2_isodisc_"))
+    Path(p).mkdir(parents=True, exist_ok=True)
+    os.environ["DISCOVERY_CACHE_PATH"] = p
+    try:
+        yield p
+    finally:
+        if saved is None:
+            os.environ.pop("DISCOVERY_CACHE_PATH", None)
+        else:
+            os.environ["DISCOVERY_CACHE_PATH"] = saved
+
+
 def uc_token(payload: dict, secret: str, alg: str = "HS256") -> str:
     claims = {"exp": int(time.time()) + 3600, **payload}
     try:
@@ -239,6 +257,10 @@ def selfcheck() -> int:
     checks.append(("trio_restored", os.environ.get("UC__BASE_URL") is None))
     with iso_db() as db:
         checks.append(("iso_db_created", db.parent.name.startswith("fe_env2_db_")))
+    with isolate_discovery() as iso_p:
+        checks.append(("isolate_discovery_set", os.environ.get("DISCOVERY_CACHE_PATH") == iso_p))
+        checks.append(("isolate_discovery_surgical", "UC__BASE_URL" not in os.environ))
+    checks.append(("isolate_discovery_restored", "DISCOVERY_CACHE_PATH" not in os.environ))
     try:
         uc_token({"sub": "1"}, "s")
         checks.append(("uc_token_lib", True))
