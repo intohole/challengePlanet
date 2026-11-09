@@ -55,7 +55,7 @@ class AIAnalysisService:
         llm = get_llm_service()
         parsed = await ask_json(
             llm, user_msg, system=DIAGNOSIS_SYSTEM,
-            temperature=0.4, max_tokens=256, timeout=30.0, task_type="extract",
+            max_tokens=256, timeout=30.0, task_type="extract",
         )
         if parsed is None:
             return None
@@ -72,7 +72,7 @@ class AIAnalysisService:
         llm = get_llm_service()
         parsed = await ask_json(
             llm, user_msg, system=ADJUST_TASKS_SYSTEM, root_type=list, list_key="tasks",
-            temperature=0.5, max_tokens=2048, timeout=60.0, task_type="extract",
+            max_tokens=2048, timeout=60.0, task_type="extract",
         )
         if parsed is None:
             return None
@@ -104,7 +104,7 @@ class AIAnalysisService:
         llm = get_llm_service()
         parsed = await ask_json(
             llm, user_msg, system=INSIGHT_SYSTEM,
-            temperature=0.4, max_tokens=384, timeout=30.0,
+            max_tokens=384, timeout=30.0,
             task_type="extract",
         )
         if parsed is None:

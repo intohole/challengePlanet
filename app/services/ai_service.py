@@ -95,7 +95,7 @@ class AIService:
 
     async def parse_challenge_input(self, raw_input: str) -> dict[str, object]:
         llm = get_llm_service()
-        raw = await llm.ask(raw_input, system=PARSE_SYSTEM, temperature=0.3, max_tokens=256, timeout=30.0, task_type="extract")
+        raw = await llm.ask(raw_input, system=PARSE_SYSTEM, max_tokens=256, timeout=30.0, task_type="extract")
         parsed = parse_llm_json(raw, fallback={
             "title": _slice_title(raw_input), "category": "other", "duration_days": 30,
             "task_type": "binary", "target_value": 1.0,
@@ -133,7 +133,7 @@ class AIService:
         llm = get_llm_service()
         raw = await llm.ask(
             description, system=DIET_ESTIMATE_SYSTEM,
-            temperature=0.3, max_tokens=256, timeout=30.0, task_type="extract",
+            max_tokens=256, timeout=30.0, task_type="extract",
         )
         return self._normalize_diet_result(parse_llm_json(raw, fallback={}))
 
@@ -240,7 +240,7 @@ class AIService:
     async def generate_repair_message(self, challenge_title: str, missed_days: int) -> str:
         user_msg = f"挑战：{challenge_title}\n中断天数：{missed_days}天"
         llm = get_llm_service()
-        raw = await llm.ask(user_msg, system=REPAIR_SYSTEM, temperature=0.7, max_tokens=128, timeout=20.0, task_type="assistant")
+        raw = await llm.ask(user_msg, system=REPAIR_SYSTEM, max_tokens=128, timeout=20.0, task_type="assistant")
         return sanitize_coach_text(raw.strip(), system=REPAIR_SYSTEM)
 
     async def generate_companion_message(
