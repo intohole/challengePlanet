@@ -234,8 +234,18 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-risk-banner { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: var(--radius); background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.25); color: var(--red); font-size: 13px; font-weight: 600; animation: fade-in-up .4s ease; }
 .cp-risk-banner i { font-size: 16px; flex-shrink: 0; }
 .cp-risk-banner span { flex: 1; }
-.cp-risk-btn { padding: 6px 14px; border-radius: 8px; border: none; background: rgba(248,113,113,.2); color: var(--red); font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+.cp-risk-btn { padding: 6px 14px; border-radius: 8px; border: none; background: rgba(248,113,113,.2); color: var(--red); font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; min-height: 44px; }
 .cp-risk-btn:active { transform: scale(.95); }
+.cp-risk-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+
+/* Revive strip — 复活当天的开局条（emerald，与断档救援 cp-slope-bar 同语言） */
+.cp-revive-strip { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: var(--radius); background: rgba(52,211,153,.09); border: 1px solid rgba(52,211,153,.3); border-left: 3px solid var(--emerald, #10b981); color: var(--text-primary); font-size: 13px; line-height: 1.65; margin-top: 10px; animation: fade-in-up .4s ease; }
+.cp-revive-strip i { color: var(--emerald, #10b981); font-size: 17px; flex-shrink: 0; }
+.cp-revive-strip b { font-weight: 700; }
+[data-theme="dark"] .cp-revive-strip { background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.28); }
+.cp-cta-flash { animation: cp-cta-flash 1.4s ease; }
+@keyframes cp-cta-flash { 0%, 100% { box-shadow: none; } 25%, 60% { box-shadow: 0 0 0 3px rgba(99,102,241,.45); } }
+@media (prefers-reduced-motion: reduce) { .cp-cta-flash { animation: none; } }
 
 /* Tomorrow enhanced card */
 .cp-tomorrow-enhanced { display: flex; gap: 12px; padding: 14px; border-radius: var(--radius); border: 1px solid rgba(129,140,248,.2); background: rgba(129,140,248,.06); margin-top: 10px; animation: fade-in-up .4s ease; }

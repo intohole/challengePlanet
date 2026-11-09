@@ -112,8 +112,19 @@ def main() -> int:
         check("无打卡主界面（resting 不显待打卡）", page.locator('[data-testid="revive-btn"]').count() == 1)
 
         page.click('[data-testid="revive-btn"]')
+        # fe6: 复活加确认弹窗——点确定才真正 revive
         try:
-            page.wait_for_selector(".cp-rest-card", state="detached", timeout=10000)
+            page.wait_for_selector(".nux-overlay", timeout=5000)
+        except Exception:
+            pass
+        confirm_clicked = page.evaluate(
+            "() => { const btns = Array.from(document.querySelectorAll('button'));"
+            " const confirm = btns.find(b => b.textContent.trim() === '确定');"
+            " if (confirm) { confirm.click(); return true } return false }"
+        )
+        check("确认弹窗出现并点确定", bool(confirm_clicked))
+        try:
+            page.wait_for_selector(".cp-rest-card", state="detached", timeout=15000)
             check("点击重新出发 → resting 卡退场", True)
         except Exception:
             diag = page.evaluate("""() => ({

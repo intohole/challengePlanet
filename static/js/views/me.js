@@ -127,14 +127,22 @@ window.cpViews = window.cpViews || {}
     },
 
     async reviveChallenge(id) {
+      const ch = window.appState.challenges.find(c => c.id === Number(id))
+      const days = (ch && ch.completed_days) || 0
+      const msg = days > 0
+        ? '重新出发会开启一段新旅程——从今天重新计程，之前 ' + days + ' 天的坚持都保留。确定开始吗？'
+        : '重新出发会开启一段新旅程——从今天重新计程。确定开始吗？'
+      if (!(await window.nuxConfirm(msg))) return
       try {
         const res = await window.cpApi.post('/challenges/' + id + '/revive')
         const d = res.data || res
         if (d && d.revived) {
-          window.cpToast('新的旅程从今天开始，加油！')
+          window.cpToast((ch ? '「' + window.cpTitleClean(ch.title) + '」' : '') + '已重新出发，回首页开始今天的打卡')
           const hv = window.cpViews.home
           if (hv && hv.loadedFor === Number(id)) hv.loadedFor = null
           await window.cpLoadChallenges()
+          const fresh = window.appState.challenges.find(c => c.id === Number(id))
+          if (fresh) window.appState.current = fresh
           this.rerender()
         } else {
           window.cpToast('这段挑战不在告一段落状态')

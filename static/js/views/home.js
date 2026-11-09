@@ -170,7 +170,7 @@ window.cpViews.home = (function () {
       const ordered = s.challenges.slice().sort((a, b) => (b.rescue && b.rescue.missed_days ? 1 : 0) - (a.rescue && a.rescue.missed_days ? 1 : 0) || (b.rescue && b.rescue.missed_days ? b.rescue.missed_days : 0) - (a.rescue && a.rescue.missed_days ? a.rescue.missed_days : 0))
       ordered.forEach(c => {
         const cc = window.cpCat(c.category)
-        const r = c.rescue && c.rescue.missed_days
+        const r = c.status === 'active' && c.rescue && c.rescue.missed_days
         html += '<div class="cp-ch-chip' + (c.id === ch.id ? ' active' : '') + '" onclick="cpSelectChallenge(\'' + c.id + '\')"><i class="fas ' + (c.status === 'resting' ? 'fa-box-archive' : cc.icon) + '" style="color:' + cc.color + '"></i><span>' + window.cpEsc(window.cpTitleClean(c.title)) + '</span>' + (c.status === 'resting' ? '<span class="cp-chip-badge">🌙 告一段落</span>' : '') + (r ? '<span class="cp-chip-badge rescue">⚡断' + r + '天</span>' : '') + '<span class="cp-chip-badge">' + (c.completed_days || 0) + '/' + c.total_days + '</span></div>'
       })
       html += '</div>'
@@ -178,13 +178,21 @@ window.cpViews.home = (function () {
     },
 
     async revive(id) {
+      const ch = window.appState.challenges.find(c => c.id === Number(id))
+      const days = (ch && ch.completed_days) || 0
+      const msg = days > 0
+        ? '重新出发会开启一段新旅程——从今天重新计程，之前 ' + days + ' 天的坚持都保留。确定开始吗？'
+        : '重新出发会开启一段新旅程——从今天重新计程。确定开始吗？'
+      if (!(await window.nuxConfirm(msg))) return
       try {
         const res = await window.cpApi.post('/challenges/' + id + '/revive')
         const d = res.data || res
         if (d && d.revived) {
-          window.cpToast('新的旅程从今天开始，加油！')
+          window.cpToast((ch ? '「' + window.cpTitleClean(ch.title) + '」' : '') + '已重新出发，新的旅程从今天开始！')
           this.loadedFor = null
           await window.cpLoadChallenges()
+          const fresh = window.appState.challenges.find(c => c.id === Number(id))
+          if (fresh) window.appState.current = fresh
           this.load()
         } else {
           window.cpToast('这段挑战不在告一段落状态')
@@ -192,6 +200,18 @@ window.cpViews.home = (function () {
       } catch (e) {
         window.cpToast(window.cpErrMsg(e, '重新出发失败，请稍后重试'))
       }
+    },
+
+    revivedTodayOf(ch) {
+      return !!(ch && ch.status === 'active' && ch.start_date === window.cpTodayStr() && (ch.completed_days || 0) > 0)
+    },
+
+    goCheckin() {
+      const el = document.querySelector('.cp-cta-main')
+      if (!el) { this.load(); return }
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('cp-cta-flash')
+      setTimeout(() => el.classList.remove('cp-cta-flash'), 1400)
     },
 
     _main(s) {
@@ -205,7 +225,9 @@ window.cpViews.home = (function () {
         html += '<h3 class="cp-rest-title">' + window.cpEsc(window.cpTitleClean(ch.title)) + '</h3>'
         html += '<p class="cp-rest-lede">这段旅程已告一段落——' + (ch.completed_days || 0) + ' 天的坚持都在。想继续的话，随时从今天重新出发。</p>'
         html += '<button class="cp-btn-primary" data-testid="revive-btn" onclick="cpViews.home.revive(' + ch.id + ')"><i class="fas fa-arrows-rotate"></i> 重新出发</button>'
-        html += '</div></div>'
+        html += '</div>'
+        html += '<button class="cp-fab" title="新建挑战" aria-label="新建挑战" onclick="cpCreate.open()"><i class="fas fa-plus"></i></button>'
+        html += '</div>'
         return html
       }
       html += this._chips(s, ch)
@@ -231,14 +253,22 @@ window.cpViews.home = (function () {
       const d = this.data
       let html = ''
       const cur = s.current
-      if (cur && cur.status === 'active' && cur.rescue && cur.rescue.missed_days) {
+      const revivedToday = this.revivedTodayOf(cur)
+      if (revivedToday) {
+        html += this._reviveStrip(cur)
+      } else if (cur && cur.status === 'active' && cur.rescue && cur.rescue.missed_days) {
         html += this._rescueCardHtml(cur)
       } else if (d.guidance && d.guidance.is_at_risk) {
-        html += '<div class="cp-risk-banner"><i class="fas fa-triangle-exclamation"></i><span>中断了！今天重新打卡，节奏就能恢复</span><button class="cp-risk-btn" onclick="cpViews.home.load()">立即打卡</button></div>'
+        html += '<div class="cp-risk-banner"><i class="fas fa-triangle-exclamation"></i><span>中断了！今天重新打卡，节奏就能恢复</span><button class="cp-risk-btn" onclick="cpViews.home.goCheckin()">立即打卡</button></div>'
       }
       html += this._gradWelcome(s)
       html += this._taskArea(s)
       return html
+    },
+
+    _reviveStrip(ch) {
+      const days = (ch.completed_days || 0)
+      return '<div class="cp-revive-strip" data-testid="revive-strip"><i class="fas fa-seedling" aria-hidden="true"></i><span><b>新旅程第 1 天。</b>之前 ' + days + ' 天的坚持都算数，今天的上限按新旅程重新计。</span></div>'
     },
 
     _tabToday(s) {
