@@ -125,15 +125,15 @@ window.cpViews.home = (function () {
     },
 
     _skeleton() {
-      return '<div class="glass-card cp-skeleton-card"><div class="cp-skel-row"><div class="cp-skel-circle"></div><div class="cp-skel-lines"><div class="cp-skel-line w60"></div><div class="cp-skel-line w40"></div><div class="cp-skel-line w80"></div></div></div><div class="cp-skel-line w80"></div><div class="cp-skel-line w60"></div></div>'
+      return '<div class="glass-card nux-skeleton" role="status" aria-busy="true" aria-label="加载中"><div class="nux-skeleton-avatar" aria-hidden="true"></div><div class="nux-skeleton-content" aria-hidden="true"><div class="nux-skeleton-row"></div><div class="nux-skeleton-row" style="width:60%"></div><div class="nux-skeleton-row" style="width:80%"></div><div class="nux-skeleton-row" style="width:40%"></div></div></div>'
     },
 
     _empty() {
-      let html = '<div class="glass-card cp-empty"><div class="cp-empty-icon">🌍</div><h2>开启你的第一个挑战</h2><p>选择一个模板，或描述目标让 AI 为你规划每一天</p><div class="cp-templates">'
+      let html = '<div class="glass-card nx-empty-state"><i aria-hidden="true">🌍</i><h3>开启你的第一个挑战</h3><p>选择一个模板，或描述目标让 AI 为你规划每一天</p><div class="nx-empty-actions cp-templates">'
       window.cpTemplates.forEach((t, i) => {
         html += '<button class="cp-template-card" onclick="cpViews.home.useTemplate(' + i + ')"><span class="cp-template-icon">' + t.icon + '</span><span class="cp-template-title">' + window.cpEsc(t.title) + '</span><span class="cp-template-desc">' + window.cpEsc(t.desc) + '</span><span class="cp-template-days">' + t.days + '天</span></button>'
       })
-      html += '</div><button class="cp-btn-primary" onclick="cpCreate.open()"><i class="fas fa-wand-magic-sparkles"></i> 自定义挑战</button></div>'
+      html += '</div><div class="nx-empty-actions"><button class="cp-btn-primary" onclick="cpCreate.open()"><i class="fas fa-wand-magic-sparkles"></i> 自定义挑战</button></div></div>'
       return html
     },
 

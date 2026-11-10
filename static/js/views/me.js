@@ -21,7 +21,7 @@ window.cpViews = window.cpViews || {}
       html += '<div class="glass-card cp-me-card"><div class="cp-me-avatar">' + window.cpEsc((s.nickname || '挑').slice(0, 1)) + '</div><div><div class="cp-me-name">' + window.cpEsc(s.nickname) + '</div><div class="cp-me-pts">总积分 <b>' + ((d.points && d.points.total) || 0) + '</b> · 本周 <b>' + ((d.points && d.points.week_points) || 0) + '</b></div></div></div>'
       html += '<div class="glass-card cp-pad16"><div class="cp-section-title"><i class="fas fa-flag-checkered cp-ic-primary"></i> 我的挑战' + (s.booted && s.challenges.length ? ' <span class="cp-ch-count">' + s.challenges.length + '</span>' : '') + '</div>'
       if (!s.booted) {
-        html += '<div class="cp-skel-line w80"></div><div class="cp-skel-line w60"></div>'
+        html += '<div class="nux-skeleton-content" role="status" aria-busy="true"><div class="nux-skeleton-row" style="width:80%"></div><div class="nux-skeleton-row" style="width:60%"></div></div>'
       } else if (!s.challenges.length) {
         html += '<p class="cp-empty-tip">还没有挑战，从现在开始吧</p>'
       } else {

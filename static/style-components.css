@@ -195,11 +195,6 @@ a[title="关于我们"], a[aria-label="关于我们"] { bottom: 150px !important
 .cp-diag-plan { padding: 11px 13px; border-radius: var(--radius-sm); background: rgba(5,150,105,.06); border: 1px solid rgba(5,150,105,.25); font-size: 13px; color: var(--emerald); line-height: 1.6; margin-bottom: 6px; }
 .cp-diag-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 14px; }
 
-.cp-empty { display: flex; flex-direction: column; align-items: center; padding: 36px 20px; text-align: center; }
-.cp-empty-icon { font-size: 52px; margin-bottom: 14px; animation: empty-float 3s ease-in-out infinite; }
-@keyframes empty-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-.cp-empty h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
-.cp-empty > p { color: var(--text-secondary); margin-bottom: 22px; }
 
 .cp-hero-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .cp-hero-share-btn { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--card-border); background: rgba(15,23,42,.03); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all .2s; }
