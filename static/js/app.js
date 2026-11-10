@@ -2,6 +2,7 @@ window.cpPrefix = window.PATH_PREFIX || ''
 window.api = new NexusApi({
   baseUrl: window.cpPrefix + '/api/v1',
   tokenKey: 'uc_access_token',
+  cache: { ttl: 15000 },
   onUnauthorized: () => {
     ['uc_access_token', 'uc_refresh_token', 'cp_user_id', 'cp_nickname'].forEach(k => localStorage.removeItem(k))
     window.location.href = window.cpPrefix + '/login'
