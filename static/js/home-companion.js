@@ -48,7 +48,13 @@ window.cpCompanion = (function () {
       .catch(function () {})
   }
 
-  function runStream(content, callbacks) {
+  var regenPending = false
+
+  function onRegenerate() {
+    regenPending = true
+  }
+
+  function runStream(content, callbacks, regen) {
     var accumulated = ''
     var finished = false
     function finish(text) {
@@ -58,7 +64,9 @@ window.cpCompanion = (function () {
       }
     }
     setQueue(0, 0)
-    chatApi.streamPost('/api/chat/conversations/' + conversationId + '/messages/stream', { content: content }, {
+    var endpoint = '/api/chat/conversations/' + conversationId + '/messages/' + (regen ? 'regenerate' : 'stream')
+    var payload = regen ? {} : { content: content }
+    chatApi.streamPost(endpoint, payload, {
       timeout: 120000,
       onEvent: function (eventName, data) {
         var type = (data && data.type) || ''
@@ -147,14 +155,16 @@ window.cpCompanion = (function () {
     setQueue(0, 0)
     if (!conversationId) {
       ensureConversation(getCurrentChallengeId()).then(function () {
-        if (conversationId) runStream(content, callbacks)
+        if (conversationId) { var r = regenPending; regenPending = false; runStream(content, callbacks, r) }
         else callbacks.onError(new Error('伴学会话初始化失败，请稍后再试'))
       }).catch(function () {
         callbacks.onError(new Error('伴学会话初始化失败，请稍后再试'))
       })
       return
     }
-    runStream(content, callbacks)
+    var r = regenPending
+    regenPending = false
+    runStream(content, callbacks, r)
   }
 
   function toggleSessions() {
@@ -186,5 +196,5 @@ window.cpCompanion = (function () {
     window.appState.companion.show = false
   }
 
-  return { open: open, close: close, toggleSessions: toggleSessions, sendHandler: sendHandler, loadHistory: loadHistory, currentId: currentId, conversationApi: conversationApi, sessionFilter: sessionFilter, switchConversation: switchConversation, onSessionCreated: onSessionCreated }
+  return { open: open, close: close, toggleSessions: toggleSessions, sendHandler: sendHandler, onRegenerate: onRegenerate, loadHistory: loadHistory, currentId: currentId, conversationApi: conversationApi, sessionFilter: sessionFilter, switchConversation: switchConversation, onSessionCreated: onSessionCreated }
 })()
