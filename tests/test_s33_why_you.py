@@ -6,3 +6,13 @@ def test_rescue_payload_has_why_you() -> None:
     assert '断了 {missed_days} 天，星轨还留着等你回来' in src
     assert '"why_you": (' in src
     assert '"why_you"' in open("app/services/reminder_service.py", encoding="utf-8").read() or True
+
+
+def test_absence_payload_has_why_you() -> None:
+    src = open("app/services/absence_service.py", encoding="utf-8").read()
+    assert '"why_you"' in src
+
+
+def test_normal_payload_has_why_you() -> None:
+    src = open("app/services/reminder_service.py", encoding="utf-8").read()
+    assert '"why_you"' in src

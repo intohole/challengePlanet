@@ -210,6 +210,10 @@ async def collect_absence_items(
                 "app_id": "challengePlanet",
                 "channels": ["in_app", "email"],
                 "link": f"/challengePlanet/?ch={challenge.id}&rc={link_rc}",
+                "why_you": (
+                    f"你的「{challenge.title or '挑战'}」已 {int(absence['absent_days'])} 天没记录，"
+                    f"上一次还停在 {absence['last_record_date']}"
+                ),
                 "data": {"challenge_id": challenge.id, "absence_care": True,
                          "touch_action": str(gate["action"])},
             },

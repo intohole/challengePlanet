@@ -212,6 +212,10 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                         "app_id": "challengePlanet",
                         "channels": ["in_app", "email"],
                         "link": "/challengePlanet/",
+                        "why_you": (
+                            f"你立的「{representative.title or '挑战'}」今天还没打卡"
+                            + (f"，已连着 {len(challenges)} 个挑战在等" if len(challenges) > 1 else "")
+                        ),
                         "data": {"challenge_count": len(challenges)},
                     }
                 )
