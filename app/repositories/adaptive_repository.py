@@ -33,6 +33,20 @@ class AdaptiveRepository:
         )
         return result.scalar_one_or_none()
 
+    async def latest_by_kind(
+        self, session: AsyncSession, challenge_id: int, kind: str
+    ) -> AdaptiveSuggestion | None:
+        result = await session.execute(
+            select(AdaptiveSuggestion)
+            .where(
+                AdaptiveSuggestion.challenge_id == challenge_id,
+                AdaptiveSuggestion.kind == kind,
+            )
+            .order_by(AdaptiveSuggestion.created_at.desc(), AdaptiveSuggestion.id.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
     async def update_status(
         self, session: AsyncSession, suggestion: AdaptiveSuggestion, status: str
     ) -> AdaptiveSuggestion:

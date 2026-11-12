@@ -340,10 +340,24 @@
   V._returnHero = function (rs, t, ch) {
     const unit = window.cpEsc(t.unit || ch.unit || '')
     const micro = Number(rs.micro_target) || 0
+    const dis = this.data.checking ? 'disabled' : ''
+    const rst = rs.restart
+    if (rst && rst.status === 'pending') {
+      const rc = window.cpFmtNum(Number(rst.restart_cap) || 0)
+      const cc = window.cpFmtNum(Number(rst.current_cap) || 0)
+      return '<div class="glass-card cp-task-card cp-return-hero" data-testid="restart-card">'
+        + '<div class="cp-return-emblem"><i class="fas fa-arrows-rotate" aria-hidden="true"></i></div>'
+        + '<p class="cp-task-title">欢迎回来——从 ' + rc + ' ' + unit + ' 重新出发</p>'
+        + '<p class="cp-task-desc">离开了 ' + window.cpFmtInt(rs.gap_days) + ' 天，走过的 <b>' + window.cpFmtInt(rs.walked_days) + '</b> 天都算数。'
+        + '阶梯按日历走到了每天 <b>' + cc + ' ' + unit + '</b>，对刚回来的你太陡了。上次你守在 <b>' + rc + ' ' + unit + '</b>。</p>'
+        + '<div class="cp-return-micro"><i class="fas fa-feather" aria-hidden="true"></i> 从 ' + rc + ' ' + unit + ' 接着往下走，毕业日重新计算。</div>'
+        + '<button class="cp-btn-primary cp-block" ' + dis + ' data-testid="restart-accept" onclick="cpViews.home.respondRestart(' + ch.id + ',' + rst.suggestion_id + ',true)"><i class="fas fa-flag-checkered" aria-hidden="true"></i> 从 ' + rc + ' ' + unit + ' 重新出发</button>'
+        + '<button class="cp-absence-dismiss" data-testid="restart-reject" ' + dis + ' onclick="cpViews.home.respondRestart(' + ch.id + ',' + rst.suggestion_id + ',false)">保持每天 ' + cc + ' ' + unit + '</button>'
+        + '</div>'
+    }
     const microLine = micro > 0 && unit
       ? '今天先做最小的：<b>' + window.cpFmtNum(micro) + ' ' + unit + '</b>（目标的 1/5）'
       : '今天先记一笔，就算今天上路'
-    const dis = this.data.checking ? 'disabled' : ''
     let backfill = ''
     if (rs.reward_granted) {
       backfill = '<p class="cp-return-backfill cp-return-backfill-done"><i class="fas fa-gift" aria-hidden="true"></i> 连续回来 3 天做到了，送你 1 张免费补签卡（补签时自动可用）</p>'
@@ -358,5 +372,17 @@
       + '<div class="cp-return-micro"><i class="fas fa-feather" aria-hidden="true"></i> ' + microLine + '</div>'
       + '<button class="cp-btn-primary cp-block" ' + dis + ' onclick="cpViews.home.logAbsenceReturn(' + ch.id + ')"><i class="fas fa-pen" aria-hidden="true"></i> 今天记一笔</button>'
       + backfill + '</div>'
+  }
+
+  V.respondRestart = async function (chId, suggestionId, accept) {
+    const s = window.appState
+    const ch = s.current
+    if (!ch || Number(ch.id) !== Number(chId)) return
+    try {
+      await window.api.post('/challenges/' + chId + '/adaptive/' + suggestionId + '/respond', { accept: !!accept })
+    } catch (e) {}
+    this.data.lastFeedback = accept ? '已重新出发——今天的上限已按你的节奏调整' : ''
+    this.loadedFor = null
+    await this.load()
   }
 })()

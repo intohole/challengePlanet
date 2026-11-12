@@ -81,17 +81,61 @@ def ladder_cap_of(
     return min(goal, start + elapsed * step)
 
 
+def restart_anchor_of(challenge: object) -> dict[str, float | str] | None:
+    """重启重锚（r27）：ladder_restart JSON {"date","cap"}——从该日起曲线以 cap 为新起点重走。
+
+    缺席长归来的「不可能任务」根治：阶梯按日历走到毕业底时，回来的人面对做不到的
+    上限。重锚让 cap 从他上次真实守住的量重新递减，锚前曲线字节级不变。
+    """
+    from nexus import loads_or
+
+    raw = str(getattr(challenge, "ladder_restart", "") or "")
+    if not raw:
+        return None
+    loaded = loads_or(raw, {})
+    if not isinstance(loaded, dict):
+        return None
+    try:
+        cap = float(loaded.get("cap") or 0)
+    except (TypeError, ValueError):
+        return None
+    date = str(loaded.get("date") or "")
+    start = str(getattr(challenge, "start_date", "") or "")
+    if cap <= 0 or not date or not start or date < start:
+        return None
+    return {"date": date, "cap": cap}
+
+
+def _anchor_day_number(challenge: object, anchor_date: str) -> int:
+    from datetime import datetime as _dt
+
+    start = str(getattr(challenge, "start_date", "") or "")
+    try:
+        s = _dt.strptime(start, "%Y-%m-%d").date()
+        d = _dt.strptime(anchor_date, "%Y-%m-%d").date()
+    except ValueError:
+        return 0
+    return max(1, (d - s).days + 1)
+
+
 def ladder_cap_with(
     challenge: object, day_number: int, adjustments: list[dict[str, int]],
 ) -> float:
-    return ladder_cap_of(
-        str(getattr(challenge, "direction", "") or "increase"),
-        float(getattr(challenge, "ladder_start", 0) or 0),
-        float(getattr(challenge, "ladder_goal", 0) or 0),
-        max(1, int(getattr(challenge, "ladder_interval", 1) or 1)),
-        float(getattr(challenge, "ladder_step", 1) or 1),
-        shifted_day(day_number, adjustments),
-    )
+    direction = str(getattr(challenge, "direction", "") or "increase")
+    start = float(getattr(challenge, "ladder_start", 0) or 0)
+    goal = float(getattr(challenge, "ladder_goal", 0) or 0)
+    interval = max(1, int(getattr(challenge, "ladder_interval", 1) or 1))
+    step = float(getattr(challenge, "ladder_step", 1) or 1)
+    shifted = shifted_day(day_number, adjustments)
+    anchor = restart_anchor_of(challenge)
+    if anchor is not None:
+        anchor_shifted = shifted_day(_anchor_day_number(challenge, str(anchor["date"])), adjustments)
+        if shifted >= anchor_shifted:
+            return ladder_cap_of(
+                direction, float(anchor["cap"]), goal, interval, step,
+                shifted - anchor_shifted + 1,
+            )
+    return ladder_cap_of(direction, start, goal, interval, step, shifted)
 
 
 def ladder_cap(challenge: object, day_number: int) -> float:
@@ -110,7 +154,16 @@ def ladder_goal_day_with(challenge: object, adjustments: list[dict[str, int]]) -
     interval = max(1, int(getattr(challenge, "ladder_interval", 1) or 1))
     plain = int(-(-(start - goal) // step)) * interval + 1
     limit = plain + total_shift_days(adjustments) + interval + 2
-    for day in range(2, limit + 1):
+    anchor = restart_anchor_of(challenge)
+    first_day = 2
+    if anchor is not None:
+        anchor_day = _anchor_day_number(challenge, str(anchor["date"]))
+        anchor_shifted = shifted_day(anchor_day, adjustments)
+        span_a = abs(float(anchor["cap"]) - goal)
+        anchor_plain = int(-(-span_a // step)) * interval + 1
+        limit = max(limit, anchor_shifted + anchor_plain + interval + 2)
+        first_day = max(first_day, anchor_day)
+    for day in range(first_day, limit + 1):
         if ladder_cap_with(challenge, day, adjustments) <= goal + 1e-9:
             return day
     return None

@@ -53,6 +53,17 @@ ACTION_FREEZE = "freeze"
 ACTION_REPAIR = "repair"
 
 
+async def load_recorded_dates(session: AsyncSession, challenge_id: int) -> set[str]:
+    """真实记录日+冻结/修复/护盾动作日（不含 mercy 补齐——缺席/回归判定口径）。"""
+    checkins = await CheckInRepository().get_by_challenge(session, challenge_id)
+    actions = await StreakActionRepository().get_by_challenge(session, challenge_id)
+    action_dates = {
+        a.action_date for a in actions
+        if a.action in (ACTION_FREEZE, ACTION_REPAIR, ACTION_SHIELD)
+    }
+    return action_dates | {c.date for c in checkins}
+
+
 async def load_valid_dates(session: AsyncSession, challenge_id: int) -> set[str]:
     checkins = await CheckInRepository().get_by_challenge(session, challenge_id)
     actions = await StreakActionRepository().get_by_challenge(session, challenge_id)

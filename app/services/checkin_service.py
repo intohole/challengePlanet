@@ -14,7 +14,6 @@ from app.repositories.points_repository import ChallengeMetaRepository
 from app.core.datetime_utils import now_china
 from app.services.absence_service import assess_absence
 from app.services.return_service import return_after_checkin
-from app.services.adaptive_service import evaluate_after_bad_mood_task
 from app.services.checkin_background import (
     fire_and_forget,
     save_memory,
@@ -161,8 +160,6 @@ class CheckInService:
         shields = await self._shields.award_milestone(session, challenge_id, streak)
         return_state = await return_after_checkin(session, challenge, today) if not today_checkins else None
         fire_and_forget(save_memory(user_id, challenge.title, day_number, mood, reflection, value))
-        if mood == "bad":
-            fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
 
         return self._result_payload(
             challenge, checkin, target_snapshot, baseline,
@@ -242,8 +239,6 @@ class CheckInService:
         fire_and_forget(
             save_memory(user_id, challenge.title, checkin.day_number, mood, reflection, checkin.value)
         )
-        if mood == "bad":
-            fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
         return updated
 
     async def delete_checkin(
@@ -285,8 +280,6 @@ class CheckInService:
         if mood:
             updates["mood"] = mood
         updated = await self._repo.update(session, checkin, updates)
-        if mood == "bad":
-            fire_and_forget(evaluate_after_bad_mood_task(challenge_id))
         return updated
 
     async def get_checkins(

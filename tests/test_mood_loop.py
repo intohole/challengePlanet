@@ -91,30 +91,6 @@ async def test_update_meta_rejects_past_checkin() -> None:
 
 
 @pytest.mark.asyncio
-async def test_bad_mood_triggers_adaptive_suggestion(monkeypatch) -> None:
-    from app.services import adaptive_service
-
-    engine, maker = await _make_session()
-    async with maker() as session:
-        today = today_str()
-        ch = _add_challenge(session, start_date=shift_date(today, -2), end_date=shift_date(today, 11))
-        await session.commit()
-        svc = CheckInService()
-        await svc.do_checkin(session, ch.id, "u1", value=1.0, mood="bad")
-        await svc.do_checkin(session, ch.id, "u1", value=1.0, mood="bad")
-
-        async def fake_ai_adjust(title, tasks, mode):
-            return [{"day": 1, "title": tasks[0].get("title", "任务"), "description": "轻松版", "tip": ""}]
-
-        monkeypatch.setattr(adaptive_service.AIService, "generate_adjusted_tasks", fake_ai_adjust)
-        monkeypatch.setattr(adaptive_service, "async_session", maker)
-        await adaptive_service.evaluate_after_bad_mood_task(ch.id)
-        pending = await adaptive_service.AdaptiveRepository().get_pending(session, ch.id)
-        assert pending is not None
-        assert pending.kind == "lighten"
-
-
-@pytest.mark.asyncio
 async def test_mood_distribution_aggregates() -> None:
     engine, maker = await _make_session()
     async with maker() as session:

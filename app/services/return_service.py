@@ -12,6 +12,7 @@ RETURN_WINDOW_DAYS = 3
 GAP_MIN_DAYS = 2
 BACKFILL_TARGET_DAYS = 3
 BONUS_MENDS_PER_BACKFILL = 1
+RESTART_GAP_DAYS = 7
 
 
 def _gap_run_ending_at(valid_dates: set[str], start: str, first_missing: str) -> tuple[int, str] | None:
@@ -26,28 +27,36 @@ def _gap_run_ending_at(valid_dates: set[str], start: str, first_missing: str) ->
     return gap_days, walk
 
 
-def return_state_of(challenge: object, valid_dates: set[str], today: str) -> dict[str, object] | None:
+def return_state_of(
+    challenge: object, valid_dates: set[str], today: str,
+    recorded_dates: set[str] | None = None,
+) -> dict[str, object] | None:
     """最近一次缺席（连续 ≥2 天无有效记录）后的回归状态；未在回归窗返回 None。
 
     在场即回归：今天已打卡→连击段（今天起往前数连续有效日）即回归段；今天未打卡
     但缺口延续到昨天→他正在 app 里，视为回归第 1 天。return_day=回来第 N 天，
     超过 RETURN_WINDOW_DAYS 天退出窗口。micro_target=今日目标的 1/5（向上取整）。
+
+    recorded_dates（r27）：cap 阶梯的 mercy 口径把「没记录=守住」补齐进 valid_dates
+    ——缺席判定必须用真实记录日（同 assess_absence 口径），否则 gap 恒 0、回归卡
+    对 cap 挑战永不触发。walked_days 仍用补齐式 valid（静默守的天也算走过的天）。
     """
     start = str(getattr(challenge, "start_date", "") or "")
     if not start or today < start:
         return None
+    gap_source = recorded_dates if recorded_dates is not None else valid_dates
     first_missing = shift_date(today, -1)
-    if today in valid_dates:
+    if today in gap_source:
         run = 1
         walk = shift_date(today, -1)
-        while walk >= start and walk in valid_dates:
+        while walk >= start and walk in gap_source:
             run += 1
             walk = shift_date(walk, -1)
         first_missing = shift_date(today, -run)
-    gap = _gap_run_ending_at(valid_dates, start, first_missing)
+    gap = _gap_run_ending_at(gap_source, start, first_missing)
     if gap is None or gap[0] < GAP_MIN_DAYS:
         return None
-    return_day = run if today in valid_dates else 1
+    return_day = run if today in gap_source else 1
     if return_day > RETURN_WINDOW_DAYS:
         return None
     target = float(daily_target(challenge, 1) or 0)
@@ -105,21 +114,55 @@ def _dumps(data: dict[str, object]) -> str:
 
 
 async def active_return_state(session, challenge, today: str) -> dict[str, object] | None:
-    """today-task 入口：活跃挑战的回归态（缺席期打开 app 亦视为回归第 1 天）。"""
+    """today-task 入口：活跃挑战的回归态（缺席期打开 app 亦视为回归第 1 天）。
+
+    长缺席（gap ≥ RESTART_GAP_DAYS）时挂重启建议评估——建议 pending 时随
+    return_state.restart 出口（r27 重启引擎）。
+    """
     if str(getattr(challenge, "status", "")) != "active":
         return None
-    from app.services.mercy_service import load_valid_dates
+    from app.services.mercy_service import load_recorded_dates, load_valid_dates
 
-    return return_state_of(challenge, await load_valid_dates(session, int(challenge.id)), today)
+    cid = int(challenge.id)
+    state = return_state_of(
+        challenge, await load_valid_dates(session, cid), today,
+        recorded_dates=await load_recorded_dates(session, cid),
+    )
+    if state is None or int(state.get("gap_days") or 0) < RESTART_GAP_DAYS:
+        return state
+    from app.services.adaptive_service import AdaptiveService
+
+    svc = AdaptiveService()
+    suggestion = await svc.evaluate_restart_on_return(session, challenge, int(state["gap_days"]))
+    if suggestion is None:
+        suggestion = await svc.get_pending(session, int(challenge.id), str(challenge.user_id))
+        if suggestion is not None and suggestion.kind != "restart":
+            suggestion = None
+    if suggestion is not None:
+        from nexus import loads_or
+
+        task = loads_or(str(suggestion.task_json or "{}"), {})
+        state["restart"] = {
+            "suggestion_id": int(suggestion.id),
+            "restart_cap": task.get("restart_cap"),
+            "current_cap": task.get("current_cap"),
+            "status": suggestion.status,
+            "reason": suggestion.reason,
+        }
+    return state
 
 
 async def return_after_checkin(session, challenge, today: str) -> dict[str, object] | None:
     """checkin 入口：首记后的回归态；第 BACKFILL_TARGET_DAYS 天发回赠免费补签卡。"""
-    from app.services.mercy_service import load_valid_dates
+    from app.services.mercy_service import load_recorded_dates, load_valid_dates
     from app.services.streak_service import shift_date
 
-    valid_now = await load_valid_dates(session, int(challenge.id))
-    rstate = return_state_of(challenge, valid_now, today)
+    cid = int(challenge.id)
+    valid_now = await load_valid_dates(session, cid)
+    rstate = return_state_of(
+        challenge, valid_now, today,
+        recorded_dates=await load_recorded_dates(session, cid),
+    )
     if rstate is None:
         return None
     if int(rstate["return_day"]) == BACKFILL_TARGET_DAYS:
