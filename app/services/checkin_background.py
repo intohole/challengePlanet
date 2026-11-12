@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import asyncio
+
+from nexus.utils.background import spawn_background
 from datetime import datetime
 
 from nexus.logging import get_logger
@@ -12,13 +13,8 @@ from app.services.ai_service import AIService
 
 logger = get_logger("challengePlanet.checkin_bg")
 
-_background_tasks: set[asyncio.Task] = set()
-
-
 def fire_and_forget(coro: object) -> None:
-    task = asyncio.create_task(coro)  # type: ignore[arg-type]
-    _background_tasks.add(task)
-    task.add_done_callback(_background_tasks.discard)
+    spawn_background(coro)  # type: ignore[arg-type]
 
 
 async def recall_context(user_id: str, title: str) -> str:
