@@ -15,6 +15,7 @@ from app.services.goal_rule_service import (
     is_repeatable,
     is_settled,
     ladder_progress_pct,
+    present_start_of,
     resolve_mode,
 )
 from app.services.period_service import period_fields
@@ -121,7 +122,12 @@ def build_today_payload(
     feedback = today_checkins[-1].ai_feedback if today_checkins else ""
     not_started = day_number < 1
     repeatable = is_repeatable(challenge)
-    ladder_progress = ladder_progress_pct(challenge, day_number) if is_ladder(challenge) else 0.0
+    ladder_progress = 0.0
+    present_start = float(getattr(challenge, "ladder_start", 0.0) or 0.0)
+    restarted = False
+    if is_ladder(challenge):
+        ladder_progress = ladder_progress_pct(challenge, day_number)
+        present_start, restarted = present_start_of(challenge, day_number)
     task_type = str(task.get("task_type", challenge.task_type))
     pf = period_fields(challenge, task_type, aggregates or {})
     return {
@@ -138,10 +144,11 @@ def build_today_payload(
         "goal_type": str(challenge.goal_type), "decompose_mode": str(challenge.decompose_mode),
         "goal_rule": str(challenge.goal_rule) or "fixed",
         "goal_mode": resolve_mode(challenge),
-        "ladder_start": float(getattr(challenge, "ladder_start", 0.0) or 0.0),
+        "ladder_start": present_start,
         "ladder_goal": float(getattr(challenge, "ladder_goal", 0.0) or 0.0),
         "ladder_interval": max(1, int(getattr(challenge, "ladder_interval", 1) or 1)),
         "ladder_step": float(getattr(challenge, "ladder_step", 1.0) or 1.0),
+        "restarted": restarted,
         "today_total": today_total, "today_target": today_target, "today_cap": today_target,
         "dynamic_baseline": dynamic_baseline, "remaining": round(remaining, 2), "forecast": forecast,
         "journey": journey,

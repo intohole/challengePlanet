@@ -145,6 +145,20 @@ def ladder_cap(challenge: object, day_number: int) -> float:
     )
 
 
+def present_start_of(challenge: object, day_number: int) -> tuple[float, bool]:
+    """重锚生效后的呈现起点与 restarted 标志：锚后日 ladder_start 以 anchor.cap
+    为准（r27 遗留③——任务卡「12→3」徽章在重锚后语义过期），锚前/未重锚返回原始起点。"""
+    start = float(getattr(challenge, "ladder_start", 0) or 0)
+    anchor = restart_anchor_of(challenge)
+    if anchor is None:
+        return start, False
+    adj = parse_ladder_adjustments(getattr(challenge, "ladder_adjust", ""))
+    anchor_shifted = shifted_day(_anchor_day_number(challenge, str(anchor["date"])), adj)
+    if day_number >= anchor_shifted:
+        return float(anchor["cap"]), True
+    return start, False
+
+
 def ladder_goal_day_with(challenge: object, adjustments: list[dict[str, int]]) -> int | None:
     start = float(getattr(challenge, "ladder_start", 0) or 0)
     goal = float(getattr(challenge, "ladder_goal", 0) or 0)
@@ -231,8 +245,9 @@ def ladder_progress_pct(challenge: object, day_number: int) -> float:
     start = meta["ladder_start"]
     goal = meta["ladder_goal"]
     cap = ladder_cap(challenge, day_number)
-    span = start - goal
     if challenge.direction == "decrease":
+        start, _restarted = present_start_of(challenge, day_number)
+        span = start - goal
         if span <= 0:
             return 100.0
         return max(0.0, min((start - cap) / span * 100.0, 100.0))

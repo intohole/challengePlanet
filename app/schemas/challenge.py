@@ -160,6 +160,7 @@ class TodayTaskResponse(BaseModel):
     date: str
     not_started: bool = False
     repeatable: bool = False
+    restarted: bool = False
     task: dict[str, object] = Field(default_factory=dict)
     task_title: str = ""
     task_description: str = ""

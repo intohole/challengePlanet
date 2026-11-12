@@ -330,7 +330,8 @@
     const label = isDesc ? '今日上限' : '今日目标'
     let html = '<div class="cp-ladder-daily"><div class="cp-ladder-daily-head"><span>' + label + ' <b>' + window.cpFmtNum(cap) + '</b> ' + unit + '</span>'
     if (t.ladder_goal && t.ladder_start) {
-      html += '<span class="cp-ladder-daily-path">' + Number(t.ladder_start) + '→' + Number(t.ladder_goal) + ' <i class="fas fa-stairs" style="font-size:11px"></i> 阶梯</span>'
+      const restartMark = t.restarted ? '<i class="fas fa-arrows-rotate" style="font-size:10px;opacity:.75" title="重新出发后：从 ' + window.cpFmtNum(Number(t.ladder_start)) + ' 重新递减"></i> ' : ''
+      html += '<span class="cp-ladder-daily-path">' + restartMark + window.cpFmtNum(Number(t.ladder_start)) + '→' + window.cpFmtNum(Number(t.ladder_goal)) + ' <i class="fas fa-stairs" style="font-size:11px"></i> 阶梯</span>'
     }
     html += '</div>'
     html += this._paceRail(total, Number(fc.projected) || 0, cap, unit, state)
@@ -377,12 +378,21 @@
   V.respondRestart = async function (chId, suggestionId, accept) {
     const s = window.appState
     const ch = s.current
-    if (!ch || Number(ch.id) !== Number(chId)) return
+    if (!ch || Number(ch.id) !== Number(chId) || this.data.checking) return
+    this.data.checking = true
+    const cc = Number((((this.data.today || {}).return_state || {}).restart || {}).current_cap || 0)
+    const feedback = accept ? '已重新出发——今天的上限已按你的节奏调整'
+      : (cc > 0 ? '好的，保持每天 ' + window.cpFmtNum(cc) + '——这个建议已收下，近期不会再问' : '好的，已记录你的选择，近期不会再问')
     try {
       await window.api.post('/challenges/' + chId + '/adaptive/' + suggestionId + '/respond', { accept: !!accept })
-    } catch (e) {}
-    this.data.lastFeedback = accept ? '已重新出发——今天的上限已按你的节奏调整' : ''
+    } catch (e) {
+      window.cpToast(window.cpErrMsg(e, '操作没成功——卡片还在，请再试一次'))
+      return
+    } finally { this.data.checking = false }
     this.loadedFor = null
     await this.load()
+    this.data.lastFeedback = feedback
+    window.cpToast(feedback)
+    this.rerender()
   }
 })()

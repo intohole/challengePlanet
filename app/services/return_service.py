@@ -15,6 +15,18 @@ BONUS_MENDS_PER_BACKFILL = 1
 RESTART_GAP_DAYS = 7
 
 
+def _day_number_of(challenge: object, today: str) -> int:
+    from datetime import datetime as _dt
+
+    start = str(getattr(challenge, "start_date", "") or "")
+    try:
+        s = _dt.strptime(start, "%Y-%m-%d").date()
+        t = _dt.strptime(today, "%Y-%m-%d").date()
+    except ValueError:
+        return 1
+    return max(1, (t - s).days + 1)
+
+
 def _gap_run_ending_at(valid_dates: set[str], start: str, first_missing: str) -> tuple[int, str] | None:
     """从 first_missing 起向前数连续缺失日：(缺失天数, 缺口前最后一个有效日)。"""
     gap_days = 0
@@ -35,7 +47,9 @@ def return_state_of(
 
     在场即回归：今天已打卡→连击段（今天起往前数连续有效日）即回归段；今天未打卡
     但缺口延续到昨天→他正在 app 里，视为回归第 1 天。return_day=回来第 N 天，
-    超过 RETURN_WINDOW_DAYS 天退出窗口。micro_target=今日目标的 1/5（向上取整）。
+    超过 RETURN_WINDOW_DAYS 天退出窗口。micro_target=今日目标的 1/5（四舍五入）。
+    r27 遗留②收口：今日目标按今日日序取（阶梯含重锚曲线），不再用 day1 起点——
+    decrease 阶梯 day1 口径会把「最小的一步」说大。
 
     recorded_dates（r27）：cap 阶梯的 mercy 口径把「没记录=守住」补齐进 valid_dates
     ——缺席判定必须用真实记录日（同 assess_absence 口径），否则 gap 恒 0、回归卡
@@ -59,7 +73,7 @@ def return_state_of(
     return_day = run if today in gap_source else 1
     if return_day > RETURN_WINDOW_DAYS:
         return None
-    target = float(daily_target(challenge, 1) or 0)
+    target = float(daily_target(challenge, _day_number_of(challenge, today)) or 0)
     micro_target = max(1, round(target / 5)) if target > 0 else 0
     return {
         "gap_days": gap[0],

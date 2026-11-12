@@ -248,3 +248,93 @@ async def test_return_state_carries_restart_block() -> None:
         assert int(restart["suggestion_id"]) > 0
         state = await active_return_state(session, ch, today_str())
         assert state["restart"]["suggestion_id"] == restart["suggestion_id"]
+
+
+@pytest.mark.asyncio
+async def test_micro_target_uses_today_cap_not_day1() -> None:
+    """回归 micro（今天先做最小的）必须相对今日 cap，不是 day1 起点——
+    decrease 阶梯今日 cap < day1，day1 口径会把「最小的一步」说大（r27 遗留②）。"""
+    from app.services.return_service import return_state_of
+
+    engine, maker = await _make_session()
+    async with maker() as session:
+        ch = _ladder_challenge(session)  # start 12→goal 3，今日（day35）cap 已到 3
+        await session.commit()
+        today = today_str()
+        from datetime import datetime as _dt
+        start = _dt.strptime(str(ch.start_date), "%Y-%m-%d").date()
+        _t = _dt.strptime(today, "%Y-%m-%d").date()
+        day_number = (_t - start).days + 1
+        today_cap = daily_target(ch, day_number)
+        assert today_cap < 12.0
+        micro = max(1, round(today_cap / 5))
+        # 旧实现（day1 口径）给 12/5=2；新实现必须等于今日 cap 口径
+        state = _return_state_via_private(ch, today)
+        assert state is not None
+        assert int(state["micro_target"]) == micro
+
+
+def _return_state_via_private(ch, today: str) -> dict[str, object] | None:
+    from datetime import datetime as _dt
+
+    from app.services.return_service import return_state_of
+
+    start = _dt.strptime(str(ch.start_date), "%Y-%m-%d").date()
+    t = _dt.strptime(today, "%Y-%m-%d").date()
+    # 回归窗：今天未打卡、昨天缺、前天缺 → gap 从 first_missing 起算；start 到 today-2 有「记录」
+    recorded = set()
+    walk = start
+    while walk <= t:
+        recorded.add(walk.isoformat())
+        walk = __import__("datetime").timedelta(days=1) + walk
+    recorded.discard(shift_date(today, -1))
+    recorded.discard(shift_date(today, -2))
+    return return_state_of(ch, set(recorded), today, recorded_dates=recorded)
+
+
+@pytest.mark.asyncio
+async def test_today_payload_ladder_start_reflects_anchor() -> None:
+    """重锚后 today 透出的阶梯起点必须是锚点 cap（r27 遗留③：任务卡徽章「12→3」
+    语义过期，重锚后应为「7→3」），并带 restarted 标志。"""
+    import json as _json
+
+    from app.services.challenge_present import build_today_payload
+
+    engine, maker = await _make_session()
+    async with maker() as session:
+        ch = _ladder_challenge(session)
+        await session.commit()
+        today = today_str()
+        anchor_day = _day_number(ch, today)
+        payload = build_today_payload(
+            ch, int(ch.id), anchor_day, today, {}, [], 0.0, 3.0, 3.0,
+            {"streak": 0, "completed_days": 0, "total_days": 66, "last_streak": 0}, 0.0,
+        )
+        assert payload["ladder_start"] == 12.0
+        assert not payload.get("restarted")
+        ch.ladder_restart = _json.dumps({"date": today, "cap": 7})
+        payload = build_today_payload(
+            ch, int(ch.id), anchor_day, today, {}, [], 0.0, 7.0, 7.0,
+            {"streak": 0, "completed_days": 0, "total_days": 66, "last_streak": 0}, 0.0,
+        )
+        assert payload["ladder_start"] == 7.0
+        assert payload["ladder_goal"] == 3.0
+        assert payload.get("restarted") is True
+
+
+@pytest.mark.asyncio
+async def test_ladder_progress_pct_rebased_after_anchor() -> None:
+    """重锚后进度百分比按锚点新曲线重算——否则 cap 回升会算出「进度倒退」。"""
+    from app.services.goal_rule_service import ladder_progress_pct
+
+    engine, maker = await _make_session()
+    async with maker() as session:
+        ch = _ladder_challenge(session)
+        await session.commit()
+        today = today_str()
+        anchor_day = _day_number(ch, today)
+        before = ladder_progress_pct(ch, anchor_day)
+        ch.ladder_restart = json.dumps({"date": today, "cap": 7})
+        after = ladder_progress_pct(ch, anchor_day)
+        assert after < before
+        assert after == 0.0
