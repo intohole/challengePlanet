@@ -261,14 +261,14 @@ class AIService:
     async def generate_share_quote(self, challenge_title: str, streak: int) -> str:
         user_msg = f"挑战：{challenge_title}\n已连续坚持：{streak}天"
         llm = get_llm_service()
-        raw = await llm.ask(user_msg, system=QUOTE_SYSTEM, temperature=0.8, max_tokens=64, timeout=15.0)
+        raw = await llm.ask(user_msg, system=QUOTE_SYSTEM, temperature=0.8, max_tokens=64, timeout=15.0, task_type="assistant")
         quote = raw.strip().strip('"').strip("'").split("\n")[0].strip()
         return quote[:20] if quote else "坚持，是最好的答案"
 
     async def generate_declaration(self, challenge_title: str, day_number: int, streak: int) -> str:
         user_msg = f"挑战：{challenge_title}\n今天是第{day_number}天，已连续{streak}天"
         llm = get_llm_service()
-        raw = await llm.ask(user_msg, system=DECLARATION_SYSTEM, temperature=0.9, max_tokens=48, timeout=12.0)
+        raw = await llm.ask(user_msg, system=DECLARATION_SYSTEM, temperature=0.9, max_tokens=48, timeout=12.0, task_type="assistant")
         text = raw.strip().strip('"').strip("'").split("\n")[0].strip()
         return text[:20]
 
