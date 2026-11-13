@@ -35,6 +35,8 @@ window.cpCompanion = (function () {
   function switchConversation(conv) {
     if (!conv || !conv.id) return
     conversationId = conv.id
+    historyCursor = ''
+    window.appState.companionHasMore = false
     window.appState.companion.sessions = false
     loadHistory()
   }
@@ -122,15 +124,38 @@ window.cpCompanion = (function () {
     return initPromise
   }
 
+  var historyCursor = ''
+
+  function applyWindow(body) {
+    var items = Array.isArray(body) ? body : ((body && body.data) || [])
+    var info = (body && body.pagination) || {}
+    historyCursor = info.next_cursor || ''
+    window.appState.companionHasMore = !!info.has_more
+    return items.map(function (m) { return { id: m.id, role: m.role, content: m.content } })
+  }
+
   function loadHistory() {
     if (!conversationId) return Promise.resolve()
-    return conversationApi.get('/api/chat/conversations/' + conversationId + '/messages', { page_size: 50 }).then(function (res) {
-      var items = Array.isArray(res) ? res : ((res && res.items) || [])
-      var msgs = items.map(function (m) { return { id: m.id, role: m.role, content: m.content } })
+    return chatApi.get('/api/chat/conversations/' + conversationId + '/messages', { tail: true, page_size: 50 }).then(function (body) {
+      var msgs = applyWindow(body)
       Vue.nextTick(function () {
         if (chatRef && chatRef.value) chatRef.value.setMessages(msgs)
       })
     }).catch(function () {})
+  }
+
+  function loadEarlier() {
+    if (!conversationId || !historyCursor) {
+      window.appState.companionHasMore = false
+      if (chatRef && chatRef.value && chatRef.value.resetLoadEarlier) chatRef.value.resetLoadEarlier()
+      return
+    }
+    chatApi.get('/api/chat/conversations/' + conversationId + '/messages', { before: historyCursor, page_size: 50 }).then(function (body) {
+      var msgs = applyWindow(body)
+      if (chatRef && chatRef.value && chatRef.value.prependMessages) chatRef.value.prependMessages(msgs)
+    }).catch(function () {
+      if (chatRef && chatRef.value && chatRef.value.resetLoadEarlier) chatRef.value.resetLoadEarlier()
+    })
   }
 
   function applyMeta(m) {
@@ -196,5 +221,5 @@ window.cpCompanion = (function () {
     window.appState.companion.show = false
   }
 
-  return { open: open, close: close, toggleSessions: toggleSessions, sendHandler: sendHandler, onRegenerate: onRegenerate, loadHistory: loadHistory, currentId: currentId, conversationApi: conversationApi, sessionFilter: sessionFilter, switchConversation: switchConversation, onSessionCreated: onSessionCreated }
+  return { open: open, close: close, toggleSessions: toggleSessions, sendHandler: sendHandler, onRegenerate: onRegenerate, loadHistory: loadHistory, loadEarlier: loadEarlier, currentId: currentId, conversationApi: conversationApi, sessionFilter: sessionFilter, switchConversation: switchConversation, onSessionCreated: onSessionCreated }
 })()

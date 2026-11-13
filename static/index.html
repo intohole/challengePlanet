@@ -476,7 +476,9 @@
     <nux-ai-chat
       ref="companionChatRef"
       :send-handler="cpCompanion.sendHandler"
+      :has-more="state.companionHasMore"
       @regenerate="cpCompanion.onRegenerate"
+      @load-earlier="cpCompanion.loadEarlier"
       :welcome="{ icon: '🤖', title: '我是你的挑战伴学', description: '聊聊今天的进展，我会陪你稳住节奏、给出可执行的建议～' }"
       :quick-replies="companionQuickReplies"
       :features="{ stopButton: true, streamFallback: false, scrollToBottomButton: true, smartScroll: true, messageCopy: true, aiTag: true, voice: true, keyboardAvoid: true }"
@@ -529,7 +531,7 @@
 <script src="https://songguokr.com/nexus-ui/v2.93.0/js/components/nux-conversation-list.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.93.0/js/components/nux-menu-about.js"></script>
 <script src="https://songguokr.com/nexus-ui/v2.93.0/js/components/nux-menu-user.js"></script>
-<script src="/static/js/home-companion.js?h=69efdc50ec"></script>
+<script src="/static/js/home-companion.js?h=ec19adf971"></script>
 <script src="/static/js/data-scenes.js?v=20261006a"></script>
 <script src="/static/js/app.js?v=20261028b"></script>
 <script src="https://songguokr.com/nexus-ui/v2.93.0/js/components/nux-checkin.js"></script>
