@@ -299,7 +299,7 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                         logger.warning(
                             "absence care not sent for challenge %s: %s — mark skipped",
                             entry["challenge_id"],
-                            status if isinstance(result, dict) else result,
+                            result.get("status") if isinstance(result, dict) else result,
                         )
                 await session.commit()
             logger.info(
