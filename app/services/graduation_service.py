@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexus import loads_or
 from nexus.logging import get_logger
-from nexus.notify import get_notify_client
+from nexus.notify import get_notify_client, is_sent
 
 from app.db.database import async_session
 from app.models.challenge import Challenge
@@ -184,7 +184,14 @@ class GraduationPushService:
         self._checkin_repo = CheckInRepository()
         self._journey_repo = CheckInRepository()
 
-    async def scan_challenge(self, session: AsyncSession, challenge: Challenge) -> list[dict[str, object]]:
+    async def scan_challenge(
+        self, session: AsyncSession, challenge: Challenge,
+    ) -> tuple[list[dict[str, object]], list[tuple[Challenge, object | None, dict[str, object], str]]]:
+        """扫描可推送项：items 与待标记 marks 配对返回，标记由发送方按送达结果落库。
+
+        r213 前形态：扫描期即 _mark_pushed+commit，发送失败时「已推送」标记
+        照样落库，里程碑推送永不重发——对齐 slip_service「先发后标」对账形态。
+        """
         from app.services.journey_service import journey_baseline, recent_average, reduction_pct
         from app.services.streak_service import day_number_of, today_str
 
@@ -196,12 +203,13 @@ class GraduationPushService:
         )
         state_row, state = await _load_push_state(session, challenge)
         items: list[dict[str, object]] = []
+        marks: list[tuple[Challenge, object | None, dict[str, object], str]] = []
         link = f"/challengePlanet/?ch={challenge.id}&grad=1"
         new_ms = [t for t in milestone_push_rows(rows, baseline, (50, 100, 200, 500, 1000)) if not state.get(f"avoided_{t}")]
         for threshold in new_ms:
             title, body = milestone_push_text(str(getattr(challenge, "unit", "") or ""), threshold)
             items.append(_push_item(challenge, title, body, link))
-            await _mark_pushed(session, challenge, state_row, state, f"avoided_{threshold}")
+            marks.append((challenge, state_row, state, f"avoided_{threshold}"))
         if goal_day is not None and not state.get("graduated"):
             day_number = day_number_of(str(challenge.start_date), today)
             if day_number and day_number >= goal_day:
@@ -222,10 +230,8 @@ class GraduationPushService:
                         str(getattr(challenge, "unit", "") or ""),
                     )
                 items.append(_push_item(challenge, title, body, link))
-                await _mark_pushed(session, challenge, state_row, state, "graduated")
-        if items:
-            await session.commit()
-        return items
+                marks.append((challenge, state_row, state, "graduated"))
+        return items, marks
 
     async def send_journey_pushes(self) -> None:
         from app.core.datetime_utils import now_china
@@ -237,17 +243,34 @@ class GraduationPushService:
                 from app.repositories.challenge_repository import ChallengeRepository
                 challenges = await ChallengeRepository().get_all_active(session)
                 items: list[dict[str, object]] = []
+                marks: list[tuple[Challenge, object | None, dict[str, object], str]] = []
                 for challenge in challenges:
                     if str(getattr(challenge, "direction", "") or "") != "decrease":
                         continue
                     try:
-                        items.extend(await self.scan_challenge(session, challenge))
+                        challenge_items, challenge_marks = await self.scan_challenge(session, challenge)
+                        items.extend(challenge_items)
+                        marks.extend(challenge_marks)
                     except Exception as e:
                         logger.warning("journey push skip ch=%s: %s", challenge.id, e)
                 if not items:
                     return
-                await get_notify_client().send_many(items)
+                results = await get_notify_client().send_many(items)
+                delivered = 0
+                for mark, result in zip(marks, results):
+                    if not is_sent(result):
+                        logger.warning(
+                            "journey push not sent (%s) — mark skipped, will retry next run",
+                            result.get("reason") if isinstance(result, dict) else result,
+                        )
+                        continue
+                    challenge, state_row, state, key = mark
+                    await _mark_pushed(session, challenge, state_row, state, key)
+                    delivered += 1
                 await session.commit()
-                logger.info("journey pushes sent: %d items", len(items))
+                skipped = len(items) - delivered
+                if skipped:
+                    logger.warning("journey pushes skipped %d/%d — no state advance", skipped, len(items))
+                logger.info("journey pushes: %d/%d sent", delivered, len(items))
         except Exception as e:
             logger.error("journey push task failed: %s", e)

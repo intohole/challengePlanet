@@ -4,7 +4,7 @@ import json
 
 from nexus import loads_or
 from nexus.logging import get_logger
-from nexus.notify import get_notify_client
+from nexus.notify import get_notify_client, is_sent
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import async_session
@@ -139,12 +139,12 @@ async def send_slip_care() -> None:
                 return
             results = await get_notify_client().send_many(items)
             for (challenge_id, user_id, date_str), result in zip(marks, results):
-                if isinstance(result, dict) and result.get("status") == "sent":
+                if is_sent(result):
                     await _mark_sent(session, challenge_id, user_id, date_str)
                 else:
                     logger.warning(
                         "slip care not sent for challenge %s: %s — mark skipped",
-                        challenge_id, result.get("status") if isinstance(result, dict) else result,
+                        challenge_id, result.get("reason") if isinstance(result, dict) else result,
                     )
             await session.commit()
             logger.info("slip care sent to %d challenges", len(marks))

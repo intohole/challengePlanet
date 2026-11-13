@@ -134,7 +134,8 @@ async def _run_graduation_push(fake: FakeNotify) -> list[dict]:
             for c in challenges:
                 if str(getattr(c, "direction", "") or "") != "decrease":
                     continue
-                items.extend(await svc.scan_challenge(session, c))
+                ci, _ = await svc.scan_challenge(session, c)
+                items.extend(ci)
             if items:
                 await session.commit()
             return items

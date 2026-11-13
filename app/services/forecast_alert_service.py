@@ -5,7 +5,7 @@ import json
 from nexus import loads_or
 from nexus.audience import sendable_users
 from nexus.logging import get_logger
-from nexus.notify import get_notify_client
+from nexus.notify import get_notify_client, is_sent
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -119,7 +119,7 @@ async def send_forecast_alerts() -> None:
                 marks.append([challenge for challenge, _, _ in alerts])
             results = await client.send_many(items)
             for alert_list, result in zip(marks, results):
-                if isinstance(result, dict) and result.get("status") == "sent":
+                if is_sent(result):
                     for challenge, _, _ in alert_list:
                         await _mark_alerted(session, challenge, today)
                 else:

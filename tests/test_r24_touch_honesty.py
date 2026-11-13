@@ -35,7 +35,7 @@ class FakeNotifyClient:
 
     async def send(self, **kwargs: object) -> dict[str, object]:
         self.sent.append(kwargs)
-        return {"ok": True}
+        return {"ok": True, "status": "sent", "id": 9900}
 
     async def send_many(self, items: list[dict[str, object]]) -> list[dict[str, object]]:
         results: list[dict[str, object]] = []
@@ -52,19 +52,13 @@ def _make_session():
     return engine, Session
 
 
-def _run_reminders() -> list[dict[str, object]]:
+def _run_reminders(seed_rescue: bool = True) -> list[dict[str, object]]:
     async def main() -> list[dict[str, object]]:
         engine, Session = _make_session()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         async with Session() as s:
             uid = "1001"
-            c_word = Challenge(
-                user_id=uid, title="英语挑战", task_type="word", unit="词",
-                direction="increase", goal_rule="fixed", target_value=20.0,
-                start_date=shift_date(today_str(), -40), end_date=shift_date(today_str(), 20),
-                status="active",
-            )
             c_fresh = Challenge(
                 user_id=uid, title="读书", task_type="page", unit="页",
                 direction="increase", goal_rule="fixed", target_value=10.0,
@@ -77,13 +71,23 @@ def _run_reminders() -> list[dict[str, object]]:
                 start_date=shift_date(today_str(), -10), end_date=shift_date(today_str(), 20),
                 status="active",
             )
-            s.add_all([c_word, c_fresh, c_two_day])
+            challenges: list[Challenge] = [c_fresh, c_two_day]
+            if seed_rescue:
+                c_word = Challenge(
+                    user_id=uid, title="英语挑战", task_type="word", unit="词",
+                    direction="increase", goal_rule="fixed", target_value=20.0,
+                    start_date=shift_date(today_str(), -40), end_date=shift_date(today_str(), 20),
+                    status="active",
+                )
+                challenges.insert(0, c_word)
+            s.add_all(challenges)
             await s.flush()
-            s.add(CheckIn(
-                challenge_id=c_word.id, user_id=uid,
-                timestamp=TimeUtils.now_naive(), date=shift_date(today_str(), -4),
-                status="completed",
-            ))
+            if seed_rescue:
+                s.add(CheckIn(
+                    challenge_id=c_word.id, user_id=uid,
+                    timestamp=TimeUtils.now_naive(), date=shift_date(today_str(), -4),
+                    status="completed",
+                ))
             s.add(CheckIn(
                 challenge_id=c_fresh.id, user_id=uid,
                 timestamp=TimeUtils.now_naive(), date=shift_date(today_str(), -1),
@@ -120,18 +124,18 @@ def test_absent_three_days_handed_to_rescue() -> None:
     normals = [p for k, p in by_kind if k == "normal"]
     rescues = [p for k, p in by_kind if k == "rescue"]
 
-    assert len(normals) == 1, sent
-    # 缺席 1 天（读书）与缺席 2 天（冥想）留在 normal；缺席 4 天（英语挑战，rescue 口径漏 3 天）让位 rescue
-    assert normals[0]["data"]["challenge_count"] == 2
-    assert "英语挑战" not in str(normals[0]["title"])
     assert len(rescues) == 1, sent
     assert rescues[0]["data"]["missed_days"] == 3
     assert "断了 3 天" in str(rescues[0]["content"])
     assert "节奏有些波动" not in str(rescues[0]["content"])
+    # r213 桩对齐终态契约后走真路径：rescue 送达 → rescued_users 生效 →
+    # 该用户当拍 normal 全让位（reminder_service else 分支注释的显式设计）。
+    # 旧桩 {"ok": True} 无 status，判定恒走失败分支，「送达让位」从未被测过。
+    assert len(normals) == 0, sent
 
 
 def test_two_day_absence_stays_in_normal() -> None:
-    sent = _run_reminders()
+    sent = _run_reminders(seed_rescue=False)
     normal = [p for p in sent if "打卡提醒" in str(p.get("title", "")) or "个挑战待打卡" in str(p.get("title", ""))]
     assert len(normal) == 1
     assert normal[0]["data"]["challenge_count"] == 2

@@ -21,7 +21,7 @@ class FakeNotifyClient:
 
     async def send(self, **kwargs: object) -> dict[str, object]:
         self.sent.append(kwargs)
-        return {"ok": True}
+        return {"ok": True, "status": "sent", "id": 9900}
 
     async def send_many(self, items: list[dict[str, object]]) -> list[dict[str, object]]:
         results: list[dict[str, object]] = []

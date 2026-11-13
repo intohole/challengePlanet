@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexus.audience import sendable_users
-from nexus.notify import get_notify_client
+from nexus.notify import get_notify_client, is_sent
 from nexus.logging import get_logger
 
 from app.core.datetime_utils import now_china
@@ -262,8 +262,7 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                 rescue_results = await client.send_many([e["payload"] for e in rescue_ok])
                 rescued_users: set[str] = set()
                 for entry, result in zip(rescue_ok, rescue_results):
-                    status = result.get("status") if isinstance(result, dict) else None
-                    if status == "sent":
+                    if is_sent(result):
                         rescued_users.add(str(entry["user_id"]))
                         sent_counter["rescue"] += 1
                         await mark_rescue_sent(
@@ -275,7 +274,7 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
                         logger.warning(
                             "rescue not sent for challenge %s: %s — normal reminder keeps this user covered",
                             entry["challenge_id"],
-                            status if isinstance(result, dict) else result,
+                            result.get("reason") if isinstance(result, dict) else result,
                         )
                 await session.commit()
                 if rescued_users:
@@ -284,14 +283,12 @@ async def send_checkin_reminders(current_hour: int | None = None) -> None:
             if normal_ok:
                 results = await client.send_many(normal_ok)
                 for item, result in zip(normal_ok, results):
-                    status = result.get("status") if isinstance(result, dict) else None
-                    if status == "sent":
+                    if is_sent(result):
                         sent_counter["normal"] += 1
             if absence_ok:
                 results = await client.send_many([e["payload"] for e in absence_ok])
                 for entry, result in zip(absence_ok, results):
-                    status = result.get("status") if isinstance(result, dict) else None
-                    if status == "sent":
+                    if is_sent(result):
                         sent_counter["absence"] += 1
                         await mark_absence_sent(
                             session, int(entry["challenge_id"]), str(entry["user_id"]),
