@@ -111,7 +111,7 @@ def _lion_stub():
 
 def main():
     stub = _lion_stub()
-    cid = __import__("asyncio").run(seed())
+    __import__("asyncio").run(seed())
     env = dict(os.environ)
     proc = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1",

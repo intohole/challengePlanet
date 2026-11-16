@@ -13,7 +13,6 @@ import app.models  # noqa: F401 register all tables
 from app.db.database import Base
 from app.models.challenge import Challenge
 from app.models.checkin import AIInsight, CheckIn
-from app.models.recall import RecallEvent
 from app.services import recall_service
 from app.services.journey_service import JourneyService, _silent_in_window
 from app.services.mercy_service import load_valid_dates

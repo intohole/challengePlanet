@@ -106,7 +106,6 @@ def _lion_stub():
 
     class H(BaseHTTPRequestHandler):
         def do_GET(self):
-            import json as _json
 
             body = b'{"code": 404, "message": "Config not found: stub"}'
             self.send_response(200)
@@ -309,7 +308,7 @@ def main():
             pd.on("pageerror", lambda e: errors.append("dark:" + str(e)))
             pd.goto(BASE + f"/?ch={ch_b}&grad=1", wait_until="domcontentloaded", timeout=60000)
             pd.wait_for_selector('[data-testid="grad-welcome"]', timeout=15000)
-            bg = pd.evaluate(
+            pd.evaluate(
                 "(()=>{const el=document.querySelector('[data-testid=grad-welcome]');"
                 "return el?getComputedStyle(el).backgroundImage.slice(0,60):''})()"
             )

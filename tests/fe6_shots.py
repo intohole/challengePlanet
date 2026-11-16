@@ -99,7 +99,7 @@ def main():
     import jwt
     from playwright.sync_api import sync_playwright
 
-    stub = _lion_stub()
+    _lion_stub()
     rest_ids = asyncio.run(seed())
     token = jwt.encode({"sub": UID, "exp": int(time.time()) + 7200}, SECRET, algorithm="HS256")
     proc = subprocess.Popen(

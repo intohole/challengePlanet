@@ -254,7 +254,6 @@ async def test_return_state_carries_restart_block() -> None:
 async def test_micro_target_uses_today_cap_not_day1() -> None:
     """回归 micro（今天先做最小的）必须相对今日 cap，不是 day1 起点——
     decrease 阶梯今日 cap < day1，day1 口径会把「最小的一步」说大（r27 遗留②）。"""
-    from app.services.return_service import return_state_of
 
     engine, maker = await _make_session()
     async with maker() as session:

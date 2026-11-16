@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import tempfile
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 from sqlalchemy import select

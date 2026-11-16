@@ -19,7 +19,7 @@ from app.db.database import Base
 from app.models.challenge import Challenge
 from app.models.points import StreakAction
 from app.services import mercy_service as mercy_mod
-from app.services.mercy_service import ACTION_REPAIR, MercyService
+from app.services.mercy_service import MercyService
 
 CHALLENGE_ID = 101
 OWNER = "u1"

@@ -154,7 +154,7 @@ def main():
     asyncio.run(seed_day(cid_a, uid, shift(4), 5.0))
     asyncio.run(seed_day(cid_a, uid, shift(3), 6.0))  # 最后记录在 3 天前→断 2 天
     fake = run_job_with_fake_notify()
-    rescue_titles = [s["title"] for s in fake.sent if "星轨还在" in str(s.get("title", ""))]
+    [s["title"] for s in fake.sent if "星轨还在" in str(s.get("title", ""))]
     mine = [s for s in fake.sent if str(s.get("user_id")) == uid]
     check("S1 断2天零催促(首发门槛)", all("星轨还在" not in str(s.get("title", "")) for s in mine), str([s.get("title") for s in mine]))
 

@@ -2,12 +2,10 @@
 
 用法：python3 tests/fe5_regression_env.py &  → 8610 就绪后跑 f2/f3/f4，结束时 kill。
 """
-import datetime
 import json
 import os
 import subprocess
 import sys
-import tempfile
 import threading
 import time
 import urllib.request

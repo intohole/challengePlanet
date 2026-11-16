@@ -7,12 +7,10 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-import json
 import os
 import sys
 import tempfile
 import time
-from types import SimpleNamespace
 
 sys.path.insert(0, ".")
 
@@ -290,7 +288,7 @@ def main():
             await _seed_checkin(cid, uid, shift(40), value=5.0)
             return cid
 
-        cid_d = asyncio.run(e5())
+        asyncio.run(e5())
         fake4 = FakeNotify()
         asyncio.run(_run_job(fake4))
         mine = [s for s in fake4.sent if str(s.get("user_id")) == uid and (s.get("data") or {}).get("absence_care")]
@@ -303,7 +301,7 @@ def main():
             await _seed_checkin(cid, uid, shift(4))
             return cid
 
-        cid_e = asyncio.run(e6())
+        asyncio.run(e6())
         fake5 = FakeNotify(fail_rescue=True)
         asyncio.run(_run_job(fake5))
         mine5 = [s for s in fake5.sent if str(s.get("user_id")) == uid]

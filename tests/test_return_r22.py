@@ -12,9 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 import app.models  # noqa: F401 register all tables
 from app.db.database import Base
 from app.models.points import ChallengeMeta
-from app.services.mercy_service import _consume_bonus_mend, load_valid_dates
+from app.services.mercy_service import _consume_bonus_mend
 from app.services.return_service import (
-    BACKFILL_TARGET_DAYS,
     grant_backfill_reward,
     return_state_of,
 )
