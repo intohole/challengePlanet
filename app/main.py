@@ -19,6 +19,7 @@ from nexus.scheduler import get_scheduler
 
 from app.api.adaptive import router as adaptive_router
 from app.api.archives import router as archives_router
+from app.api.brief import router as brief_router
 from app.api.challenge import router as challenge_router
 from app.api.checkin import router as checkin_router
 from app.api.diet import router as diet_router
@@ -148,6 +149,7 @@ app.include_router(reminder_router, prefix=API_PREFIX + "/challenges")
 app.include_router(ladder_router, prefix=API_PREFIX + "/challenges")
 app.include_router(points_router, prefix=API_PREFIX)
 app.include_router(archives_router, prefix=API_PREFIX)
+app.include_router(brief_router, prefix=API_PREFIX + "/brief")
 app.include_router(recall_router, prefix=API_PREFIX)
 challenge_chat_engine = (
     ChatEngine(db_engine)

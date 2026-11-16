@@ -166,6 +166,45 @@ async def active_return_state(session, challenge, today: str) -> dict[str, objec
     return state
 
 
+async def brief_return_state(session, challenge, today: str) -> dict[str, object] | None:
+    """brief snapshot 入口：active_return_state 的纯读孪生（零评估零创建零状态推进）。
+
+    缺席口径与回归窗判定同源（return_state_of）；重启卡只读现役 pending
+    （peek 过窗判定单源在 AdaptiveService.peek_pending），缺卡时只报缺口不现场
+    建卡——创建语义属主仍是 app 内 today 动线（#1051：简报每日委托不放大写入）。
+    remaining_days 由读日实时派生（铸造日快照会陈旧）。"""
+    if str(getattr(challenge, "status", "")) != "active":
+        return None
+    from app.services.mercy_service import load_recorded_dates, load_valid_dates
+
+    cid = int(challenge.id)
+    state = return_state_of(
+        challenge, await load_valid_dates(session, cid), today,
+        recorded_dates=await load_recorded_dates(session, cid),
+    )
+    if state is None:
+        return None
+    from app.services.adaptive_service import RESTART_WINDOW_DAYS, AdaptiveService
+
+    suggestion, expired = await AdaptiveService().peek_pending(
+        session, cid, str(challenge.user_id),
+    )
+    if suggestion is not None and not expired and suggestion.kind == "restart":
+        from nexus import loads_or
+
+        task = loads_or(str(suggestion.task_json or "{}"), {})
+        day_now = _day_number_of(challenge, today)
+        remaining = RESTART_WINDOW_DAYS - (day_now - int(suggestion.target_day or day_now))
+        state["restart"] = {
+            "suggestion_id": int(suggestion.id),
+            "restart_cap": task.get("restart_cap"),
+            "current_cap": task.get("current_cap"),
+            "remaining_days": max(0, remaining),
+            "reason": suggestion.reason,
+        }
+    return state
+
+
 async def return_after_checkin(session, challenge, today: str) -> dict[str, object] | None:
     """checkin 入口：首记后的回归态；第 BACKFILL_TARGET_DAYS 天发回赠免费补签卡。"""
     from app.services.mercy_service import load_recorded_dates, load_valid_dates

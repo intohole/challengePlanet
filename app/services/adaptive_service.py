@@ -45,22 +45,32 @@ class AdaptiveService:
         self._challenge_repo = ChallengeRepository()
         self._checkin_repo = CheckInRepository()
 
-    async def get_pending(
+    async def peek_pending(
         self, session: AsyncSession, challenge_id: int, user_id: str
-    ) -> AdaptiveSuggestion | None:
+    ) -> tuple[AdaptiveSuggestion | None, bool]:
+        """纯读版 pending 判定：(建议|None, 是否已过窗)。零写库——与 get_pending
+        共用同一新鲜度判定（过窗钟单源，防简报与 app 各说各话）。"""
         challenge = await self._challenge_repo.get_by_id(session, challenge_id)
         if challenge is None or challenge.user_id != user_id:
             raise ValueError("挑战不存在")
         suggestion = await self._repo.get_pending(session, challenge_id)
         if suggestion is None:
-            return None
+            return None, False
         current_day = day_number_of(challenge.start_date, today_str())
         if suggestion.kind == "restart":
-            if current_day > int(suggestion.target_day or 0) + RESTART_WINDOW_DAYS:
-                await self._repo.update_status(session, suggestion, "expired")
-                return None
-            return suggestion
-        if suggestion.target_day <= current_day or suggestion.target_day > challenge.duration_days:
+            expired = current_day > int(suggestion.target_day or 0) + RESTART_WINDOW_DAYS
+        else:
+            expired = (
+                suggestion.target_day <= current_day
+                or suggestion.target_day > challenge.duration_days
+            )
+        return suggestion, expired
+
+    async def get_pending(
+        self, session: AsyncSession, challenge_id: int, user_id: str
+    ) -> AdaptiveSuggestion | None:
+        suggestion, expired = await self.peek_pending(session, challenge_id, user_id)
+        if suggestion is not None and expired:
             await self._repo.update_status(session, suggestion, "expired")
             return None
         return suggestion
