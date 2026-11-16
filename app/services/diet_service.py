@@ -82,7 +82,7 @@ class DietService:
         if image:
             try:
                 result = await self._ai.estimate_diet_calories_from_photo(normalize_image(image))
-            except ValueError as exc:
+            except ValueError:
                 raise
             except Exception as e:
                 logger.warning("diet photo estimate failed: %s", e)

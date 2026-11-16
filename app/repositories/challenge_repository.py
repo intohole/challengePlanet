@@ -20,15 +20,6 @@ class ChallengeRepository:
         result = await session.execute(select(Challenge).where(Challenge.id == challenge_id))
         return result.scalar_one_or_none()
 
-    async def get_active_by_user_id(self, session: AsyncSession, user_id: str) -> list[Challenge]:
-        result = await session.execute(
-            select(Challenge).where(
-                Challenge.user_id == user_id,
-                Challenge.status == "active",
-            ).order_by(Challenge.created_at.desc())
-        )
-        return list(result.scalars().all())
-
     async def create(self, session: AsyncSession, data: dict[str, object]) -> Challenge:
         challenge = Challenge(**data)
         session.add(challenge)

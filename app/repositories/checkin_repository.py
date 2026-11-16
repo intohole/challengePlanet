@@ -152,17 +152,6 @@ class CheckInRepository(StatelessRepository[CheckIn]):
         )
         return int(result.scalar_one() or 0)
 
-    async def user_has_checkin_on_date(
-        self, session: AsyncSession, user_id: str, date: str
-    ) -> bool:
-        result = await session.execute(
-            select(CheckIn.id).where(
-                CheckIn.user_id == user_id,
-                CheckIn.date == date,
-            ).limit(1)
-        )
-        return result.scalar_one_or_none() is not None
-
     async def get_hourly_distribution(
         self, session: AsyncSession, challenge_id: int,
         start_date: str, end_date: str,
@@ -325,7 +314,3 @@ class InsightRepository(StatelessRepository[AIInsight]):
         )
         return result.scalar_one_or_none()
 
-    async def get_forecast(
-        self, session: AsyncSession, challenge_id: int
-    ) -> AIInsight | None:
-        return await self.get_by_type(session, challenge_id, "forecast")

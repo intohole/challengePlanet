@@ -151,25 +151,6 @@ class AIService:
         parsed["items"] = items if isinstance(items, list) else []
         return parsed
 
-    async def generate_challenge_plan(
-        self, title: str, description: str, category: str, duration: int,
-        scene_template: str = "", target_value: float = 0, unit: str = "",
-    ) -> dict[str, object]:
-        inferred_value, inferred_unit = _infer_daily_target(description)
-        tval = float(target_value) if target_value > 0 else inferred_value
-        tunit = unit or inferred_unit
-        direction = _infer_direction(title, description, category, "")
-        task_type = "counter" if tval > 0 else "binary"
-        steps: list[str] = []
-        if scene_template:
-            scene = self._scenes.get_scene(scene_template)
-            if scene and scene.steps:
-                steps = list(scene.steps)
-        return build_plan(
-            title, duration, task_type=task_type,
-            target_value=tval, unit=tunit, direction=direction, steps=steps,
-        )
-
     @staticmethod
     def _feedback_system(mood: str) -> str:
         return FEEDBACK_SYSTEM + get_mood_aware_prefix(mood)
@@ -196,26 +177,6 @@ class AIService:
         if memory_context:
             tail += f"\n用户过往记忆：{memory_context}"
         return head + tail, cls._feedback_system(mood)
-
-    async def generate_daily_feedback(
-        self, challenge_title: str, day_number: int, total_days: int,
-        mood: str, reflection: str, memory_context: str,
-        value: float = 0.0, target: float = 0.0,
-        direction: str = "increase", is_soft_exceeded: bool = False,
-        journey_context: str = "",
-    ) -> str:
-        prompt, system = self._feedback_prompt(
-            challenge_title, day_number, total_days, mood, reflection,
-            memory_context, value, target, direction, is_soft_exceeded,
-            journey_context=journey_context,
-        )
-        llm = get_llm_service()
-        raw = await llm.ask(
-            prompt, system=system,
-            temperature=settings.FEEDBACK_TEMPERATURE,
-            max_tokens=256, timeout=30.0, task_type="assistant",
-        )
-        return sanitize_coach_text(raw.strip(), system=system)
 
     async def stream_daily_feedback(
         self, challenge_title: str, day_number: int, total_days: int,

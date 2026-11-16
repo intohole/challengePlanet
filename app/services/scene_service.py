@@ -268,9 +268,6 @@ class SceneService:
     def __init__(self) -> None:
         self._templates = _TEMPLATES
 
-    def list_scenes(self) -> list[SceneTemplate]:
-        return list(self._templates.values())
-
     def get_scene(self, scene_id: str) -> SceneTemplate | None:
         return self._templates.get(scene_id)
 
@@ -298,18 +295,3 @@ class SceneService:
         factor = max(0.5, min(1.0, factor))
         return round(base * factor, 2)
 
-    def build_plan_hint(self, scene_id: str, duration: int) -> str:
-        template = self._templates.get(scene_id)
-        if template is None:
-            return ""
-        checkpoints = sorted({1, max(2, duration // 4), max(3, duration // 2), max(4, duration * 3 // 4), duration})
-        targets = [f"第{d}天={self.get_progressive_target(scene_id, d, duration)}{template.unit}" for d in checkpoints]
-        steps_hint = f"\n步骤参考: {'→'.join(template.steps)}" if template.steps else ""
-        return (
-            f"\n场景: {template.name}({template.icon})\n"
-            f"打卡类型: {template.task_type} 单位: {template.unit}\n"
-            f"渐进难度: {template.difficulty_curve}\n"
-            f"渐进目标参考: {'; '.join(targets)}\n"
-            f"每天JSON需包含 task_type=\"{template.task_type}\", target_value(数值), unit=\"{template.unit}\""
-            f"{steps_hint}"
-        )
