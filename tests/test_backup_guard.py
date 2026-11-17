@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pytest
 
+from nexus.backup import table_count
+
 from app.infra import backup
 
 
@@ -15,9 +17,8 @@ def fake_env(tmp_path, monkeypatch):
         conn.executemany(f"INSERT INTO {table} VALUES (?, ?)", [(i, f"u{i}") for i in range(5)])
     conn.commit()
     conn.close()
+    monkeypatch.setattr(backup.shim, "db_paths", src)
     backup_dir = tmp_path / "backups"
-    monkeypatch.setattr(backup, "_resolve_db_path", lambda: src)
-    monkeypatch.setattr(backup, "_resolve_backup_dir", lambda: backup_dir)
     return src, backup_dir
 
 
@@ -33,12 +34,12 @@ def test_backup_creates_verified_copy(fake_env):
     assert report["ok"] is True
     assert report["integrity"] == "ok"
     table = backup.VERIFY_TABLES[0]
-    assert backup._table_count(src, table) == 5
-    assert backup._table_count(Path(str(report["backup"])), table) == 5
+    assert table_count(src, table) == 5
+    assert table_count(Path(str(report["backup"])), table) == 5
 
 
-def test_backup_missing_db_returns_error(fake_env, monkeypatch):
-    monkeypatch.setattr(backup, "_resolve_db_path", lambda: Path("/nonexistent/x.db"))
+def test_backup_missing_db_returns_error(fake_env, tmp_path, monkeypatch):
+    monkeypatch.setattr(backup.shim, "db_paths", tmp_path / "ghost.db")
     report = backup.create_backup()
     assert report["ok"] is False
 
