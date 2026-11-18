@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class CheckInCreate(BaseModel):
-    value: float = Field(1.0, description="本次打卡值(如本次抽1根)")
+    value: float = Field(1.0, ge=0, le=10000, description="本次打卡值(如本次抽1根)")
     mood: str = Field("", description="心情: good/normal/bad")
     reflection: str = Field("", description="心得")
     context_tag: str = Field("", description="情境标签: home/work/social/stress")

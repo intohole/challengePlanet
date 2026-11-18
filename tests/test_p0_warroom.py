@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 
 import pytest
 from sqlalchemy import text
@@ -10,6 +11,12 @@ from app.core.datetime_utils import now_china
 from app.db.database import Base
 from app.db.database import db_manager as app_db_manager
 from app.models.challenge import Challenge
+from app.models.points import PointsLedger
+from app.schemas.checkin import CheckInCreate
+from app.services.points_service import (
+    DAILY_EARN_CAP_PER_CHALLENGE,
+    PointsService,
+)
 from app.models.checkin import CheckIn
 from app.models.points import ChallengeMeta
 from app.repositories.points_repository import ChallengeMetaRepository, StreakActionRepository
@@ -128,6 +135,41 @@ async def test_settle_shield_on_return_consumes_once() -> None:
 
 def test_app_db_manager_enables_sqlite_pragma() -> None:
     assert app_db_manager._config_arg.database.sqlite_pragma is True
+
+
+def test_checkin_schema_rejects_negative_value() -> None:
+    with pytest.raises(Exception):
+        CheckInCreate(value=-5.0)
+
+
+def test_checkin_schema_rejects_oversize_value() -> None:
+    with pytest.raises(Exception):
+        CheckInCreate(value=99999.0)
+
+
+async def _points_fixture():
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    maker = async_sessionmaker(engine, expire_on_commit=False)
+    return engine, maker()
+
+
+@pytest.mark.asyncio
+async def test_award_checkin_daily_cap_per_challenge() -> None:
+    engine, session = await _points_fixture()
+    try:
+        svc = PointsService(rng=random.Random(7))
+        earned = 0
+        for _ in range(12):
+            base, chest = await svc.award_checkin(session, "u1", 1, 3, completion_pct=100.0)
+            earned += base + chest
+        assert earned <= DAILY_EARN_CAP_PER_CHALLENGE
+        base_other, chest_other = await svc.award_checkin(session, "u1", 2, 3, completion_pct=100.0)
+        assert base_other > 0
+    finally:
+        await session.close()
+        await engine.dispose()
 
 
 @pytest.mark.asyncio
