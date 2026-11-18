@@ -127,7 +127,7 @@ async def test_settle_shield_on_return_consumes_once() -> None:
 
 
 def test_app_db_manager_enables_sqlite_pragma() -> None:
-    assert app_db_manager._config.database.sqlite_pragma is True
+    assert app_db_manager._config_arg.database.sqlite_pragma is True
 
 
 @pytest.mark.asyncio
