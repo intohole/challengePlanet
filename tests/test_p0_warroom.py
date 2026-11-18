@@ -32,6 +32,12 @@ class _Ch:
     def __init__(self, direction: str) -> None:
         self.direction = direction
         self.goal_rule = "ladder"
+        self.task_type = "counter"
+        self.unit = "根"
+        self.goal_type = "soft"
+        self.decompose_mode = "none"
+        self.duration_days = 66
+        self.end_date = shift_date(today_str(), 55)
         self.ladder_start = 2.0
         self.ladder_goal = 5.0
         self.ladder_interval = 2
@@ -47,6 +53,20 @@ def test_ladder_progress_pct_increase_returns_float() -> None:
     pct = ladder_progress_pct(ch, 1)
     assert isinstance(pct, float)
     assert 0.0 <= pct <= 100.0
+
+
+def test_build_today_payload_increase_ladder_no_crash() -> None:
+    from app.services.challenge_present import build_today_payload
+
+    ch = _Ch("increase")
+    payload = build_today_payload(
+        ch, 1, 1, today_str(),
+        task={"task_type": "counter"}, today_checkins=[], today_total=0.0,
+        today_target=2.0, dynamic_baseline=0.0,
+        stats={"streak": 0, "silent_kept": 0, "completed_days": 0}, progress=0.0,
+    )
+    assert payload["challenge_id"] == 1
+    assert isinstance(payload.get("ladder_progress_pct"), float)
 
 
 def test_ladder_progress_pct_decrease_still_works() -> None:
