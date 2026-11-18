@@ -3,10 +3,12 @@ from __future__ import annotations
 import json
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.core.datetime_utils import now_china
 from app.db.database import Base
+from app.db.database import db_manager as app_db_manager
 from app.models.challenge import Challenge
 from app.models.checkin import CheckIn
 from app.models.points import ChallengeMeta
@@ -122,3 +124,30 @@ async def test_settle_shield_on_return_consumes_once() -> None:
     finally:
         await session.close()
         await engine.dispose()
+
+
+def test_app_db_manager_enables_sqlite_pragma() -> None:
+    assert app_db_manager._config.database.sqlite_pragma is True
+
+
+@pytest.mark.asyncio
+async def test_sqlite_pragma_wires_wal(tmp_path) -> None:
+    from nexus import DatabaseManager
+    from nexus.config import DatabaseConfig, NexusConfig
+
+    mgr = DatabaseManager(
+        NexusConfig(
+            database=DatabaseConfig(
+                url=f"sqlite+aiosqlite:///{tmp_path}/p0wal.db",
+                echo=False,
+                sqlite_pragma=True,
+            )
+        )
+    )
+    try:
+        await mgr.init()
+        async with mgr.engine.connect() as conn:
+            row = (await conn.execute(text("PRAGMA journal_mode"))).scalar()
+        assert str(row).lower() == "wal"
+    finally:
+        await mgr.engine.dispose()

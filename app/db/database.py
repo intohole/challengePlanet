@@ -23,7 +23,7 @@ db_manager = DatabaseManager(
         database=DatabaseConfig(
             url=settings.DATABASE_URL,
             echo=False,
-            sqlite_pragma=False,
+            sqlite_pragma=True,
         )
     )
 )
