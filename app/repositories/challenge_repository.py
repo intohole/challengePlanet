@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.challenge import Challenge
@@ -35,6 +35,20 @@ class ChallengeRepository:
     async def delete_with_children(self, session: AsyncSession, challenge_id: int) -> None:
         for model in (CheckIn, AIInsight, StreakAction, ChallengeMeta, AdaptiveSuggestion, WeightRecord):
             await session.execute(delete(model).where(model.challenge_id == challenge_id))
+        has_chat = (
+            await session.execute(
+                text("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_conversations'")
+            )
+        ).scalar()
+        if has_chat:
+            await session.execute(
+                text(
+                    "DELETE FROM chat_conversations "
+                    "WHERE app_name = 'challengePlanet' "
+                    "AND CAST(json_extract(meta, '$.challenge_id') AS INTEGER) = :cid"
+                ),
+                {"cid": challenge_id},
+            )
         await session.execute(delete(Challenge).where(Challenge.id == challenge_id))
         await session.flush()
 

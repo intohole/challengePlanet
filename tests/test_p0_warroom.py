@@ -26,6 +26,7 @@ from app.services.goal_rule_service import (
 )
 from app.services.mercy_service import MercyService
 from app.services.streak_service import shift_date, today_str
+from nexus.chat.models import ChatConversation
 
 
 class _Ch:
@@ -237,3 +238,66 @@ async def test_sqlite_pragma_wires_wal(tmp_path) -> None:
         assert str(row).lower() == "wal"
     finally:
         await mgr.engine.dispose()
+
+
+async def _purge_fixture():
+    from nexus.chat.models import ChatBase
+
+    import nexus.chat.models  # noqa: F401
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(ChatBase.metadata.create_all)
+    maker = async_sessionmaker(engine, expire_on_commit=False)
+    session = maker()
+    today = today_str()
+    ch = Challenge(
+        user_id="u1", title="清理挑战", category="quit", task_type="counter", unit="根",
+        direction="decrease", goal_type="soft", goal_rule="fixed", goal_mode="auto",
+        duration_days=30, status="active", target_value=1.0, ai_plan="[]",
+        share_token="t-purge", color="#ef4444", icon="🚭",
+        start_date=shift_date(today, -5), end_date=shift_date(today, 24),
+    )
+    session.add(ch)
+    await session.flush()
+    session.add_all([
+        ChatConversation(user_id="u1", app_name="challengePlanet", meta={"challenge_id": ch.id}),
+        ChatConversation(user_id="u1", app_name="challengePlanet", meta={"challenge_id": 999}),
+        ChatConversation(user_id="u1", app_name="challengePlanet", meta={}),
+        ChatConversation(user_id="u1", app_name="otherapp", meta={"challenge_id": ch.id}),
+    ])
+    await session.commit()
+    return engine, session, ch
+
+
+@pytest.mark.asyncio
+async def test_purge_cascades_chat_conversations() -> None:
+    from app.repositories.challenge_repository import ChallengeRepository
+
+    engine, session, ch = await _purge_fixture()
+    try:
+        await ChallengeRepository().delete_with_children(session, ch.id)
+        rows = (await session.execute(text("SELECT app_name, meta FROM chat_conversations"))).all()
+        assert len(rows) == 3
+        own = [m for app, m in rows if app == "challengePlanet"]
+        assert own
+        metas = [json.loads(m) if isinstance(m, str) else (m or {}) for m in own]
+        assert all(item.get("challenge_id") != ch.id for item in metas)
+        assert any(app == "otherapp" for app, _ in rows)
+    finally:
+        await session.close()
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_purge_tolerates_missing_chat_table() -> None:
+    from app.repositories.challenge_repository import ChallengeRepository
+
+    engine, session, ch = await _purge_fixture()
+    try:
+        await session.execute(text("DROP TABLE chat_conversations"))
+        await session.commit()
+        await ChallengeRepository().delete_with_children(session, ch.id)
+    finally:
+        await session.close()
+        await engine.dispose()
