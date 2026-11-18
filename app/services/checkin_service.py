@@ -27,7 +27,7 @@ from app.services.checkin_calc import (
 from app.services.forecast_math import CONTEXT_TAGS
 from app.services.forecast_service import ForecastService
 from app.services.goal_rule_service import is_cap_mode, is_ladder, is_repeatable
-from app.services.mercy_service import load_valid_dates
+from app.services.mercy_service import MercyService, load_valid_dates
 from app.services.points_service import PointsService
 from app.services.prompts import MOODS
 from app.services.shield_service import ShieldService
@@ -152,6 +152,8 @@ class CheckInService:
                 session, challenge_id, str(challenge.start_date), shift_date(today, -1),
             )
             return_block = assess_absence(challenge, rows_to_yesterday, today)
+        if not today_checkins:
+            await MercyService().settle_shield_on_return(session, challenge, user_id)
         streak = await self._current_streak(session, challenge_id)
         base, chest = await self._points.award_checkin(
             session, user_id, challenge_id, streak,

@@ -257,6 +257,23 @@ class MercyService:
         valid.add(yesterday)
         return {"ok": True, "message": message, "streak": calc_streak(valid, today)}
 
+    async def settle_shield_on_return(
+        self, session: AsyncSession, challenge: object, user_id: str
+    ) -> int:
+        challenge_id = int(getattr(challenge, "id"))
+        valid = await self._valid_dates(session, challenge_id)
+        yesterday = shift_date(today_str(), -1)
+        shields = await self._shields.get_shields(session, challenge_id)
+        if (
+            yesterday not in valid
+            and challenge.start_date <= yesterday <= challenge.end_date
+            and streak_before(valid, yesterday) > 0
+            and shields > 0
+        ):
+            if await self._shields.consume_for_date(session, challenge_id, user_id, yesterday):
+                shields -= 1
+        return shields
+
     async def get_mercy_status(
         self, session: AsyncSession, challenge_id: int, user_id: str
     ) -> dict[str, object]:
@@ -275,17 +292,6 @@ class MercyService:
         valid = await self._valid_dates(session, challenge_id)
         yesterday = shift_date(today, -1)
         shields = await self._shields.get_shields(session, challenge_id)
-        shield_activated = False
-        if (
-            yesterday not in valid
-            and challenge.start_date <= yesterday <= challenge.end_date
-            and streak_before(valid, yesterday) > 0
-            and shields > 0
-        ):
-            if await self._shields.consume_for_date(session, challenge_id, user_id, yesterday):
-                shield_activated = True
-                shields -= 1
-                valid = await self._valid_dates(session, challenge_id)
         repair_available = (
             yesterday not in valid
             and challenge.start_date <= yesterday <= challenge.end_date
@@ -300,5 +306,5 @@ class MercyService:
             "missed_dates": missed,
             "streak": calc_streak(valid, today),
             "shields": shields,
-            "shield_activated": shield_activated,
+            "shield_activated": False,
         }
