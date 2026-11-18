@@ -251,9 +251,15 @@ def ladder_progress_pct(challenge: object, day_number: int) -> float:
         if span <= 0:
             return 100.0
         return max(0.0, min((start - cap) / span * 100.0, 100.0))
+    span = goal - start
     if span <= 0:
         return 100.0
-    return max(0.0, min((cap - start) / (goal - start) * 100.0, 100.0))
+    return max(0.0, min((cap - start) / span * 100.0, 100.0))
+
+
+def ensure_ladder_direction(direction: str, goal_rule: str) -> None:
+    if str(goal_rule or "") == "ladder" and str(direction or "") != "decrease":
+        raise ValueError("ladder goal_rule 仅支持 decrease 方向")
 
 
 def judge_mode(challenge: object, task_type: str) -> str:

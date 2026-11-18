@@ -23,6 +23,7 @@ from app.schemas.guidance import GuidanceResponse, ImportResponse, SharedConfigR
 from app.services.ai_service import AIService
 from app.services.challenge_service import ChallengeService, _normalize_title
 from app.services.companion_service import companion_meta, load_challenge_state
+from app.services.goal_rule_service import ensure_ladder_direction
 from app.services.guidance_service import GuidanceService
 from app.services.plan_adjust import apply_numeric_adjust
 from app.services.plan_builder import build_plan
@@ -147,6 +148,10 @@ async def confirm_challenge(
     bearer: str = Depends(get_bearer_token),
 ) -> ChallengeResponse:
     service = ChallengeService()
+    try:
+        ensure_ladder_direction(request.direction, request.goal_rule)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
     plan = [day.model_dump() for day in request.plan]
     challenge = await service.create_with_plan(
         session, user_id, request.title, request.description, request.category,
