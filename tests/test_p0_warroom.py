@@ -147,6 +147,30 @@ def test_checkin_schema_rejects_oversize_value() -> None:
         CheckInCreate(value=99999.0)
 
 
+def test_weekly_prompt_has_no_time_slot_fabrication() -> None:
+    from app.services.prompts import WEEKLY_SYSTEM
+
+    assert "时段" not in WEEKLY_SYSTEM
+
+
+def test_milestone_tips_no_fabricated_percentile() -> None:
+    from app.services.guidance_service import MILESTONE_TIPS
+
+    for tip in MILESTONE_TIPS.values():
+        assert "超越" not in tip
+        assert "%" not in tip
+
+
+def test_encouragement_no_fabricated_percentile() -> None:
+    from app.services.guidance_service import GuidanceService
+
+    svc = GuidanceService()
+    for completed, streak in ((3, 3), (30, 10), (66, 20), (5, 0), (0, 0)):
+        text = svc._build_encouragement(completed, streak)
+        assert "超越" not in text
+        assert "%" not in text
+
+
 async def _points_fixture():
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     async with engine.begin() as conn:

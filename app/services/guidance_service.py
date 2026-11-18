@@ -48,29 +48,29 @@ HABIT_PHASES: dict[str, dict[str, str]] = {
     },
 }
 
-BENCHMARKS: dict[str, dict[str, object]] = {
-    "fitness": {"avg_streak": 7, "avg_completion": 45, "drop_off_day": 5, "tip": "健身习惯最常在第5天放弃，因为肌肉酸痛达到峰值。坚持过第7天，完成率翻倍。"},
-    "study": {"avg_streak": 10, "avg_completion": 52, "drop_off_day": 7, "tip": "学习习惯的关键是固定时间和场景。建议在每天同一时间、同一地点学习。"},
-    "reading": {"avg_streak": 12, "avg_completion": 58, "drop_off_day": 8, "tip": "阅读习惯的秘诀是'触手可及'。把书放在床头、桌上等显眼位置，降低启动成本。"},
-    "meditation": {"avg_streak": 5, "avg_completion": 38, "drop_off_day": 3, "tip": "冥想是最难坚持的习惯之一。建议从3分钟开始，配合引导音频，逐步延长。"},
-    "morning": {"avg_streak": 8, "avg_completion": 48, "drop_off_day": 4, "tip": "早起习惯的关键是早睡。调整作息时每天只提前15分钟，给身体适应时间。"},
-    "quit": {"avg_streak": 4, "avg_completion": 35, "drop_off_day": 3, "tip": "戒断习惯在前3天最难，戒断反应最强。准备好替代行为，如嚼口香糖、喝水。"},
-    "water": {"avg_streak": 9, "avg_completion": 50, "drop_off_day": 6, "tip": "饮水习惯建议设置固定提醒时间，配合水杯放在显眼位置。"},
-    "running": {"avg_streak": 6, "avg_completion": 42, "drop_off_day": 4, "tip": "跑步习惯从慢跑开始，速度不重要，持续才是关键。前两周以'能说话的速度'慢跑。"},
-    "writing": {"avg_streak": 7, "avg_completion": 44, "drop_off_day": 5, "tip": "写作习惯最难的是开始动笔。设一个'最低字数'（如50字），只要写了就算完成。"},
-    "gratitude": {"avg_streak": 11, "avg_completion": 55, "drop_off_day": 7, "tip": "感恩习惯建议在固定时间（如睡前）记录，配合呼吸放松效果更好。"},
-    "custom": {"avg_streak": 7, "avg_completion": 45, "drop_off_day": 5, "tip": "自定义习惯的关键是明确触发条件。设定'当X发生时，我就做Y'的执行意图。"},
+BENCHMARKS: dict[str, str] = {
+    "fitness": "健身习惯最难的是酸痛期的那几天，过了第7天会明显轻松。",
+    "study": "学习习惯的关键是固定时间和场景。建议在每天同一时间、同一地点学习。",
+    "reading": "阅读习惯的秘诀是'触手可及'。把书放在床头、桌上等显眼位置，降低启动成本。",
+    "meditation": "冥想是最难坚持的习惯之一。建议从3分钟开始，配合引导音频，逐步延长。",
+    "morning": "早起习惯的关键是早睡。调整作息时每天只提前15分钟，给身体适应时间。",
+    "quit": "戒断习惯在前3天最难，戒断反应最强。准备好替代行为，如嚼口香糖、喝水。",
+    "water": "饮水习惯建议设置固定提醒时间，配合水杯放在显眼位置。",
+    "running": "跑步习惯从慢跑开始，速度不重要，持续才是关键。前两周以'能说话的速度'慢跑。",
+    "writing": "写作习惯最难的是开始动笔。设一个'最低字数'（如50字），只要写了就算完成。",
+    "gratitude": "感恩习惯建议在固定时间（如睡前）记录，配合呼吸放松效果更好。",
+    "custom": "自定义习惯的关键是明确触发条件。设定'当X发生时，我就做Y'的执行意图。",
 }
 
 MILESTONE_TIPS: dict[int, str] = {
     1: "万事开头难，今天迈出了第一步！这比永远不开始要强100倍。",
     3: "3天是第一个小关卡，你的大脑已经开始适应新模式了。",
-    7: "7天里程碑！你已超越40%的用户。习惯回路初步建立中。",
-    14: "两周了！你已超越65%的用户。行为模式开始固化。",
-    21: "21天经典里程碑！你已超越80%的用户。习惯初步形成。",
-    30: "满月达成！你已超越90%的用户。这个习惯已经成为你的一部分。",
-    42: "42天深度巩固！你已超越95%的用户。坚持下去就是自动行为。",
-    66: "66天习惯稳定期！你已超越98%的用户。这已成为你的第二天性。",
+    7: "7天里程碑！习惯回路初步建立中，这就是你自己的节奏。",
+    14: "两周了！行为模式开始固化，你已经和两周前的自己不一样了。",
+    21: "21天经典里程碑！习惯初步形成，继续按自己的步子走。",
+    30: "满月达成！这个习惯已经成为你生活的一部分。",
+    42: "42天深度巩固！坚持下去就会越来越接近自动行为。",
+    66: "66天习惯稳定期！这已经成为你的第二天性。",
 }
 
 
@@ -120,13 +120,10 @@ class GuidanceService:
         phase_key = self._detect_phase(completed)
         phase = HABIT_PHASES[phase_key]
         scene_id = challenge.scene_template or "custom"
-        benchmark = BENCHMARKS.get(scene_id, BENCHMARKS["custom"])
+        scene_tip = BENCHMARKS.get(scene_id, BENCHMARKS["custom"])
         next_milestone = self._get_next_milestone(completed)
         last_milestone_tip = self._get_last_milestone(completed)
-        avg_streak = int(benchmark["avg_streak"])
-        avg_completion = int(benchmark["avg_completion"])
         completion_rate = (completed * 100) // challenge.duration_days if challenge.duration_days > 0 else 0
-        percentile = self._calc_percentile(completed)
         risk = assess_risk(checkins, valid, streak, today_str())
         companion_msg = await self._build_companion(challenge, streak, phase_key, risk)
         return {
@@ -141,17 +138,11 @@ class GuidanceService:
             "total_days": challenge.duration_days,
             "streak": streak,
             "completion_rate": completion_rate,
-            "benchmark": {
-                "avg_streak": avg_streak,
-                "avg_completion_rate": avg_completion,
-                "drop_off_day": int(benchmark["drop_off_day"]),
-                "scene_tip": str(benchmark["tip"]),
-            },
-            "percentile": percentile,
+            "scene_tip": scene_tip,
             "next_milestone": next_milestone,
             "milestone_tip": last_milestone_tip,
             "is_at_risk": streak == 0 and completed > 0,
-            "encouragement": self._build_encouragement(completed, streak, percentile),
+            "encouragement": self._build_encouragement(completed, streak),
             "companion": {
                 "score": int(risk["score"]),
                 "level": str(risk["level"]),
@@ -175,35 +166,14 @@ class GuidanceService:
         except Exception:
             return companion_text(risk)
 
-    def _calc_percentile(self, completed: int) -> int:
-        if completed <= 0:
-            return 0
-        if completed >= 66:
-            return 98
-        if completed >= 42:
-            return 95
-        if completed >= 30:
-            return 90
-        if completed >= 21:
-            return 80
-        if completed >= 14:
-            return 65
-        if completed >= 7:
-            return 40
-        if completed >= 3:
-            return 25
-        return 10
-
-    def _build_encouragement(self, completed: int, streak: int, percentile: int) -> str:
+    def _build_encouragement(self, completed: int, streak: int) -> str:
         if completed == 0:
             return "今天就是最好的开始时机！哪怕只做1分钟，也胜过100分钟的计划。"
         if streak == 0 and completed > 0:
             return "中断不可怕，重启才重要。今天重新开始，连续打卡从这里继续！"
-        if percentile >= 90:
-            return f"你已超越{percentile}%的用户！你是真正的坚持者，继续保持这份自律。"
-        if percentile >= 50:
-            return f"你已超越{percentile}%的用户！你正在变得越来越好，继续保持。"
-        return f"你已超越{percentile}%的用户！每一个坚持的日子都在塑造更好的你。"
+        if streak >= 7:
+            return f"已经连续守了{streak}天，比你上次开始的时候走得更稳了。"
+        return f"走过{completed}天了，每一个坚持的日子都在塑造更好的你。"
 
     async def get_shared_config(
         self, session: AsyncSession, share_token: str
