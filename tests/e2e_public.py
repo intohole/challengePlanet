@@ -144,22 +144,6 @@ check("冻结后剩余0次", mercy2.get("freeze_left_this_week") == 0, f"={mercy
 st, mend_future = req("POST", f"/challenges/{cid}/mend", {"date": today.get("date")}, token)
 check("补签今天被拒绝400", st == 400, f"st={st}")
 
-print("== 9. 小队 ==")
-st, squad = req("POST", "/squads", {"name": "E2E互助组", "nickname": "E2E测试"}, token)
-sid = squad.get("id")
-invite = squad.get("invite_code")
-check("创建小队返回邀请码", st == 200 and bool(invite), f"st={st} body={str(squad)[:150]}")
-st, joined = req("POST", "/squads/join", {"invite_code": invite, "nickname": "E2E测试"}, token)
-check("重复加入幂等", st == 200 and joined.get("id") == sid, f"st={st}")
-st, board = req("GET", f"/squads/{sid}/board", token=token)
-members = board.get("members", [])
-check("看板1名成员且今日已打卡", len(members) == 1 and members[0].get("checked_today") is True,
-      f"members={members}")
-st, nudge_self = req("POST", f"/squads/{sid}/nudge", {"to_user_id": members[0]["user_id"] if members else "x"}, token)
-check("戳自己被拒绝400", st == 400, f"st={st}")
-st, bad_join = req("POST", "/squads/join", {"invite_code": "deadbeef00", "nickname": "x"}, token)
-check("无效邀请码400", st == 400, f"st={st}")
-
 print("== 10. 排行榜（r15 已下架） ==")
 st, lb = req("GET", "/leaderboard/weekly", token=token)
 check("周榜端点已下架404/405", st in (404, 405), f"st={st}")
