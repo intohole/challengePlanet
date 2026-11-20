@@ -41,11 +41,11 @@ def _ladder_challenge(session, **kw) -> Challenge:
 
 
 def _seed_checkin(session, ch: Challenge, days_after_start: int) -> None:
-    from datetime import datetime as _dt
+    from datetime import datetime as _dt, timezone
 
     session.add(CheckIn(
         challenge_id=int(ch.id), user_id=str(ch.user_id), day_number=days_after_start + 1,
-        status="completed", timestamp=_dt.utcnow(),
+        status="completed", timestamp=_dt.now(timezone.utc).replace(tzinfo=None),
         date=shift_date(str(ch.start_date), days_after_start),
         value=5.0, unit=str(ch.unit),
     ))
