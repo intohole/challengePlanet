@@ -7,26 +7,25 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from app.chatkit.models import ChatConversation
 from app.core.datetime_utils import now_china
 from app.db.database import Base
 from app.db.database import db_manager as app_db_manager
 from app.models.challenge import Challenge
-from app.models.points import PointsLedger
-from app.schemas.checkin import CheckInCreate
-from app.services.points_service import (
-    DAILY_EARN_CAP_PER_CHALLENGE,
-    PointsService,
-)
 from app.models.checkin import CheckIn
 from app.models.points import ChallengeMeta
 from app.repositories.points_repository import ChallengeMetaRepository, StreakActionRepository
+from app.schemas.checkin import CheckInCreate
 from app.services.goal_rule_service import (
     ensure_ladder_direction,
     ladder_progress_pct,
 )
 from app.services.mercy_service import MercyService
+from app.services.points_service import (
+    DAILY_EARN_CAP_PER_CHALLENGE,
+    PointsService,
+)
 from app.services.streak_service import shift_date, today_str
-from nexus.chat.models import ChatConversation
 
 
 class _Ch:
@@ -241,9 +240,8 @@ async def test_sqlite_pragma_wires_wal(tmp_path) -> None:
 
 
 async def _purge_fixture():
-    from nexus.chat.models import ChatBase
-
-    import nexus.chat.models  # noqa: F401
+    import app.chatkit.models  # noqa: F401
+    from app.chatkit.models import ChatBase
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

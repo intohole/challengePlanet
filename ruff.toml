@@ -5,3 +5,8 @@ select = ["E", "F", "W", "I"]
 ignore = [
     "E501",
 ]
+
+# r267: app/chatkit = vendored freeze copy（8a9cb85^ nexus/chat），禁就地演化含样式；
+# E402/I001/W292 豁免，E/F 逻辑类不豁免（安全修仍受门禁）。
+[lint.per-file-ignores]
+"app/chatkit/**" = ["E402", "I001", "W292"]

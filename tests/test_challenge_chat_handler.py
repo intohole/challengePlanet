@@ -1,4 +1,4 @@
-"""ChallengeChatHandler 试点测试 — 验证 nexus.chat 协议表达力。
+"""ChallengeChatHandler 试点测试 — 验证 app.chatkit 协议表达力。
 
 覆盖: 挑战进度/连续天数/风险检测/阶梯玩法/meta 持久化/引擎集成。
 """
@@ -18,8 +18,8 @@ def handler() -> ChallengeChatHandler:
 
 
 def _make_context(handler: ChallengeChatHandler, meta: dict | None = None, user_message: str = "我今天有点不想坚持了"):
-    from nexus.chat.context import ChatContext
-    from nexus.chat.models import ChatConversation
+    from app.chatkit.context import ChatContext
+    from app.chatkit.models import ChatConversation
 
     conv = ChatConversation(user_id="u1", app_name="challengePlanet", meta=meta or {})
     return ChatContext(conversation=conv, user_message=user_message)
@@ -124,7 +124,7 @@ async def test_stream_reply_no_challenge(handler: ChallengeChatHandler) -> None:
 @pytest.mark.asyncio
 async def test_memory_parts_reach_system_prompt(handler: ChallengeChatHandler, monkeypatch) -> None:
     """context_parts（MemoryMiddleware 注入的记忆块）必须进入 stream_reply 的 system。"""
-    from nexus.chat.middleware.memory import MemoryMiddleware
+    from app.chatkit.middleware.memory import MemoryMiddleware
 
     _patch_db(monkeypatch, _make_challenge(), [_make_checkin("2026-08-19")])
 
@@ -146,7 +146,8 @@ async def test_memory_parts_reach_system_prompt(handler: ChallengeChatHandler, m
     await MemoryMiddleware(StubSDK()).before(ctx)
     events = [e async for e in handler.stream_reply(ctx, [{"role": "user", "content": "我今天有点不想坚持了"}])]
     assert any(isinstance(e, str) for e in events)
-    assert captured["system"].startswith("以下是用户的历史记忆")
+    assert captured["system"].startswith("<memory_context")
+    assert "以下是用户的历史记忆" in captured["system"]
     assert "重新开始" in captured["system"]
     assert "挑战信息" in captured["system"]
 
@@ -199,7 +200,7 @@ async def test_on_reply_complete_persists_meta(handler: ChallengeChatHandler, mo
 async def test_engine_integration(handler: ChallengeChatHandler, monkeypatch) -> None:
     from sqlalchemy.ext.asyncio import create_async_engine
 
-    from nexus.chat.engine import ChatEngine
+    from app.chatkit.engine import ChatEngine
 
     challenge = _make_challenge()
     checkins = [

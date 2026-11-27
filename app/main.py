@@ -1,19 +1,24 @@
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
-import os
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from nexus.middleware import LoadingSplashMiddleware, StaticAssetsCacheMiddleware
-from app.api.probe import register_probe
-from nexus import close_uc_sdk, create_auth_router, ensure_ironman, get_bm_sdk, get_uc_sdk, init_uc_sdk_from_lion, is_ironman_available, register_health_endpoints
-from nexus.chat.engine import ChatEngine
-from nexus.chat.middleware.memory import MemoryMiddleware
-from nexus.chat.router import chat_router
+from nexus import (
+    close_uc_sdk,
+    create_auth_router,
+    ensure_ironman,
+    get_bm_sdk,
+    get_uc_sdk,
+    init_uc_sdk_from_lion,
+    is_ironman_available,
+    register_health_endpoints,
+)
 from nexus.logging import get_logger, setup_loguru
+from nexus.middleware import LoadingSplashMiddleware, StaticAssetsCacheMiddleware
 from nexus.notify import async_init_notify_client, register_notify_proxy
 from nexus.scheduler import get_scheduler
 
@@ -25,18 +30,23 @@ from app.api.checkin import router as checkin_router
 from app.api.diet import router as diet_router
 from app.api.ladder import router as ladder_router
 from app.api.points import router as points_router
+from app.api.probe import register_probe
 from app.api.recall import router as recall_router
 from app.api.reminder import router as reminder_router
 from app.api.report import router as report_router
+from app.chatkit.engine import ChatEngine
+from app.chatkit.middleware.memory import MemoryMiddleware
+from app.chatkit.router import chat_router
 from app.config import settings
 from app.core.middleware import register_middleware
-from app.db.database import init_db, run_migrations, engine as db_engine, async_session
-from app.services.reminder_service import send_checkin_reminders
+from app.db.database import async_session, init_db, run_migrations
+from app.db.database import engine as db_engine
+from app.services.challenge_chat_handler import challenge_chat_handler
+from app.services.challenge_service import ChallengeService
 from app.services.forecast_alert_service import send_forecast_alerts
 from app.services.graduation_service import GraduationPushService
+from app.services.reminder_service import send_checkin_reminders
 from app.services.slip_service import send_slip_care
-from app.services.challenge_service import ChallengeService
-from app.services.challenge_chat_handler import challenge_chat_handler
 
 setup_loguru(app_name="challengeplanet")
 logger = get_logger("challengePlanet.main")
@@ -161,6 +171,7 @@ app.include_router(chat_router(challenge_chat_engine, "challengePlanet"))
 register_notify_proxy(app)
 
 from nexus import register_voice_endpoints
+
 register_voice_endpoints(app)
 
 
@@ -204,6 +215,7 @@ async def cron_status() -> dict[str, object]:
 
 async def _health_db_check() -> str:
     from sqlalchemy import text
+
     from app.db.database import async_session
 
     async with async_session() as session:

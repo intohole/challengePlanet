@@ -1,4 +1,4 @@
-"""挑战星球统一聊天处理器 — 接入 nexus.chat 引擎试点。
+"""挑战星球统一聊天处理器 — 接入 app.chatkit 引擎试点（原 nexus.chat，r267 冻结 vendor）。
 
 承载挑战星球领域差异: 挑战进度/连续天数/风险检测/阶梯玩法进度。
 """
@@ -8,9 +8,9 @@ from __future__ import annotations
 from typing import AsyncIterator, ClassVar
 
 from nexus import get_llm_service
-from nexus.chat.context import ChatContext
-from nexus.chat.handler import BaseChatHandler
 
+from app.chatkit.context import ChatContext
+from app.chatkit.handler import BaseChatHandler
 from app.services.companion_service import companion_meta, load_challenge_state
 
 
