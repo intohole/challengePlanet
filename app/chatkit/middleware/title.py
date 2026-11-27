@@ -30,7 +30,6 @@ class TitleMiddleware(BaseChatMiddleware):
             title = await get_llm_service().ask(
                 prompt,
                 system="你是标题生成器，只输出简短标题，不要标点符号和引号。",
-                temperature=0.2,
                 max_tokens=30,
                 task_type='summarize',
             )
